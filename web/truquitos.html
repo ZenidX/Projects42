@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Truquitos — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="truquitos.html" class="active">Truquitos</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Truquitos</h1>
+<p class="sub">Recetas de supervivencia para la piscine: cosas que no vienen en ningún
+enunciado pero que se usan todos los días — clonar de Vogsphere, pasar la norminette
+y no volverse loco haciéndolo.</p>
+
+<ul class="toc">
+  <li><a href="#vogsphere">Clonar tu repo de Vogsphere</a></li>
+  <li><a href="#norminette">norminette: instalar y usar</a></li>
+  <li><a href="#continua">norminette en modo continuo</a></li>
+</ul>
+
+<div class="card" id="vogsphere">
+<h2><span class="ex">#1</span>Clonar tu repo de Vogsphere</h2>
+<div class="meta"><span><b>Necesitas:</b> clave SSH subida a la intra</span>
+<span><b>Dónde:</b> red del campus (o VPN de 42)</span></div>
+
+<p>Cada proyecto de la intra te da una URL de entrega del tipo
+<code>git@vogsphere.42barcelona.com:vogsphere/intra-uuid-...-tulogin</code>.
+Es git por SSH: para que funcione, tu clave pública tiene que estar registrada
+en tu cuenta de la intra.</p>
+
+<h3>1. Comprueba (o genera) tu clave SSH</h3>
+<pre><code>ls -la ~/.ssh</code></pre>
+<p>Si no tienes ninguna pareja (<code>id_ed25519</code> + <code>id_ed25519.pub</code>),
+genera una:</p>
+<pre><code>ssh-keygen -t ed25519 -C "tulogin@42barcelona"</code></pre>
+<p>Y sube la <strong>pública</strong> (<code>~/.ssh/id_ed25519.pub</code>) en la intra:
+<em>Settings → SSH Keys</em>. En los iMacs del campus suele estar ya gestionado, pero
+conviene verificarlo — sobre todo si trabajas desde tu portátil.</p>
+
+<h3>2. Prueba la conexión</h3>
+<pre><code>ssh -T git@vogsphere.42barcelona.com</code></pre>
+<p>Si autentica, vas bien. Si responde <code>Permission denied (publickey)</code>,
+el problema está en la clave (no está subida, o ssh no está ofreciendo la correcta).</p>
+
+<h3>3. Clona (y renombra de paso)</h3>
+<p>El nombre del repo es un UUID kilométrico; pásale un segundo argumento a
+<code>git clone</code> para que la carpeta se llame como el proyecto:</p>
+<pre><code>git clone git@vogsphere.42barcelona.com:vogsphere/intra-uuid-...-tulogin shell00
+cd shell00</code></pre>
+
+<div class="trasfondo"><b>Si da timeout o no resuelve el host</b> — Vogsphere solo es
+accesible desde la red del campus. Fuera de 42 Barcelona necesitas la VPN de la escuela
+activa; sin ella, ni <code>ssh -T</code> ni el clone van a llegar.</div>
+
+<p>Para entregar: copia dentro del clon <strong>solo</strong> las carpetas
+<code>exNN/</code> con los archivos pedidos, y haz <code>git add</code>,
+<code>commit</code> y <code>push</code>. La Moulinette corrige lo que hay en el repo
+en el momento del deadline — un archivo de más o un nombre mal escrito es un cero.</p>
+</div>
+
+<div class="card" id="norminette">
+<h2><span class="ex">#2</span>norminette: instalar y usar</h2>
+<div class="meta"><span><b>Qué es:</b> el linter oficial de la Norma de 42</span>
+<span><b>Lenguaje:</b> Python (pip)</span></div>
+
+<p>La <strong>norminette</strong> ("pequeña norma", en francés) es la herramienta oficial
+de 42 que comprueba si tu C cumple la Norma: header 42, tabs, máximo 25 líneas por
+función, sin <code>for</code>, etc. Es exactamente lo mismo que ejecuta la Moulinette,
+así que si pasa en local, pasa en la corrección.</p>
+
+<h3>Instalación</h3>
+<p>En los puestos del campus ya viene instalada. En tu máquina:</p>
+<pre><code>pip install norminette</code></pre>
+
+<h3>Uso básico</h3>
+<pre><code>norminette archivo.c          # un archivo
+norminette .                  # todo el directorio actual, recursivo
+norminette ex01/ ex02/        # varios directorios a la vez</code></pre>
+
+<p>Salida típica con errores:</p>
+<pre><code>ex01/ft_ft.c
+Error: TOO_MANY_LINES          (line:  45, col:  1):  Too many lines in function
+Error: SPACE_REPLACE_TAB       (line:  12, col:  3):  Found space when expecting tab
+Error: MISSING_FUNCTION_HEADER (line:   1, col:  1):  Missing function header</code></pre>
+<p>Y cuando todo está bien:</p>
+<pre><code>ex01/ft_ft.c: OK!</code></pre>
+
+<h3>Flags útiles</h3>
+<pre><code>norminette -R CheckForbiddenSourceHeader .   # ignorar una regla concreta
+norminette --version                         # qué versión de la Norma aplica</code></pre>
+
+<div class="trasfondo"><b>Truco</b> — Las soluciones de C de este repo se verificaron con
+<code>norminette -R CheckForbiddenSourceHeader</code> (la regla del header se salta porque
+el header 42 se genera aparte). En CI puedes usar la GitHub Action oficial
+<code>42School/norminette</code> o <code>alexandregv/norminette-action</code>: por debajo
+ejecutan exactamente este mismo comando.</div>
+</div>
+
+<div class="card" id="continua">
+<h2><span class="ex">#3</span>norminette en modo continuo</h2>
+<div class="meta"><span><b>Objetivo:</b> ver los errores de Norma al guardar, no al entregar</span>
+<span><b>Opciones:</b> entr · watch · vim</span></div>
+
+<p>Pasar la norminette a mano después de cada cambio es un rollo. Tres formas de que
+se ejecute sola:</p>
+
+<h3>Opción A — <code>entr</code> (la recomendada)</h3>
+<p>Vigila archivos y relanza un comando cada vez que cambian. Ligera y agnóstica
+del editor: déjala corriendo en una pestaña de tmux mientras editas en otra.</p>
+<pre><code>sudo apt install entr
+
+find . -name "*.c" -o -name "*.h" | entr -c norminette .</code></pre>
+<p>Cada vez que guardas, re-ejecuta <code>norminette</code> automáticamente.
+El flag <code>-c</code> limpia la terminal entre ejecuciones.</p>
+
+<h3>Opción B — <code>watch</code> (cero dependencias)</h3>
+<pre><code>watch -n 2 norminette .</code></pre>
+<p>Re-ejecuta cada 2 segundos, cambie algo o no. Menos elegante que <code>entr</code>,
+pero funciona en cualquier sitio sin instalar nada.</p>
+
+<h3>Opción C — dentro de vim</h3>
+<p>El plugin <a href="https://github.com/alexandregv/norminette-vim">norminette-vim</a>
+usa syntastic para marcar los errores de Norma inline, en el propio código, al abrir
+o guardar un <code>.c</code>:</p>
+<pre><code>git clone https://github.com/alexandregv/norminette-vim \
+  ~/.vim/pack/syntax/start/norminette-vim</code></pre>
+<p>Y en tu <code>~/.vimrc</code>:</p>
+<pre><code>let g:syntastic_c_checkers = ['norminette', 'gcc']
+let g:syntastic_check_on_open = 1</code></pre>
+
+<div class="trasfondo"><b>Cuál elegir</b> — Si vives en la terminal, <code>entr</code>:
+no depende del editor y solo trabaja cuando hay cambios. Si editas en vim todo el día,
+el plugin es lo más cómodo — ves el error en la línea exacta sin salir del archivo.</div>
+</div>
+
+<footer>42.zenidx.com — ZenidX. Los enunciados pertenecen a 42; las soluciones y explicaciones
+son propias.</footer>
+</div>
+</body>
+</html>
