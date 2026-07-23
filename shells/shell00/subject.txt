@@ -1,0 +1,393 @@
+﻿--- PAGINA 1 ---
+C Piscine
+Shell 00
+Resumen: Este documento contiene el enunciado del módulo Shell 00 de la C Piscine
+de 42.
+Versión: 5.0
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 3
+III. Prólogo 6
+IV. Ejercicio 00: Z 8
+V. Ejercicio 01: testShell00 9
+VI. Ejercicio 02: Pues toma dos tazas 10
+VII. Ejercicio 03: ¡Conéctame por SSH! 12
+VIII. Ejercicio 04: midLS 13
+IX. Ejercicio 05: Git commit 14
+X. Exercise 06: gitignore 16
+XI. Ejercicio 07: diff 17
+XII. Ejercicio 08: clean 18
+XIII. Ejercicio 09: Son ilusiones, no trucos, Michael... 19
+XIV. Entrega y evaluación 20
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Los ejercicios están organizados por orden de dificultad, de menor a mayor. Nose
+considerará un ejercicio difícil como válido si uno más sencillo no funciona correc-
+tamente.
+• Asegúrate de que los archivos y directorios tienen los permisos adecuados.
+• Debes seguir losprocedimientos de entregaen todos los ejercicios.
+• Tus ejercicios serán revisados y evaluados por otras personas.
+• Además, serán evaluados por un programa llamadoMoulinette.
+• Moulinette es extremadamente precisa y estricta en su evaluación. Es comple-
+tamente automática y no admite negociación. Para evitar resultados inesperados,
+revisa tu trabajo con atención.
+• Los ejercicios Shell deben poder ejecutarse con/bin/sh.
+• No debesdejar archivos adicionales en tu directorio, aparte de los especificados en
+el enunciado.
+• ¿Tienes una duda? Consulta con la persona de tu derecha. Si no, prueba con la
+persona de tu izquierda.
+• Tus referencias principales son:Google / man / Internet / ...
+• Revisa los ejemplos con atención: pueden incluir detalles no mencionados explícita-
+mente.
+2
+--- PAGINA 4 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La C Piscine es intensa. Es tu primer gran desafío en 42: una inmersión profunda en
+la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas a través del es-
+fuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares.
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante con-
+siderar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construye fundamentos sólidos sin atajos.
+☛ Desarolla de forma real habilidades técnicas y transversales.
+☛ Experimenta el aprendizaje entre pares de forma inmersiva , empezando por apren-
+der a aprender y por resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprende sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas que neutralicen evitar errores comunes.
+3
+--- PAGINA 5 ---
+C Piscine Shell 00
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Infórmate sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener una base adecuada en tecnología y programación.
+• Comprender cómo y por qué la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí,sabemosquelaIAexiste.Ysí,tambiénsabemosquepuederesolvertusproyectos.
+Peroestásaquíparaaprender,noparademostrarquelaIAhaaprendido.Nopierdas
+tiempo solo para demostrar que la IA puede resolver un problema determinado.
+• Aprender en 42 no tiene nada que ver con saber una respuesta, sino con desarrollar
+las habilidades para encontrarla. La IA te dará la respuesta directa, lo que impide
+quedesarrollestupropiorazonamiento.Razonarrequieretiempo,esfuerzoycometer
+errores. Nadie dijo que el proceso iba a ser fácil.
+• Ten en cuenta que, durante los exámenes, no tendrás acceso a la IA (no tenemos
+internetnidispositivosinteligentes).Tevasadarcuentarápidamentesihasconfiado
+demasiadoenlaIAdurantetuprocesodeaprendizajedelaformamásdirecta:frente
+a una hoja en blanco donde vas a tener que escribir tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades transversales y tu capacidad de pensar de forma diferente. Eso es mucho
+más valioso que sentarte a chatear con un bot. Así que, ¡sin miedo! Habla, haz
+preguntas y aprende con el resto de personas en tu Piscina.
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+4
+--- PAGINA 6 ---
+C Piscine Shell 00
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamos durante 10 minutos y, de repente, todo encaja. Lo entiendo. No entiendo
+algo concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona cómo
+lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+5
+--- PAGINA 7 ---
+Capítulo III
+Prólogo
+A continuación se muestran las letras del tema deCity Hunter, "Moonlight Shadow":
+The last time ever she saw him
+Carried away by a moonlight shadow
+He passed on worried and warning
+Carried away by a moonlight shadow.
+Lost in a riddle that Saturday night
+Far away on the other side.
+He was caught in the middle of a desperate fight
+And she couldn’t find how to push through
+The trees that whisper in the evening
+Carried away by a moonlight shadow
+Sing a song of sorrow and grieving
+Carried away by a moonlight shadow
+All she saw was a silhouette of a gun
+Far away on the other side.
+He was shot six times by a man on the run
+And she couldn’t find how to push through
+[Chorus]
+I stay, I pray
+See you in Heaven far away...
+I stay, I pray
+See you in Heaven one day.
+Four A.M. in the morning
+Carried away by a moonlight shadow
+I watched your vision forming
+Carried away by a moonlight shadow
+A star was glowing in the silvery night
+Far away on the other side
+Will you come to talk to me this night
+But she couldn’t find how to push through
+6
+--- PAGINA 8 ---
+C Piscine Shell 00
+[Chorus]
+Far away on the other side.
+Caught in the middle of a hundred and five
+The night was heavy and the air was alive
+But she couldn’t find how to push through
+Carried away by a moonlight shadow
+Carried away by a moonlight shadow
+Far away on the other side.
+Desafortunadamente, este enunciado no tiene relación conCity Hunter .
+7
+--- PAGINA 9 ---
+Capítulo IV
+Ejercicio 00: Z
+Ejercicio: 00
+Solo quienes dominan lo básico saben mostrar una Z
+Directorio de entrega: ex00/
+Archivos a entregar: z
+Funciones autorizadas: Ninguna
+• Crea un archivoz que muestre "Z", seguido de un salto de línea, cuando se utilice
+el comando cat sobre él.
+?>cat z
+Z
+?>
+Google es tu amigo.
+8
+--- PAGINA 10 ---
+Capítulo V
+Ejercicio 01: testShell00
+Ejercicio: 01
+¿Qué son realmente los atributos?
+Directorio de entrega: ex01/
+Archivos a entregar: testShell00.tar
+Funciones autorizadas: Ninguna
+• Crea un archivo llamadotestShell00 en tu directorio de entrega.
+• Consigue que la salida tenga el siguiente formato (excepto por la línea de "total 1"):
+%> ls -l
+total XX
+-r--r-xr-x 1 XX XX 40 Jun 1 23:42 testShell00
+%>
+• Una vez completado, ejecuta el siguiente comando para generar el archivo a entre-
+gar:
+%> tar -cf testShell00.tar testShell00
+• No te preocupes por lo que aparezca en lugar de ”XX” en tu
+solución.
+• Se aceptará que aparezca el año en lugar de la hora en la marca
+temporal.
+¿Le has preguntado a la persona de la derecha?
+9
+--- PAGINA 11 ---
+Capítulo VI
+Ejercicio 02: Pues toma dos tazas
+Ejercicio: 02
+Pues toma dos tazas
+Directorio de entrega: ex02/
+Archivos a entregar: exo2.tar
+Funciones autorizadas: Ninguna
+• Crea los archivos y directorios indicados. Ajusta sus propiedades para que, al eje-
+cutar ls -l , la salida coincida con la mostrada.
+%> ls -l
+total XX
+drwx--xr-x 2 XX XX XX Jun 1 20:47 test0
+-rwx--xr-- 1 XX XX 4 Jun 1 21:46 test1
+dr-x---r-- 2 XX XX XX Jun 1 22:45 test2
+-r-----r-- 2 XX XX 1 Jun 1 23:44 test3
+-rw-r----x 1 XX XX 2 Jun 1 23:43 test4
+-r-----r-- 2 XX XX 1 Jun 1 23:44 test5
+lrwxrwxrwx 1 XX XX 5 Jun 1 22:20 test6 -> test0
+%>
+• Una vez completado, ejecuta el siguiente comando para crear el archivo que tendrás
+que entregar:
+%> tar -cf exo2.tar *
+• No te preocupes por lo que aparece en lugar de "XX.en tu
+solución.
+• Se aceptará un año en lugar de la hora en la marca temporal del
+archivo.
+10
+--- PAGINA 12 ---
+C Piscine Shell 00
+No dudes en preguntarle a cualquier persona del cluster.
+11
+--- PAGINA 13 ---
+Capítulo VII
+Ejercicio 03: ¡Conéctame por SSH!
+Ejercicio: 03
+SSH Key
+Directorio de entrega: ex03/
+Archivos a entregar: id_ed25519_pub
+Funciones autorizadas: Ninguna
+• Crea tu propia clave SSH utilizando el algoritmoed25519. . Una vez hecho:
+◦ Añade tu clave pública a tu repositorio en un archivo llamadoid_ed25519_pub
+◦ Actualiza tu clave SSH en la intranet. Esto te permitirá lanzar el repositorio
+a nuestro servidor git.
+• El nombre del archivo no fue elegido al azar.
+• Asegúrate de entender la diferencia entre clave pública y clave
+privada.
+¿Le has preguntado a la persona de la izquierda?
+12
+--- PAGINA 14 ---
+Capítulo VIII
+Ejercicio 04: midLS
+Ejercicio: 04
+midLS
+Directorio de entrega: ex04/
+Archivos a entregar: midLS
+Funciones autorizadas: Ninguna
+• En un archivo llamado midLS, escribe el comando que lista todos los archivos
+y directorios del directorio actual (excluyendo archivos ocultos o cualquiera que
+empiecen por punto, incluyendo el signo de dos puntos).
+• La salida debe estar ordenada por fecha de modificación y separada por coma y
+espacio.
+• Los directorios deben terminar con una barra (/).
+¡Haz solo lo que se te pide, nada más!
+• RTFM!
+• Recuerda hacer git push con frecuencia.
+13
+--- PAGINA 15 ---
+Capítulo IX
+Ejercicio 05: Git commit
+Ejercicio: 05
+¿GiT commit?
+Directorio de entrega: ex05/
+Archivos a entregar: git_commit.sh
+Funciones autorizadas: Ninguna
+• Crea un script en shell que muestre los identificadores de los últimos 5 commits de
+tu repositorio git.
+%> bash git_commit.sh | cat -e
+baa23b54f0adb7bf42623d6d0a6ed4587e11412a$
+2f52d74b1387fa80eea844969e8dc5483b531ac1$
+905f53d98656771334f53f59bb984fc29774701f$
+5ddc8474f4f15b3fcb72d08fcb333e19c3a27078$
+e94d0b448c03ec633f16d84d63beaef9ae7e7be8$
+%>
+• Tu script será probado en nuestro propio entorno.
+• RTFM!
+• El primer intervalo de reintento es corto, ¡prueba una
+evaluación intermedia para seguir tu progreso!
+14
+--- PAGINA 16 ---
+C Piscine Shell 00
+¡Milestone conseguido, sigue así!
+Has completado los ejercicios obligatorios de este proyecto. Ahora tienes una elección:
+• Continuar con losejercicios opcionales.
+• Pasar alsiguiente proyecto.
+Ambas opciones te permitirán familiarizarte con conceptos útiles
+Para tomar una decisión, considera las sigientes razones:
+• Tu primer examen, al igual que el rush de fin de semana, se centrará en la progra-
+mación en C. Por lo tanto, podría resultarte útil adquirir experiencia en este campo
+de antemano. (Pronto recibirás más información sobre el rush).
+• Tu rendimiento en esta piscina se evalúa en función de varios factores:
+◦ La finalización del proyecto es un aspecto.
+◦ Otro aspecto es el avance general en toda la lista de proyectos. Elige con
+cuidado para maximizar tus resultados.
+• Puedes volver a intentar el mismo proyecto dentro de unos días o semanas, hasta
+que termine la Piscine
+• Mantenerse al día con tus compañeros fomenta una mejor colaboración.
+15
+--- PAGINA 17 ---
+Capítulo X
+Exercise 06: gitignore
+Ejercicio: 06
+GiT
+Directorio de entrega: ex06/
+Archivos a entregar: git_ignore.sh
+Funciones autorizadas: Ninguna
+• Escribe un pequeño script que liste todos los archivos ignorados por tu repositorio
+Git.
+Ejemplo:
+%> bash git_ignore.sh | cat -e
+.DS_Store$
+mywork.c~$
+%>
+• Tu script se probará en nuestro propio entorno.
+• RTFM!
+• ¡Inspírate en las demás personas, pero no dejes que hagan tu
+trabajo!
+16
+--- PAGINA 18 ---
+Capítulo XI
+Ejercicio 07: diff
+Ejercicio: 07
+Directorio de entrega: ex07/
+Archivos a entregar: b
+Funciones autorizadas: Ninguna
+• Crea un archivo llamadob de modo que...
+%>cat -e a
+STARWARS$
+Episode IV, A NEW HOPE It is a period of civil war.$
+$
+Rebel spaceships, striking from a hidden base, have won their first victory against the evil
+Galactic Empire.$
+During the battle, Rebel spies managed to steal secret plans to the Empire 's ultimate weapon, the
+DEATH STAR,$
+an armored space station with enough power to destroy an entire planet.$
+$
+Pursued by the Empire 's sinister agents, Princess Leia races home aboard her starship, custodian of
+the stolen plans that can save her people and restore freedom to the galaxy...$
+$
+%>diff a b > sw.diff
+• man patch
+• No confíes ciegamente en ninguna fuente; comprueba, verifica y
+valida tus resultados con tus propias manos.
+17
+--- PAGINA 19 ---
+Capítulo XII
+Ejercicio 08: clean
+Ejercicio: 08
+Directorio de entrega: ex08/
+Archivos a entregar: clean
+Funciones autorizadas: Ninguna
+• En un archivo llamadoclean, escribe un único comando que:
+◦ Busque todos los archivos en el directorio actual y en sus subdirectorios que
+terminen en ~ o empiecen y terminen con#.
+◦ Los muestre y los elimine.
+• Solo se permite un comando (sin ’;’, ’&&’, etc.).
+• man find
+• ¡La colaboración es la clave del éxito!
+18
+--- PAGINA 20 ---
+Capítulo XIII
+Ejercicio 09: Son ilusiones, no
+trucos, Michael...
+Ejercicio: 09
+Son ilusiones, no trucos, Michael...
+Directorio de entrega: ex09/
+Archivos a entregar: ft_magic
+Funciones autorizadas: Ninguna
+• Crea un archivo mágicollamado ft_magic correctamente formateado para que
+el comando file detecte archivos del tipo 42 file , definidos como aquellos que
+contienen la cadena"42" en el byte 42.
+• man file
+• El fracaso forma parte de tu proceso de aprendizaje.
+19
+--- PAGINA 21 ---
+Capítulo XIV
+Entrega y evaluación
+Entrega tu trabajo en tu repositorio Git como de costumbre. Solo se evaluará el
+contenido del repositorio durante la defensa. Asegúrate de revisar los nombres de los
+archivos.
+Debes entregar únicamente los archivos requeridos explícitamente en
+los enunciados.
+20

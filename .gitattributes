@@ -1,0 +1,12 @@
+* text=auto
+*.sh text eol=lf
+*.c text eol=lf
+*.py text eol=lf
+midLS text eol=lf
+clean text eol=lf
+z text eol=lf
+b text eol=lf
+ft_magic text eol=lf
+*.tar binary
+*.tar.gz binary
+*.pdf binary

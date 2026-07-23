@@ -1,0 +1,422 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 00
+Resumen: Este documento contiene el enunciado del módulo C 00 de la C Piscine.
+Versión: 8
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 4
+III. Introducción 7
+IV. Ejercicio 00: ft_putchar 10
+V. Ejercicio 01: ft_print_alphabet 11
+VI. Ejercicio 02: ft_print_reverse_alphabet 12
+VII. Ejercicio 03: ft_print_numbers 13
+VIII. Ejercicio 04: ft_is_negative 14
+IX. Ejercicio 05: ft_print_comb 16
+X. Ejercicio 06: ft_print_comb2 17
+XI. Ejercicio 07: ft_putnbr 18
+XII. Ejercicio 08: ft_print_combn 19
+XIII. Entrega y evaluación 20
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• Antes de empezar a hacer los ejercicios deberás registrarte en el proyecto en tu
+intranet. Una vez lo hayas hecho, obtendrás tu repositorio Git. Ahí es donde debes
+trabajar.
+• Los ejercicios han sido ordenados del más sencillo al más complejo. Por lo tanto,
+debeshacerlosenordenyasegurartedequeelejercicioescorrectoantesdecontinuar
+con el siguiente.
+• Los ejercicios de Shell se deben ejecutar con/bin/bash.
+• Los ejercicios de C se deben compilar concc y utilizando las flags -Wall -Wextra
+-Werror.
+• Solamente hay que entregar una funciónmain() si lo que se pide es un programa.
+Si se pide una función se puede entregar elmain() comentado con la batería de
+tests que hayas hecho.
+• Los ejercicios de C se deben escribir de acuerdo ala Norma. Puedes encontrarla en
+la intranet, en el icono de la brújula, FAQ, sección 42, apartado General Pedagogy
+como La Norma .
+• Para ayudarte a comprobar si tus ejercicios cumplenla Norma puedes ayudarte de
+norminette - un programa que aplica ciertos requisitos dela Norma a tu código.
+Si tienes archivos o funciones adicionales, también deben cumplir conla Norma.
+• Lee detenidamente los ejemplos. Podrían dar información que no se especifica en el
+enunciado...
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entrega para todos tus ejercicios. Solo el
+trabajo de tu repositorioGit será evaluado.
+• No puedes dejar en tu directorioningún archivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+2
+--- PAGINA 4 ---
+C Piscine C 00
+• La evaluación de este proyecto consta de dos fases. Primero, las personas con las
+que compartes piscina se encargarán de evaluar tus ejercicios. A continuación, serán
+evaluados por un programa que se llamala Moulinette.
+• Tus funciones no deben terminar de forma inesperada (segfault, bus error, double
+free) excepto en el caso de comportamientos indefinidos. Si esto sucede, tu proyecto
+será considerado no funcional y recibirás un0 durante la evaluación.
+• La Moulinette es muy estricta a la hora de evaluar y está completamente automa-
+tizada. Es imposible discutir con ella sobre tu nota. Por lo tanto, debes mantener
+el rigor en tu código para evitar cualquier sorpresa.
+• La Moulinette utiliza norminette para comprobar tus ejercicios, aunque este
+programa no es exhaustivo en la verificacion dela Norma. Durante las evaluaciones
+por parte de las personas de tu Piscina se comprobará quela Norma es correcta.
+Si se incumple, el proyecto tendrá una puntuación final de0, aunque norminette
+no indique ningún error.
+• ¿Tienes alguna pregunta? Pregunta a la persona de tu derecha. Si no puede ayu-
+darte, prueba con la persona de tu izquierda.
+• ¡Por Loki, por Freyja! ¡¡Piensa fuerte!!
+No te olvides de añadir el header estándar de 42 en cada uno de tus
+archivos .c y .h. ¡La Norminette siempre comprueba que esté presente!
+Para este módulo, la Norminette debe ser ejecutada con la flag -R
+CheckForbiddenSourceHeader. La Moulinette también la utilizará.
+3
+--- PAGINA 5 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La C Piscine es intensa. Es tu primer gran desafío en 42: una inmersión profunda en
+la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas a través del es-
+fuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares .
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante consi-
+derar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construye fundamentos sólidos sin atajos.
+☛ Desarolla de forma real habilidades técnicas y transversales.
+☛ Experimenta el aprendizaje entre pares de forma inmersiva , empezando por apren-
+der a aprender y por resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprende sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas que neutralicen evitar errores comunes.
+4
+--- PAGINA 6 ---
+C Piscine C 00
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Infórmate sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener una base adecuada en tecnología y programación.
+• Comprender cómo y por qué la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí,sabemosquelaIAexiste.Ysí,tambiénsabemosquepuederesolvertusproyectos.
+Peroestásaquíparaaprender,noparademostrarquelaIAhaaprendido.Nopierdas
+tiempo solo para demostrar que la IA puede resolver un problema determinado.
+• Aprender en 42 no tiene nada que ver con saber una respuesta, sino con desarrollar
+las habilidades para encontrarla. La IA te dará la respuesta directa, lo que impide
+quedesarrollestupropiorazonamiento.Razonarrequieretiempo,esfuerzoycometer
+errores. Nadie dijo que el proceso iba a ser fácil.
+• Ten en cuenta que, durante los exámenes, no tendrás acceso a la IA (no tenemos
+internetnidispositivosinteligentes).Tevasadarcuentarápidamentesihasconfiado
+demasiadoenlaIAdurantetuprocesodeaprendizajedelaformamásdirecta:frente
+a una hoja en blanco donde vas a tener que escribir tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades transversales y tu capacidad de pensar de forma diferente. Eso es mucho
+más valioso que sentarte a chatear con un bot. Así que, ¡sin miedo! Habla, haz
+preguntas y aprende con el resto de personas en tu Piscina.
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+5
+--- PAGINA 7 ---
+C Piscine C 00
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamos durante 10 minutos y, de repente, todo encaja. Lo entiendo. No entiendo
+algo concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona cómo
+lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+6
+--- PAGINA 8 ---
+Capítulo III
+Introducción
+La mermelada de fideos, segúnPierre Dac
+Antes de usar el fideo para preparar la mermelada, obviamente hay
+que cosecharlo; antes de cosecharlo tiene que crecer y para
+que crezca, naturalmente, primero hay que sembrarlo.
+La siembra de las semillas del fideo, es decir la fidembra, es
+una operación extremadamente delicada. En primer lugar, la elección de un
+terreno propicio para el cultivo del fideo requiere un estudio lo más
+exhaustivo posible. La finca fideícola típica debe estar, si es posible,
+situada al lado de la carretera provincial y cerca de la Guardia Civil.
+Antes de sembrar la semilla del fideo, los fideicultores preparan durante mucho
+tiempo el campo fideícola para convertirlo en idóneo para el cultivo.
+Remueven la tierra con un arado especializado cuya reja es reemplazada por una
+cuchilla Gillette; después, despreciando los fertilizantes químicos, muy poco
+recomendables en este caso, abonan el campo fideícola con queso rallado. Se puede
+realizar esta operación tanto con una jeringuilla como con una bomba de bicicleta.
+Cuando el campo está lo suficientemente impregnado de queso rallado, se vierte
+sobre toda la superficie alcohol de menta a razón de una copa de Burdeos por
+hectárea de superficie; esta operación, que llevan a cabo los especialistas de
+la escuela de Fideicultura, se realiza con un cuentagotas.
+Después de eso, se deja fermentar la tierra durante todo el periodo de luna
+nueva y en cuanto aparece el cuarto creciente, se procede a la fidembra
+de las semillas de fideo. No piensen ustedes, señoras y
+señores, que las semillas de fideo provienen de cualquier comercio y que se
+encuentra fácilmente en las tiendas de semillas; si usted piensa eso, está
+claro que pace en las laderas del error. La semilla de fideo solo
+se obtiene tras una larga preparación en laboratorio, dado que es el
+fruto de un cruce de hígado de ternera con un pepino adulto; he aquí,
+por cierto, algunos detalles sobre esta maravillosa unión que es el
+orgullo de nuestros químicos, cuya ciencia solo se puede equiparar a su modestia.
+Ponemos juntos, en una lavadora, un filete de hígado de ternera y un
+7
+--- PAGINA 9 ---
+C Piscine C 00
+pepino adulto, lo colocamos todo en una autoclave y lo dejamos durante 45 días
+a una temperatura de 120 º, bajo la supervisión de un inspector de la compañía
+del gas; al cabo de ese período, abrimos el aparato y solo nos queda
+recoger las preciadas semillas que vamos a esparcir en la tierra preparada para
+recibirlas y cultivarlas.
+La fidembra se realiza con la ayuda de una estufa móvil en la cual se vierten, y
+se dispersan sobre la tierra con la ayuda de un dispositivo especial del que no
+tenemos derecho a revelar el secreto por cuestiones de defensa nacional
+fáciles de entender. Después de esto, se riega todo el campo con
+sifones de soda, a continuación se seca con papel secante, se limpia con
+un plumero y ya solo nos queda confiar en el trabajo de la tierra madre
+y de la naturaleza inmortal, generosa y democrática. Cuando se ha terminado
+la fidembra, los fideicultores, que todavía creen en supersticiones,
+consultan los augurios; cogen a un topo pequeño, le hacen correr sobre
+la hierba y si hace: "¡uh!" es que la cosecha será buena; si no
+hace "¡uh!" es que la cosecha será buena de todos modos, pero así
+se respetan las creencias y todo el mundo está contento.
+Durante la germinación, casi no hay nada que hacer; tan solo se riega el campo
+cada ocho días con aceite de enebro, ceniza de puro, zumo de limón y glicerina
+para evitar que se agriete la tierra.
+Durante la siega, las noches son testigo de los sanos festejos que
+organizan los trabajadores de la fideicultura, la juventud baila y
+disfruta al son de una orquesta compuesta por un armonio, una
+mandolina y una trompeta de caballería; los jóvenes se visten con su
+traje regional compuesto por una levita, un culotte de ciclista, alpargatas
+y un sombrero de copa; las jovencitas, con su rubor de púdica alegría,
+visten hermosos vestidos de tela de cataplasma, adornados con aplicaciones
+de schputnutz y se ciñen la frente con una corona de huevos cocidos de lo más
+elegante. Los festejos se clausuran con unos fuegos artificiales lanzados con
+lámparas de petróleo y cada uno vuelve a su casa, contento por el trabajo
+realizado, para proceder finalmente a la elaboración de la mermelada de fideos,
+objeto del presente estudio.
+Se selecciona con esmero el fideo, que aún se encuentra en estado bruto, y se le
+retiran las impurezas; después de una primera fase, se manda a la fábrica y se le
+introduce acto seguido en el lamifideo que le va a dar el aspecto definitivo tal y
+como lo conocemos - el lamifideo es una máquina extremadamente perfeccionada, que
+funciona con aguardiente de grosella negra y que puede producir hasta 80
+kilómetros de fideos por hora -; cuando el fideo sale del lamifideo, se le aplica
+una capa de barniz celulósico que lo hace impermeable y flexible; después se pica
+bien con un hacha de abordaje y se ralla. El proceso de rallado todavía se efectúa
+a mano con un rallador de madera. Una vez rallado, se embotella el fideo, una
+operación muy delicada que exige mucha atención; después se introducen las
+botellas en un aparato que se llama electrofideo, que los somete a una tensión
+de 210 voltios; tras permanecer 12 horas en ese aparato, se sacan las botellas
+8
+--- PAGINA 10 ---
+C Piscine C 00
+y se vacían los fideos, que ahora están electrificados, en un recipiente que
+se coloca sobre un hornillo de alcohol de alta tensión.
+Vertemos entonces en dicho recipiente: sal, azúcar, pimienta de Cayena,
+jengibre, canela, aceite, puré de patatas, un copo
+de magnesia bisurada, arroz, zanahorias, pieles de salchichón, tomates,
+vino blanco y pimientos rojos, mezclamos lentamente estos ingredientes con
+los fideos con la ayuda de un cazo y dejamos cocer a fuego lento
+durante 21 días. La mermelada de fideos está virtualmente terminada.
+Cuando han transcurrido los 21 días y la cocción ha alcanzado su punto
+álgido y definitivo, se coloca el recipiente en un armario para que se
+solidifique la mermelada y se vuelva gelatinosa; cuando se ha enfriado
+por completo, cogemos el recipiente con mucha delicadeza, con una precaución
+infinita y con la máxima prudencia y lo tiramos todo por la ventana,
+¡porque no está bueno!
+A diferencia de la mermelada de fideos, C sí que vale la pena.
+9
+--- PAGINA 11 ---
+Capítulo IV
+Ejercicio 00: ft_putchar
+Ejercicio: 00
+ft_putchar
+Directorio de entrega: ex00/
+Archivos a entregar: ft_putchar.c
+Funciones autorizadas: write
+• Escribe una función que muestre el carácter recibido como parámetro.
+• El prototipo de la función deberá ser el siguiente:
+void ft_putchar(char c);
+Para mostrar el carácter,deberás utilizar la funciónwrite de la siguiente manera:
+write(1, &c, 1);
+Si presentas a evaluación este proyecto por primera vez, el tiempo
+de reintento es corto. No dudes en intentar una primera evaluación
+(a modo de prueba) aunque no tengas claro si todo está perfecto. Así
+podrás medir tu progreso.
+10
+--- PAGINA 12 ---
+Capítulo V
+Ejercicio 01: ft_print_alphabet
+Ejercicio: 01
+ft_print_alphabet
+Directorio de entrega: ex01/
+Archivos a entregar: ft_print_alphabet.c
+Funciones autorizadas: write
+• Escribe una función que muestre el alfabeto en minúsculas en una sola línea, en
+orden creciente, empezando en la letra “a”.
+• El prototipo de la función deberá ser el siguiente:
+void ft_print_alphabet(void);
+No dudes en preguntarle a cualquier persona del clúster.
+11
+--- PAGINA 13 ---
+Capítulo VI
+Ejercicio 02:
+ft_print_reverse_alphabet
+Ejercicio: 02
+ft_print_reverse_alphabet
+Directorio de entrega: ex02/
+Archivos a entregar: ft_print_reverse_alphabet.c
+Funciones autorizadas: write
+• Escribe una función que muestre el alfabeto en minúsculas en una sola línea, en
+orden decreciente, empezando en la letra “z”.
+• El prototipo de la función deberá ser el siguiente:
+void ft_print_reverse_alphabet(void);
+Haz git push con frecuencia.
+12
+--- PAGINA 14 ---
+Capítulo VII
+Ejercicio 03: ft_print_numbers
+Ejercicio: 03
+ft_print_numbers
+Directorio de entrega: ex03/
+Archivos a entregar: ft_print_numbers.c
+Funciones autorizadas: write
+• Escribe una función que muestre, en una sola línea y en orden creciente, todos los
+dígitos.
+• El prototipo de la función deberá ser el siguiente:
+void ft_print_numbers(void);
+La colaboración es la clave para el éxito.
+13
+--- PAGINA 15 ---
+Capítulo VIII
+Ejercicio 04: ft_is_negative
+Ejercicio: 04
+ft_is_negative
+Directorio de entrega: ex04/
+Archivos a entregar: ft_is_negative.c
+Funciones autorizadas: write
+• Escribe una función que muestre “N” o “P” en función del signo del entero pasado
+como parámetro. Sin es negativo mostrará “N”. Sin es positivo o nulo, se mostrará
+“P”.
+• El prototipo de la función deberá ser el siguiente:
+void ft_is_negative(int n);
+14
+--- PAGINA 16 ---
+C Piscine C 00
+¡Milestone conseguido, sigue así!
+Ya has llegado al mínimo obligatorio de ejercicios requerido para validar este proyecto.
+Tú decides si quieres continuar con el resto de ejercicios opcionales o saltar al siguiente
+proyecto. Ambos caminos te conducirán a aprender conceptos valiosos tarde o temprano.
+Para poder tomar una decisión, debes considerar las siguientes razones:
+• El primer examen se centra en la programación en C. Si ya has trabajado en el
+primer proyecto en C, esta experiencia será muy útil. Lo mismo se puede aplicar
+para el primer rush que tendrá lugar a final de la semana (ya aprenderás lo que es
+un rush).
+• Tu progreso y aprendizaje en esta piscina serán evaluados en base a múltiples fac-
+tores. Completar cada proyecto es importante, pero el progreso general en los pro-
+yectos de la C Piscine también juega un papel decisivo. Elige sabiamente cuál será
+tu camino para optimizar tus resultados.
+• Siempre podrás intentar el mismo proyecto de nuevo en un par de días o semanas,
+hasta el final de la piscina.
+• Mantenerte en sintonía con el progreso del resto de personas que te rodean facilita
+una mejor colaboración.
+15
+--- PAGINA 17 ---
+Capítulo IX
+Ejercicio 05: ft_print_comb
+Ejercicio: 05
+ft_print_comb
+Directorio de entrega: ex05/
+Archivos a entregar: ft_print_comb.c
+Funciones autorizadas: write
+• Escribe una función que muestre todas las combinaciones únicas de tres dígitos dis-
+tintos, con los dígitos de cada combinación en orden ascendente y las combinaciones
+también ordenadas de forma ascendente.
+• El resultado debe ser parecido a esto:
+$>./a.out | cat -e
+012, 013, 014, 015, 016, 017, 018, 019, 023, ..., 789$>
+• 987 no se incluye porque789 ya existe.
+• 999 no se incluye porque el dígito9 aparece en más de una ocasión.
+• El prototipo de la función deberá ser el siguiente:
+void ft_print_comb(void);
+¿Le has preguntado a tu compi de la derecha?
+16
+--- PAGINA 18 ---
+Capítulo X
+Ejercicio 06: ft_print_comb2
+Ejercicio: 06
+ft_print_comb2
+Directorio de entrega: ex06/
+Archivos a entregar: ft_print_comb2.c
+Funciones autorizadas: write
+• Escribe una función que muestre todas las combinaciones posibles de dos números
+(XX XX) entre0 y 99, en orden creciente.
+• El resultado debe ser parecido a esto:
+$>./a.out | cat -e
+00 01, 00 02, 00 03, 00 04, 00 05, ..., 00 99, 01 02, ..., 97 99, 98 99$>
+• El prototipo de la función deberá ser el siguiente:
+void ft_print_comb2(void);
+Deja que los demás te inspiren, pero no dejes que hagan el trabajo
+por ti.
+17
+--- PAGINA 19 ---
+Capítulo XI
+Ejercicio 07: ft_putnbr
+Ejercicio: 07
+ft_putnbr
+Directorio de entrega: ex07/
+Archivos a entregar: ft_putnbr.c
+Funciones autorizadas: write
+• Escribe una función que muestre el número recibido como parámetro. La función
+deberá ser capaz de mostrar cualquier valor posible de una variable de tipoint.
+• El prototipo de la función deberá ser el siguiente:
+void ft_putnbr(int nb);
+• Por ejemplo:
+◦ ft_putnbr(42); deberá mostrar “42”.
+No te fíes de una única fuente de información: haz siempre tus
+propias pruebas, comprobaciones y verificaciones.
+18
+--- PAGINA 20 ---
+Capítulo XII
+Ejercicio 08: ft_print_combn
+Ejercicio: 08
+ft_print_combn
+Directorio de entrega: ex08/
+Archivos a entregar: ft_print_combn.c
+Funciones autorizadas: write
+• Escribe una función que muestre todas las combinaciones den dígitos en orden
+creciente, sin repeticiones.
+• El valor den será tal que: 0 <n <10.
+• Si n = 2, el resultado es algo parecido a esto:
+$>./a.out | cat -e
+01, 02, 03, ..., 09, 12, ..., 79, 89$>
+• El prototipo de la función deberá ser el siguiente:
+void ft_print_combn(int n);
+¿Le has preguntado a tu compi de la izquierda?
+19
+--- PAGINA 21 ---
+Capítulo XIII
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado en el repositorio será evaluado durante la evaluación. No dudes en comprobar varias
+veces los nombres de los archivos para verificar que sean correctos.
+Recuerda que solo debes entregar los archivos indicados en el
+enunciado.
+20

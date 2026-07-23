@@ -1,0 +1,306 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 01
+Resumen: este documento corresponde al enunciado del módulo C 01 de la C Piscine de
+42.
+Versión: 6
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 4
+III. Introducción 7
+IV. Ejercicio 00 : ft_ft 9
+V. Ejercicio 01 : ft_ultimate_ft 10
+VI. Ejercicio 02 : ft_swap 11
+VII. Ejercicio 03 : ft_div_mod 12
+VIII. Ejercicio 04 : ft_ultimate_div_mod 13
+IX. Ejercicio 05 : ft_putstr 14
+X. Ejercicio 06 : ft_strlen 15
+XI. Ejercicio 07 : ft_rev_int_tab 16
+XII. Ejercicio 08 : ft_sort_int_tab 17
+XIII. Entrega y evaluación 18
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• Antes de empezar a hacer los ejercicios deberás registrarte en el proyecto en tu
+intranet. Una vez lo hayas hecho, obtendrás tu repositorio Git. Ahí es donde debes
+trabajar.
+• Los ejercicios han sido ordenados del más sencillo al más complejo. Por lo tanto,
+debeshacerlosenordenyasegurartedequeelejercicioescorrectoantesdecontinuar
+con el siguiente.
+• Los ejercicios de Shell se deben ejecutar con/bin/bash.
+• Los ejercicios de C se deben compilar concc y utilizando las flags -Wall -Wextra
+-Werror.
+• Solamente hay que entregar una funciónmain() si lo que se pide es un programa.
+Si se pide una función se puede entregar elmain() comentado con la batería de
+tests que hayas hecho.
+• Los ejercicios de C se deben escribir de acuerdo ala Norma. Puedes encontrarla en
+la intranet, en el icono de la brújula, FAQ, sección 42, apartado General Pedagogy
+como La Norma.
+• Para ayudarte a comprobar si tus ejercicios cumplenla Norma puedes ayudarte de
+norminette - un programa que aplica ciertos requisitos dela Norma a tu código.
+Si tienes archivos o funciones adicionales, también deben cumplir conla Norma.
+• Lee detenidamente los ejemplos. Podrían dar información que no se especifica en el
+enunciado...
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entrega para todos tus ejercicios. Solo el
+trabajo de tu repositorioGit será evaluado.
+• No puedes dejar en tu directorioningún archivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+2
+--- PAGINA 4 ---
+C Piscine C 01
+• La evaluación de este proyecto consta de dos fases. Primero, las personas con las
+que compartes piscina se encargarán de evaluar tus ejercicios. A continuación, serán
+evaluados por un programa que se llamala Moulinette.
+• Tus funciones no deben terminar de forma inesperada (segfault, bus error, double
+free) excepto en el caso de comportamientos indefinidos. Si esto sucede, tu proyecto
+será considerado no funcional y recibirás un0 durante la evaluación.
+• La Moulinette es muy estricta a la hora de evaluar y está completamente automa-
+tizada. Es imposible discutir con ella sobre tu nota. Por lo tanto, debes mantener
+el rigor en tu código para evitar cualquier sorpresa.
+• La Moulinette utiliza norminette para comprobar tus ejercicios, aunque este
+programa no es exhaustivo en la verificacion dela Norma. Durante las evaluaciones
+por parte de las personas de tu Piscina se comprobará quela Norma es correcta.
+Si se incumple, el proyecto tendrá una puntuación final de0, aunquenorminette
+no indique ningún error.
+• ¿Tienes alguna pregunta? Pregunta a la persona de tu derecha. Si no puede ayu-
+darte, prueba con la persona de tu izquierda.
+• ¡Por Loki, por Freyja! ¡¡Piensa fuerte!!
+No te olvides de añadir el encabezado estándar de 42 en cada uno
+de tus archivos .c/.h. ¡La norminette siempre comprobará que el
+encabezado esté presente!
+Ejecuta norminette con el flag -R CheckForbiddenSourceHeader .
+Moulinette también la utilizará.
+3
+--- PAGINA 5 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La C Piscine es intensa. Es tu primer gran desafío en 42: una inmersión profunda en
+la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas a través del es-
+fuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares .
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante consi-
+derar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construye fundamentos sólidos sin atajos.
+☛ Desarolla de forma real habilidades técnicas y transversales.
+☛ Experimenta el aprendizaje entre pares de forma inmersiva , empezando por apren-
+der a aprender y por resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprende sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas que neutralicen evitar errores comunes.
+4
+--- PAGINA 6 ---
+C Piscine C 01
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Infórmate sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener una base adecuada en tecnología y programación.
+• Comprender cómo y por qué la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí,sabemosquelaIAexiste.Ysí,tambiénsabemosquepuederesolvertusproyectos.
+Peroestásaquíparaaprender,noparademostrarquelaIAhaaprendido.Nopierdas
+tiempo solo para demostrar que la IA puede resolver un problema determinado.
+• Aprender en 42 no tiene nada que ver con saber una respuesta, sino con desarrollar
+las habilidades para encontrarla. La IA te dará la respuesta directa, lo que impide
+quedesarrollestupropiorazonamiento.Razonarrequieretiempo,esfuerzoycometer
+errores. Nadie dijo que el proceso iba a ser fácil.
+• Ten en cuenta que, durante los exámenes, no tendrás acceso a la IA (no tenemos
+internetnidispositivosinteligentes).Tevasadarcuentarápidamentesihasconfiado
+demasiadoenlaIAdurantetuprocesodeaprendizajedelaformamásdirecta:frente
+a una hoja en blanco donde vas a tener que escribir tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades transversales y tu capacidad de pensar de forma diferente. Eso es mucho
+más valioso que sentarte a chatear con un bot. Así que, ¡sin miedo! Habla, haz
+preguntas y aprende con el resto de personas en tu Piscina.
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+5
+--- PAGINA 7 ---
+C Piscine C 01
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamos durante 10 minutos y, de repente, todo encaja. Lo entiendo. No entiendo
+algo concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona cómo
+lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+6
+--- PAGINA 8 ---
+Capítulo III
+Introducción
+Diálogo de la películaUna Noche en la Ópera , de losHermanos Marx:
+Vincent: ¿Y sabes cómo llaman a una Quarter Pounder con queso en París?
+Jules: ¿No la llaman Quarter Pounder con queso?
+Vincent: No, tío, allí tienen el sistema métrico.
+No sabrían qué diantres es una Quarter Pounder.
+Jules: Entonces, ¿cómo la llaman?
+Vincent: La llaman Royale con queso.
+Jules: Royale con queso. ¿Y cómo llaman a una Big Mac?
+Vincent: Bueno, una Big Mac es una Big Mac, pero la llaman “Le Big Mac”.
+Jules: “Le Big Mac”. Ja ja ja ja. ¿Y cómo llaman a una Whopper?
+Vincent: No lo sé, no entré en Burger King.
+Al menos uno de los ejercicios siguientes no tiene ninguna relación con la Royale con
+Queso.
+7
+--- PAGINA 9 ---
+C Piscine C 01
+Umbral mínimo del proyecto
+El umbral de validación de este proyecto es del 50%.
+Depende de ti determinar qué ejercicios te permiten alcanzar este porcentaje, y si quieres
+completar más ejercicios.
+8
+--- PAGINA 10 ---
+Capítulo IV
+Ejercicio 00 : ft_ft
+Ejercicio: 00
+ft_ft
+Directorio de entrega: ex00/
+Archivos a entregar: ft_ft.c
+Funciones autorizadas: Ninguna
+• Escribe una función que reciba como parámetro un puntero a unentero y asigne
+a esteentero el valor 42.
+• El prototipo de la función deberá ser el siguiente:
+void ft_ft(int *nbr);
+9
+--- PAGINA 11 ---
+Capítulo V
+Ejercicio 01 : ft_ultimate_ft
+Ejercicio: 01
+ft_ultimate_ft
+Directorio de entrega: ex01/
+Archivos a entregar: ft_ultimate_ft.c
+Funciones autorizadas: Ninguna
+• Escribe una función que reciba como parámetro un puntero a un puntero a un
+puntero a un puntero un puntero a un puntero a un puntero a un puntero a un
+puntero a unentero y asigne a esteentero el valor 42.
+• El prototipo de la función deberá ser el siguiente:
+void ft_ultimate_ft(int *********nbr);
+10
+--- PAGINA 12 ---
+Capítulo VI
+Ejercicio 02 : ft_swap
+Ejercicio: 02
+ft_swap
+Directorio de entrega: ex02/
+Archivos a entregar: ft_swap.c
+Funciones autorizadas: Ninguna
+• Escribe una función que intercambie el contenido de dos enteros cuyas direcciones
+se reciben como parámetro.
+• El prototipo de la función deberá ser el siguiente:
+void ft_swap(int *a, int *b);
+11
+--- PAGINA 13 ---
+Capítulo VII
+Ejercicio 03 : ft_div_mod
+Ejercicio: 03
+ft_div_mod
+Directorio de entrega: ex03/
+Archivos a entregar: ft_div_mod.c
+Funciones autorizadas: Ninguna
+• Escribe una funciónft_div_mod que tenga el siguiente prototipo:
+void ft_div_mod(int a, int b, int *div, int *mod);
+• Esta función divide los dos parámetrosa y b y almacena el resultado en el entero
+apuntado pordiv.
+También almacena el resto de la división dea y b en el entero apuntado pormod.
+12
+--- PAGINA 14 ---
+Capítulo VIII
+Ejercicio 04 : ft_ultimate_div_mod
+Ejercicio: 04
+ft_ultimate_div_mod
+Directorio de entrega: ex04/
+Archivos a entregar: ft_ultimate_div_mod.c
+Funciones autorizadas: Ninguna
+• Escribe una funciónft_ultimate_div_mod que tenga el siguiente prototipo:
+void ft_ultimate_div_mod(int *a, int *b);
+• Esta función divide los enteros apuntados pora y b.
+El resultado de la división se almacena en el entero apuntado pora.
+El resultado del resto de la división se almacena en el entero apuntado porb
+13
+--- PAGINA 15 ---
+Capítulo IX
+Ejercicio 05 : ft_putstr
+Ejercicio: 05
+ft_putstr
+Directorio de entrega: ex05/
+Archivos a entregar: ft_putstr.c
+Funciones autorizadas: write
+• Escribe una función que muestre uno a uno en la pantalla los caracteres de una
+cadena.
+• La dirección del primer carácter de la cadena está incluida en el puntero utilizado
+como parámetro para la función.
+• El prototipo de la función deberá ser el siguiente:
+void ft_putstr(char *str);
+14
+--- PAGINA 16 ---
+Capítulo X
+Ejercicio 06 : ft_strlen
+Ejercicio: 06
+ft_strlen
+Directorio de entrega: ex06/
+Archivos a entregar: ft_strlen.c
+Funciones autorizadas: Ninguna
+• Escribe una función que cuente el número de caracteres de una cadena y devuelva
+el resultado.
+• El prototipo de la función deberá ser el siguiente:
+int ft_strlen(char *str);
+15
+--- PAGINA 17 ---
+Capítulo XI
+Ejercicio 07 : ft_rev_int_tab
+Ejercicio: 07
+ft_rev_int_tab
+Directorio de entrega: ex07/
+Archivos a entregar: ft_rev_int_tab.c
+Funciones autorizadas: Ninguna
+• Escribe una función que invierta un conjunto de enteros (o array) (el primer ele-
+mento va el último, etc).
+• Los parámetros son un puntero a un entero y el número de enteros que conforman
+el arreglo.
+• El prototipo de la función deberá ser el siguiente:
+void ft_rev_int_tab(int *tab, int size);
+16
+--- PAGINA 18 ---
+Capítulo XII
+Ejercicio 08 : ft_sort_int_tab
+Ejercicio: 08
+ft_sort_int_tab
+Directorio de entrega: ex08/
+Archivos a entregar: ft_sort_int_tab.c
+Funciones autorizadas: Ninguna
+• Escribe una función que ordene un array de enteros en orden ascendente.
+• Los parámetros son un puntero a un entero y el número de enteros que conforman
+el array.
+• El prototipo de la función deberá ser el siguiente:
+void ft_sort_int_tab(int *tab, int size);
+17
+--- PAGINA 19 ---
+Capítulo XIII
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado en el repositorio será evaluado durante la defensa. No dudes en comprobar varias
+veces los nombres de los archivos para verificar que sean correctos.
+Sólo necesitas entregar los archivos requeridos en el enunciado de
+este proyecto.
+18

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shell 00 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html" class="active">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — Shell 00</h1>
+<p class="sub">Primer contacto con la terminal: archivos, permisos, tar, SSH, git y los rincones
+raros de Unix. 10 ejercicios (ex00–ex09), todos con <em>funciones autorizadas: ninguna</em> —
+solo comandos del sistema.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — Z</a></li>
+  <li><a href="#ex01">ex01 — testShell00</a></li>
+  <li><a href="#ex02">ex02 — Pues toma dos tazas</a></li>
+  <li><a href="#ex03">ex03 — ¡Conéctame por SSH!</a></li>
+  <li><a href="#ex04">ex04 — midLS</a></li>
+  <li><a href="#ex05">ex05 — Git commit</a></li>
+  <li><a href="#ex06">ex06 — gitignore</a></li>
+  <li><a href="#ex07">ex07 — diff</a></li>
+  <li><a href="#ex08">ex08 — clean</a></li>
+  <li><a href="#ex09">ex09 — Son ilusiones, no trucos, Michael</a></li>
+</ul>
+
+<div class="trasfondo"><b>El prólogo</b> — El enunciado abre con la letra completa de
+<em>Moonlight Shadow</em> (Mike Oldfield, 1983), presentándola como "el tema de City Hunter" —
+en Francia, una versión de esta canción sonaba en el anime <em>City Hunter</em> (allí
+<em>Nicky Larson</em>), del que toda una generación de franceses se acuerda. Tras dos páginas de
+letra, el enunciado remata: "Desafortunadamente, este enunciado no tiene relación con City Hunter".
+Este tipo de introducción absurda es marca de la casa en los subjects de 42.</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>Z</h2>
+<div class="meta"><span>Entregable: <b>z</b></span><span>«Solo quienes dominan lo básico saben mostrar una Z»</span></div>
+<p>Crear un archivo <code>z</code> tal que <code>cat z</code> muestre <code>Z</code> y un salto de línea.</p>
+<pre><code>$ printf 'Z\n' &gt; z</code></pre>
+<p>El archivo contiene exactamente dos bytes: <code>Z</code> (0x5A) y <code>\n</code> (0x0A).
+Parece una tontería, pero ya obliga a entender qué es un archivo (una secuencia de bytes, sin
+magia), qué hace <code>cat</code> (volcarlos a la salida estándar) y que el salto de línea final
+<em>es un byte más</em> — la Moulinette distingue un archivo de 1 byte de uno de 2.</p>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>testShell00</h2>
+<div class="meta"><span>Entregable: <b>testShell00.tar</b></span></div>
+<p>Crear un archivo <code>testShell00</code> cuyo <code>ls -l</code> sea exactamente:</p>
+<pre><code>-r--r-xr-x 1 XX XX 40 Jun 1 23:42 testShell00</code></pre>
+<p>y empaquetarlo con <code>tar -cf testShell00.tar testShell00</code>. Tres cosas que clavar:</p>
+<pre><code>$ printf '%040d' 0 &gt; testShell00    # 40 bytes exactos
+$ chmod 455 testShell00             # -r--r-xr-x
+$ touch -t 06012342 testShell00     # Jun 1, 23:42
+$ tar -cf testShell00.tar testShell00</code></pre>
+<ul>
+<li><strong>Tamaño (40)</strong>: cualquier contenido vale mientras ocupe 40 bytes.</li>
+<li><strong>Permisos</strong>: <code>-r--r-xr-x</code> en octal es <code>455</code>
+(r=4, w=2, x=1 por cada tercio: propietario <code>r--</code>=4, grupo <code>r-x</code>=5,
+resto <code>r-x</code>=5).</li>
+<li><strong>Fecha</strong>: <code>touch -t MMDDhhmm</code> falsifica la fecha de modificación.
+El 23:42 no es casual: en 42 casi todas las horas de ejemplo son las 4:2 o las 23:42.</li>
+</ul>
+<p>El tar conserva permisos y fechas en sus cabeceras, así que el evaluador puede comprobar todo
+sin extraer siquiera: <code>tar -tvf testShell00.tar</code>.</p>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>Pues toma dos tazas</h2>
+<div class="meta"><span>Entregable: <b>exo2.tar</b></span></div>
+<p>Reproducir exactamente este listado y empaquetarlo (<code>tar -cf exo2.tar *</code>):</p>
+<pre><code>drwx--xr-x 2 XX XX XX Jun 1 20:47 test0
+-rwx--xr-- 1 XX XX  4 Jun 1 21:46 test1
+dr-x---r-- 2 XX XX XX Jun 1 22:45 test2
+-r-----r-- 2 XX XX  1 Jun 1 23:44 test3
+-rw-r----x 1 XX XX  2 Jun 1 23:43 test4
+-r-----r-- 2 XX XX  1 Jun 1 23:44 test5
+lrwxrwxrwx 1 XX XX  5 Jun 1 22:20 test6 -&gt; test0</code></pre>
+<pre><code>$ mkdir test0 test2
+$ printf 'abc\n' &gt; test1          # 4 bytes
+$ printf '1' &gt; test3              # 1 byte
+$ printf '2\n' &gt; test4            # 2 bytes
+$ ln test3 test5                  # hard link
+$ ln -s test0 test6               # symlink
+$ chmod 715 test0; chmod 714 test1; chmod 504 test2
+$ chmod 404 test3; chmod 641 test4
+$ touch -t 06012047 test0; touch -t 06012146 test1
+$ touch -t 06012245 test2; touch -t 06012344 test3 test5
+$ touch -t 06012343 test4; touch -h -t 06012220 test6
+$ tar -cf exo2.tar *</code></pre>
+<p>La trampa del ejercicio está en la <strong>segunda columna</strong>: test3 y test5 marcan
+<code>2</code> enlaces y comparten tamaño, permisos y fecha. No son dos archivos: son
+<strong>el mismo inodo con dos nombres</strong> (<code>ln</code> sin <code>-s</code>). Al hacer
+<code>chmod</code> o <code>touch</code> sobre uno, el otro "cambia" también — porque no hay otro.
+test6 en cambio es un enlace simbólico: un archivo distinto cuyo contenido es la ruta
+<code>test0</code> (por eso su tamaño es 5, los 5 caracteres de "test0", y sus permisos son
+siempre <code>rwxrwxrwx</code>). Detalle fino: la fecha del symlink se cambia con
+<code>touch -h</code>, porque <code>touch</code> a secas seguiría el enlace y tocaría test0.</p>
+<div class="trasfondo"><b>El título</b> — Del refrán español «¿No querías caldo? Pues toma dos
+tazas»: pediste aprender permisos y aquí tienes siete archivos de golpe, con hard links de regalo.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>¡Conéctame por SSH!</h2>
+<div class="meta"><span>Entregable: <b>id_ed25519_pub</b></span></div>
+<pre><code>$ ssh-keygen -t ed25519
+$ cp ~/.ssh/id_ed25519.pub ex03/id_ed25519_pub</code></pre>
+<p>Generar un par de claves SSH con el algoritmo <strong>ed25519</strong> (curva elíptica moderna:
+claves cortas, rápidas y sin las dudas históricas de RSA). El ejercicio tiene una función muy
+práctica: la clave pública se sube a la intra y es la que te permite hacer <code>git push</code>
+a Vogsphere el resto de la piscine. Quien no entiende este ejercicio no entrega nada más.</p>
+<p>La lección real está en la advertencia del enunciado: entender la diferencia entre la clave
+<strong>pública</strong> (se comparte, cifra/verifica) y la <strong>privada</strong> (no sale de
+tu máquina jamás). Entregar la privada por error es el clásico suspenso doloroso — de ahí que el
+archivo pedido se llame explícitamente <code>id_ed25519_pub</code>: "el nombre del archivo no fue
+elegido al azar".</p>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>midLS</h2>
+<div class="meta"><span>Entregable: <b>midLS</b></span></div>
+<p>Un archivo con <em>el comando</em> que lista el directorio actual: sin ocultos, ordenado por
+fecha de modificación, separado por coma y espacio, y con <code>/</code> al final de los
+directorios.</p>
+<pre><code>ls -tpm</code></pre>
+<p>Tres flags hacen todo el trabajo — el ejercicio es un RTFM (<em>Read The F… Manual</em>) puro:</p>
+<ul>
+<li><code>-t</code> — ordena por fecha de modificación (más reciente primero).</li>
+<li><code>-p</code> — añade <code>/</code> a los directorios.</li>
+<li><code>-m</code> — salida "stream": entradas separadas por <code>, </code>.</li>
+</ul>
+<p>Los ocultos ya quedan fuera por defecto (eso es <code>-a</code>, que precisamente no se pasa).
+La gracia de midLS es descubrir que <code>ls</code> tiene ~60 opciones y que la respuesta a "¿cómo
+hago X?" casi siempre está en <code>man ls</code>, no en escribir un script.</p>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>Git commit</h2>
+<div class="meta"><span>Entregable: <b>git_commit.sh</b></span></div>
+<p>Script que muestra los hashes de los últimos 5 commits del repositorio.</p>
+<pre><code>git log -5 --format=%H</code></pre>
+<p><code>git log</code> con <code>--format=%H</code> imprime solo el hash completo de cada commit
+(sin autor, fecha ni mensaje), y <code>-5</code> corta en cinco. El enunciado enseña la salida
+pasada por <code>cat -e</code> (que marca los finales de línea con <code>$</code>) para dejar
+claro que no puede haber espacios ni líneas extra: la Moulinette compara la salida literal.</p>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06</span>gitignore</h2>
+<div class="meta"><span>Entregable: <b>git_ignore.sh</b></span></div>
+<p>Script que lista los archivos ignorados por el repositorio git actual.</p>
+<pre><code>git ls-files --others --ignored --exclude-standard</code></pre>
+<p>Descomponiendo: <code>ls-files</code> es el comando de "fontanería" (<em>plumbing</em>) de git
+para consultar su índice; <code>--others</code> pide archivos no rastreados;
+<code>--ignored</code> los filtra a los que casan con alguna regla de ignorado; y
+<code>--exclude-standard</code> hace que esas reglas sean las estándar (<code>.gitignore</code>,
+<code>.git/info/exclude</code>, config global). La pareja ex05/ex06 tiene el mismo mensaje:
+git no es solo <code>add/commit/push</code>, tiene una API de consulta enorme.</p>
+</div>
+
+<div class="card" id="ex07">
+<h2><span class="ex">ex07</span>diff</h2>
+<div class="meta"><span>Entregable: <b>b</b></span><span>Material: <b>a</b>, <b>sw.diff</b></span></div>
+<p>El proyecto da un archivo <code>a</code> — el texto de apertura de <em>Star Wars: Episodio IV</em> —
+y un <code>sw.diff</code>. Hay que crear <code>b</code> tal que <code>diff a b</code> produzca
+exactamente ese <code>sw.diff</code>. La pista del enunciado (<code>man patch</code>) lo dice todo:</p>
+<pre><code>$ cp a b
+$ patch b &lt; sw.diff</code></pre>
+<p>Un diff no es una descripción: es un <strong>programa de edición</strong> que <code>patch</code>
+sabe ejecutar. Aplicado sobre la copia de <code>a</code>, produce el <code>b</code> buscado — y se
+verifica cerrando el círculo: <code>diff a b</code> regenera un diff idéntico al original.
+Así funcionan por dentro los parches de kernel, los <em>pull requests</em> y el propio git.</p>
+<div class="trasfondo"><b>El texto</b> — El diff convierte el opening crawl en una versión
+corrupta: "Episode V, A NEW H0PE", la DEATH STAR pasa a ser "STAR DEATH", la princesa Leia es
+"Princess Mehdi" (guiño a algún staff de 42) y en vez de restaurar la libertad en la galaxia,
+restaura "la dictadura". Vándalos.</div>
+</div>
+
+<div class="card" id="ex08">
+<h2><span class="ex">ex08</span>clean</h2>
+<div class="meta"><span>Entregable: <b>clean</b></span><span>Un solo comando, sin <code>;</code> ni <code>&amp;&amp;</code></span></div>
+<p>Buscar en el directorio actual y subdirectorios los archivos que terminan en <code>~</code>
+o que empiezan y terminan con <code>#</code>, mostrarlos y borrarlos.</p>
+<pre><code>find . -type f \( -name "*~" -o -name "#*#" \) -print -delete</code></pre>
+<ul>
+<li><code>\( … -o … \)</code> — agrupación con OR; los paréntesis se escapan para que no los
+interprete el shell.</li>
+<li><code>-print -delete</code> — las "acciones" de find se encadenan en orden: primero imprime,
+luego borra. Por eso no hace falta <code>;</code> — <em>find ya es un lenguaje en sí mismo</em>,
+esa es la lección.</li>
+</ul>
+<p>Los patrones no son arbitrarios: <code>archivo~</code> y <code>#archivo#</code> son los backups
+y autosaves que va dejando Emacs — el ejercicio es, literalmente, limpiar la basura del editor.</p>
+</div>
+
+<div class="card" id="ex09">
+<h2><span class="ex">ex09</span>Son ilusiones, no trucos, Michael…</h2>
+<div class="meta"><span>Entregable: <b>ft_magic</b></span></div>
+<p>Crear un <em>archivo mágico</em> para que <code>file</code> detecte como "42 file" los archivos
+que contienen la cadena <code>42</code> en el byte 42.</p>
+<pre><code>42	string	42	42 file</code></pre>
+<p>¿Cómo sabe <code>file</code> que algo es un PNG, un PDF o un ELF sin mirar la extensión?
+Consultando una base de datos de "números mágicos": patrones de bytes en posiciones fijas
+(un PNG empieza por <code>\x89PNG</code>, un ELF por <code>\x7fELF</code>…). El formato de esa
+base de datos (<code>man 5 magic</code>) es: <em>offset, tipo, valor, mensaje</em>. Nuestra línea
+dice: en el offset 42, si hay la cadena "42", el archivo es un "42 file".</p>
+<pre><code>$ printf '%042d42' 0 &gt; f42     # "42" en el byte 42
+$ file -m ft_magic f42
+f42: 42 file</code></pre>
+<div class="trasfondo"><b>El título</b> — Cita de <em>Arrested Development</em>: GOB Bluth,
+mago fracasado, corrige indignado a su hermano cada vez que llama "trucos" a sus ilusiones.
+Aplica: la detección de tipos de archivo parece magia y es solo mirar bytes en el sitio justo.</div>
+</div>
+
+<footer>42.zenidx.com — Shell 00 · <a href="shell01.html">continuar con Shell 01 →</a></footer>
+</div>
+</body>
+</html>

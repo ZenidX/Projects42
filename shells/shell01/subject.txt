@@ -1,0 +1,351 @@
+﻿--- PAGINA 1 ---
+Piscina de C
+Shell 01
+Resumen: Este documento contiene las instrucciones del módulo Shell 01 de la Piscine
+de C en 42.
+Versión: 8.1
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 3
+III. Introducción 6
+IV. Ejercicio 00: Exam 7
+V. Ejercicio 01: print_groups 8
+VI. Ejercicio 02: find_sh 9
+VII. Ejercicio 03: count_files 10
+VIII. Ejercicio 04: MAC 11
+IX. Ejercicio 05: ¿Puedes crearlo? 12
+X. Ejercicio 06: Skip 14
+XI. Ejercicio 07: r_dwssap 15
+XII. Ejercicio 08: add_chelou 16
+XIII. Entrega y evaluación entre pares 17
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Los ejercicios están organizados por orden de dificultad, de menor a mayor. Nose
+considerará un ejercicio difícil como válido si uno más sencillo no funciona correc-
+tamente.
+• Asegurate de que tus archivos y directorios tienen los permisos adecuados.
+• Debes seguir losprocedimientos de entregaen todos los ejercicios.
+• Tus ejercicios serán revisados y evaluados por otras personas.
+• Además, tus ejercicios serán revisados y evaluados por un programa llamadoMou-
+linette.
+• Moulinette es extremadamente precisa y estricta en su evaluación. Está comple-
+tamente automática y no admite negociación. Para evitar sorpresas desagradables,
+sé lo más riguroso posible.
+• Los ejercicios de shell deben poder ejecutarse con/bin/sh.
+• No debesdejar archivos adicionales en tu directorio aparte de los especificados en
+el enunciado.
+• ¿Tienes una duda? Pregunta a la persona de tu derecha. Si no, prueba con la de tu
+izquierda.
+• Tus referencias principales son:Google / man / Internet / ...
+• Revisa los ejemplos con atención: pueden incluir detalles no mencionados explícita-
+mente.
+2
+--- PAGINA 4 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La Piscina de C es intensa. Es tu primer gran desafío en 42: una inmersión profunda
+en la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas, a través del
+esfuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares.
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante consi-
+derar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construir fundamentos sólidos sin atajos.
+☛ Desarollar de forma real habilidades técnicas y transversales.
+☛ Experimentar el aprendizaje entre pares de forma real, empezar a aprender a apren-
+der y a resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprender sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas de mitigación para evitar errores comunes.
+3
+--- PAGINA 5 ---
+Piscina de C Shell 01
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Aprende sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener Una base sólida técnica y en programación.
+• Comprender por qué y cómo la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí, sabemos que la IA existe y que puede resolver tus proyectos, pero estás aquí
+para aprender. Te recomendamos que inviertas 26 días de aprendizaje de calidad
+para resolver los retos que hemos pensado para ti.
+• Aprender en 42 no tiene nada que ver con saber la respuesta. En 42 aprendemos
+desarrollando la capacidad para encontrarla. La IA te dará la respuesta directa,
+lo que impide que desarrolles tu propio razonamiento. Razonar requiere tiempo,
+esfuerzo y equivocare muchas veces.
+• Recuerda que durante los exámenes no tendrás acceso a la IA ni a internet. Te
+darás cuenta rápidamente si has confiado demasiado en la IA durante tu proceso de
+aprendizaje. Te vas a enfrentar a una hoja en blanco donde vas a tener que escribir
+tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades interpersonales y tu capacidad de pensar de forma diferente. Eso es
+mucho más valioso que simplemente chatear con un bot. Así que, ¡que no te supere
+la timidez!: ¡habla, haz preguntas y aprende con el resto de la piscina!
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+4
+--- PAGINA 6 ---
+Piscina de C Shell 01
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamosdurante10minutosy,derepente,todoencaja.Loentiendo.Noentiendoalgo
+concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona de la piscina
+cómo lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+5
+--- PAGINA 7 ---
+Capítulo III
+Introducción
+Esto es lo que diceWikipedia sobre las nutrias:
+La Nutria de Europa o Nutria europea (Lutra lutra), a menudo llamada
+nutria común en los países de Europa donde se encuentra presente, es un mamífero
+carnívoro semiacuático y principalmente nocturno, de la familia de los Mustélidos
+(subfamilia Lutrinos). Es una de las tres especies de nutrias pertenecientes
+al género Lutra. En España, solo se encuentra esta especie de nutria.
+Su altura a la cruz es de aproximadamente 30 cm. Su pelaje, pardo oscuro, está
+compuesto por dos capas: el pelo de borra, corto, muy fino, denso y lanoso;
+y el pelo de jarre, largo, liso, brillante e impermeable.
+Excelente nadadora, presenta una membrana interdigital entre sus dedos, un cuerpo
+alargado (60 a 80 cm de media, al cual hay que añadir una cola aplanada en la base
+y algo puntiaguda en su extremo de 30 a 40 cm de larga) y un peso que oscila entre
+5 y 15 kg.
+Vive cerca de los cursos de agua (arroyos, ríos e incluso grandes ríos), hasta
+una altitud de 1300 m, en pantanos y a veces en la costa. Normalmente es
+solitaria, ocupando un territorio de 5 a 15 km de ribera a lo largo de un curso
+de agua (a veces más) o de 20 a 30 km2 en zona pantanosa.
+En la orilla, suele utilizar los mismos accesos para meterse en el agua: los
+"pasos". Cuando sale del agua, se revuelca en la hierba para limpiar su pelaje
+sobre zonas que se pueden reconocer por la hierba aplastada llamadas
+"lugares de secado".
+Hace su madriguera entre las raíces de los árboles de las orillas de los
+cursos de agua o en otras cavidades (cavidad rocosa, tronco hueco, madriguera
+de otra especies). La madriguera dispone a menudo de una entrada más o menos
+disimulada por debajo del nivel del agua y un conducto de ventilación.
+Las nutrias son adorables.
+6
+--- PAGINA 8 ---
+Capítulo IV
+Ejercicio 00: Exam
+Ejercicio: 00
+Exam
+• Durante la semana podrás apuntarte en la agenda al examen del viernes. ¡No te
+olvides!
+• También debes inscribirte en el proyectoExam00.
+• Comprueba dos veces que te hayas inscrito tanto en el evento del examen como en
+el proyecto.
+• Comprueba tres veces que realmente te has inscrito tanto en el evento del examen
+como en el proyecto. Sí, en ambos.
+7
+--- PAGINA 9 ---
+Capítulo V
+Ejercicio 01: print_groups
+Ejercicio: 01
+print_groups.sh
+Directorio de entrega:ex01/
+Archivos a entregar:print_groups.sh
+Funciones autorizadas:Ninguna
+• Escribe un script que muestre la lista de grupos a los que pertenece el usuario
+definido en la variable de entornoFT_USER.
+• La salida debe estar separada por comas, sin espacios.
+• Ejemplos:
+◦ para FT_USER=bocal:
+$>./print_groups.sh
+bocal,adm,cdrom,sudo,dip,plugdev,lxd,lpadmin,libvirt$>
+◦ para FT_USER=daemon:
+$>./print_groups.sh
+daemon,bin$>
+• man id
+• Inspírate en los demás, pero haz el trabajo por tu cuenta.
+8
+--- PAGINA 10 ---
+Capítulo VI
+Ejercicio 02: find_sh
+Ejercicio: 02
+find_sh.sh
+Directorio de entrega:ex02/
+Archivos a entregar:find_sh.sh
+Funciones autorizadas:Ninguna
+• Escribe un script que busque todos los archivos terminados en.sh en el directorio
+actual y en todos sus subdirectorios.
+• La salida debe mostrar únicamente los nombres de archivo sin la extensión.sh.
+• Ejemplo de salida:
+$>./find_sh.sh | cat -e
+find_sh$
+file1$
+file2$
+file3$
+$>
+No te fíes de ninguna fuente de información: haz siempre tus propios
+test, controles y verificaciones.
+9
+--- PAGINA 11 ---
+Capítulo VII
+Ejercicio 03: count_files
+Ejercicio: 03
+count_files.sh
+Directorio de entrega:ex03/
+Archivos a entregar:count_files.sh
+Funciones autorizadas:Ninguna
+• Escribe un script que cuente y muestre el número total de archivos normales y
+directorios en el directorio actual y en todos sus subdirectorios.
+• El recuento debe incluir "."(el directorio inicial).
+• Ejemplo de salida:
+$>./count_files.sh | cat -e
+42$
+$>
+Equivocarse forma parte del aprendizaje: sigue probando y mejorando.
+10
+--- PAGINA 12 ---
+Capítulo VIII
+Ejercicio 04: MAC
+Ejercicio: 04
+MAC.sh
+Directorio de entrega:ex04/
+Archivos a entregar:MAC.sh
+Funciones autorizadas:Ninguna
+• Escribe un script que muestre las direcciones MAC de tu máquina, cada una seguida
+de un salto de línea.
+• man ifconfig
+• La colaboración es la clave del éxito.
+11
+--- PAGINA 13 ---
+Capítulo IX
+Ejercicio 05: ¿Puedes crearlo?
+Ejercicio: 05
+¿Puedes crearlo?
+Directorio de entrega:ex05/
+Archivos a entregar:"\?$*'MaRViN'*$?\"
+Funciones autorizadas:Ninguna
+• Crea un archivo que contenga solo42 ynada más.
+• El nombre del archivo debe ser:
+"\?$*'MaRViN'*$?\"
+• Ejemplo de salida:
+$>ls -lRa *MaRV* | cat -e
+-rw---xr-- 1 75355 32015 2 Oct 2 12:21 "\?$* 'MaRViN'*$?\"$
+$>
+12
+--- PAGINA 14 ---
+Piscina de C Shell 01
+Milestone conseguido, ¡sigue así!
+Has completado los ejercicios obligatorios de este proyecto. Ahora tienes una elección:
+• Continuar con losejercicios opcionalespara explorar más.
+• Pasar a tusiguiente proyecto.
+Ambos caminos te permitiran aprender conceptos útiles. Antes de decidir, ten en cuenta
+lo siguiente:
+• Tu primer examen, así como el rush de fin de semana, se centrarán en programación
+en C. Por tanto, puede ser útil adquirir experiencia en este ámbito con antelación.
+(Ya descubrirás pronto qué es el rush).
+• Tu rendimiento en esta Piscina se evalúa según varios factores:
+◦ Completar proyectos es uno de ellos.
+◦ Otro es el progreso global a lo largo de toda la lista de proyectos de la Piscina.
+Elige con cabeza para maximizar tus resultados.
+• Puedes volver a intentar el mismo proyecto dentro de unos días o semanas hasta el
+final de la Piscina.
+• Mantener el ritmo junto a tus compañeros y compañeras favorece una mejor cola-
+boración.
+13
+--- PAGINA 15 ---
+Capítulo X
+Ejercicio 06: Skip
+Ejercicio: 06
+skip.sh
+Directorio de entrega:ex06/
+Archivos a entregar:skip.sh
+Funciones autorizadas:Ninguna
+• Escribe un script que ejecute ls -l pero muestre solo una de cada dos líneas,
+empezando por la primera.
+• Ejemplo de salida:
+$>ls -l | cat -e
+total 4$
+-rw-rw-r-- 1 eagle eagle ** ** 15 15:46 skip.sh$
+-rw-rw-r-- 1 eagle eagle ** ** 15 15:41 tata$
+-rw-rw-r-- 1 eagle eagle ** ** 15 15:41 titi$
+-rw-rw-r-- 1 eagle eagle ** ** 15 15:41 toto$
+-rw-rw-r-- 1 eagle eagle ** ** 15 15:41 tutu$
+$>
+$>./skip.sh | cat -e
+total 4$
+-rw-rw-r-- 1 eagle eagle ** ** 15 15:41 tata$
+-rw-rw-r-- 1 eagle eagle ** ** 15 15:41 toto$
+$>
+Git push con frecuencia
+14
+--- PAGINA 16 ---
+Capítulo XI
+Ejercicio 07: r_dwssap
+Ejercicio: 07
+r_dwssap.sh
+Directorio de entrega:ex07/
+Archivos a entregar:r_dwssap.sh
+Funciones autorizadas:Ninguna
+• Escribe un script que procese la salida de cat /etc/passwd con las siguientes
+modificaciones:
+◦ Elimina los comentarios.
+◦ Conserva una de cada dos líneas, empezando por la segunda.
+◦ Invierte cada nombre de usuario.
+◦ Ordena los resultados en orden alfabético inverso.
+◦ Conserva solo los nombres de usuario comprendidos entre las variables de en-
+torno FT_LINE1 y FT_LINE2 (incluidas).
+◦ Únelos en una única línea, separados por ", ".
+◦ Termina la salida con un "."
+• Ejemplo de salida (para las líneas 7 a 15):
+$> ./r_dwssap.sh
+sstq_, sorebrek_brk_, soibten_, sergtsop_, scodved_, rlaxcm_, rgmecived_, revreswodniw_, revressta_
+.$>
+• Sigue los pasos exactamente en el orden indicado.
+• ¿Has preguntado a la persona de tu izquierda?
+15
+--- PAGINA 17 ---
+Capítulo XII
+Ejercicio 08: add_chelou
+Ejercicio: 08
+add_chelou.sh
+Directorio de entrega:ex08/
+Archivos a entregar:add_chelou.sh
+Funciones autorizadas:Ninguna
+• Escribe un script que:
+◦ coja los números de las variablesFT_NBR1 en base '\¿!, y FT_NBR2 en base
+mrdoc.
+◦ muestre la suma de ambos en basegtaio luSnemf .
+• Ejemplo 1:
+FT_NBR1=\'?"\"'\
+FT_NBR2=rcrdmddd
+• El resultado es:
+Salut
+• Ejemplo 2 :
+FT_NBR1=\"\"!\"\"!\"\"!\"\"!\"\"!\"\"
+FT_NBR2=dcrcmcmooododmrrrmorcmcrmomo
+• El resultado es:
+Segmentation fault
+Si te atascas, pide ayuda a alguién del clúster.
+16
+--- PAGINA 18 ---
+Capítulo XIII
+Entrega y evaluación entre pares
+Entrega tu proyecto en tu repositorio Git como de costumbre. Solo se evaluará el
+contenido de tu repositorio durante la defensa. Asegúrate de revisar bien los nombres de
+archivo para comprobar que son correctos.
+Debes entregar únicamente los archivos requeridos explícitamente en
+los enunciados.
+17

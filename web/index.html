@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>42.zenidx.com — la piscine de 42, explicada</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html" class="active">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>La piscine de 42, explicada</h1>
+<p class="sub">Los módulos Shell de la C Piscine de 42 Barcelona (cuenta <code>xalara</code>):
+cada ejercicio resuelto, explicado y con su trasfondo.</p>
+
+<h2>Qué es 42</h2>
+<p><strong>42</strong> es una escuela de programación fundada en París en 2013 por Xavier Niel
+(fundador de Free/Iliad). Su modelo rompe con la enseñanza tradicional en tres frentes:
+es <strong>gratuita</strong>, <strong>no tiene profesores ni clases</strong>, y funciona por
+<strong>aprendizaje entre pares</strong> (peer-to-peer learning): los proyectos los corriges y
+te los corrigen otros estudiantes, cara a cara. El plan de estudios está gamificado — proyectos,
+niveles, logros — y cada uno avanza a su ritmo.</p>
+<p>La red tiene hoy decenas de campus en todo el mundo. <strong>42 Barcelona</strong> abrió en 2022,
+impulsada por Fundación Telefónica junto con Barcelona Activa, en el Parc Tecnològic de Nou Barris.</p>
+
+<div class="trasfondo"><b>¿Por qué "42"?</b> — Es la referencia friki por excelencia: en
+<em>La guía del autoestopista galáctico</em> de Douglas Adams, un superordenador calcula durante
+7,5 millones de años la "respuesta a la pregunta definitiva sobre la vida, el universo y todo lo
+demás". La respuesta es <strong>42</strong>; el problema es que nadie sabe cuál era exactamente la
+pregunta. La escuela entera está sembrada de guiños a la novela, como se verá más abajo.</div>
+
+<h2>Qué es la piscine</h2>
+<p>La <strong>piscine</strong> ("piscina" en francés) es el proceso de selección de 42: unas
+4 semanas intensivas en el campus, sin requisitos previos — no hace falta saber programar, ni
+título, ni CV. Te tiran a la piscina y, o nadas, o nadas. Día a día resuelves módulos de
+<strong>shell</strong> (la terminal de Unix) y de <strong>C</strong>, los viernes hay examen sin
+internet ni apuntes, y los fines de semana <em>rushes</em> (proyectos en grupo). Al final, el
+campus decide con todo eso quién entra en el cursus.</p>
+<p>La evaluación tiene dos patas:</p>
+<ul>
+  <li>La <strong>evaluación entre pares</strong>: defiendes tu código ante otros pisciners, que
+  te preguntan hasta comprobar que entiendes lo que has entregado.</li>
+  <li>La <strong>Moulinette</strong>: el corrector automático de 42. "Moulinette" es, en francés,
+  el molinillo de pasar puré — la máquina que tritura tu entrega. Es literal: comprueba nombres de
+  archivo, permisos, salidas byte a byte. Un espacio de más es un cero.</li>
+</ul>
+
+<div class="trasfondo"><b>Vocabulario de la casa</b> — Las entregas se hacen por git a
+<strong>Vogsphere</strong>, el servidor de la escuela: en la novela de Adams, Vogsfera es el
+planeta de los vogones, los burócratas despiadados de la galaxia — el nombre perfecto para la
+máquina que decide si tu entrega cuenta o no. Los programas de los estudiantes llevan el prefijo
+<code>ft_</code> (<em>forty-two</em>), y el campus se organiza en <em>clusters</em> de iMacs.</div>
+
+<h2>Los módulos Shell</h2>
+<p>Los dos primeros módulos de la piscine no van de programar: van de <strong>vivir en la
+terminal</strong>. Antes de escribir una línea de C, tienes que saber moverte por el sistema de
+archivos, entender permisos, usar git y encadenar comandos. Esa es la función de Shell 00 y
+Shell 01: obligarte a leer los <code>man</code>, a pelearte con <code>find</code>, <code>sed</code>
+y <code>awk</code>, y a descubrir que casi todo lo que necesitas ya existe como comando.</p>
+
+<div class="grid">
+  <a class="mod" href="shell00.html">
+    <div class="t">Shell 00</div>
+    <div class="d">10 ejercicios: archivos y permisos, tar, claves SSH, ls, git, diff/patch,
+    find y archivos mágicos. Del <code>cat</code> más simple al <code>file</code> más oscuro.</div>
+  </a>
+  <a class="mod" href="shell01.html">
+    <div class="t">Shell 01</div>
+    <div class="d">9 ejercicios: grupos de usuario, búsquedas con find, MACs, nombres de archivo
+    imposibles, filtrado línea a línea y una suma en bases numéricas inventadas.</div>
+  </a>
+</div>
+
+<h2>Sobre estas soluciones</h2>
+<p>Las soluciones publicadas aquí corresponden a la cuenta <code>xalara</code> de 42 Barcelona
+y están <strong>resueltas y verificadas</strong>: cada ejercicio se probó en un Linux real
+(Ubuntu/WSL) contra lo que pide el enunciado — permisos y fechas exactos en los tar, salidas
+comparadas con <code>cat -e</code>, positivos y negativos en el archivo mágico, y verificación
+aritmética independiente en el ejercicio de bases. Los enunciados originales (v5.0 y v8.1, en
+español) piden explícitamente no delegar el razonamiento en una IA durante la piscine; esta web
+hace lo contrario de un atajo: cada solución viene con la explicación de por qué funciona,
+que es exactamente lo que la evaluación entre pares te va a exigir.</p>
+
+<footer>42.zenidx.com — ZenidX. Los enunciados pertenecen a 42; las soluciones y explicaciones
+son propias.</footer>
+</div>
+</body>
+</html>

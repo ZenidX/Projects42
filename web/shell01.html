@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shell 01 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html" class="active">Shell 01</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — Shell 01</h1>
+<p class="sub">Segundo asalto: aquí ya no se crean archivos, se <strong>procesa</strong> —
+pipes, filtros, variables de entorno y los comandos que convierten la terminal en una cadena
+de montaje. 9 ejercicios (ex00–ex08).</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — Exam</a></li>
+  <li><a href="#ex01">ex01 — print_groups</a></li>
+  <li><a href="#ex02">ex02 — find_sh</a></li>
+  <li><a href="#ex03">ex03 — count_files</a></li>
+  <li><a href="#ex04">ex04 — MAC</a></li>
+  <li><a href="#ex05">ex05 — ¿Puedes crearlo?</a></li>
+  <li><a href="#ex06">ex06 — Skip</a></li>
+  <li><a href="#ex07">ex07 — r_dwssap</a></li>
+  <li><a href="#ex08">ex08 — add_chelou</a></li>
+</ul>
+
+<div class="trasfondo"><b>La introducción</b> — Si Shell 00 abría con Mike Oldfield, Shell 01
+abre con… el artículo completo de Wikipedia sobre la <strong>nutria europea</strong> (Lutra lutra):
+su pelaje de dos capas, sus 5–15 kg, sus madrigueras con entrada submarina. Conclusión textual del
+enunciado: «Las nutrias son adorables». Nada de esto se usa en ningún ejercicio. El absurdo
+gratuito en los prólogos es tradición de los subjects de 42 — y un primer filtro de lectura:
+aprender a distinguir lo decorativo de lo evaluable.</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>Exam</h2>
+<div class="meta"><span>Entregable: ninguno</span></div>
+<p>El único ejercicio sin código: apuntarse al examen del viernes — al <strong>evento</strong> en
+la agenda <em>y</em> al <strong>proyecto</strong> Exam00. El enunciado pide comprobarlo dos veces,
+y luego tres. No es humor (bueno, no solo): cada piscine hay gente que hace toda la semana de
+ejercicios y descubre el viernes que no está inscrita en el examen. En 42 la burocracia también
+es parte del sistema — Vogsphere no perdona.</p>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>print_groups</h2>
+<div class="meta"><span>Entregable: <b>print_groups.sh</b></span></div>
+<p>Mostrar los grupos del usuario indicado en la variable de entorno <code>FT_USER</code>,
+separados por comas, sin espacios.</p>
+<pre><code>id -Gn "$FT_USER" | tr ' ' ',' | tr -d '\n'</code></pre>
+<ul>
+<li><code>id -Gn usuario</code> — imprime los nombres (<code>-n</code>) de todos los grupos
+(<code>-G</code>) del usuario, separados por espacios.</li>
+<li><code>tr ' ' ','</code> — cambia cada espacio por una coma.</li>
+<li><code>tr -d '\n'</code> — elimina el salto final: en el ejemplo del enunciado el prompt
+aparece pegado a la salida (<code>…libvirt$&gt;</code>), señal de que no hay <code>\n</code>.</li>
+</ul>
+<p>Primera aparición de dos ideas clave del módulo: los scripts se parametrizan por
+<strong>variables de entorno</strong> (la Moulinette exporta <code>FT_USER</code> antes de ejecutar),
+y <code>tr</code> es el transformador de caracteres más barato del sistema.</p>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>find_sh</h2>
+<div class="meta"><span>Entregable: <b>find_sh.sh</b></span></div>
+<p>Buscar todos los <code>.sh</code> del directorio actual y subdirectorios y mostrar solo el
+nombre, sin ruta y sin extensión.</p>
+<pre><code>find . -type f -name '*.sh' | sed 's|.*/||; s|\.sh$||'</code></pre>
+<p><code>find</code> localiza (<code>./sub/file2.sh</code>) y <code>sed</code> recorta con dos
+sustituciones encadenadas: <code>s|.*/||</code> borra todo hasta la última barra (fuera la ruta) y
+<code>s|\.sh$||</code> borra la extensión anclada al final. Detalle de estilo: usar <code>|</code>
+como delimitador de sed evita el baile de contrabarras al trabajar con rutas — el clásico
+<code>s/\/ruta\/…//</code> ilegible.</p>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>count_files</h2>
+<div class="meta"><span>Entregable: <b>count_files.sh</b></span></div>
+<p>Contar archivos regulares y directorios (incluido <code>.</code>) del directorio actual hacia
+abajo.</p>
+<pre><code>find . -type f -o -type d | wc -l</code></pre>
+<p><code>find</code> con dos condiciones unidas por <code>-o</code> (OR) emite una línea por
+coincidencia — y <code>.</code> siempre es la primera —, y <code>wc -l</code> las cuenta.
+El patrón <em>generador | contador</em> es el pan de cada día en Unix: no se cuenta "a mano",
+se produce un flujo y se mide. (Guiño del enunciado: la salida de ejemplo es, cómo no,
+<code>42</code>.)</p>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>MAC</h2>
+<div class="meta"><span>Entregable: <b>MAC.sh</b></span></div>
+<p>Mostrar las direcciones MAC de la máquina, una por línea.</p>
+<pre><code>ifconfig | awk '/ether/ {print $2}'</code></pre>
+<p>En la salida de <code>ifconfig</code>, cada interfaz física tiene una línea
+<code>ether xx:xx:xx:xx:xx:xx …</code>. El one-liner de <code>awk</code> hace las dos cosas a la
+vez: <code>/ether/</code> filtra esas líneas y <code>{print $2}</code> imprime su segundo campo,
+la MAC. Es el ejercicio-presentación de awk: patrón + acción, campos ya troceados gratis.
+(La alternativa moderna sería <code>ip link | awk '/link\/ether/ {print $2}'</code> —
+pero el enunciado manda: <code>man ifconfig</code>.)</p>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>¿Puedes crearlo?</h2>
+<div class="meta"><span>Entregable: <b>"\?$*'MaRViN'*$?\"</b></span></div>
+<p>Crear un archivo que contenga exactamente <code>42</code> (2 bytes, sin salto) y cuyo nombre
+sea, literalmente:</p>
+<pre><code>"\?$*'MaRViN'*$?\"</code></pre>
+<pre><code>$ printf '42' &gt; '"\?$*'\''MaRViN'\''*$?\"'</code></pre>
+<p>El nombre es una mina anti-shell: comillas dobles, backslashes, <code>$</code>, <code>*</code>,
+<code>?</code> y comillas simples — todo con significado especial. La solución es entender de una
+vez el <strong>quoting</strong>: entre comillas simples <em>nada</em> se interpreta… excepto la
+propia comilla simple, que no puede aparecer. El truco <code>'\''</code> cierra la cadena, mete
+una comilla escapada y la reabre. Para Unix el nombre es válido sin más: cualquier byte salvo
+<code>/</code> y NUL puede formar parte de un nombre de archivo. (En Windows/NTFS este archivo
+directamente no puede existir — <code>"</code>, <code>*</code> y <code>?</code> están prohibidos.)</p>
+<div class="trasfondo"><b>MaRViN</b> — Marvin, el Androide Paranoico de <em>La guía del
+autoestopista galáctico</em>: un robot con "un cerebro del tamaño de un planeta" condenado a
+tareas triviales… como que lo usen a él de nombre de archivo imposible. Segunda referencia a
+Douglas Adams de la piscine, y no será la última.</div>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06</span>Skip</h2>
+<div class="meta"><span>Entregable: <b>skip.sh</b></span></div>
+<p>Ejecutar <code>ls -l</code> pero mostrando solo una de cada dos líneas, empezando por la
+primera.</p>
+<pre><code>ls -l | awk 'NR % 2 == 1'</code></pre>
+<p><code>NR</code> es el número de línea que awk lleva contado. La condición
+<code>NR % 2 == 1</code> (impar) selecciona 1ª, 3ª, 5ª… y, como no hay bloque <code>{…}</code>,
+awk aplica su acción por defecto: imprimir. Un programa completo en 11 caracteres. La versión
+sed equivalente — <code>sed -n 'p;n'</code> — también cabe en un tuit; elegir herramienta es
+parte del aprendizaje.</p>
+</div>
+
+<div class="card" id="ex07">
+<h2><span class="ex">ex07</span>r_dwssap</h2>
+<div class="meta"><span>Entregable: <b>r_dwssap.sh</b></span></div>
+<p>El gran pipeline del módulo. Sobre <code>/etc/passwd</code>: quitar comentarios, quedarse con
+una de cada dos líneas (empezando por la segunda), invertir cada nombre de usuario, ordenarlos en
+alfabético inverso, quedarse con los que caen entre las líneas <code>FT_LINE1</code> y
+<code>FT_LINE2</code>, unirlos con <code>", "</code> y terminar con un punto.</p>
+<pre><code>grep -v '^#' /etc/passwd | awk 'NR % 2 == 0' | cut -d: -f1 \
+  | rev | sort -r | sed -n "${FT_LINE1},${FT_LINE2}p" \
+  | tr '\n' '@' | sed 's/@$/./; s/@/, /g'</code></pre>
+<p>Siete etapas, cada una un comando mínimo que hace una sola cosa:</p>
+<ol>
+<li><code>grep -v '^#'</code> — fuera comentarios.</li>
+<li><code>awk 'NR%2==0'</code> — líneas pares (la "una de cada dos, empezando por la segunda").</li>
+<li><code>cut -d: -f1</code> — primer campo de cada línea (el usuario; <code>:</code> separa los
+7 campos de passwd).</li>
+<li><code>rev</code> — invierte cada línea carácter a carácter.</li>
+<li><code>sort -r</code> — orden alfabético inverso.</li>
+<li><code>sed -n "${FT_LINE1},${FT_LINE2}p"</code> — imprime solo el rango de líneas pedido
+(sed acepta rangos numéricos directamente).</li>
+<li><code>tr</code> + <code>sed</code> final — sustituye los saltos por un marcador, convierte el
+último en <code>.</code> y el resto en <code>", "</code>.</li>
+</ol>
+<p>Es la tesis del módulo entero: problemas aparentemente enrevesados se descomponen en filtros
+triviales conectados por pipes. El enunciado avisa: «sigue los pasos exactamente en el orden
+indicado» — cambiar el orden de sort y el recorte de rango da resultados distintos.</p>
+<div class="trasfondo"><b>El nombre</b> — <code>r_dwssap</code> es <code>passwd_r</code> escrito
+del revés: el ejercicio se autodescribe (passwd + reverse). Leer nombres al revés es deporte
+nacional en 42.</div>
+</div>
+
+<div class="card" id="ex08">
+<h2><span class="ex">ex08</span>add_chelou</h2>
+<div class="meta"><span>Entregable: <b>add_chelou.sh</b></span></div>
+<p>El jefe final. Sumar dos números que llegan en variables de entorno, cada uno escrito en una
+base inventada, y mostrar el resultado en una tercera base inventada:</p>
+<ul>
+<li><code>FT_NBR1</code> viene en base 5 con los símbolos <code>' \ " ? !</code> (es decir:
+<code>'</code>=0, <code>\</code>=1, <code>"</code>=2, <code>?</code>=3, <code>!</code>=4).</li>
+<li><code>FT_NBR2</code> viene en base 5 con símbolos <code>m r d o c</code>.</li>
+<li>El resultado se escribe en base 13 con símbolos <code>g t a i o &nbsp; l u S n e m f</code>
+(sí, el sexto símbolo es un espacio).</li>
+</ul>
+<pre><code>n1=$(printf '%s' "$FT_NBR1" | sed "s/'/0/g; s/\\\\/1/g; s/\"/2/g; s/?/3/g; s/!/4/g")
+n2=$(printf '%s' "$FT_NBR2" | sed 's/m/0/g; s/r/1/g; s/d/2/g; s/o/3/g; s/c/4/g')
+echo "obase=13; ibase=5; $n1 + $n2" | bc \
+  | sed 's/0/g/g; s/1/t/g; s/2/a/g; s/3/i/g; s/4/o/g; s/5/ /g;
+         s/6/l/g; s/7/u/g; s/8/S/g; s/9/n/g; s/A/e/g; s/B/m/g; s/C/f/g'</code></pre>
+<p>La clave es darse cuenta de que una "base rara" solo es un cambio de alfabeto: con
+<code>sed</code> se traducen los símbolos a dígitos normales, <strong><code>bc</code></strong>
+(la calculadora de precisión arbitraria de Unix) hace la conversión de bases y la suma de verdad
+(<code>ibase=5</code>, <code>obase=13</code> — el obase se fija primero, cuando aún se lee en
+decimal), y un último <code>sed</code> traduce los dígitos del resultado (0–9, A, B, C — así
+imprime bc las bases hasta 16) al alfabeto final. Los símbolos elegidos (<code>\</code>,
+<code>"</code>, <code>?</code>…) obligan además a repasar el quoting del ex05: escapar el
+backslash <em>dentro</em> de un sed <em>dentro</em> de unas comillas dobles tiene su miga
+(<code>s/\\\\/1/g</code>).</p>
+<p>¿Y los alfabetos no son arbitrarios? El de salida, leído con sus 13 símbolos en orden de valor,
+deletrea <strong>"gtaio luSnemf"</strong> — anagrama de <em>"Salut mon eg…"</em>; de hecho el
+primer ejemplo del enunciado da como resultado <code>Salut</code> ("hola" en francés). Todo el
+ejercicio está montado para que el resultado salude.</p>
+<div class="trasfondo"><b>El nombre</b> — <em>chelou</em> es <em>verlan</em> (el argot francés de
+invertir sílabas) de <em>louche</em>: "raro", "turbio". Literalmente: "suma rara". El verlan es al
+francés lo que <code>r_dwssap</code> a passwd — hasta el argot del enunciado invierte cosas.</div>
+</div>
+
+<footer>42.zenidx.com — Shell 01 · <a href="shell00.html">← volver a Shell 00</a></footer>
+</div>
+</body>
+</html>

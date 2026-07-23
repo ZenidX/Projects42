@@ -1,0 +1,25 @@
+name: web42
+
+# 42.zenidx.com — web estática (patrón reflexiones/chesia): explicación de los
+# ejercicios de la C Piscine de 42 BCN (cuenta xalara). Contenido en ./web,
+# fuente en E:\WORK\Xavi\Projects42\web (Windows de Xavi). Pública.
+
+services:
+  web:
+    image: nginx:alpine
+    container_name: web42
+    restart: unless-stopped
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.web42.entrypoints=web
+      - traefik.http.routers.web42.rule=Host(`42.zenidx.com`) || Host(`42-linux.zenidx.com`)
+      - traefik.http.services.web42.loadbalancer.server.port=80
+
+networks:
+  proxy:
+    external: true
