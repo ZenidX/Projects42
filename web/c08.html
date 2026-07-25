@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 08 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html" class="active">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 08</h1>
+<p class="sub">El módulo del <strong>preprocesador</strong>. Aquí no se escriben apenas funciones:
+se escriben <em>cabeceras</em> (<code>.h</code>). Se aprende para qué existe el <code>#include</code>,
+qué es una macro, cómo se declara un <code>struct</code> y cómo se agrupan datos en memoria.
+6 ejercicios (ex00–ex05).</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft.h</a></li>
+  <li><a href="#ex01">ex01 — ft_boolean.h</a></li>
+  <li><a href="#ex02">ex02 — ft_abs.h</a></li>
+  <li><a href="#ex03">ex03 — ft_point.h</a></li>
+  <li><a href="#ex04">ex04 — ft_strs_to_tab</a></li>
+  <li><a href="#ex05">ex05 — ft_show_tab</a></li>
+</ul>
+
+<div class="trasfondo"><b>El preámbulo</b> — El enunciado abre con la entrada de Wikipedia sobre el
+<em>ornitorrinco</em>: un mamífero que pone huevos, con pico de pato y espolón venenoso, que los
+naturalistas europeos tomaron por una broma. Cierra con el clásico de la casa: "este enunciado no
+tiene nada que ver con el ornitorrinco". El guiño encaja con el módulo: la cabecera es esa pieza
+rara que no es del todo código ejecutable ni del todo documentación.</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft.h</h2>
+<div class="meta"><span>Entregable: <b>ft.h</b></span><span>Funciones autorizadas: <b>ninguna</b></span></div>
+<p>Crear un archivo de cabecera con los prototipos de cinco funciones:</p>
+<pre><code>#ifndef FT_H
+# define FT_H
+
+void	ft_putchar(char c);
+void	ft_swap(int *a, int *b);
+void	ft_putstr(char *str);
+int	ft_strlen(char *str);
+int	ft_strcmp(char *s1, char *s2);
+
+#endif</code></pre>
+<div class="trasfondo"><b>Por qué existen los <code>.h</code></b> — El compilador de C procesa cada
+<code>.c</code> por separado y no sabe nada de las funciones que viven en otro archivo. Un
+<em>prototipo</em> es una promesa: "esta función existe, se llama así y tiene estos tipos". El
+<code>#include "ft.h"</code> no es magia — el <strong>preprocesador</strong> literalmente pega el
+contenido del <code>.h</code> en el punto del <code>#include</code> antes de compilar. Por eso una
+cabecera solo debe declarar, no definir: si dos <code>.c</code> incluyen el mismo <code>.h</code>
+con código dentro, ese código se duplica y el enlazador se queja. El <code>#ifndef FT_H</code> /
+<code>#define FT_H</code> / <code>#endif</code> es el <em>include guard</em>: si un mismo archivo
+se incluye dos veces (algo habitual con cabeceras que se incluyen entre sí), la segunda vez la
+macro <code>FT_H</code> ya está definida y todo el bloque se salta. Sin él, redefiniciones y
+errores. La Norma exige el guard con el nombre del archivo en mayúsculas.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_boolean.h</h2>
+<div class="meta"><span>Entregable: <b>ft_boolean.h</b></span><span>Norminette: <b>-R CheckDefine</b></span></div>
+<p>El enunciado da un <code>main</code> ya escrito y hay que crear la cabecera que lo haga compilar
+y funcionar: cuenta si el número de argumentos es par o impar.</p>
+<pre><code># include &lt;unistd.h&gt;
+
+# define EVEN_MSG "I have an even number of arguments.\n"
+# define ODD_MSG "I have an odd number of arguments.\n"
+# define SUCCESS 0
+# define TRUE 1
+# define FALSE 0
+# define EVEN(nbr) ((nbr) % 2 == 0)
+
+typedef int	t_bool;</code></pre>
+<p>La cabecera aporta todo lo que el <code>main</code> usa sin definir: el tipo <code>t_bool</code>
+(un simple <code>int</code> con nombre con intención), las constantes <code>TRUE</code>/<code>FALSE</code>/<code>SUCCESS</code>,
+los mensajes y la macro <code>EVEN</code>. Incluye <code>&lt;unistd.h&gt;</code> porque el
+<code>main</code> llama a <code>write</code> sin incluirlo él mismo.</p>
+<div class="trasfondo"><b>Macros y <code>typedef</code></b> — Una macro <code>#define</code> es
+sustitución de texto pura, antes de compilar: donde ponga <code>EVEN(x)</code> el preprocesador
+escribe <code>((x) % 2 == 0)</code>. No es una función: no hay llamada, no hay tipos, no hay coste
+en tiempo de ejecución. El <code>typedef int t_bool</code> no crea un tipo nuevo, solo un
+<em>alias</em>: sirve para que el código se lea con intención (<code>t_bool</code> dice "esto es un
+sí/no", aunque por dentro sea un entero). El flag <code>-R CheckDefine</code> hace que la
+norminette vigile expresamente el estilo de las macros: constantes en mayúsculas y bien formadas.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_abs.h</h2>
+<div class="meta"><span>Entregable: <b>ft_abs.h</b></span><span>Norminette: <b>-R CheckDefine</b></span></div>
+<p>Una sola macro que sustituye su parámetro por su valor absoluto:</p>
+<pre><code># define ABS(Value) (((Value) &lt; 0) ? -(Value) : (Value))</code></pre>
+<div class="trasfondo"><b>Los paréntesis no son decorado</b> — En una macro, cada aparición del
+parámetro <strong>tiene que ir entre paréntesis</strong>, y el resultado entero también. Como la
+macro es sustitución de texto, <code>ABS(a - b)</code> sin paréntesis se expandiría a
+<code>-a - b</code> (que no es <code>-(a-b)</code>) y romper la precedencia. Con
+<code>-(Value)</code> y el paréntesis exterior, la expansión respeta el operando completo. Es el
+peligro clásico de las macros frente a las funciones: no evalúan argumentos, copian texto. Por eso
+también <code>ABS(x++)</code> incrementaría <code>x</code> dos veces — una macro no es una función,
+aunque lo parezca.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_point.h</h2>
+<div class="meta"><span>Entregable: <b>ft_point.h</b></span></div>
+<p>Una cabecera que declare un tipo <code>t_point</code> con dos enteros, de modo que compile el
+<code>main</code> del enunciado (que hace <code>point-&gt;x = 42; point-&gt;y = 21;</code>).</p>
+<pre><code>typedef struct s_point
+{
+	int	x;
+	int	y;
+}	t_point;</code></pre>
+<div class="trasfondo"><b>Structs: agrupar datos en memoria</b> — Un <code>struct</code> es un
+molde para poner varias variables juntas bajo un mismo nombre, contiguas en memoria. Aquí un
+<code>t_point</code> ocupa dos <code>int</code> seguidos; <code>point.x</code> es el primero y
+<code>point.y</code> el siguiente. El detalle de estilo 42: la estructura se llama
+<code>s_point</code> y el alias <code>t_point</code> (prefijos <code>s_</code> de <em>struct</em> y
+<code>t_</code> de <em>type</em>). El <code>-&gt;</code> del <code>main</code> es azúcar para
+"desreferencia el puntero y accede al campo": <code>point-&gt;x</code> es <code>(*point).x</code>.
+Entender que un struct es solo memoria contigua es la base de todo lo que viene después: arrays de
+structs, listas enlazadas, y la gestión manual de memoria.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_strs_to_tab</h2>
+<div class="meta"><span>Entregable: <b>ft_strs_to_tab.c</b></span><span>Funciones: <b>malloc, free</b></span></div>
+<p>Transformar un array de cadenas (los argumentos) en un array de estructuras
+<code>t_stock_str</code>, cada una con el tamaño de la cadena, la cadena original y una copia:</p>
+<pre><code>typedef struct s_stock_str
+{
+	int		size;
+	char	*str;
+	char	*copy;
+}	t_stock_str;</code></pre>
+<p>Se reserva memoria para <code>ac + 1</code> estructuras; la última hace de centinela con
+<code>str = 0</code> para marcar el final. La copia se hace con un <code>ft_strdup</code> propio
+(reservar <code>len + 1</code> y copiar carácter a carácter). Si algún <code>malloc</code> falla,
+se devuelve <code>NULL</code>.</p>
+<div class="trasfondo"><b>Array de structs y el centinela</b> — Aquí se juntan dos ideas: reservar
+memoria dinámica (<code>malloc</code>) para un número de elementos que no se sabe hasta ejecución,
+y usar un <strong>valor centinela</strong> para marcar el final en vez de llevar la cuenta aparte
+(el mismo patrón que el <code>'\0'</code> al final de las cadenas, o el <code>NULL</code> al final
+de <code>argv</code>). Reservar <code>ac + 1</code> y dejar la última con <code>str = 0</code>
+permite recorrer el array sin conocer su longitud. La <em>copia</em> existe para que el ejercicio
+siguiente pueda modificarla sin tocar el original: el struct guarda el dato y una versión de
+trabajo.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>ft_show_tab</h2>
+<div class="meta"><span>Entregable: <b>ft_show_tab.c</b></span><span>Funciones: <b>write</b></span></div>
+<p>Recorrer el array creado por el ejercicio anterior y mostrar, por cada estructura: la cadena, su
+tamaño y la copia, cada uno seguido de un salto de línea.</p>
+<pre><code>while (par[i].str)
+{
+	ft_putstr(par[i].str);
+	write(1, "\n", 1);
+	ft_putnbr(par[i].size);
+	write(1, "\n", 1);
+	ft_putstr(par[i].copy);
+	write(1, "\n", 1);
+	i++;
+}</code></pre>
+<div class="trasfondo"><b>Recorrer hasta el centinela</b> — El bucle no necesita saber cuántos
+elementos hay: avanza mientras <code>par[i].str</code> no sea <code>NULL</code>, que es justo la
+marca de fin que dejó <code>ft_strs_to_tab</code>. Este par de ejercicios (ex04 construye, ex05
+consume) es el primer contacto con el patrón productor/consumidor sobre una estructura de datos
+propia, y con el hecho de que solo se dispone de <code>write</code>: no hay <code>printf</code>,
+así que hay que escribir a mano un <code>ft_putnbr</code> para imprimir el tamaño dígito a dígito.</div>
+</div>
+
+<footer>42.zenidx.com — C 08 · <a href="c09.html">continuar con C 09 →</a></footer>
+</div>
+</body>
+</html>

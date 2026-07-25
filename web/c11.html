@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 11 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html" class="active">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 11</h1>
+<p class="sub">Punteros a función: pasar <em>comportamiento</em> como argumento. Ocho ejercicios que
+construyen, a mano, las piezas que en cualquier lenguaje moderno se llaman <code>map</code>,
+<code>filter</code>, <code>any</code> y <code>sort</code> — y un mini-intérprete de operadores
+resuelto con una tabla de funciones.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_foreach</a></li>
+  <li><a href="#ex01">ex01 — ft_map</a></li>
+  <li><a href="#ex02">ex02 — ft_any</a></li>
+  <li><a href="#ex03">ex03 — ft_count_if</a></li>
+  <li><a href="#ex04">ex04 — ft_is_sort</a></li>
+  <li><a href="#ex05">ex05 — do-op</a></li>
+  <li><a href="#ex06">ex06 — ft_sort_string_tab</a></li>
+  <li><a href="#ex07">ex07 — ft_advanced_sort_string_tab</a></li>
+</ul>
+
+<div class="trasfondo"><b>La idea que atraviesa el módulo</b> — Hasta aquí una función era algo que
+<em>llamabas</em>. En C 11 una función pasa a ser un <em>valor</em>: se guarda en una variable, se
+mete en un array, se pasa como argumento. La sintaxis <code>void (*f)(int)</code> se lee «puntero a
+una función que toma un <code>int</code> y no devuelve nada». En cuanto lo tienes, puedes escribir
+código que decide <em>qué</em> hacer sin saber <em>cómo</em> se hace: eso es la genericidad, y es la
+base de los <em>callbacks</em>, de <code>qsort</code> y de cualquier <em>event loop</em>.</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_foreach</h2>
+<div class="meta"><span>Entregable: <b>ft_foreach.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Aplicar una función a cada entero de la tabla, en orden.</p>
+<pre><code>void	ft_foreach(int *tab, int length, void (*f)(int))
+{
+	int	i;
+
+	i = 0;
+	while (i &lt; length)
+	{
+		f(tab[i]);
+		i++;
+	}
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el bucle y la acción son cosas separables.
+<code>ft_foreach</code> es el bucle; <code>f</code> es la acción, y llega de fuera. El mismo recorrido
+sirve para imprimir, para sumar o para lo que sea, sin tocar <code>ft_foreach</code>. Es el patrón
+<em>iterador + callback</em> en su forma más pura.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_map</h2>
+<div class="meta"><span>Entregable: <b>ft_map.c</b></span><span>Autorizadas: <b>malloc</b></span></div>
+<p>Como <code>foreach</code>, pero <code>f</code> devuelve un valor y se acumula todo en una tabla
+nueva que se retorna.</p>
+<pre><code>int	*ft_map(int *tab, int length, int (*f)(int))
+{
+	int	*res;
+	int	i;
+
+	res = malloc(sizeof(int) * length);
+	if (!res)
+		return (NULL);
+	i = 0;
+	while (i &lt; length)
+	{
+		res[i] = f(tab[i]);
+		i++;
+	}
+	return (res);
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre <em>transformar en el sitio</em>
+y <em>producir algo nuevo</em>. <code>map</code> no toca la tabla original: reserva memoria y devuelve
+otra. Aparece aquí la responsabilidad del <code>malloc</code> (comprobar el <code>NULL</code>) y la
+regla implícita: quien reserva, avisa; el <code>free</code> lo hará quien reciba la tabla.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_any</h2>
+<div class="meta"><span>Entregable: <b>ft_any.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Devuelve 1 si <em>algún</em> elemento hace que <code>f</code> devuelva algo distinto de 0. La tabla
+acaba en <code>NULL</code>.</p>
+<pre><code>int	ft_any(char **tab, int (*f)(char *))
+{
+	int	i;
+
+	i = 0;
+	while (tab[i])
+	{
+		if (f(tab[i]))
+			return (1);
+		i++;
+	}
+	return (0);
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <code>f</code> aquí es un <em>predicado</em>: una
+función que responde sí/no sobre un elemento. Y el <code>return (1)</code> en cuanto encuentra uno es
+la <em>evaluación en cortocircuito</em>: no hace falta mirar el resto. Es exactamente el
+<code>any()</code> de Python o el <code>some()</code> de JavaScript.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_count_if</h2>
+<div class="meta"><span>Entregable: <b>ft_count_if.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Cuenta cuántos elementos cumplen el predicado <code>f</code>.</p>
+<pre><code>int	ft_count_if(char **tab, int length, int (*f)(char *))
+{
+	int	i;
+	int	count;
+
+	i = 0;
+	count = 0;
+	while (i &lt; length)
+	{
+		if (f(tab[i]))
+			count++;
+		i++;
+	}
+	return (count);
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El mismo predicado de <code>ft_any</code>, pero
+ahora sin cortocircuito: hay que recorrerlo entero. Es la pareja <em>filtrar + contar</em>. Cambiando
+solo la función que pasas, la misma rutina cuenta pares, positivos o palabras que empiezan por vocal:
+la lógica del recuento no sabe nada del criterio.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_is_sort</h2>
+<div class="meta"><span>Entregable: <b>ft_is_sort.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Devuelve 1 si la tabla está ordenada según el comparador <code>f</code> (negativo si el primero es
+menor, 0 si iguales, positivo si mayor).</p>
+<pre><code>int	ft_is_sort(int *tab, int length, int (*f)(int, int))
+{
+	int	i;
+	int	up;
+	int	down;
+
+	i = 0;
+	up = 1;
+	down = 1;
+	while (i &lt; length - 1)
+	{
+		if (f(tab[i], tab[i + 1]) &gt; 0)
+			up = 0;
+		if (f(tab[i], tab[i + 1]) &lt; 0)
+			down = 0;
+		i++;
+	}
+	return (up || down);
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Aquí <code>f</code> no es un predicado sino un
+<em>comparador</em>: no dice sí/no, dice «menor, igual o mayor», con el mismo convenio de signo que
+<code>strcmp</code>. Y una decisión de diseño: «ordenada» debería valer tanto para ascendente como
+descendente, así que llevamos dos banderas (<code>up</code>, <code>down</code>) y damos por buena la
+tabla si <em>alguna</em> se mantiene. Ese convenio de signo es el que luego usa <code>qsort</code>.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>do-op</h2>
+<div class="meta"><span>Entregable: <b>programa <code>do-op</code></b></span><span>Autorizadas: <b>write</b></span></div>
+<p>Un programa <code>./do-op valor1 operador valor2</code> que aplica <code>+ - * / %</code>. Operador
+desconocido → <code>0</code>; número de argumentos incorrecto → nada; división o módulo por cero →
+mensaje. El enunciado pide explícitamente resolverlo con una <strong>tabla de punteros a función</strong>.</p>
+<pre><code>typedef struct s_op
+{
+	char	*sym;
+	int		(*f)(int, int);
+}	t_op;
+
+/* ... se rellena ops[] con {"+", &amp;ft_add}, {"-", &amp;ft_sub}, ... */
+while (i &lt; 5)
+{
+	if (!ft_strcmp(ops[i].sym, op))
+		return (ops[i].f(a, b));
+	i++;
+}
+return (0);   /* operador desconocido: el resultado es 0 */</code></pre>
+<p>Dos trampas del enunciado, visibles en sus ejemplos:</p>
+<ul>
+<li><strong>Parsing tolerante</strong>: <code>./do-op 42amis - --+-20toto12</code> da <code>62</code>.
+El <code>ft_atoi</code> tiene que saltarse el sufijo basura (<code>amis</code>), contar
+<em>varios</em> signos seguidos (<code>--+-</code> = negativo) y parar en la primera no-cifra:
+<code>--+-20toto12</code> vale <code>-20</code>, y <code>42 - (-20) = 62</code>.</li>
+<li><strong>Dividir por cero antes de dividir</strong>: no se puede llamar a <code>ft_div(a, 0)</code>
+y capturar el error después — eso es un <code>SIGFPE</code>. Hay que interceptarlo <em>antes</em> y
+escribir <code>Stop : division by zero</code>.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una tabla de punteros a función es un
+<em>dispatcher</em>: sustituye una escalera de <code>if/else</code> por una búsqueda en datos. Añadir
+un operador es añadir una fila, no tocar la lógica. Así funcionan por dentro los intérpretes, las
+máquinas virtuales y las tablas de <em>syscalls</em> del kernel. La Norma, además, empuja a trocearlo
+en ficheros (máx. 5 funciones cada uno) con un <code>Makefile</code> que los enlaza.</div>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06</span>ft_sort_string_tab</h2>
+<div class="meta"><span>Entregable: <b>ft_sort_string_tab.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Ordena por código ASCII un array de cadenas terminado en <code>NULL</code>,
+<strong>intercambiando los punteros</strong> de la tabla (nunca copiando las cadenas).</p>
+<pre><code>if (ft_strcmp(tab[i], tab[i + 1]) &gt; 0)
+{
+	tmp = tab[i];
+	tab[i] = tab[i + 1];
+	tab[i + 1] = tmp;
+	i = 0;
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que ordenar no es mover datos, es mover
+<em>referencias</em>. Las cadenas se quedan donde están en memoria; lo único que baraja el algoritmo
+son los punteros del array. Intercambiar tres <code>char *</code> es barato; copiar cadenas enteras
+sería caro e innecesario. Es la misma razón por la que se ordenan índices o punteros, no registros
+completos.</div>
+</div>
+
+<div class="card" id="ex07">
+<h2><span class="ex">ex07</span>ft_advanced_sort_string_tab</h2>
+<div class="meta"><span>Entregable: <b>ft_advanced_sort_string_tab.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Igual que el anterior, pero el criterio de orden llega como parámetro. Pasándole
+<code>ft_strcmp</code> se obtiene el mismo resultado que <code>ft_sort_string_tab</code>.</p>
+<pre><code>void	ft_advanced_sort_string_tab(char **tab, int (*cmp)(char *, char *))
+{
+	/* ... mismo bucle, pero comparando con cmp(tab[i], tab[i + 1]) ... */
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El paso final de la abstracción: sacar el
+<em>criterio</em> fuera del <em>algoritmo</em>. El mismo ordenador sirve para orden ASCII, por
+longitud o inverso; solo cambia la función que le pasas. Esto es, literalmente, la firma de
+<code>qsort</code> de la librería estándar: <code>void qsort(void *, size_t, size_t,
+int (*)(const void *, const void *))</code>. Acabas de reinventarla.</div>
+</div>
+
+<footer>42.zenidx.com — C 11 · <a href="c12.html">continuar con C 12 →</a></footer>
+</div>
+</body>
+</html>

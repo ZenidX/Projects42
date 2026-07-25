@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 09 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html" class="active">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 09</h1>
+<p class="sub">El módulo de la <strong>compilación</strong>. Aquí se deja de compilar a mano: se
+crea una <em>librería estática</em> (<code>libft.a</code>) y se automatiza su construcción con un
+<code>Makefile</code>. Se aprende qué hace el enlazador y por qué existe <code>make</code>.
+3 ejercicios (ex00–ex02).</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — libft</a></li>
+  <li><a href="#ex01">ex01 — Makefile</a></li>
+  <li><a href="#ex02">ex02 — ft_split</a></li>
+</ul>
+
+<div class="trasfondo"><b>La introducción</b> — El enunciado cita un fragmento de <em>Proyecto Hail
+Mary</em> de Andy Weir: un profesor humano y un alienígena (un "eridiano") intentan construir un
+vocabulario común a base de gestos, empezando por "sí" y "no" y liándose enseguida. Cierra con la
+coletilla de siempre: "este enunciado no tiene nada que ver con el aprendizaje del eridiano". El
+paralelo es fino — este módulo va justamente de eso: darle a la máquina un <em>vocabulario</em>
+(reglas de <code>make</code>) para que sepa qué construir y cómo.</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>libft</h2>
+<div class="meta"><span>Entregables: <b>libft_creator.sh</b> + 5 <code>.c</code></span><span>Funciones: <b>write</b></span></div>
+<p>Crear la biblioteca <code>libft.a</code> con cinco funciones (<code>ft_putchar</code>,
+<code>ft_swap</code>, <code>ft_putstr</code>, <code>ft_strlen</code>, <code>ft_strcmp</code>) y un
+script que la construya:</p>
+<pre><code>#!/bin/sh
+cc -Wall -Wextra -Werror -c ft_putchar.c ft_swap.c ft_putstr.c ft_strlen.c \
+	ft_strcmp.c
+ar rcs libft.a ft_putchar.o ft_swap.o ft_putstr.o ft_strlen.o ft_strcmp.o</code></pre>
+<p>El <code>cc -c</code> compila cada <code>.c</code> a un objeto <code>.o</code> (código máquina,
+pero sin enlazar). El <code>ar rcs</code> empaqueta esos objetos en un solo archivo
+<code>libft.a</code>.</p>
+<div class="trasfondo"><b>Qué es una librería estática</b> — Compilar un programa tiene dos fases:
+<strong>compilar</strong> (cada <code>.c</code> → un <code>.o</code> con el código de sus funciones)
+y <strong>enlazar</strong> (juntar los <code>.o</code> y resolver quién llama a quién). Una
+librería <code>.a</code> es, literalmente, un <em>archivo</em> (eso es <code>ar</code>, de
+<em>archiver</em>, el mismo linaje que <code>tar</code>) que agrupa varios <code>.o</code> para no
+ir pasándolos sueltos. La <code>s</code> de <code>rcs</code> escribe un índice de símbolos para que
+el enlazador encuentre rápido cada función. "Estática" quiere decir que, al enlazar, el código de
+las funciones que uses se <em>copia dentro</em> de tu ejecutable (frente a las dinámicas
+<code>.so</code>, que se cargan aparte al arrancar). Es el primer paso para dejar de reescribir
+<code>ft_strlen</code> en cada proyecto.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>Makefile</h2>
+<div class="meta"><span>Entregable: <b>Makefile</b></span><span>Reglas: <b>all, clean, fclean, re</b></span></div>
+<p>El mismo resultado que el script, pero con un <code>Makefile</code>: busca las fuentes en
+<code>srcs/</code>, la cabecera en <code>includes/</code>, compila con
+<code>-Wall -Wextra -Werror</code> y crea <code>libft.a</code>. Sin recompilar de más, sin
+wildcards.</p>
+<pre><code>NAME = libft.a
+CC = cc
+CFLAGS = -Wall -Wextra -Werror
+INCLUDES = -I includes
+SRCS = srcs/ft_putchar.c srcs/ft_swap.c srcs/ft_putstr.c \
+       srcs/ft_strlen.c srcs/ft_strcmp.c
+OBJS = $(SRCS:.c=.o)
+
+all: $(NAME)
+
+$(NAME): $(OBJS)
+	ar rcs $(NAME) $(OBJS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $&lt; -o $@
+
+clean:
+	rm -f $(OBJS)
+
+fclean: clean
+	rm -f $(NAME)
+
+re: fclean all
+
+.PHONY: all clean fclean re</code></pre>
+<div class="trasfondo"><b>Por qué existe <code>make</code> y su grafo de dependencias</b> — El
+script del ejercicio anterior recompila <em>todo</em> cada vez. En un proyecto grande eso es
+insoportable. <code>make</code> resuelve el problema con un <strong>grafo de dependencias</strong>:
+cada objetivo (<code>libft.a</code>) depende de unos prerequisitos (los <code>.o</code>), y cada
+<code>.o</code> depende de su <code>.c</code>. Antes de rehacer algo, <code>make</code> compara las
+fechas de modificación: si el <code>.c</code> no ha cambiado desde que se generó el <code>.o</code>,
+no lo recompila. Por eso al tocar un solo fuente solo se recompila ese, y volver a ejecutar
+<code>make</code> sin cambios responde "nothing to be done". Las reglas <code>clean</code> (borra
+los <code>.o</code>), <code>fclean</code> (borra también la librería) y <code>re</code> (todo de
+cero) son la convención de 42. La regla <code>%.o: %.c</code> es un <em>patrón</em>: "para hacer
+cualquier <code>.o</code>, compila su <code>.c</code>", con <code>$&lt;</code> = el prerequisito y
+<code>$@</code> = el objetivo. Y el aviso "cuidado con los wildcards": listar las fuentes a mano en
+vez de <code>*.c</code> evita que un archivo de sobra se cuele en la compilación.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_split</h2>
+<div class="meta"><span>Entregable: <b>ft_split.c</b></span><span>Funciones: <b>malloc</b></span></div>
+<p>Partir una cadena en trozos usando cualquier carácter de un <em>charset</em> como separador, y
+devolver un array de cadenas terminado en <code>NULL</code>. Sin trozos vacíos.</p>
+<pre><code>char	**ft_split(char *str, char *charset);</code></pre>
+<p>La solución se descompone en piezas pequeñas (Norma: máximo 25 líneas por función): detectar si
+un carácter es separador, contar cuántas palabras hay, duplicar una palabra reservando su tamaño
+exacto, y rellenar el array. Se reserva sitio para <code>nº palabras + 1</code> y la última entrada
+se pone a <code>NULL</code> como centinela.</p>
+<div class="trasfondo"><b>El clásico que lo junta todo</b> — <code>ft_split</code> es el ejercicio
+donde convergen casi todos los conceptos previos: punteros a puntero (<code>char **</code>, un
+array de cadenas), memoria dinámica (un <code>malloc</code> para el array y uno por cada palabra),
+recorrer cadenas con centinela, y descomponer un problema en funciones cortas para respetar la
+Norma. La regla "sin cadenas vacías" obliga a pensar los casos borde: separadores al principio, al
+final, o varios seguidos ("saca las conclusiones pertinentes", dice el enunciado con retranca).
+Contar primero y reservar exacto — en vez de ir agrandando el array — es el patrón de dos pasadas
+que evita realloc y fugas.</div>
+</div>
+
+<footer>42.zenidx.com — C 09 · <a href="c10.html">continuar con C 10 →</a></footer>
+</div>
+</body>
+</html>

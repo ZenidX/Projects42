@@ -1,0 +1,246 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 11
+Resumen: Este documento corresponde al enunciado del módulo C 11 de la C Piscine
+de 42.
+Versión: 6.2
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Introducción 4
+III. Ejercicio 00 : ft_foreach 5
+IV. Ejercicio 01 : ft_map 6
+V. Ejercicio 02 : ft_any 7
+VI. Ejercicio 03 : ft_count_if 8
+VII. Ejercicio 04 : ft_is_sort 9
+VIII. Ejercicio 05 : do-op 10
+IX. Ejercicio 06 : ft_sort_string_tab 12
+X. Ejercicio 07 : ft_advanced_sort_string_tab 13
+XI. Entrega y evaluación 14
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• ¡Ten cuidado! Los enunciados pueden cambiar en cualquier momento.
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entregapara todos tus ejercicios.
+• Tus compañeros de piscina se encargarán de corregir tus ejercicios.
+• Además de por tus compañeros, también serán corregidos por un programa que se
+llama la Moulinette.
+• La Moulinette es muy estricta a la hora de evaluar. Está completamente automati-
+zada. Es imposible discutir con ella sobre tu nota. Por lo tanto, sé extremadamente
+riguroso para evitar cualquier sorpresa.
+• LaMoulinettenotieneunamentemuyabierta.Nointentacomprenderelcódigoque
+norespetalaNorma.LaMoulinetteutilizaelprograma norminetteparacomprobar
+La Norma en sus archivos. Entiende entonces que es estúpido entregar un código
+que no pase lanorminette.
+• Los ejercicios han sido ordenados con mucha precisión, del más sencillo al más
+complejo. En ningún caso se tendrá en cuenta un ejercicio complejo si no se ha
+conseguido realizar perfectamente un ejercicio más sencillo.
+• El uso de una función prohibida se considera una trampa. Cualquier trampa será
+sancionada con la nota-42.
+• Solamente hay que entregar una función main() si lo que se pide es un programa.
+• La Moulinette compila con los flags -Wall -Wextra -Werror y utilizacc.
+• Si tu programa no compila, tendrán un0.
+• No puedesdejar en tu directorio ningúnarchivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+• ¿Tienes alguna pregunta? Pregunta a tu compañero de la derecha. Si no, prueba
+con tu compañero de la izquierda.
+2
+--- PAGINA 4 ---
+C Piscine C 11
+• Tu manual de referencia se llamaGoogle / man / Internet / ...
+• ¡No olvides participar en el slack de tu Piscina!
+• Lee detenidamente los ejemplos. Podrían exigir cosas que no se especifican nece-
+sariamente en los enunciados...
+• Razona. ¡Te lo suplico, por Thor, por Odín! Maldita sea.
+3
+--- PAGINA 5 ---
+Capítulo II
+Introducción
+Cita sacada de la películaV de Vendetta :
+¡Vedà! A primera Vista, un humilde Veterano de VaudeVille,
+en el papel de Víctima y Villano por Vicisitudes de la Vida.
+Este que Ves, ya no mas Velo de Vanidad, es un Vestigio de
+la Vox populi, ahora Vacua, desVanecida. Sin embargo, esta Valerosa
+Visión de una extinta Vejación se siente reViVida y ha hecho Voto de
+Vencer el Vil Veneno de estas Víboras en aVanzada que Velan por los
+Violentos Viciosos y por la Violación de la Voluntad. El único Veredicto
+es Venganza; Vendetta, como Voto, y no en Vano, pues la Valía y Veracidad
+de esta un día Vindicará al Vigilante y al Virtuoso. La verdad, esta
+Vichyssoise de Verborrea se está VolViendo muy Verbosa así que solo añadiré
+que es un Verdadero placer conocerte y que puedes llamarme V.
+Evite las aliteraciones. Siempre.
+4
+--- PAGINA 6 ---
+Capítulo III
+Ejercicio 00 : ft_foreach
+Ejercicio: 00
+ft_foreach
+Directorio de entrega: ex00/
+Archivos a entregar: ft_foreach.c
+Funciones autorizadas: Ninguna
+• Escribe una función ft_foreach que, para una tabla de enteros determinada,
+aplique una función sobre cada uno de los elementos de la tabla. Se aplicará es-
+ta función siguiendo el orden de la tabla.
+• El prototipo de la función deberá ser el siguiente:
+void ft_foreach(int *tab, int length, void(*f)(int));
+• Por ejemplo, para mostrar todos los enteros de la tabla, se podrá llamar a la función
+ft_foreach de la siguiente forma:
+ft_foreach(tab, 1337, &ft_putnbr);
+5
+--- PAGINA 7 ---
+Capítulo IV
+Ejercicio 01 : ft_map
+Ejercicio: 01
+ft_map
+Directorio de entrega: ex01/
+Archivos a entregar: ft_map.c
+Funciones autorizadas: malloc
+• Escribe una función ft_map que, para una tabla de enteros determinada, aplique
+una función sobre cada uno de los elementos de la tabla (por orden) y retorne una
+tabla con todos los valores de retorno.
+• Se aplicará esta función siguiendo el orden de la tabla.
+• El prototipo de la función deberá ser el siguiente:
+int *ft_map(int *tab, int length, int(*f)(int));
+6
+--- PAGINA 8 ---
+Capítulo V
+Ejercicio 02 : ft_any
+Ejercicio: 02
+ft_any
+Directorio de entrega: ex02/
+Archivos a entregar: ft_any.c
+Funciones autorizadas: Ninguna
+• Escribe una funciónft_any que devuelva 1 si, al menos uno de los elementos de la
+tabla pasados a la funciónf devuelve algo diferente de 0, si no devolverá 0.
+• Se aplicará esta función siguiendo el orden de la tabla.
+• El prototipo de la función deberá ser el siguiente:
+int ft_any(char **tab, int(*f)(char*));
+• La tabla terminará con un puntero NULL.
+7
+--- PAGINA 9 ---
+Capítulo VI
+Ejercicio 03 : ft_count_if
+Ejercicio: 03
+ft_count_if
+Directorio de entrega: ex03/
+Archivos a entregar: ft_count_if.c
+Funciones autorizadas: Ninguna
+• Escribe una funciónft_count_if que devuelva el número de elementos de la tabla
+que, cuando sean pasados a la funciónf, no devuelvan 0.
+• Se aplicará esta función siguiendo el orden de la tabla.
+• El prototipo de la función deberá ser el siguiente:
+int ft_count_if(char **tab, int length, int(*f)(char*));
+8
+--- PAGINA 10 ---
+Capítulo VII
+Ejercicio 04 : ft_is_sort
+Ejercicio: 04
+ft_is_sort
+Directorio de entrega: ex04/
+Archivos a entregar: ft_is_sort.c
+Funciones autorizadas: Ninguna
+• Escribe una funciónft_is_sort que devuelva 1 si la tabla está ordenada y 0 en el
+caso contrario.
+• La función pasada como parámetro devolverá un entero negativo si el primer argu-
+mento es inferior al segundo, 0 si son iguales y un entero positivo en cualquier otro
+caso.
+• El prototipo de la función deberá ser el siguiente:
+int ft_is_sort(int *tab, int length, int(*f)(int, int));
+9
+--- PAGINA 11 ---
+Capítulo VIII
+Ejercicio 05 : do-op
+Ejercicio: 05
+do-op
+Directorio de entrega: ex05/
+Archivos a entregar: Todos los archivos necesarios para su programa
+Funciones autorizadas: write
+• Crea un programaque se llamedo-op.
+• El programa deberá ser ejecutado con tres argumentos:do-op valor1 operador
+valor2
+• Ejemplo:
+$>./do-op 42 "+" 21
+63
+$>
+• Deberías usar una tabla de punteros a funciones para llamar a la función que cor-
+responda a unoperador.
+• En el caso de un operador desconocido, tu programa debe mostrar0.
+• Si el número de argumentos no es correcto,do-op no muestra nada.
+• Tu programa debe aceptar y mostrar el resultado con los siguientes operadores: ’+’
+’-’ ’/’ ’*’ y ’%’
+• Tu programa debe tratar el valor el valor como int.
+• En el caso de una división por 0 tu programa debe mostrar:
+Stop : division by zero
+• En el caso de un módulo por 0 tu programa debe mostrar:
+Stop : modulo by zero
+10
+--- PAGINA 12 ---
+C Piscine C 11
+• He aquí un ejemplo de pruebas de la Moulinette:
+$> make clean
+$> make
+$> ./do-op
+$> ./do-op 1 + 1
+2
+$> ./do-op 42amis - --+-20toto12
+62
+$> ./do-op 1 p 1
+0
+$> ./do-op 1 + toto3
+1
+$>
+$> ./do-op toto3 + 4
+4
+$> ./do-op foo plus bar
+0
+$> ./do-op 25 / 0
+Stop : division by zero
+$> ./do-op 25 % 0
+Stop : modulo by zero
+$>
+11
+--- PAGINA 13 ---
+Capítulo IX
+Ejercicio 06 : ft_sort_string_tab
+Ejercicio: 06
+ft_sort_string_tab
+Directorio de entrega: ex06/
+Archivos a entregar: ft_sort_string_tab.c
+Funciones autorizadas: Ninguna
+• Escribe la funciónft_sort_string_tab que ordene por códigoASCII las cadenas
+de caracteres .
+• tab se terminará con un NULL.
+• La clasificación se realizará intercambiando los punteros de la tabla.
+• El prototipo de la función deberá ser el siguiente:
+void ft_sort_string_tab(char **tab);
+12
+--- PAGINA 14 ---
+Capítulo X
+Ejercicio 07 :
+ft_advanced_sort_string_tab
+Ejercicio: 07
+ft_advanced_sort_string_tab
+Directorio de entrega: ex07/
+Archivos a entregar: ft_advanced_sort_string_tab.c
+Funciones autorizadas: Ninguna
+• Escribe la función ft_advanced_sort_string_tab que ordene, en función del re-
+torno de la función pasada como parámetro.
+• La clasificación se realizará intercambiando los punteros de la tabla.
+• tab se terminará con un NULL.
+• El prototipo de la función deberá ser el siguiente:
+void ft_advanced_sort_string_tab(char **tab, int(*cmp)(char *, char *));
+La llamada a ft_advanced_sort_string_tab() con un segundo parámetro
+ft_strcmp dará el mismo resultado que ft_sort_string_tab().
+13
+--- PAGINA 15 ---
+Capítulo XI
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado en el repositorio será evaluado durante la defensa. No dudes en comprobar varias
+veces los nombres de los archivos para verificar que sean correctos.
+Sólo necesitas entregar los archivos requeridos por el enunciado de
+este proyecto.
+14

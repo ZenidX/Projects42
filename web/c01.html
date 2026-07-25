@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 01 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html" class="active">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 01</h1>
+<p class="sub">El módulo de punteros: nueve ejercicios para interiorizar que en C todo es
+memoria con dirección, y que un puntero no es más (ni menos) que esa dirección guardada en
+una variable.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_ft</a></li>
+  <li><a href="#ex01">ex01 — ft_ultimate_ft</a></li>
+  <li><a href="#ex02">ex02 — ft_swap</a></li>
+  <li><a href="#ex03">ex03 — ft_div_mod</a></li>
+  <li><a href="#ex04">ex04 — ft_ultimate_div_mod</a></li>
+  <li><a href="#ex05">ex05 — ft_putstr</a></li>
+  <li><a href="#ex06">ex06 — ft_strlen</a></li>
+  <li><a href="#ex07">ex07 — ft_rev_int_tab</a></li>
+  <li><a href="#ex08">ex08 — ft_sort_int_tab</a></li>
+</ul>
+
+<div class="trasfondo"><b>Por qué un módulo entero de punteros</b> — C pasa <em>todo</em> por
+valor: cuando llamas <code>f(x)</code>, la función recibe una copia y no puede tocar tu
+variable. La única forma de que una función modifique algo del que llama es darle la
+<em>dirección</em> de ese algo. De esa limitación — deliberada, C es de 1972 y mapea casi
+directo a ensamblador — nace todo este módulo: los punteros no son un tema avanzado de C,
+son <em>el</em> mecanismo del lenguaje para compartir memoria entre funciones. (El prólogo
+del enunciado atribuye a "Una noche en la ópera de los Hermanos Marx" el diálogo de la Royale
+con queso… que es de Pulp Fiction. Error a propósito: comprobar las fuentes también es parte
+del oficio.)</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_ft</h2>
+<div class="meta"><span>Entrega: <b>ft_ft.c</b></span><span>Autorizado: nada</span></div>
+<pre><code>void	ft_ft(int *nbr)
+{
+	*nbr = 42;
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La pareja de operadores que define C:
+<code>&amp;</code> ("dame la dirección de") y <code>*</code> ("ve a esta dirección"). Escribir
+<code>*nbr = 42</code> es: toma la dirección que te han pasado, ve a esa celda de memoria y
+escribe 42 en ella. El que llama ve su variable cambiada sin que se la hayas "devuelto".
+Una línea de código, pero es el modelo mental completo de la indirección.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_ultimate_ft</h2>
+<div class="meta"><span>Entrega: <b>ft_ultimate_ft.c</b></span><span>Autorizado: nada</span></div>
+<pre><code>void	ft_ultimate_ft(int *********nbr)
+{
+	*********nbr = 42;
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Nadie usa nueve niveles de
+indirección; el absurdo es el mensaje. Cada <code>*</code> del tipo añade un salto ("puntero a
+puntero a…"), y cada <code>*</code> al usarlo deshace exactamente uno. Si entiendes que
+<code>*********nbr</code> son nueve saltos encadenados hasta llegar al int del fondo — y que
+el main de prueba necesita nueve variables intermedias, cada una guardando la dirección de la
+anterior — los dobles punteros de C12 (<code>t_list **</code>) te parecerán triviales. Es
+vacunación por sobredosis.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_swap</h2>
+<div class="meta"><span>Entrega: <b>ft_swap.c</b></span><span>Autorizado: nada</span></div>
+<pre><code>void	ft_swap(int *a, int *b)
+{
+	int	tmp;
+
+	tmp = *a;
+	*a = *b;
+	*b = tmp;
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El ejercicio canónico de "por qué
+existen los punteros": un swap por valor (<code>void swap(int a, int b)</code>) compila,
+corre y no hace <em>nada</em> visible — intercambia las copias. Solo con direcciones el efecto
+sobrevive al return. También introduce el patrón de la variable temporal: no puedes pisar un
+valor sin guardarlo antes. Este swap reaparecerá dentro de rev_int_tab, sort_int_tab y todos
+los sorts que escribas.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_div_mod</h2>
+<div class="meta"><span>Entrega: <b>ft_div_mod.c</b></span><span>Autorizado: nada</span></div>
+<pre><code>void	ft_div_mod(int a, int b, int *div, int *mod)
+{
+	*div = a / b;
+	*mod = a % b;
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — C solo puede devolver UN valor con
+<code>return</code>. ¿Y si una operación produce dos (cociente y resto)? El idioma clásico:
+<em>parámetros de salida</em> — el llamador reserva las variables y te pasa sus direcciones
+para que las rellenes. Así funcionan media libc y todas las APIs de sistema
+(<code>pipe(int fd[2])</code>, <code>waitpid(&amp;status)</code>…). Los lenguajes modernos
+devuelven tuplas; C te enseña qué hay debajo de esa azúcar.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_ultimate_div_mod</h2>
+<div class="meta"><span>Entrega: <b>ft_ultimate_div_mod.c</b></span><span>Autorizado: nada</span></div>
+<pre><code>void	ft_ultimate_div_mod(int *a, int *b)
+{
+	int	div;
+	int	mod;
+
+	div = *a / *b;
+	mod = *a % *b;
+	*a = div;
+	*b = mod;
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Ahora los punteros son entrada
+<em>y</em> salida a la vez, y aparece un peligro nuevo: el orden. Si escribes
+<code>*a = *a / *b</code> y después calculas el resto, ya has destruido el valor original de
+<code>*a</code> — el resto saldrá mal. Hay que leer todo antes de escribir nada (de ahí las
+temporales). Es la primera lección de <em>aliasing</em>: cuando lees y escribes a través de
+punteros, el orden de las operaciones es parte de la corrección.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>ft_putstr</h2>
+<div class="meta"><span>Entrega: <b>ft_putstr.c</b></span><span>Autorizado: <b>write</b></span></div>
+<pre><code>void	ft_putstr(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		write(1, &amp;str[i], 1);
+		i++;
+	}
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en C <em>no hay tipo cadena</em>.
+Una "string" es solo la dirección de su primer carácter, y la convención de que termina donde
+aparezca el byte 0 (<code>'\0'</code>). La condición <code>while (str[i])</code> es
+literalmente "mientras el byte no sea cero". De esa decisión de diseño de 1972 —
+comprometida pero baratísima en memoria — salen strlen, los buffer overflows, y medio siglo
+de bugs; conviene entenderla bien porque es la base de los módulos C02-C04 y de C07.</div>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06</span>ft_strlen</h2>
+<div class="meta"><span>Entrega: <b>ft_strlen.c</b></span><span>Autorizado: nada</span></div>
+<pre><code>int	ft_strlen(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+		i++;
+	return (i);
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La consecuencia directa del diseño
+de ex05: como la longitud no se guarda en ninguna parte, <em>medirla cuesta recorrer la
+cadena entera</em>, O(n). En lenguajes con la longitud almacenada, len() es O(1). Entender
+este coste explica patrones de todo el C real: por qué no se llama strlen dentro de la
+condición de un bucle, por qué las APIs pasan la longitud junto al puntero, por qué existen
+strlcpy/strlcat. Primer ejercicio del módulo que <em>devuelve</em> algo: `return (i);`.</div>
+</div>
+
+<div class="card" id="ex07">
+<h2><span class="ex">ex07</span>ft_rev_int_tab</h2>
+<div class="meta"><span>Entrega: <b>ft_rev_int_tab.c</b></span><span>Autorizado: nada</span></div>
+<pre><code>void	ft_rev_int_tab(int *tab, int size)
+{
+	int	i;
+	int	tmp;
+
+	i = 0;
+	while (i &lt; size / 2)
+	{
+		tmp = tab[i];
+		tab[i] = tab[size - 1 - i];
+		tab[size - 1 - i] = tmp;
+		i++;
+	}
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas. (1) Un array que entra en
+una función <em>degenera a puntero</em>: dentro solo tienes la dirección del primer elemento,
+y por eso el tamaño viaja como parámetro aparte — C no lo sabe. Perder el tamaño = leer
+memoria ajena. (2) El patrón de los dos índices que avanzan desde los extremos
+(<code>i</code> y <code>size-1-i</code>) intercambiando — parar en <code>size/2</code> para
+no des-invertir, y comprobar que el elemento central impar se queda quieto solo. Invertir
+<em>in place</em>, sin array auxiliar, es la primera vez que piensas en memoria constante.</div>
+</div>
+
+<div class="card" id="ex08">
+<h2><span class="ex">ex08</span>ft_sort_int_tab</h2>
+<div class="meta"><span>Entrega: <b>ft_sort_int_tab.c</b></span><span>Autorizado: nada</span></div>
+<pre><code>void	ft_sort_int_tab(int *tab, int size)
+{
+	int	i;
+	int	tmp;
+
+	i = 0;
+	while (i &lt; size - 1)
+	{
+		if (tab[i] &gt; tab[i + 1])
+		{
+			tmp = tab[i];
+			tab[i] = tab[i + 1];
+			tab[i + 1] = tmp;
+			i = 0;
+		}
+		else
+			i++;
+	}
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Tu primer algoritmo de verdad: no hay
+receta en el enunciado, solo "ordena". La solución de arriba (gnome sort) cabe en la Norma y
+se razona con un invariante simple: si encuentro un par desordenado, lo arreglo y vuelvo a
+empezar; si llego al final, está ordenado. Es O(n²) — y está bien que lo sea: la piscine
+quiere que primero escribas un sort correcto y <em>después</em>, cuando ordenar 100.000
+elementos duela, tengas motivo para aprender quicksort. También es el cierre del módulo:
+swap (ex02) + recorrido con índices (ex07) + mutación in place = ordenación.</div>
+</div>
+
+<footer>42.zenidx.com — C 01 · <a href="c00.html">← C 00</a> · <a href="c02.html">C 02 →</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 02 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html" class="active">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 02</h1>
+<p class="sub">Manipulación de cadenas carácter a carácter. Se reimplementan trozos de la
+<code>libc</code> (<code>strcpy</code>, <code>strncpy</code>, <code>strlcpy</code>) y se escriben
+predicados y transformaciones sobre texto. 13 ejercicios (ex00–ex12); todos con
+<em>funciones autorizadas: ninguna</em>, salvo ex11 y ex12 que pueden usar <code>write</code>.</p>
+
+<div class="trasfondo"><b>¿Qué es un <code>char</code>?</b> — El tema de fondo de todo el módulo.
+Un <code>char</code> no es «una letra»: es un entero de 8 bits (un byte). Cuando escribes
+<code>'A'</code>, el compilador guarda el número <strong>65</strong>; <code>'a'</code> es
+<strong>97</strong>, <code>'0'</code> es <strong>48</strong>. Esa correspondencia es la tabla
+<strong>ASCII</strong>, y explica los trucos que se repiten aquí: pasar de mayúscula a minúscula
+es sumar 32 (la distancia entre <code>'A'</code> y <code>'a'</code>), y comprobar «¿es una letra?»
+es preguntar «¿el número cae en el rango 65–90 o 97–122?». Reimplementar la libc no es reinventar
+la rueda por gusto: es dejar de tratar <code>strcpy</code> como magia y entender que por dentro
+solo hay un bucle que copia bytes hasta el <code>\0</code>. En el examen no hay <code>#include
+&lt;string.h&gt;</code> que te salve.</p></div>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_strcpy</a></li>
+  <li><a href="#ex01">ex01 — ft_strncpy</a></li>
+  <li><a href="#ex02">ex02 — ft_str_is_alpha</a></li>
+  <li><a href="#ex03">ex03 — ft_str_is_numeric</a></li>
+  <li><a href="#ex04">ex04 — ft_str_is_lowercase</a></li>
+  <li><a href="#ex05">ex05 — ft_str_is_uppercase</a></li>
+  <li><a href="#ex06">ex06 — ft_str_is_printable</a></li>
+  <li><a href="#ex07">ex07 — ft_strupcase</a></li>
+  <li><a href="#ex08">ex08 — ft_strlowcase</a></li>
+  <li><a href="#ex09">ex09 — ft_strcapitalize</a></li>
+  <li><a href="#ex10">ex10 — ft_strlcpy</a></li>
+  <li><a href="#ex11">ex11 — ft_putstr_non_printable</a></li>
+  <li><a href="#ex12">ex12 — ft_print_memory</a></li>
+</ul>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_strcpy</h2>
+<div class="meta"><span>Prototipo: <b>char *ft_strcpy(char *dest, char *src)</b></span></div>
+<p>Copiar la cadena <code>src</code> dentro de <code>dest</code>, incluido el <code>\0</code> final,
+y devolver <code>dest</code>.</p>
+<pre><code>char	*ft_strcpy(char *dest, char *src)
+{
+	int	i;
+
+	i = 0;
+	while (src[i])
+	{
+		dest[i] = src[i];
+		i++;
+	}
+	dest[i] = '\0';
+	return (dest);
+}</code></pre>
+<p>El bucle avanza mientras <code>src[i]</code> no sea <code>\0</code> (que en C vale 0, es decir
+<em>falso</em>). Al salir, <code>src[i]</code> es el terminador, así que hay que copiarlo a mano:
+sin la línea <code>dest[i] = '\0'</code> la copia no sería una cadena válida, solo una ristra de
+bytes sin final.</p>
+<div class="trasfondo"><b>Concepto — el <code>\0</code> no es opcional</b>. En C una «string» no
+guarda su longitud en ningún sitio: es un puntero al primer carácter, y se sabe dónde acaba porque
+hay un byte 0. Todo el módulo depende de esta convención. Olvidar copiar el terminador es el bug
+clásico que hace que el siguiente <code>printf</code> imprima basura hasta topar con un 0 por
+casualidad.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_strncpy</h2>
+<div class="meta"><span>Prototipo: <b>char *ft_strncpy(char *dest, char *src, unsigned int n)</b></span></div>
+<p>Copiar como mucho <code>n</code> caracteres. Si <code>src</code> es más corto que <code>n</code>,
+el resto de <code>dest</code> se rellena con <code>\0</code> hasta completar <code>n</code>.</p>
+<pre><code>char	*ft_strncpy(char *dest, char *src, unsigned int n)
+{
+	unsigned int	i;
+
+	i = 0;
+	while (i &lt; n &amp;&amp; src[i])
+	{
+		dest[i] = src[i];
+		i++;
+	}
+	while (i &lt; n)
+	{
+		dest[i] = '\0';
+		i++;
+	}
+	return (dest);
+}</code></pre>
+<p>Son dos bucles: el primero copia hasta que se acaba <code>src</code> o se llega a <code>n</code>;
+el segundo rellena con ceros lo que falte. La sutileza de <code>strncpy</code> —y la razón por la
+que es una función traicionera en la vida real— es que <strong>no garantiza terminador</strong>: si
+<code>src</code> tiene <code>n</code> caracteres o más, <code>dest</code> queda sin <code>\0</code>.</p>
+<div class="trasfondo"><b>Concepto — el tipo importa</b>. Aquí <code>n</code> es
+<code>unsigned int</code>, así que <code>i</code> también lo es. Mezclar <code>int</code> y
+<code>unsigned</code> en la condición <code>i &lt; n</code> dispara avisos con <code>-Wextra</code>
+(y <code>-Werror</code> los convierte en error). Empezar a leer los prototipos y respetar los tipos
+exactos es parte del ejercicio.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_str_is_alpha</h2>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_alpha(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<p>Devolver 1 si <code>str</code> contiene solo caracteres alfabéticos (y también para la cadena
+vacía), 0 si aparece cualquier otra cosa.</p>
+<pre><code>int	ft_str_is_alpha(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] &lt; 'A' || (str[i] &gt; 'Z' &amp;&amp; str[i] &lt; 'a') || str[i] &gt; 'z')
+			return (0);
+		i++;
+	}
+	return (1);
+}</code></pre>
+<p>La condición niega la pertenencia a los dos rangos de letras: <code>A</code>–<code>Z</code>
+(65–90) y <code>a</code>–<code>z</code> (97–122). Un carácter <em>no</em> es alfabético si está por
+debajo de <code>'A'</code>, en el hueco entre <code>'Z'</code> y <code>'a'</code> (donde viven
+<code>[</code>, <code>\</code>, <code>]</code>...), o por encima de <code>'z'</code>. La cadena
+vacía nunca entra al bucle, así que devuelve 1 «gratis».</p>
+<div class="trasfondo"><b>Concepto — comparar caracteres es comparar números</b>. Escribir
+<code>str[i] &gt;= 'a'</code> funciona porque <code>'a'</code> <em>es</em> 97 para el compilador.
+Este ejercicio (y los cinco siguientes) son la versión casera de las funciones
+<code>isalpha</code>, <code>isdigit</code>… de <code>&lt;ctype.h&gt;</code>: predicados que
+responden sí/no mirando en qué tramo de ASCII cae cada byte.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_str_is_numeric</h2>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_numeric(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<p>Igual que el anterior pero con dígitos: 1 si todo son cifras <code>0</code>–<code>9</code>.</p>
+<pre><code>int	ft_str_is_numeric(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] &lt; '0' || str[i] &gt; '9')
+			return (0);
+		i++;
+	}
+	return (1);
+}</code></pre>
+<p>Los dígitos ocupan un tramo contiguo de ASCII (<code>'0'</code>=48 … <code>'9'</code>=57), así
+que basta un único rango. Ojo: comprueba <em>caracteres</em> dígito, no el valor numérico; el signo
+<code>-</code> o un punto decimal harían devolver 0.</p>
+<div class="trasfondo"><b>Concepto — el carácter <code>'0'</code> no vale 0</b>. Es 48. Esa
+distancia de 48 entre el dígito impreso y su valor es la que se usará en C04 para convertir texto a
+número (<code>str[i] - '0'</code>). Aquí solo se valida; allí se aprovechará.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_str_is_lowercase</h2>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_lowercase(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<p>1 si todos los caracteres son minúsculas <code>a</code>–<code>z</code>.</p>
+<pre><code>int	ft_str_is_lowercase(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] &lt; 'a' || str[i] &gt; 'z')
+			return (0);
+		i++;
+	}
+	return (1);
+}</code></pre>
+<p>Un solo rango, <code>a</code>–<code>z</code>. El patrón «recorrer y rechazar al primer fallo» se
+repite idéntico; cambia únicamente el intervalo.</p>
+<div class="trasfondo"><b>Concepto — repetición deliberada</b>. La piscina insiste en variaciones
+mínimas del mismo esqueleto a propósito: se busca que el bucle-con-guardia se vuelva un reflejo, no
+un problema a resolver cada vez.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>ft_str_is_uppercase</h2>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_uppercase(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<p>1 si todos los caracteres son mayúsculas <code>A</code>–<code>Z</code>.</p>
+<pre><code>int	ft_str_is_uppercase(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] &lt; 'A' || str[i] &gt; 'Z')
+			return (0);
+		i++;
+	}
+	return (1);
+}</code></pre>
+<p>Simétrico a <code>is_lowercase</code>, con el rango de mayúsculas.</p>
+<div class="trasfondo"><b>Concepto — mayúsculas antes que minúsculas</b>. En ASCII las mayúsculas
+(65–90) van <em>antes</em> que las minúsculas (97–122). Por eso al ordenar cadenas byte a byte
+<code>"Zoo"</code> queda antes que <code>"abeja"</code>: es la lógica que gobernará
+<code>ft_strcmp</code> en C03.</div>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06</span>ft_str_is_printable</h2>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_printable(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<p>1 si todos los caracteres son imprimibles.</p>
+<pre><code>int	ft_str_is_printable(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] &lt; 32 || str[i] &gt; 126)
+			return (0);
+		i++;
+	}
+	return (1);
+}</code></pre>
+<p>El rango imprimible de ASCII va del espacio (32) a la tilde <code>~</code> (126). Por debajo de 32
+están los caracteres de control (tabulador = 9, salto de línea = 10…), que existen pero no «se ven».</p>
+<div class="trasfondo"><b>Concepto — hay bytes que no se ven</b>. Esta frontera 32–126 es la clave
+de los dos últimos ejercicios del módulo: en <code>ft_putstr_non_printable</code> y
+<code>ft_print_memory</code> habrá que <em>representar</em> de otra forma los bytes que caen fuera de
+ella, porque enviarlos crudos a la terminal la ensuciaría o la haría pitar.</div>
+</div>
+
+<div class="card" id="ex07">
+<h2><span class="ex">ex07</span>ft_strupcase</h2>
+<div class="meta"><span>Prototipo: <b>char *ft_strupcase(char *str)</b></span><span>Devuelve str</span></div>
+<p>Pasar cada letra a mayúscula, modificando la cadena in situ.</p>
+<pre><code>char	*ft_strupcase(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] &gt;= 'a' &amp;&amp; str[i] &lt;= 'z')
+			str[i] = str[i] - 32;
+		i++;
+	}
+	return (str);
+}</code></pre>
+<p>La aritmética ASCII en acción: una minúscula está exactamente 32 posiciones por encima de su
+mayúscula (<code>'a'</code>−<code>'A'</code> = 97−65 = 32), así que restar 32 la convierte. Los
+caracteres que no son minúsculas se dejan intactos.</p>
+<div class="trasfondo"><b>Concepto — modificar «en el sitio»</b>. La función no crea una copia:
+escribe sobre el mismo <code>str</code> que recibió. Esto solo es legal si quien llama pasó memoria
+escribible (un array, no un literal <code>"..."</code>, que es de solo lectura). Entender la
+diferencia evita el <em>segfault</em> más habitual del módulo.</div>
+</div>
+
+<div class="card" id="ex08">
+<h2><span class="ex">ex08</span>ft_strlowcase</h2>
+<div class="meta"><span>Prototipo: <b>char *ft_strlowcase(char *str)</b></span><span>Devuelve str</span></div>
+<p>El inverso: cada letra a minúscula.</p>
+<pre><code>char	*ft_strlowcase(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] &gt;= 'A' &amp;&amp; str[i] &lt;= 'Z')
+			str[i] = str[i] + 32;
+		i++;
+	}
+	return (str);
+}</code></pre>
+<p>Ahora se suma 32 a las mayúsculas. Misma idea, signo opuesto.</p>
+<div class="trasfondo"><b>Concepto — ¿por qué +32 y no una tabla?</b>. Se podría mapear cada letra
+con una tabla de traducción, pero el <code>+32</code> demuestra que la codificación ASCII no es
+arbitraria: mayúsculas y minúsculas se diseñaron separadas por una potencia de dos (32 = bit 5),
+justo para que cambiar la caja fuera una operación de un solo bit.</div>
+</div>
+
+<div class="card" id="ex09">
+<h2><span class="ex">ex09</span>ft_strcapitalize</h2>
+<div class="meta"><span>Prototipo: <b>char *ft_strcapitalize(char *str)</b></span><span>Devuelve str</span></div>
+<p>Poner en mayúscula la primera letra de cada palabra y el resto en minúscula. Una «palabra» es una
+secuencia de caracteres alfanuméricos.</p>
+<pre><code>static int	ft_is_alnum(char c)
+{
+	if (c &gt;= '0' &amp;&amp; c &lt;= '9')
+		return (1);
+	if (c &gt;= 'a' &amp;&amp; c &lt;= 'z')
+		return (1);
+	if (c &gt;= 'A' &amp;&amp; c &lt;= 'Z')
+		return (1);
+	return (0);
+}
+
+char	*ft_strcapitalize(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		if (i != 0 &amp;&amp; ft_is_alnum(str[i - 1]))
+		{
+			if (str[i] &gt;= 'A' &amp;&amp; str[i] &lt;= 'Z')
+				str[i] = str[i] + 32;
+		}
+		else if (str[i] &gt;= 'a' &amp;&amp; str[i] &lt;= 'z')
+			str[i] = str[i] - 32;
+		i++;
+	}
+	return (str);
+}</code></pre>
+<p>La clave es detectar el <strong>inicio de palabra</strong>: un carácter empieza palabra si es el
+primero de la cadena o si el <em>anterior</em> no es alfanumérico. En ese caso se fuerza a mayúscula;
+en cualquier otro, a minúscula. Con la entrada <code>42mots</code>, el <code>4</code> abre palabra
+pero no es letra (queda igual), y la <code>m</code> ya no es inicio (el <code>2</code> anterior es
+alfanumérico), así que se queda minúscula: <code>42mots</code>. El helper <code>ft_is_alnum</code> se
+declara <code>static</code> porque no forma parte de la entrega.</p>
+<div class="trasfondo"><b>Concepto — el estado está en el vecino</b>. Aquí ya no basta con mirar el
+carácter actual: la decisión depende del <em>contexto</em> (qué había justo antes). Es el primer
+ejercicio del módulo con una pizca de máquina de estados, y anticipa parsers más serios donde «dónde
+estoy» importa tanto como «qué leo».</div>
+</div>
+
+<div class="card" id="ex10">
+<h2><span class="ex">ex10</span>ft_strlcpy</h2>
+<div class="meta"><span>Prototipo: <b>unsigned int ft_strlcpy(char *dest, char *src, unsigned int size)</b></span></div>
+<p>La copia «segura» de BSD: copia como mucho <code>size − 1</code> caracteres, <strong>siempre</strong>
+pone <code>\0</code> (si <code>size &gt; 0</code>) y devuelve la longitud de <code>src</code>.</p>
+<pre><code>unsigned int	ft_strlcpy(char *dest, char *src, unsigned int size)
+{
+	unsigned int	i;
+	unsigned int	len;
+
+	len = 0;
+	while (src[len])
+		len++;
+	i = 0;
+	while (i + 1 &lt; size &amp;&amp; src[i])
+	{
+		dest[i] = src[i];
+		i++;
+	}
+	if (size &gt; 0)
+		dest[i] = '\0';
+	return (len);
+}</code></pre>
+<p>Primero se mide <code>src</code> completo (ese es el valor a devolver, pase lo que pase con la
+copia). Luego se copia dejando siempre un hueco para el terminador: la guarda <code>i + 1 &lt;
+size</code> reserva la última posición. Devolver la longitud <em>real</em> de <code>src</code>
+—aunque no quepa— es lo que permite a quien llama detectar que hubo truncamiento
+(<code>retorno &gt;= size</code>).</p>
+<div class="trasfondo"><b>Concepto — desbordamientos de búfer</b>. <code>strcpy</code> no conoce el
+tamaño del destino: si <code>src</code> es más largo, escribe fuera y corrompe memoria (la base de
+incontables vulnerabilidades). <code>strlcpy</code> nació para eso: recibe <code>size</code> y nunca
+lo excede. Reimplementarla es tomar contacto con la seguridad de memoria, tema que atraviesa todo C.</div>
+</div>
+
+<div class="card" id="ex11">
+<h2><span class="ex">ex11</span>ft_putstr_non_printable</h2>
+<div class="meta"><span>Prototipo: <b>void ft_putstr_non_printable(char *str)</b></span><span>Autorizada: write</span></div>
+<p>Imprimir la cadena, pero mostrando los caracteres no imprimibles como <code>\</code> seguido de su
+código hexadecimal en minúsculas y dos dígitos. Así, un salto de línea (<code>0x0a</code>) se ve como
+<code>\0a</code>.</p>
+<pre><code>void	ft_putstr_non_printable(char *str)
+{
+	char	*hex;
+	int		i;
+
+	hex = "0123456789abcdef";
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] &gt;= 32 &amp;&amp; str[i] &lt;= 126)
+			write(1, &amp;str[i], 1);
+		else
+		{
+			write(1, "\\", 1);
+			write(1, &amp;hex[(unsigned char)str[i] / 16], 1);
+			write(1, &amp;hex[(unsigned char)str[i] % 16], 1);
+		}
+		i++;
+	}
+}</code></pre>
+<p>Para convertir un byte a hexadecimal se parte en dos «nibbles» de 4 bits: la cifra alta es
+<code>byte / 16</code> y la baja <code>byte % 16</code>, y cada una indexa la tabla
+<code>"0123456789abcdef"</code>. El <code>(unsigned char)</code> es crucial: sin él, un byte con el
+bit alto puesto (valor &gt; 127) se interpretaría como <code>char</code> negativo y las divisiones
+darían índices negativos.</p>
+<div class="trasfondo"><b>Concepto — hexadecimal como lenguaje de bytes</b>. Un byte son 8 bits =
+dos dígitos hex exactos (00–ff). Por eso los volcados de memoria, los colores web y los hashes se
+escriben en hex: es la notación más compacta que mapea limpiamente cada mitad de un byte. Este
+ejercicio es el ensayo general del siguiente.</div>
+</div>
+
+<div class="card" id="ex12">
+<h2><span class="ex">ex12</span>ft_print_memory</h2>
+<div class="meta"><span>Prototipo: <b>void *ft_print_memory(void *addr, unsigned int size)</b></span><span>Autorizada: write</span></div>
+<p>Volcar una región de memoria en tres columnas, al estilo de un editor hexadecimal: la dirección en
+hex, el contenido en hex (agrupado de dos en dos bytes, relleno con espacios si la línea queda a
+medias) y el contenido como texto (los no imprimibles se sustituyen por <code>.</code>). Dieciséis
+bytes por línea; si <code>size</code> es 0 no se imprime nada. Devuelve <code>addr</code>.</p>
+<pre><code>$&gt; ./ft_print_memory
+000000010a161f40: 426f 6e6a 6f75 7220 6c65 7320 616d 696e Bonjour les amin
+000000010a161f50: 6368 6573 090a 0963 0720 6573 7420 666f ches...c. est fo
+...</code></pre>
+<p>La función se reparte en tres ayudantes <code>static</code> (dirección, columna hex, columna
+texto) más el bucle principal, que avanza de 16 en 16 bytes. El núcleo es la columna hex, que decide
+en cada posición si hay byte que imprimir o hay que rellenar con espacios para que la columna de
+texto quede siempre alineada:</p>
+<pre><code>static void	ft_hexline(unsigned char *p, unsigned int start, unsigned int size)
+{
+	char	*h;
+	int		j;
+
+	h = "0123456789abcdef";
+	j = 0;
+	while (j &lt; 16)
+	{
+		if (start + j &lt; size)
+		{
+			write(1, &amp;h[p[start + j] / 16], 1);
+			write(1, &amp;h[p[start + j] % 16], 1);
+		}
+		else
+			write(1, "  ", 2);
+		if (j % 2 == 1)
+			write(1, " ", 1);
+		j++;
+	}
+}</code></pre>
+<p>El <code>if (j % 2 == 1)</code> mete un espacio tras cada dos bytes, y el <code>else</code> con
+dos espacios rellena las posiciones que ya no existen en la última línea: así, aunque la fila esté
+incompleta, la columna de texto arranca siempre en la misma columna. La dirección se imprime con un
+bucle que extrae los 16 dígitos hex de un <code>unsigned long</code>, y la columna de texto reusa la
+frontera 32–126 de <code>ft_str_is_printable</code>.</p>
+<div class="trasfondo"><b>Concepto — la memoria es un array de bytes, y punto</b>. Un
+<code>void *</code> es «una dirección, sin tipo». Al castearlo a <code>unsigned char *</code> le
+decimos al compilador «trátalo como bytes crudos» y podemos recorrerlo como cualquier array. Esto es
+literalmente lo que hacen <code>gdb</code>, <code>xxd</code> o un depurador: no hay variables ni
+tipos ahí abajo, solo bytes en direcciones consecutivas. Ver una <code>struct</code> o un
+<code>int</code> «desnudos» en hex es el momento en que la memoria deja de ser abstracta.</div>
+</div>
+
+<footer>42.zenidx.com — C 02 · <a href="c03.html">continuar con C 03 →</a></footer>
+</div>
+</body>
+</html>

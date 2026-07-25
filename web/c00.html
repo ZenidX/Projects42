@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 00 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html" class="active">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 00</h1>
+<p class="sub">Primer módulo de C. Una sola función autorizada en todo el módulo:
+<code>write</code>. Nueve ejercicios que van de imprimir un carácter a generar combinatorias
+con recursión — todo construido desde un único byte.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_putchar</a></li>
+  <li><a href="#ex01">ex01 — ft_print_alphabet</a></li>
+  <li><a href="#ex02">ex02 — ft_print_reverse_alphabet</a></li>
+  <li><a href="#ex03">ex03 — ft_print_numbers</a></li>
+  <li><a href="#ex04">ex04 — ft_is_negative</a></li>
+  <li><a href="#ex05">ex05 — ft_print_comb</a></li>
+  <li><a href="#ex06">ex06 — ft_print_comb2</a></li>
+  <li><a href="#ex07">ex07 — ft_putnbr</a></li>
+  <li><a href="#ex08">ex08 — ft_print_combn</a></li>
+</ul>
+
+<div class="trasfondo"><b>Por qué solo write</b> — Es la decisión pedagógica que define el
+módulo. <code>printf</code> es una función gigante de la librería estándar que formatea,
+bufferea y esconde todo lo interesante. <code>write(fd, buf, n)</code> es la llamada al
+sistema desnuda: "kernel, escribe estos n bytes de esta dirección en este descriptor".
+Quitándote printf, 42 te obliga a descubrir que <em>todo lo demás se construye</em>: imprimir
+un número, un alfabeto o una tabla es siempre, al final, empujar bytes uno a uno por el
+descriptor 1 (stdout). Cuando en C04 reimplementes putnbr y en el cursus escribas tu propio
+printf, este será el único ladrillo de base. (El prólogo del enunciado — la "mermelada de
+fideos" de Pierre Dac, humorista francés — es puro absurdo intencional: dos páginas de receta
+imposible que terminan en "C sí que vale la pena".)</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_putchar</h2>
+<div class="meta"><span>Entrega: <b>ft_putchar.c</b></span><span>Autorizado: <b>write</b></span></div>
+<pre><code>void	ft_putchar(char c)
+{
+	write(1, &amp;c, 1);
+}</code></pre>
+<p>El enunciado incluso da la línea. Lo que se evalúa es entender sus tres argumentos:
+descriptor <code>1</code> (stdout), la <em>dirección</em> del carácter (<code>&amp;c</code> —
+write no recibe valores, recibe punteros a memoria) y la longitud en bytes.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Tu primer contacto con dos ideas
+que lo atraviesan todo: (1) las funciones del sistema trabajan con <em>direcciones de
+memoria</em>, no con valores — de ahí el <code>&amp;</code>; y (2) un <code>char</code> no es
+"una letra", es un byte, un número de 8 bits. Esta función de 1 línea es el átomo del que
+saldrán todas las demás salidas por pantalla de la piscine.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_print_alphabet</h2>
+<div class="meta"><span>Entrega: <b>ft_print_alphabet.c</b></span><span>Autorizado: <b>write</b></span></div>
+<pre><code>void	ft_print_alphabet(void)
+{
+	char	c;
+
+	c = 'a';
+	while (c &lt;= 'z')
+	{
+		write(1, &amp;c, 1);
+		c++;
+	}
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que los caracteres <em>son</em>
+números y se puede hacer aritmética con ellos: <code>'a'</code> vale 97 en ASCII y
+<code>'a' + 1</code> es <code>'b'</code>. Ese diseño — heredar del telégrafo una tabla donde
+las letras son consecutivas — es lo que permite recorrer el alfabeto con un contador. También
+es tu primer bucle <code>while</code> de la Norma: 42 prohíbe <code>for</code> precisamente
+para que veas las tres piezas del bucle (inicialización, condición, avance) por separado.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_print_reverse_alphabet</h2>
+<div class="meta"><span>Entrega: <b>ft_print_reverse_alphabet.c</b></span><span>Autorizado: <b>write</b></span></div>
+<pre><code>	c = 'z';
+	while (c &gt;= 'a')
+	{
+		write(1, &amp;c, 1);
+		c--;
+	}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Parece el mismo ejercicio y esa es la
+trampa: al invertir el sentido cambian <em>tres</em> cosas coordinadas (valor inicial,
+condición de parada, operador de avance). El error clásico del principiante es cambiar dos de
+las tres. Enseña a razonar el bucle como un invariante y no como una receta copiada.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_print_numbers</h2>
+<div class="meta"><span>Entrega: <b>ft_print_numbers.c</b></span><span>Autorizado: <b>write</b></span></div>
+<pre><code>	c = '0';
+	while (c &lt;= '9')
+	{
+		write(1, &amp;c, 1);
+		c++;
+	}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre el número
+<code>0</code> y el carácter <code>'0'</code> (que vale 48 en ASCII). Confundirlos es uno de
+los errores más comunes de todo C. La conversión <code>digito + '0'</code> ↔
+<code>caracter - '0'</code> que aquí se insinúa será la pieza central de putnbr (ex07) y de
+atoi (C04).</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_is_negative</h2>
+<div class="meta"><span>Entrega: <b>ft_is_negative.c</b></span><span>Autorizado: <b>write</b></span></div>
+<pre><code>void	ft_is_negative(int n)
+{
+	if (n &lt; 0)
+		write(1, "N", 1);
+	else
+		write(1, "P", 1);
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas pequeñas pero
+deliberadas: (1) leer la especificación con lupa — el 0 es "P", y quien imprime "N" para el
+cero suspende: los contratos se cumplen al pie de la letra, como hará la Moulinette; y
+(2) que un literal de cadena <code>"N"</code> ya es una dirección de memoria válida para
+write — la primera pista de que las cadenas en C son punteros.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>ft_print_comb</h2>
+<div class="meta"><span>Entrega: <b>ft_print_comb.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Todas las combinaciones de tres dígitos distintos en orden creciente:
+<code>012, 013, …, 789</code>.</p>
+<pre><code>	a = '0';
+	while (a &lt;= '7')
+	{
+		b = a + 1;
+		while (b &lt;= '8')
+		{
+			c = b + 1;
+			while (c &lt;= '9')
+			{
+				ft_print_trio(a, b, c);
+				c++;
+			}
+			b++;
+		}
+		a++;
+	}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos ideas de peso. Primera:
+<em>generar por construcción, no filtrar</em>. La solución ingenua enumera 000–999 y descarta;
+la buena hace que cada bucle empiece donde el anterior lo dejó (<code>b = a + 1</code>), de
+modo que solo se generan combinaciones válidas — así se piensa en combinatoria y en SQL, en
+backtracking, en todo. Segunda: el <em>problema de la valla</em> (fencepost): hay separador
+"<code>, </code>" <em>entre</em> elementos, no después de cada uno; detectar el último
+elemento (789) es la parte que de verdad se falla. Además obliga a decidir los límites de
+cada bucle (¿por qué a para en '7'?) razonando, no probando.</div>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06</span>ft_print_comb2</h2>
+<div class="meta"><span>Entrega: <b>ft_print_comb2.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Parejas de números de dos cifras: <code>00 01, 00 02, …, 98 99</code>.</p>
+<pre><code>	s[0] = a / 10 + '0';
+	s[1] = a % 10 + '0';
+	s[2] = ' ';
+	s[3] = b / 10 + '0';
+	s[4] = b % 10 + '0';
+	write(1, s, 5);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La descomposición posicional de un
+número: <code>n / 10</code> da las decenas y <code>n % 10</code> las unidades. La división
+entera y el módulo son las dos herramientas con las que un número "se convierte" en sus
+dígitos — putnbr (ex07) generaliza esto a cualquier longitud. De regalo: componer un buffer
+de 5 bytes y hacer un solo write enseña que la salida no tiene por qué ir carácter a
+carácter.</div>
+</div>
+
+<div class="card" id="ex07">
+<h2><span class="ex">ex07</span>ft_putnbr</h2>
+<div class="meta"><span>Entrega: <b>ft_putnbr.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Imprimir cualquier <code>int</code>, incluido <code>-2147483648</code>.</p>
+<pre><code>void	ft_putnbr(int nb)
+{
+	char	c;
+	long	n;
+
+	n = nb;
+	if (n &lt; 0)
+	{
+		write(1, "-", 1);
+		n = -n;
+	}
+	if (n &gt;= 10)
+		ft_putnbr(n / 10);
+	c = n % 10 + '0';
+	write(1, &amp;c, 1);
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El ejercicio-emboscada del módulo,
+con dos lecciones. (1) <em>Recursión por necesidad</em>: los dígitos se obtienen del último
+al primero (n%10), pero se imprimen del primero al último — la pila de llamadas recursivas
+invierte el orden gratis. (2) <em>Complemento a dos</em>: en 32 bits el rango es
+[-2147483648, 2147483647] — asimétrico. <code>-INT_MIN</code> no cabe en un int: es
+comportamiento indefinido y el clásico segfault/valor basura de las malas soluciones. Pasar
+por <code>long</code> antes de negar es reconocer cómo representa los enteros la máquina.
+Es la primera vez que la piscine te castiga por no conocer los límites del hardware.</div>
+</div>
+
+<div class="card" id="ex08">
+<h2><span class="ex">ex08</span>ft_print_combn</h2>
+<div class="meta"><span>Entrega: <b>ft_print_combn.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Como ex05 pero con n dígitos (0 &lt; n &lt; 10).</p>
+<pre><code>static void	ft_rec(int *tab, int pos, int n, int start)
+{
+	int	d;
+
+	if (pos == n)
+	{
+		ft_print_tab(tab, n);
+		return ;
+	}
+	d = start;
+	while (d &lt;= 9)
+	{
+		tab[pos] = d;
+		ft_rec(tab, pos + 1, n, d + 1);
+		d++;
+	}
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La generalización que rompe el
+esquema anterior: en ex05 anidaste 3 bucles a mano, pero no puedes escribir "n bucles". La
+respuesta es que <em>la recursión es un bucle de profundidad variable</em>: cada nivel de la
+llamada es uno de los bucles anidados, y el array <code>tab</code> hace de estado compartido.
+Esto es backtracking en miniatura — el mismo esqueleto con el que se resuelven sudokus,
+n-reinas o cualquier "prueba todas las opciones válidas". Cierra el módulo conectando ex05
+(enumeración por construcción) con ex07 (recursión).</div>
+</div>
+
+<footer>42.zenidx.com — C 00 · <a href="c01.html">continuar con C 01 →</a></footer>
+</div>
+</body>
+</html>

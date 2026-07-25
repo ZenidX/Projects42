@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 07 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html" class="active">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 07</h1>
+<p class="sub">El módulo de la memoria dinámica: por primera vez tus funciones reservan memoria con
+<code>malloc</code> y devuelven arrays y cadenas de tamaño desconocido en tiempo de compilación.
+Duplicar cadenas, generar rangos, unir, convertir bases y partir por separadores.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_strdup</a></li>
+  <li><a href="#ex01">ex01 — ft_range</a></li>
+  <li><a href="#ex02">ex02 — ft_ultimate_range</a></li>
+  <li><a href="#ex03">ex03 — ft_strjoin</a></li>
+  <li><a href="#ex04">ex04 — ft_convert_base</a></li>
+  <li><a href="#ex05">ex05 — ft_split</a></li>
+</ul>
+
+<div class="trasfondo"><b>El concepto que vertebra el módulo: el heap, <code>malloc</code> y el
+<em>ownership</em></b> — Hasta ahora toda tu memoria era <em>automática</em>: variables locales y
+arrays de tamaño fijo que viven en la <em>pila</em> (<em>stack</em>) y desaparecen solos al salir de la
+función. El problema: una función no puede devolver un array local, porque al terminar ese array ya no
+existe — devolverías la dirección de memoria basura. Cuando el tamaño se decide <em>en ejecución</em>
+(¿cuántos enteros hay entre <code>min</code> y <code>max</code>? ¿cuántas palabras tiene esta cadena?)
+necesitas otra región: el <em>heap</em> (montón). <code>malloc(n)</code> te reserva <code>n</code> bytes
+del heap y te devuelve su dirección; esa memoria vive hasta que <em>tú</em> la liberas con
+<code>free</code>. De ahí nacen las dos reglas que este módulo te mete en el cuerpo. Primera: reservas
+el tamaño exacto, y por eso escribes <code>malloc(sizeof(int) * n)</code> o
+<code>sizeof(char) * (len + 1)</code> — el <code>+1</code> es para el <code>'\0'</code> que cierra
+toda cadena, y <code>sizeof</code> pregunta al compilador cuánto ocupa cada elemento en <em>esta</em>
+máquina en vez de asumir 4 u 8. Segunda: el <em>ownership</em> (propiedad). Cuando una función devuelve
+memoria del heap, el que la llama <em>hereda</em> la obligación de liberarla; si nadie lo hace, esa
+memoria queda reservada para siempre y tienes una <em>fuga</em> (<em>memory leak</em>). Los tests de
+este módulo comprueban tanto el contenido como que todo lo que reservas se pueda <code>free</code>-ar.
+(El prólogo lista las criaturas del <em>Donjon de Naheulbeuk</em> — zombis, arañas gigantes, papel
+higiénico, raviolis; humor de rol francés, sin relación con el ejercicio.)</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_strdup</h2>
+<div class="meta"><span>Entrega: <b>ft_strdup.c</b></span><span>Autorizado: <b>malloc</b></span></div>
+<p>Reproducir <code>strdup</code>: reservar una cadena nueva y copiar en ella <code>src</code>,
+devolviendo la copia.</p>
+<pre><code>char	*ft_strdup(char *src)
+{
+	char	*dst;
+	int		i;
+
+	dst = (char *)malloc(sizeof(char) * (ft_strlen(src) + 1));
+	if (!dst)
+		return (NULL);
+	i = 0;
+	while (src[i])
+	{
+		dst[i] = src[i];
+		i++;
+	}
+	dst[i] = '\0';
+	return (dst);
+}</code></pre>
+<p>Tres pasos que se repetirán todo el módulo: medir (<code>ft_strlen</code>), reservar el tamaño
+justo (<code>+1</code> para el terminador), copiar y cerrar con <code>'\0'</code>. Y siempre,
+comprobar que <code>malloc</code> no devolvió <code>NULL</code> antes de escribir.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El ciclo de vida de una cadena en el heap y
+por qué no basta con <code>dst = src</code>: eso copiaría el <em>puntero</em> (dos nombres para los
+mismos bytes), no el contenido. Duplicar significa pedir memoria propia y copiar byte a byte. Es el
+"hola mundo" de la gestión de memoria: si esto lo tienes claro, el resto del módulo son variaciones.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_range</h2>
+<div class="meta"><span>Entrega: <b>ft_range.c</b></span><span>Autorizado: <b>malloc</b></span></div>
+<p>Devolver un array con todos los enteros de <code>min</code> a <code>max</code>, incluyendo
+<code>min</code> y excluyendo <code>max</code>. Si <code>min &gt;= max</code>, devolver <code>NULL</code>.</p>
+<pre><code>int	*ft_range(int min, int max)
+{
+	int	*arr;
+	int	i;
+	int	size;
+
+	if (min &gt;= max)
+		return (NULL);
+	size = max - min;
+	arr = (int *)malloc(sizeof(int) * size);
+	if (!arr)
+		return (NULL);
+	i = 0;
+	while (i &lt; size)
+	{
+		arr[i] = min + i;
+		i++;
+	}
+	return (arr);
+}</code></pre>
+<p>El tamaño se calcula: <code>max - min</code> elementos. Al ser un array de enteros, se reserva
+<code>sizeof(int) * size</code> — no <code>size</code> a secas: cada <code>int</code> ocupa varios
+bytes.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que devolver un array desde una función
+<em>exige</em> heap: un <code>int arr[size]</code> local moriría al volver. Y que el tamaño de la
+reserva se cuenta en bytes, de ahí <code>sizeof(int)</code>. También el contrato de errores: ante
+entrada inválida (<code>min &gt;= max</code>) devuelves <code>NULL</code>, y quien te llama tendrá que
+comprobarlo antes de usar el resultado — el mismo patrón que <code>malloc</code> usa contigo.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_ultimate_range</h2>
+<div class="meta"><span>Entrega: <b>ft_ultimate_range.c</b></span><span>Autorizado: <b>malloc</b></span></div>
+<p>Igual que ex01 pero el array se devuelve <em>por parámetro</em> (<code>int **range</code>) y la
+función devuelve el <em>tamaño</em>, o <code>-1</code> si falla el <code>malloc</code>. Si
+<code>min &gt;= max</code>, deja <code>*range</code> en <code>NULL</code> y devuelve <code>0</code>.</p>
+<pre><code>int	ft_ultimate_range(int **range, int min, int max)
+{
+	int	i;
+	int	size;
+
+	if (min &gt;= max)
+	{
+		*range = NULL;
+		return (0);
+	}
+	size = max - min;
+	*range = (int *)malloc(sizeof(int) * size);
+	if (!*range)
+		return (-1);
+	i = 0;
+	while (i &lt; size)
+	{
+		(*range)[i] = min + i;
+		i++;
+	}
+	return (size);
+}</code></pre>
+<p>El doble puntero <code>int **range</code> es la clave: el llamador pasa la dirección de su propio
+puntero, y la función escribe en él con <code>*range = …</code>. Así la función devuelve <em>dos</em>
+cosas: el array (por el parámetro) y el tamaño (por el <code>return</code>). Ojo a los paréntesis en
+<code>(*range)[i]</code>: primero se deshace un nivel de indirección, luego se indexa.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El idioma clásico de C para "devolver varias
+cosas": una por <code>return</code> y las demás por punteros de salida — aquí llevado a un doble
+puntero porque lo que se rellena es, a su vez, un puntero. Es exactamente el patrón de
+<code>ft_div_mod</code> de C01, pero con memoria dinámica de por medio. Entender <code>(*range)[i]</code>
+frente a <code>*range[i]</code> (que significaría otra cosa por la precedencia) es la clase de detalle
+de punteros que separa "compila por suerte" de "sé lo que escribo".</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_strjoin</h2>
+<div class="meta"><span>Entrega: <b>ft_strjoin.c</b></span><span>Autorizado: <b>malloc</b></span></div>
+<p>Concatenar las <code>size</code> cadenas de <code>strs</code> usando <code>sep</code> entre ellas.
+Si <code>size == 0</code>, devolver una cadena vacía que se pueda <code>free</code>-ar.</p>
+<pre><code>char	*ft_strjoin(int size, char **strs, char *sep)
+{
+	char	*res;
+	char	*p;
+	int		i;
+
+	res = (char *)malloc(sizeof(char) * (total_len(size, strs, sep) + 1));
+	if (!res)
+		return (NULL);
+	p = res;
+	i = 0;
+	while (i &lt; size)
+	{
+		p = ft_append(p, strs[i]);
+		if (i &lt; size - 1)
+			p = ft_append(p, sep);
+		i++;
+	}
+	*p = '\0';
+	return (res);
+}</code></pre>
+<p>Primero se calcula el tamaño total (suma de las longitudes más la del separador
+<code>size - 1</code> veces), se reserva de una vez, y luego se va copiando. El helper
+<code>ft_append</code> copia una cadena y devuelve el puntero <em>justo detrás</em> de lo escrito,
+para que la siguiente copia continúe donde acabó la anterior. El separador se pone entre elementos,
+nunca después del último (de ahí <code>if (i &lt; size - 1)</code>).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La estrategia "medir primero, reservar una
+vez, llenar después", que evita reservar y re-reservar en cada paso. Y el detalle exigido: con
+<code>size == 0</code> no devuelves <code>NULL</code> sino <code>""</code> — una cadena de un solo byte
+(<code>'\0'</code>) reservada en el heap. Esa distinción entre "no hay resultado" (<code>NULL</code>) y
+"el resultado es vacío pero existe y hay que liberarlo" es sutil y muy real: media librería estándar
+depende de tratarla bien.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_convert_base</h2>
+<div class="meta"><span>Entrega: <b>ft_convert_base.c</b>, <b>ft_convert_base2.c</b></span><span>Autorizado: <b>malloc, free</b></span></div>
+<p>Convertir la cadena <code>nbr</code>, escrita en <code>base_from</code>, a su representación en
+<code>base_to</code>. Cualquier base inválida ⇒ <code>NULL</code>. Se respetan las reglas de
+<code>atoi_base</code>: espacios iniciales, varios signos <code>+</code>/<code>-</code>, y solo un
+<code>-</code> como prefijo del resultado.</p>
+<pre><code>/* validación de base: longitud &gt;= 2, sin repetidos,
+   sin '+', '-' ni espacios */
+int	ft_is_valid_base(char *base);
+
+/* núcleo del pipeline */
+char	*ft_convert_base(char *nbr, char *base_from, char *base_to)
+{
+	long	value;
+
+	if (!ft_is_valid_base(base_from) || !ft_is_valid_base(base_to))
+		return (NULL);
+	value = ft_atoi_base(nbr, base_from);
+	return (fill_result(value, base_to, ft_baselen(base_to)));
+}</code></pre>
+<p>El problema se parte en dos mitades limpias: <strong>leer</strong> y <strong>escribir</strong>.
+<code>ft_atoi_base</code> lee la cadena en <code>base_from</code> y produce un <code>long</code>
+(saltando espacios, aplicando todos los signos, acumulando <code>valor · base + dígito</code>).
+<code>fill_result</code> hace lo inverso: toma el número y genera la cadena en <code>base_to</code>
+dividiendo repetidamente entre el tamaño de la base, y antepone un único <code>-</code> si es
+negativo. El módulo obliga a dos archivos porque no cabe todo en cinco funciones por fichero: los
+helpers de validación y lectura viven en <code>ft_convert_base2.c</code> y se declaran como prototipos
+en el principal.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que "convertir de base" no es una operación:
+son dos, con un entero como puente. Un número no "está en base 10"; está en la máquina como bits, y las
+bases solo son formas de <em>escribirlo</em>. Separar el <em>parser</em> (texto→entero) del
+<em>formateador</em> (entero→texto) es el mismo diseño que hay detrás de <code>printf</code>,
+<code>scanf</code> y cualquier serializador. Además concentra las trampas de robustez de toda la
+piscine: bases con caracteres repetidos o prohibidos, signos múltiples, el prefijo con un solo
+<code>-</code>, y usar <code>long</code> para que el acumulador no se desborde al leer. Y es tu primer
+proyecto multi-archivo: aprender a declarar prototipos para compartir funciones entre <code>.c</code>
+sin un <code>.h</code>.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>ft_split</h2>
+<div class="meta"><span>Entrega: <b>ft_split.c</b></span><span>Autorizado: <b>malloc</b></span></div>
+<p>Partir <code>str</code> en palabras, tratando <em>cada</em> carácter de <code>charset</code> como
+separador. Devolver un array de cadenas terminado en <code>NULL</code>, sin cadenas vacías y sin
+modificar <code>str</code>.</p>
+<pre><code>char	**ft_split(char *str, char *charset)
+{
+	char	**result;
+
+	result = (char **)malloc(sizeof(char *) * (count_words(str, charset) + 1));
+	if (!result)
+		return (NULL);
+	return (fill_words(result, str, charset));
+}</code></pre>
+<p>Dos pasadas. La primera, <code>count_words</code>, cuenta cuántas palabras hay para reservar el
+array de punteros justo (más <code>1</code> para el <code>NULL</code> final). La segunda,
+<code>fill_words</code>, localiza cada palabra entre separadores y la duplica con
+<code>word_dup</code> (un <code>strdup</code> acotado a <code>[inicio, fin)</code>). La regla "sin
+cadenas vacías" sale sola de tratar cualquier racha de separadores consecutivos como un único corte:
+solo se crea palabra cuando hay al menos un carácter no separador.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El ejercicio cumbre del módulo: memoria
+dinámica <em>de dos niveles</em>. Reservas un array de punteros (<code>char **</code>) y, para cada
+casilla, reservas otra cadena (<code>char *</code>) — memoria que apunta a memoria. Y con ello, el
+<em>ownership</em> completo: quien recibe el resultado debe liberar primero cada palabra y luego el
+array. El centinela <code>NULL</code> al final es lo que permite recorrerlo sin saber su tamaño
+(<code>while (result[i])</code>), la misma convención que el <code>'\0'</code> de las cadenas pero un
+nivel más arriba. Contar antes de reservar, tratar los separadores consecutivos, respetar la cadena de
+entrada: es el ejercicio donde todo C07 (medir, reservar el tamaño exacto, copiar, no fugar) se junta.</div>
+</div>
+
+<footer>42.zenidx.com — C 07 · <a href="c06.html">← C 06</a> · <a href="c08.html">C 08 →</a></footer>
+</div>
+</body>
+</html>

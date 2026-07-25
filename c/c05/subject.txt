@@ -1,0 +1,351 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 05
+Resumen: este documento corresponde al enunciado del módulo C 05 de la C Piscine de
+42.
+Versión: 7
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 4
+III. Introducción 7
+IV. Ejercicio 00 : ft_iterative_factorial 9
+V. Ejercicio 01 : ft_recursive_factorial 10
+VI. Ejercicio 02 : ft_iterative_power 11
+VII. Ejercicio 03 : ft_recursive_power 12
+VIII. Ejercicio 04 : ft_fibonacci 13
+IX. Ejercicio 05 : ft_sqrt 14
+X. Ejercicio 06 : ft_is_prime 15
+XI. Ejercicio 07 : ft_find_next_prime 16
+XII. Ejercicio 08 : Las Diez Reinas 17
+XIII. Entrega y evaluación 19
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• Antes de empezar a hacer los ejercicios deberás registrarte en el proyecto en tu
+intranet. Una vez lo hayas hecho, obtendrás tu repositorio Git en el cual debes
+trabajar.
+• Los ejercicios han sido ordenados del más sencillo al más complejo. Por lo tanto,
+debeshacerlosenordenyasegurartedequeelejercicioescorrectoantesdecontinuar
+con el siguiente.
+• Los ejercicios de Shell se deben ejecutar con/bin/bash.
+• Los ejercicios de C se deben compilar concc y utilizando las flags -Wall -Wextra
+-Werror.
+• Solamente hay que entregar una funciónmain() si lo que se pide es un programa.
+Si se pide una función se puede entregar elmain() comentado con la batería de
+tests que hayas hecho.
+• Los ejercicios de C se deben escribir de acuerdo ala Norma. Puedes encontrarla en
+la intranet, en el icono de la brújula, FAQ, sección 42, apartado General Pedagogy
+como La Norma .
+• Para ayudarte a comprobar si tus ejercicios cumplenla Normapuedes ayudarte de
+norminette - un programa que aplica ciertos requisitos dela Normaa tu código.
+Si tienes archivos o funciones adicionales, también deben cumplir conla Norma.
+• Lee detenidamente los ejemplos. Podrían dar información que no se especifica en el
+enunciado...
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entregapara todos tus ejercicios. Solo el
+trabajo de tu repositorioGit será evaluado.
+• No puedesdejar en tu directorioningún archivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+2
+--- PAGINA 4 ---
+C Piscine C 05
+• La evaluación de este proyecto consta de dos fases. Primero, las personas con las
+que compartes piscina se encargarán de evaluar tus ejercicios. A continuación, serán
+evaluados por un programa que se llamala Moulinette.
+• Tus funciones no deben terminar de forma inesperada (segfault, bus error, double
+free) excepto en el caso de comportamientos indefinidos. Si esto sucede, tu proyecto
+será considerado no funcional y recibirás un0 durante la evaluación.
+• La Moulinettees muy estricta a la hora de evaluar y está completamente automa-
+tizada. Es imposible discutir con ella sobre tu nota. Por lo tanto, debes mantener
+el rigor en tu código para evitar cualquier sorpresa.
+• La Moulinette utiliza norminette para comprobar tus ejercicios, aunque este
+programa no es exhaustivo en la verificacion dela Norma. Durante las evaluaciones
+por parte de las personas de tu Piscina se comprobará quela Normaes correcta.
+Si se incumple el proyecto tendrá una puntuación final de0, aunque norminette
+no indique ningún error.
+• ¿Tienes alguna pregunta? Pregunta a la persona de tu derecha. Si no puede ayu-
+darte, prueba con la persona de tu izquierda.
+• ¡Por Loki, por Freyja! ¡¡Piensa fuerte!!
+Para este módulo, la Norminette debe ser ejecutada con el flag -R
+CheckForbiddenSourceHeader. La Moulinette también lo utilizará.
+3
+--- PAGINA 5 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La Piscina de C es intensa. Es tu primer gran desafío en 42: una inmersión profunda
+en la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas, a través del
+esfuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares.
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante consi-
+derar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construir fundamentos sólidos sin atajos.
+☛ Desarollar de forma real habilidades técnicas y transversales.
+☛ Experimentar el aprendizaje entre pares de forma real, empezar a aprender a apren-
+der y a resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprender sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas de mitigación para evitar errores comunes.
+4
+--- PAGINA 6 ---
+C Piscine C 05
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Aprende sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener Una base sólida técnica y en programación.
+• Comprender por qué y cómo la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí, sabemos que la IA existe y que puede resolver tus proyectos, pero estás aquí
+para aprender. Te recomendamos que inviertas 26 días de aprendizaje de calidad
+para resolver los retos que hemos pensado para ti.
+• Aprender en 42 no tiene nada que ver con saber la respuesta. En 42 aprendemos
+desarrollando la capacidad para encontrarla. La IA te dará la respuesta directa,
+lo que impide que desarrolles tu propio razonamiento. Razonar requiere tiempo,
+esfuerzo y equivocare muchas veces.
+• Recuerda que durante los exámenes no tendrás acceso a la IA ni a internet. Te
+darás cuenta rápidamente si has confiado demasiado en la IA durante tu proceso de
+aprendizaje. Te vas a enfrentar a una hoja en blanco donde vas a tener que escribir
+tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades interpersonales y tu capacidad de pensar de forma diferente. Eso es
+mucho más valioso que simplemente chatear con un bot. Así que, ¡que no te supere
+la timidez!: ¡habla, haz preguntas y aprende con el resto de la piscina!
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+5
+--- PAGINA 7 ---
+C Piscine C 05
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamosdurante10minutosy,derepente,todoencaja.Loentiendo.Noentiendoalgo
+concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona de la piscina
+cómo lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+6
+--- PAGINA 8 ---
+Capítulo III
+Introducción
+He aquí un texto extraído del primer libro de la saga deHarry Potter :
+Oh, podrás pensar que no soy bonito,
+pero no juzgues por lo que ves.
+Me comeré a mí mismo si puedes encontrar
+un sombrero más inteligente que yo.
+Puedes tener bombines negros,
+sombreros altos y elegantes.
+Pero yo soy el Sombrero Seleccionador de Hogwarts
+y puedo superar a todos.
+No hay nada escondido en tu cabeza
+que el Sombrero Seleccionador no pueda ver.
+Así que pruébame y te diré
+dónde debes estar.
+Puedes pertenecer a Gryffindor,
+donde habitan los valientes.
+Su osadía, temple y caballerosidad
+ponen aparte a los de Gryffindor.
+Puedes pertenecer a Hufflepuff
+donde son justos y leales.
+Esos perseverantes Hufflepuff
+de verdad no temen el trabajo pesado.
+O tal vez a la antigua sabiduría de Ravenclaw,
+Si tienes una mente dispuesta,
+porque los de inteligencia y erudición
+siempre encontrarán allí a sus semejantes.
+O tal vez en Slytherin
+harás tus verdaderos amigos.
+Esa gente astuta utiliza cualquier medio
+para lograr sus fines.
+7
+--- PAGINA 9 ---
+C Piscine C 05
+¡Así que pruébame! ¡No tengas miedo!
+¡Y no recibirás una bofetada!
+Estás en buenas manos (aunque yo no las tenga).
+Porque soy un Sombrero Pensante.
+Desgraciadamente, este tema no tiene nada que ver con la saga deHarry Potter y
+es una lástima, porque el proyecto no se va a realizar porarte de magia .
+8
+--- PAGINA 10 ---
+Capítulo IV
+Ejercicio 00 : ft_iterative_factorial
+Ejercicio: 00
+ft_iterative_factorial
+Directorio de entrega:ex00/
+Archivos a entregar:ft_iterative_factorial.c
+Funciones autorizadas:Ninguna
+• Escribe una función iterativa que devuelva un número. Este número debe ser el
+resultado de una operación factorial basada en el parámetro dado.
+• Si el argumento no es válido, la función debe devolver 0.
+• No es necesario manejar los distintos tipos de desbordamientos (overflows). En estos
+casos, el valor devuelto por la función queda indefinido.
+• El prototipo de la función deberá ser el siguiente:
+int ft_iterative_factorial(int nb);
+9
+--- PAGINA 11 ---
+Capítulo V
+Ejercicio 01 : ft_recursive_factorial
+Ejercicio: 01
+ft_recursive_factorial
+Directorio de entrega:ex01/
+Archivos a entregar:ft_recursive_factorial.c
+Funciones autorizadas:Ninguna
+• Escribe una función recursiva que devuelva el factorial de un parámetro dado.
+• Si el argumento no es válido, la función debe devolver 0.
+• No es necesario manejar los distintos tipos de desbordamientos (overflows). En estos
+casos, el valor devuelto por la función queda indefinido.
+• El prototipo de la función deberá ser el siguiente:
+int ft_recursive_factorial(int nb);
+10
+--- PAGINA 12 ---
+Capítulo VI
+Ejercicio 02 : ft_iterative_power
+Ejercicio: 02
+ft_iterative_power
+Directorio de entrega:ex02/
+Archivos a entregar:ft_iterative_power.c
+Funciones autorizadas:Ninguna
+• Escribe una función iterativa que devuelva el resultado de elevar un número a una
+potencia dada.
+• Si la potencia es inferior a 0, la función devolverá 0.
+• No es necesario manejar los distintos tipos de desbordamientos (overflows).
+• Por definición, 0 elevado a la potencia de 0 debería devolver 1.
+• El prototipo de la función deberá ser el siguiente:
+int ft_iterative_power(int nb, int power);
+11
+--- PAGINA 13 ---
+Capítulo VII
+Ejercicio 03 : ft_recursive_power
+Ejercicio: 03
+ft_recursive_power
+Directorio de entrega:ex03/
+Archivos a entregar:ft_recursive_power.c
+Funciones autorizadas:Ninguna
+• Escribe una función recursiva que devuelva el resultado de elevar un número a una
+potencia dada.
+• Si la potencia es inferior a 0, la función devolverá 0.
+• No es necesario manejar los distintos tipos de desbordamientos (overflows).
+• Por definición, 0 elevado a la potencia de 0 debería devolver 1.
+• El prototipo de la función deberá ser el siguiente:
+int ft_recursive_power(int nb, int power);
+12
+--- PAGINA 14 ---
+Capítulo VIII
+Ejercicio 04 : ft_fibonacci
+Ejercicio: 04
+ft_fibonacci
+Directorio de entrega:ex04/
+Archivos a entregar:ft_fibonacci.c
+Funciones autorizadas:Ninguna
+• Escribe una funciónft_fibonacci que devuelva eln-ésimo elemento de la sucesión
+de Fibonacci, encontrándose el primer elemento de la serie en el índice 0.
+Consideraremos que la sucesión de Fibonacci comienza de la siguiente manera:
+0, 1, 1, 2.
+• No es necesario manejar los distintos tipos de desbordamientos (overflows). En estos
+casos, el valor devuelto por la función queda indefinido.
+• El prototipo de la función deberá ser el siguiente:
+int ft_fibonacci(int index);
+• ft_fibonacci debe ser una función recursiva.
+• Si el índice es inferior a 0, la función deberá devolver -1.
+13
+--- PAGINA 15 ---
+Capítulo IX
+Ejercicio 05 : ft_sqrt
+Ejercicio: 05
+ft_sqrt
+Directorio de entrega:ex05/
+Archivos a entregar:ft_sqrt.c
+Funciones autorizadas:Ninguna
+• Escribe una función que devuelva la raíz cuadrada de un número dado (si existe),
+o 0 si la raíz no es exacta.
+• El prototipo de la función deberá ser el siguiente:
+int ft_sqrt(int nb);
+14
+--- PAGINA 16 ---
+Capítulo X
+Ejercicio 06 : ft_is_prime
+Ejercicio: 06
+ft_is_prime
+Directorio de entrega:ex06/
+Archivos a entregar:ft_is_prime.c
+Funciones autorizadas:Ninguna
+• Escribe una función que devuelva 1 si el número es primo y 0 si no lo es.
+• El prototipo de la función deberá ser el siguiente:
+int ft_is_prime(int nb);
+0 y 1 no son números primos.
+15
+--- PAGINA 17 ---
+Capítulo XI
+Ejercicio 07 : ft_find_next_prime
+Ejercicio: 07
+ft_find_next_prime
+Directorio de entrega:ex07/
+Archivos a entregar:ft_find_next_prime.c
+Funciones autorizadas:Ninguna
+• Escribe una función que devuelva el número primo inmediatamente superior o igual
+al número pasado como parámetro.
+• El prototipo de la función deberá ser el siguiente:
+int ft_find_next_prime(int nb);
+16
+--- PAGINA 18 ---
+Capítulo XII
+Ejercicio 08 : Las Diez Reinas
+Ejercicio: 08
+Las Diez Reinas
+Directorio de entrega:ex08/
+Archivos a entregar:ft_ten_queens_puzzle.c
+Funciones autorizadas:write
+• Escribe una función que muestre todas las posibles disposiciones de diez reinas en
+un tablero de ajedrez de 10×10, de modo que ninguna de ellas pueda atacarse entre
+sí en un solo movimiento.
+• Deberás usar la recursividad para solucionar este problema.
+• El prototipo de la función deberá ser el siguiente:
+int ft_ten_queens_puzzle(void);
+• La visualización se hará de la manera siguiente:
+$>./a.out | cat -e
+0257948136$
+0258693147$
+...
+4605713829$
+4609582731$
+...
+9742051863$
+$>
+• La sucesión se lee de izquierda a derecha de la siguiente manera:
+◦ La primera cifra corresponde a la posición de la primera reina en la primera
+columna (el índice empieza con 0).
+◦ La n-ésima cifra corresponde a la posición de la n-ésima reina en la n-ésima
+columna.
+17
+--- PAGINA 19 ---
+C Piscine C 05
+• La función debe devolver el número total de soluciones válidas encontradas.
+18
+--- PAGINA 20 ---
+Capítulo XIII
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado dentro del repositorio será evaluado durante la defensa. No dudes en comprobar
+varias veces los nombres de los archivos para verificar que sean correctos.
+Recuerda que solo debes entregar los archivos indicados en las
+instrucciones del proyecto.
+19

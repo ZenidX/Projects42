@@ -1,0 +1,473 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 12
+Resumen: este documento corresponde al enunciado del módulo C 12 de la C Piscine de
+42.
+Versión: 9.1
+--- PAGINA 2 ---
+Índice general
+I. Introducción 2
+II. Instrucciones 4
+III. Instrucciones sobre la IA 6
+IV. Ejercicio 00 : ft_create_elem 9
+V. Ejercicio 01 : ft_list_push_front 10
+VI. Ejercicio 02 : ft_list_size 11
+VII. Ejercicio 03 : ft_list_last 12
+VIII. Ejercicio 04 : ft_list_push_back 13
+IX. Ejercicio 05 : ft_list_push_strs 14
+X. Ejercicio 06 : ft_list_clear 15
+XI. Ejercicio 07 : ft_list_at 16
+XII. Ejercicio 08 : ft_list_reverse 17
+XIII. Ejercicio 09 : ft_list_foreach 18
+XIV. Ejercicio 10 : ft_list_foreach_if 19
+XV. Ejercicio 11 : ft_list_find 20
+XVI. Ejercicio 12 : ft_list_remove_if 21
+XVII. Ejercicio 13 : ft_list_merge 22
+XVIII.Ejercicio 14 : ft_list_sort 23
+XIX. Ejercicio 15 : ft_list_reverse_fun 24
+XX. Ejercicio 16 : ft_sorted_list_insert 25
+XXI. Ejercicio 17 : ft_sorted_list_merge 26
+XXII. Entrega y evaluación 27
+1
+--- PAGINA 3 ---
+Capítulo I
+Introducción
+A VISO DE SPOILER
+NO LEA LA PÁGINA SIGUIENTE
+2
+--- PAGINA 4 ---
+C Piscine C 12
+Tú lo has querido.
+• En Star Wars , Darth Vader es el padre de Luke Skywalker.
+• En Sospechosos habituales , Verbal es Keyser Soze.
+• En El club de la lucha , Tyler Durden y el narrador son la misma persona.
+• En El sexto sentido , Bruce Willis está muerto desde el principio.
+• En Los otros , los residentes de la casa son los fantasmas y viceversa.
+• En Bambi, muere la madre de Bambi.
+• En El bosque , los monstruos son los aldeanos y, en realidad, la historia ocurre en
+nuestra época.
+• En Harry Potter , muere Dumbledore.
+• En El planeta de los simios , la historia se desarrolla en la Tierra.
+• En Juego de tronos , Robb Stark y Joffrey Baratheon mueren en su noche de
+bodas.
+• En Crepúsculo, los vampiros brillan cuando se exponen al sol.
+• En Stargate SG-1, Temporada 1, Episodio 18 ,O’NeillyCarterestánenlaAn-
+tártida.
+• En Fullmetal Alchemist: Brotherhood , Alfonse da su vida para que su hermano
+pueda derrotar a su padre, el auténtico villano.
+• En El caballero oscuro: la leyenda renace , Miranda Tate es Talia al Ghul.
+• En Super Mario Bros , la princesa se encuentra en otro castillo.
+• En Ataque a los Titanes , después de que Eren provoque el rumbling y acabe con
+el 80% de la población mundial, Mikasa lo mata para detenerlo
+3
+--- PAGINA 5 ---
+Capítulo II
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• Antes de empezar a hacer los ejercicios deberás registrarte en el proyecto en tu
+intranet. Una vez lo hayas hecho, obtendrás tu repositorio Git. Ahí es donde debes
+trabajar.
+• Los ejercicios han sido ordenados del más sencillo al más complejo. Por lo tanto,
+debeshacerlosenordenyasegurartedequeelejercicioescorrectoantesdecontinuar
+con el siguiente.
+• Los ejercicios de Shell se deben ejecutar con/bin/bash.
+• Los ejercicios de C se deben compilar concc y utilizando las flags -Wall -Wextra
+-Werror.
+• Solamente hay que entregar una funciónmain() si lo que se pide es un programa.
+Si se pide una función se puede entregar elmain() comentado con la batería de
+tests que hayas hecho.
+• Los ejercicios de C se deben escribir de acuerdo ala Norma. Puedes encontrarla en
+la intranet, en el icono de la brújula, FAQ, sección 42, apartado General Pedagogy
+como La Norma .
+• Para ayudarte a comprobar si tus ejercicios cumplenla Normapuedes ayudarte de
+norminette - un programa que aplica ciertos requisitos dela Normaa tu código.
+Si tienes archivos o funciones adicionales, también deben cumplir conla Norma.
+• Lee detenidamente los ejemplos. Podrían dar información que no se especifica en el
+enunciado...
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entregapara todos tus ejercicios. Solo el
+trabajo de tu repositorioGit será evaluado.
+• No puedesdejar en tu directorioningún archivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+4
+--- PAGINA 6 ---
+C Piscine C 12
+• La evaluación de este proyecto consta de dos fases. Primero, las personas con las
+que compartes piscina se encargarán de evaluar tus ejercicios. A continuación, serán
+evaluados por un programa que se llamala Moulinette.
+• Tus funciones no deben terminar de forma inesperada (segfault, bus error, double
+free) excepto en el caso de comportamientos indefinidos. Si esto sucede, tu proyecto
+será considerado no funcional y recibirás un0 durante la evaluación.
+• La Moulinettees muy estricta a la hora de evaluar y está completamente automa-
+tizada. Es imposible discutir con ella sobre tu nota. Por lo tanto, debes mantener
+el rigor en tu código para evitar cualquier sorpresa.
+• La Moulinette utiliza norminette para comprobar tus ejercicios, aunque este
+programa no es exhaustivo en la verificacion dela Norma. Durante las evaluaciones
+por parte de las personas de tu Piscina se comprobará quela Normaes correcta.
+Si se incumple, el proyecto tendrá una puntuación final de0, aunque norminette
+no indique ningún error.
+• ¿Tienes alguna pregunta? Pregunta a la persona de tu derecha. Si no puede ayu-
+darte, prueba con la persona de tu izquierda.
+• ¡Por Loki, por Freyja! ¡¡Piensa fuerte!!
+• Para los siguientes ejercicios, deberás utilizar la siguiente estructura:
+typedef struct s_list
+{
+struct s_list *next;
+void *data;
+} t_list;
+• Debes colocar esta estructura en un archivoft_list.h y entregarlo en cada ejer-
+cicio.
+• A partir del ejercicio 01 utilizaremos nuestroft_create_elem. Podría ser intere-
+sante tener su prototipo en un archivoft_list.h...
+5
+--- PAGINA 7 ---
+Capítulo III
+Instrucciones sobre la IA
+● Contexto
+La C Piscine es intensa. Es tu primer gran desafío en 42: una inmersión profunda en
+la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas a través del es-
+fuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares.
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante consi-
+derar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construye fundamentos sólidos sin atajos.
+☛ Desarolla de forma real habilidades técnicas y transversales.
+☛ Experimenta el aprendizaje entre pares de forma inmersiva , empezando por apren-
+der a aprender y por resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprende sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas que neutralicen evitar errores comunes.
+6
+--- PAGINA 8 ---
+C Piscine C 12
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Infórmate sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener una base adecuada en tecnología y programación.
+• Comprender cómo y por qué la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí,sabemosquelaIAexiste.Ysí,tambiénsabemosquepuederesolvertusproyectos.
+Peroestásaquíparaaprender,noparademostrarquelaIAhaaprendido.Nopierdas
+tiempo solo para demostrar que la IA puede resolver un problema determinado.
+• Aprender en 42 no tiene nada que ver con saber una respuesta, sino con desarrollar
+las habilidades para encontrarla. La IA te dará la respuesta directa, lo que impide
+quedesarrollestupropiorazonamiento.Razonarrequieretiempo,esfuerzoycometer
+errores. Nadie dijo que el proceso iba a ser fácil.
+• Ten en cuenta que, durante los exámenes, no tendrás acceso a la IA (no tenemos
+internetnidispositivosinteligentes).Tevasadarcuentarápidamentesihasconfiado
+demasiadoenlaIAdurantetuprocesodeaprendizajedelaformamásdirecta:frente
+a una hoja en blanco donde vas a tener que escribir tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades transversales y tu capacidad de pensar de forma diferente. Eso es mucho
+más valioso que sentarte a chatear con un bot. Así que, ¡sin miedo! Habla, haz
+preguntas y aprende con el resto de personas en tu Piscina.
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+7
+--- PAGINA 9 ---
+C Piscine C 12
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamos durante 10 minutos y, de repente, todo encaja. Lo entiendo. No entiendo
+algo concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona cómo
+lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+8
+--- PAGINA 10 ---
+Capítulo IV
+Ejercicio 00 : ft_create_elem
+Ejercicio: 00
+ft_create_elem
+Directorio de entrega:ex00/
+Archivos a entregar:ft_create_elem.c, ft_list.h
+Funciones autorizadas:malloc
+• Crea una funciónft_create_elem que genere un elemento nuevo de tipot_list.
+• La función tendrá que asignardata al parámetro proporcionado ynext a NULL.
+• El prototipo de la función deberá ser el siguiente:
+t_list *ft_create_elem( void *data);
+9
+--- PAGINA 11 ---
+Capítulo V
+Ejercicio 01 : ft_list_push_front
+Ejercicio: 01
+ft_list_push_front
+Directorio de entrega:ex01/
+Archivos a entregar:ft_list_push_front.c, ft_list.h
+Funciones autorizadas:ft_create_elem
+• Crea una función ft_list_push_front que añada al principio de la lista un ele-
+mento nuevo de tipot_list.
+• La función tendrá que asignardata al parámetro proporcionado.
+• La función actualizará, si es preciso, el puntero al principio de la lista.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_push_front(t_list **begin_list, void *data);
+10
+--- PAGINA 12 ---
+Capítulo VI
+Ejercicio 02 : ft_list_size
+Ejercicio: 02
+ft_list_size
+Directorio de entrega:ex02/
+Archivos a entregar:ft_list_size.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una funciónft_list_size que devuelva el número de elementos de la lista.
+• El prototipo de la función deberá ser el siguiente:
+int ft_list_size(t_list *begin_list);
+11
+--- PAGINA 13 ---
+Capítulo VII
+Ejercicio 03 : ft_list_last
+Ejercicio: 03
+ft_list_last
+Directorio de entrega:ex03/
+Archivos a entregar:ft_list_last.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una funciónft_list_last que devuelva el último elemento de la lista.
+• El prototipo de la función deberá ser el siguiente:
+t_list *ft_list_last(t_list *begin_list);
+12
+--- PAGINA 14 ---
+Capítulo VIII
+Ejercicio 04 : ft_list_push_back
+Ejercicio: 04
+ft_list_push_back
+Directorio de entrega:ex04/
+Archivos a entregar:ft_list_push_back.c, ft_list.h
+Funciones autorizadas:ft_create_elem
+• Crea una función ft_list_push_back que añada al final de la lista un elemento
+nuevo de tipot_list.
+• La función tendrá que asignardata al parámetro proporcionado.
+• La función actualizará, si es preciso, el puntero al principio de la lista.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_push_back(t_list **begin_list, void *data);
+13
+--- PAGINA 15 ---
+Capítulo IX
+Ejercicio 05 : ft_list_push_strs
+Ejercicio: 05
+ft_list_push_strs
+Directorio de entrega:ex05/
+Archivos a entregar:ft_list_push_strs.c, ft_list.h
+Funciones autorizadas:ft_create_elem
+• Crea una funciónft_list_push_strs que genere una lista nueva e introduzca en
+ella las cadenas de caracteres apuntadas por los elementos de la tablastrs.
+• size es el tamaño destrs
+• El primer elemento de la tabla se encontrará al final de la lista.
+• Se devolverá la dirección del primer elemento de la lista.
+• El prototipo de la función deberá ser el siguiente:
+t_list *ft_list_push_strs( int size, char **strs);
+14
+--- PAGINA 16 ---
+Capítulo X
+Ejercicio 06 : ft_list_clear
+Ejercicio: 06
+ft_list_clear
+Directorio de entrega:ex06/
+Archivos a entregar:ft_list_clear.c, ft_list.h
+Funciones autorizadas:free
+• Crea una funciónft_list_clear que retire y libere todos los elementos de la lista.
+• También tendrán que liberarse todos losdata usando free_fct.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_clear(t_list *begin_list, void (*free_fct)(void *));
+15
+--- PAGINA 17 ---
+Capítulo XI
+Ejercicio 07 : ft_list_at
+Ejercicio: 07
+ft_list_at
+Directorio de entrega:ex07/
+Archivos a entregar:ft_list_at.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una funciónft_list_at que devuelva el n-ésimo elemento de la lista, sabiendo
+que el primer elemento es el elemento 0.
+• En caso de error, se devolverá un puntero nulo.
+• El prototipo de la función deberá ser el siguiente:
+t_list *ft_list_at(t_list *begin_list, unsigned int nbr);
+16
+--- PAGINA 18 ---
+Capítulo XII
+Ejercicio 08 : ft_list_reverse
+Ejercicio: 08
+ft_list_reverse
+Directorio de entrega:ex08/
+Archivos a entregar:ft_list_reverse.c
+Funciones autorizadas:Ninguna
+• Crea una función ft_list_reverse que invierta el orden de los elementos de la
+lista. El valor de cada elemento debe mantenerse igual.
+• Atención, en esta función utilizaremos nuestro propioft_list.h.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_reverse(t_list **begin_list);
+17
+--- PAGINA 19 ---
+Capítulo XIII
+Ejercicio 09 : ft_list_foreach
+Ejercicio: 09
+ft_list_foreach
+Directorio de entrega:ex09/
+Archivos a entregar:ft_list_foreach.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una funciónft_list_foreach que aplique una función pasada como paráme-
+tro al valor incluido en cada elemento de la lista.
+• Se debe aplicarf en el orden de los elementos de la lista.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_foreach(t_list *begin_list, void (*f)(void *));
+• La función apuntada porf será utilizada de la siguiente forma:
+(*f)(list_ptr->data);
+18
+--- PAGINA 20 ---
+Capítulo XIV
+Ejercicio 10 : ft_list_foreach_if
+Ejercicio: 10
+ft_list_foreach_if
+Directorio de entrega:ex10/
+Archivos a entregar:ft_list_foreach_if.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una funciónft_list_foreach_if que aplique una función pasada como pa-
+rámetro al valor incluido en algunos elementos de la lista.
+• Solo se aplicará f a los elementos que, al ser pasados como argumento acmp con
+data_ref, hagan quecmp devuelva 0.
+• Se debe aplicarf en el orden de los elementos de la lista.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_foreach_if(t_list *begin_list, void (*f)(void *),
+void *data_ref, int (*cmp)(void *, void *));
+• Las funciones apuntadas porf y por cmp serán utilizadas de la siguiente forma:
+(*f)(list_ptr->data);
+(*cmp)(list_ptr->data, data_ref);
+La función cmp podría ser, por ejemplo, ft_strcmp...
+19
+--- PAGINA 21 ---
+Capítulo XV
+Ejercicio 11 : ft_list_find
+Ejercicio: 11
+ft_list_find
+Directorio de entrega:ex11/
+Archivos a entregar:ft_list_find.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Creaunafunción ft_list_findquedevuelvaladireccióndelprimerelementocuyos
+datos, cuando se los compare condata_ref usando cmp, hagan que cmp devuelva
+0.
+• El prototipo de la función deberá ser el siguiente:
+t_list *ft_list_find(t_list *begin_list, void *data_ref, int (*cmp)());
+• La función apuntada porcmp será utilizada de la siguiente forma:
+(*cmp)(list_ptr->data, data_ref);
+20
+--- PAGINA 22 ---
+Capítulo XVI
+Ejercicio 12 : ft_list_remove_if
+Ejercicio: 12
+ft_list_remove_if
+Directorio de entrega:ex12/
+Archivos a entregar:ft_list_remove_if.c, ft_list.h
+Funciones autorizadas:free
+• Crea una función ft_list_remove_if que borre de la lista todos los elementos
+cuyos datos, cuando se los compare con data_ref usando cmp, hagan que cmp
+devuelva 0.
+• Los data del elemento borrado deberán liberarse usandofree_fct.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_remove_if(t_list **begin_list, void *data_ref,
+int (*cmp)(), void (*free_fct)(void *));
+• Las funciones apuntadas porfree_fct y por cmp serán utilizadas de la siguiente
+forma:
+(*cmp)(list_ptr->data, data_ref);
+(*free_fct)(list_ptr->data);
+21
+--- PAGINA 23 ---
+Capítulo XVII
+Ejercicio 13 : ft_list_merge
+Ejercicio: 13
+ft_list_merge
+Directorio de entrega:ex13/
+Archivos a entregar:ft_list_merge.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una funciónft_list_merge que coloque los elementos de una listabegin2 al
+final de otra listabegin1.
+• No se permite la creación de elementos.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_merge(t_list **begin_list1, t_list *begin_list2);
+22
+--- PAGINA 24 ---
+Capítulo XVIII
+Ejercicio 14 : ft_list_sort
+Ejercicio: 14
+ft_list_sort
+Directorio de entrega:ex14/
+Archivos a entregar:ft_list_sort.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una función ft_list_sort que ordene de forma creciente el contenido de la
+lista, comparando dos elementos mediante una función de comparación de datos.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_sort(t_list **begin_list, int (*cmp)());
+• La función apuntada porcmp será utilizada de la siguiente forma:
+(*cmp)(list_ptr->data, list_other_ptr->data);
+La función cmp podría ser, por ejemplo, ft_strcmp.
+23
+--- PAGINA 25 ---
+Capítulo XIX
+Ejercicio 15 : ft_list_reverse_fun
+Ejercicio: 15
+ft_list_reverse_fun
+Directorio de entrega:ex15/
+Archivos a entregar:ft_list_reverse_fun.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una funciónft_list_reverse_fun que invierta el orden de los elementos de
+la lista.
+• El prototipo de la función deberá ser el siguiente:
+void ft_list_reverse_fun(t_list *begin_list);
+24
+--- PAGINA 26 ---
+Capítulo XX
+Ejercicio 16 : ft_sorted_list_insert
+Ejercicio: 16
+ft_sorted_list_insert
+Directorio de entrega:ex16/
+Archivos a entregar:ft_sorted_list_insert.c, ft_list.h
+Funciones autorizadas:ft_create_elem
+• Crea una funciónft_sorted_list_insert que genere un elemento nuevo y lo in-
+serte en una lista ordenada de tal modo que la lista quede en orden creciente.
+• El prototipo de la función deberá ser el siguiente:
+void ft_sorted_list_insert(t_list **begin_list, void *data, int (*cmp)());
+• La función apuntada porcmp será utilizada de la siguiente forma:
+(*cmp)(list_ptr->data, list_other_ptr->data);
+25
+--- PAGINA 27 ---
+Capítulo XXI
+Ejercicio 17 : ft_sorted_list_merge
+Ejercicio: 17
+ft_sorted_list_merge
+Directorio de entrega:ex17/
+Archivos a entregar:ft_sorted_list_merge.c, ft_list.h
+Funciones autorizadas:Ninguna
+• Crea una función ft_sorted_list_merge que integre los elementos de una lista
+ordenada begin2 dentro de otra lista ordenadabegin1, de tal modo que la lista
+begin1 quede en orden creciente.
+• El prototipo de la función deberá ser el siguiente:
+void ft_sorted_list_merge(t_list **begin_list1, t_list *begin_list2, int (*cmp)());
+• La función apuntada porcmp será utilizada de la siguiente forma:
+(*cmp)(list_ptr->data, list_other_ptr->data);
+26
+--- PAGINA 28 ---
+Capítulo XXII
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado en el repositorio será evaluado durante la evaluación. No dudes en comprobar varias
+veces los nombres de los archivos para verificar que sean correctos.
+Recuerda que solo debes entregar los archivos indicados en las
+instrucciones del proyecto.
+27

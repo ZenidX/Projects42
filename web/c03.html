@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 03 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html" class="active">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 03</h1>
+<p class="sub">Comparar y concatenar cadenas. Se reimplementan <code>strcmp</code>,
+<code>strncmp</code>, <code>strcat</code>, <code>strncat</code>, <code>strstr</code> y
+<code>strlcat</code>. 6 ejercicios (ex00–ex05); todos con <em>funciones autorizadas: ninguna</em>.</p>
+
+<div class="trasfondo"><b>El contrato de <code>strcmp</code></b> — El hilo conductor del módulo.
+Comparar dos cadenas no es «¿son iguales?» sino «¿cuál va antes?». El contrato de la libc es preciso:
+se recorren ambas <strong>byte a byte</strong> hasta el primer par que difiere, y se devuelve la
+<em>resta</em> de esos dos bytes (interpretados como <code>unsigned char</code>). El signo del
+resultado es lo único que importa: negativo si <code>s1</code> va antes, positivo si va después, 0 si
+son idénticas. De ahí sale el <strong>orden lexicográfico</strong> —el del diccionario, pero según
+ASCII— sobre el que se construyen <code>sort</code>, los índices y media informática. Todo el módulo
+gira en torno a leer dos punteros en paralelo y decidir con el primer byte que no coincide.</p></div>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_strcmp</a></li>
+  <li><a href="#ex01">ex01 — ft_strncmp</a></li>
+  <li><a href="#ex02">ex02 — ft_strcat</a></li>
+  <li><a href="#ex03">ex03 — ft_strncat</a></li>
+  <li><a href="#ex04">ex04 — ft_strstr</a></li>
+  <li><a href="#ex05">ex05 — ft_strlcat</a></li>
+</ul>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_strcmp</h2>
+<div class="meta"><span>Prototipo: <b>int ft_strcmp(char *s1, char *s2)</b></span></div>
+<p>Reproducir <code>strcmp</code>: comparar dos cadenas y devolver un entero negativo, cero o positivo.</p>
+<pre><code>int	ft_strcmp(char *s1, char *s2)
+{
+	int	i;
+
+	i = 0;
+	while (s1[i] &amp;&amp; s1[i] == s2[i])
+		i++;
+	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
+}</code></pre>
+<p>El bucle avanza mientras no se acabe <code>s1</code> <em>y</em> los caracteres coincidan. Se para
+en dos casos: se encontró una diferencia, o se llegó al final de <code>s1</code>. En ambos, la resta
+<code>s1[i] - s2[i]</code> da la respuesta correcta: si son iguales hasta el <code>\0</code> de las
+dos, esa resta es 0. El casting a <code>unsigned char</code> es parte del contrato: garantiza que la
+comparación trate los bytes como 0–255, igual que la <code>strcmp</code> real.</p>
+<div class="trasfondo"><b>Concepto — ¿por qué <code>unsigned char</code>?</b>. En muchos sistemas
+<code>char</code> es <em>con signo</em>, así que un byte &gt; 127 valdría negativo. Sin el cast,
+comparar un carácter «normal» con uno acentuado o binario daría un signo equivocado y el orden
+saldría del revés. Es un detalle diminuto que separa una <code>strcmp</code> «que parece funcionar»
+de una correcta: la Moulinette prueba exactamente estos bordes.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_strncmp</h2>
+<div class="meta"><span>Prototipo: <b>int ft_strncmp(char *s1, char *s2, unsigned int n)</b></span></div>
+<p>Como <code>strcmp</code> pero comparando a lo sumo <code>n</code> caracteres.</p>
+<pre><code>int	ft_strncmp(char *s1, char *s2, unsigned int n)
+{
+	unsigned int	i;
+
+	if (n == 0)
+		return (0);
+	i = 0;
+	while (i &lt; n - 1 &amp;&amp; s1[i] &amp;&amp; s1[i] == s2[i])
+		i++;
+	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
+}</code></pre>
+<p>La guarda <code>n == 0</code> al principio no es opcional: como <code>n</code> es
+<code>unsigned</code>, escribir <code>n - 1</code> con <code>n = 0</code> no da −1, sino
+<strong>4294967295</strong> (envuelve por abajo), y el bucle recorrería memoria hasta petar. Con esa
+comparación cubierta, el bucle avanza hasta <code>n − 1</code> y compara ahí el último par.</p>
+<div class="trasfondo"><b>Concepto — el <em>underflow</em> de los sin signo</b>. Los
+<code>unsigned</code> no tienen números negativos: al bajar de 0 dan la vuelta al valor máximo. Es la
+misma trampa que aparece en bucles <code>while (i &gt;= 0)</code> con <code>i</code> sin signo (nunca
+terminan). Aprender a desconfiar de las restas sobre <code>unsigned</code> es una de las lecciones
+duraderas de este ejercicio.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_strcat</h2>
+<div class="meta"><span>Prototipo: <b>char *ft_strcat(char *dest, char *src)</b></span></div>
+<p>Pegar <code>src</code> al final de <code>dest</code> y devolver <code>dest</code>.</p>
+<pre><code>char	*ft_strcat(char *dest, char *src)
+{
+	int	i;
+	int	j;
+
+	i = 0;
+	while (dest[i])
+		i++;
+	j = 0;
+	while (src[j])
+	{
+		dest[i + j] = src[j];
+		j++;
+	}
+	dest[i + j] = '\0';
+	return (dest);
+}</code></pre>
+<p>Dos fases: primero <code>i</code> se planta en el <code>\0</code> de <code>dest</code> (su
+longitud), y luego se copia <code>src</code> a partir de ahí, en <code>dest[i + j]</code>. Al acabar
+hay que volver a poner el terminador, porque hemos sobrescrito el que tenía <code>dest</code>.</p>
+<div class="trasfondo"><b>Concepto — quien concatena, confía</b>. <code>strcat</code> asume que
+<code>dest</code> tiene sitio de sobra para lo que le pegas. No hay comprobación de tamaño: si no
+cabe, escribes fuera del búfer. Es el mismo pecado original que <code>strcpy</code>, y la razón de
+que exista <code>strlcat</code> (ex05). Verlo aquí en su versión «ingenua» hace que la «segura» del
+final del módulo tenga sentido.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_strncat</h2>
+<div class="meta"><span>Prototipo: <b>char *ft_strncat(char *dest, char *src, unsigned int nb)</b></span></div>
+<p>Concatenar como mucho <code>nb</code> caracteres de <code>src</code>.</p>
+<pre><code>char	*ft_strncat(char *dest, char *src, unsigned int nb)
+{
+	unsigned int	i;
+	unsigned int	j;
+
+	i = 0;
+	while (dest[i])
+		i++;
+	j = 0;
+	while (j &lt; nb &amp;&amp; src[j])
+	{
+		dest[i + j] = src[j];
+		j++;
+	}
+	dest[i + j] = '\0';
+	return (dest);
+}</code></pre>
+<p>Idéntico a <code>strcat</code> salvo la guarda extra <code>j &lt; nb</code> en el segundo bucle.
+A diferencia de <code>strncpy</code>, aquí <code>strncat</code> <strong>sí</strong> añade siempre el
+<code>\0</code> final: es un detalle de la especificación que conviene recordar de memoria.</p>
+<div class="trasfondo"><b>Concepto — familias <code>n</code></b>. Las variantes con <code>n</code>
+(<code>strncpy</code>, <code>strncmp</code>, <code>strncat</code>) acotan cuántos bytes tocan, pero
+cada una decide de forma distinta qué hacer con el terminador. No hay una regla uniforme: hay que
+leer el <code>man</code> de cada una. Descubrir esas asimetrías es parte del oficio.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_strstr</h2>
+<div class="meta"><span>Prototipo: <b>char *ft_strstr(char *str, char *to_find)</b></span></div>
+<p>Buscar la primera aparición de <code>to_find</code> dentro de <code>str</code> y devolver un
+puntero a ella (o <code>NULL</code> si no está). Si <code>to_find</code> es vacío, devolver
+<code>str</code>.</p>
+<pre><code>char	*ft_strstr(char *str, char *to_find)
+{
+	int	i;
+	int	j;
+
+	if (!to_find[0])
+		return (str);
+	i = 0;
+	while (str[i])
+	{
+		j = 0;
+		while (str[i + j] &amp;&amp; str[i + j] == to_find[j])
+			j++;
+		if (!to_find[j])
+			return (str + i);
+		i++;
+	}
+	return (0);
+}</code></pre>
+<p>Es una búsqueda de doble bucle: por cada posición <code>i</code> de <code>str</code>, el bucle
+interno intenta casar <code>to_find</code> carácter a carácter. Si el interno llega al
+<code>\0</code> de <code>to_find</code> (<code>!to_find[j]</code>), significa que casó entero, y se
+devuelve el puntero al inicio de la coincidencia, <code>str + i</code>.</p>
+<div class="trasfondo"><b>Concepto — el primer algoritmo «de verdad»</b>. Hasta aquí todo eran
+recorridos lineales; <code>strstr</code> es coincidencia de patrones (<em>pattern matching</em>) en
+su forma más directa, O(n·m). Los algoritmos serios de búsqueda (KMP, Boyer–Moore) optimizan
+justamente este doble bucle. Antes de mejorar algo, hay que saber escribir la versión honesta: eso
+es este ejercicio.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>ft_strlcat</h2>
+<div class="meta"><span>Prototipo: <b>unsigned int ft_strlcat(char *dest, char *src, unsigned int size)</b></span></div>
+<p>La concatenación «segura» de BSD. Añade <code>src</code> a <code>dest</code> sin pasarse de
+<code>size</code>, termina siempre en <code>\0</code>, y devuelve la longitud que habría tenido el
+resultado (útil para detectar truncamiento).</p>
+<pre><code>unsigned int	ft_strlcat(char *dest, char *src, unsigned int size)
+{
+	unsigned int	dlen;
+	unsigned int	slen;
+	unsigned int	i;
+
+	dlen = 0;
+	while (dest[dlen] &amp;&amp; dlen &lt; size)
+		dlen++;
+	slen = 0;
+	while (src[slen])
+		slen++;
+	if (dlen == size)
+		return (size + slen);
+	i = 0;
+	while (src[i] &amp;&amp; dlen + i + 1 &lt; size)
+	{
+		dest[dlen + i] = src[i];
+		i++;
+	}
+	dest[dlen + i] = '\0';
+	return (dlen + slen);
+}</code></pre>
+<p>Primero se mide <code>dest</code> pero <strong>sin pasar de <code>size</code></strong>: si
+<code>dest</code> no tiene <code>\0</code> dentro del búfer, se considera «lleno» y se devuelve
+<code>size + slen</code> sin copiar nada. Si hay sitio, se anexa dejando hueco para el terminador
+(<code>dlen + i + 1 &lt; size</code>). El valor devuelto es <code>dlen + slen</code>: la longitud
+<em>ideal</em>, la haya cabido o no.</p>
+<div class="trasfondo"><b>Concepto — informar del truncamiento</b>. La gracia de <code>strlcat</code>
+sobre <code>strncat</code> es su valor de retorno: comparándolo con <code>size</code>, quien llama
+sabe si se perdieron datos y puede reservar un búfer mayor y reintentar. Es un patrón de diseño de
+API —«di siempre cuánto habrías necesitado»— que reaparece en muchas funciones de sistema
+(<code>snprintf</code>, <code>read</code>…).</div>
+</div>
+
+<footer>42.zenidx.com — C 03 · <a href="c04.html">continuar con C 04 →</a></footer>
+</div>
+</body>
+</html>

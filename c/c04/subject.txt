@@ -1,0 +1,292 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 04
+Resumen: este documento corresponde al enunciado del módulo C 04 de la C Piscine de
+42.
+Versión: 5
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 4
+III. Introducción 7
+IV. Ejercicio 00 : ft_strlen 8
+V. Ejercicio 01 : ft_putstr 9
+VI. Ejercicio 02 : ft_putnbr 10
+VII. Ejercicio 03 : ft_atoi 11
+VIII. Ejercicio 04 : ft_putnbr_base 12
+IX. Ejercicio 05 : ft_atoi_base 14
+X. Entrega y evaluación 15
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• Antes de empezar a hacer los ejercicios deberás registrarte en el proyecto en tu
+intranet. Una vez lo hayas hecho, obtendrás tu repositorio Git en el cual debes
+trabajar.
+• Los ejercicios han sido ordenados del más sencillo al más complejo. Por lo tanto,
+debeshacerlosenordenyasegurartedequeelejercicioescorrectoantesdecontinuar
+con el siguiente.
+• Los ejercicios de Shell se deben ejecutar con/bin/bash.
+• Los ejercicios de C se deben compilar concc y utilizando las flags -Wall -Wextra
+-Werror.
+• Solamente hay que entregar una funciónmain() si lo que se pide es un programa.
+Si se pide una función se puede entregar elmain() comentado con la batería de
+tests que hayas hecho.
+• Los ejercicios de C se deben escribir de acuerdo ala Norma. Puedes encontrarla en
+la intranet, en el icono de la brújula, FAQ, sección 42, apartado General Pedagogy
+como La Norma.
+• Para ayudarte a comprobar si tus ejercicios cumplenla Norma puedes ayudarte de
+norminette - un programa que aplica ciertos requisitos dela Norma a tu código.
+Si tienes archivos o funciones adicionales, también deben cumplir conla Norma.
+• Lee detenidamente los ejemplos. Podrían dar información que no se especifica en el
+enunciado...
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entrega para todos tus ejercicios. Solo el
+trabajo de tu repositorioGit será evaluado.
+• No puedes dejar en tu directorioningún archivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+2
+--- PAGINA 4 ---
+C Piscine C 04
+• La evaluación de este proyecto consta de dos fases. Primero, las personas con las
+que compartes piscina se encargarán de evaluar tus ejercicios. A continuación, serán
+evaluados por un programa que se llamala Moulinette.
+• Tus funciones no deben terminar de forma inesperada (segfault, bus error, double
+free) excepto en el caso de comportamientos indefinidos. Si esto sucede, tu proyecto
+será considerado no funcional y recibirás un0 durante la evaluación.
+• La Moulinette es muy estricta a la hora de evaluar y está completamente automa-
+tizada. Es imposible discutir con ella sobre tu nota. Por lo tanto, debes mantener
+el rigor en tu código para evitar cualquier sorpresa.
+• La Moulinette utiliza norminette para comprobar tus ejercicios, aunque este
+programa no es exhaustivo en la verificacion dela Norma. Durante las evaluaciones
+por parte de las personas de tu Piscina se comprobará quela Norma es correcta.
+Si se incumple el proyecto tendrá una puntuación final de0, aunque norminette
+no indique ningún error.
+• ¿Tienes alguna pregunta? Pregunta a la persona de tu derecha. Si no puede ayu-
+darte, prueba con la persona de tu izquierda.
+• ¡Por Loki, por Freyja! ¡¡Piensa fuerte!!
+Para este módulo, la Norminette debe ser ejecutada con el flag -R
+CheckForbiddenSourceHeader. La Moulinette también lo utilizará.
+3
+--- PAGINA 5 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La Piscina de C es intensa. Es tu primer gran desafío en 42: una inmersión profunda
+en la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas, a través del
+esfuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares .
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante consi-
+derar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construir fundamentos sólidos sin atajos.
+☛ Desarollar de forma real habilidades técnicas y transversales.
+☛ Experimentar el aprendizaje entre pares de forma real, empezar a aprender a apren-
+der y a resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprender sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas de mitigación para evitar errores comunes.
+4
+--- PAGINA 6 ---
+C Piscine C 04
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Aprende sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener Una base sólida técnica y en programación.
+• Comprender por qué y cómo la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí, sabemos que la IA existe y que puede resolver tus proyectos, pero estás aquí
+para aprender. Te recomendamos que inviertas 26 días de aprendizaje de calidad
+para resolver los retos que hemos pensado para ti.
+• Aprender en 42 no tiene nada que ver con saber la respuesta. En 42 aprendemos
+desarrollando la capacidad para encontrarla. La IA te dará la respuesta directa,
+lo que impide que desarrolles tu propio razonamiento. Razonar requiere tiempo,
+esfuerzo y equivocare muchas veces.
+• Recuerda que durante los exámenes no tendrás acceso a la IA ni a internet. Te
+darás cuenta rápidamente si has confiado demasiado en la IA durante tu proceso de
+aprendizaje. Te vas a enfrentar a una hoja en blanco donde vas a tener que escribir
+tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades interpersonales y tu capacidad de pensar de forma diferente. Eso es
+mucho más valioso que simplemente chatear con un bot. Así que, ¡que no te supere
+la timidez!: ¡habla, haz preguntas y aprende con el resto de la piscina!
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+5
+--- PAGINA 7 ---
+C Piscine C 04
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamosdurante10minutosy,derepente,todoencaja.Loentiendo.Noentiendoalgo
+concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona de la piscina
+cómo lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+6
+--- PAGINA 8 ---
+Capítulo III
+Introducción
+He aquí la letra de los créditos deBob Esponja:
+¿Estáis listos chicos?
+¡Sííí capitán!
+Más fuerteee...
+¡Sííí capitán!
+Uuuhhhh...
+Él vive en la piña debajo del mar
+¡Bob Esponja!
+Su cuerpo amarillo absorbe sin más
+¡Bob Esponja!
+El mejor amigo que puedes tener
+¡Bob Esponja!
+Igual que los peces él puede flotar
+¡Bob Esponja!
+¿Listos?
+¡Bob Esponja! ¡Bob Esponja!
+¡Bob Esponja ya llegóoo!
+Desgraciadamente, el enunciado de este proyecto no tiene nada que ver con Bob
+Esponja.
+7
+--- PAGINA 9 ---
+Capítulo IV
+Ejercicio 00 : ft_strlen
+Ejercicio: 00
+ft_strlen
+Directorio de entrega:ex00/
+Archivos a entregar:ft_strlen.c
+Funciones autorizadas:Ninguna
+• Escribe una función que cuente y devuelva el número de caracteres de una cadena
+de caracteres (string).
+• El prototipo de la función deberá ser el siguiente:
+int ft_strlen(char *str);
+8
+--- PAGINA 10 ---
+Capítulo V
+Ejercicio 01 : ft_putstr
+Ejercicio: 01
+ft_putstr
+Directorio de entrega:ex01/
+Archivos a entregar:ft_putstr.c
+Funciones autorizadas:write
+• Escribe una función que imprima por pantalla una string.
+• El prototipo de la función deberá ser el siguiente:
+void ft_putstr(char *str);
+9
+--- PAGINA 11 ---
+Capítulo VI
+Ejercicio 02 : ft_putnbr
+Ejercicio: 02
+ft_putnbr
+Directorio de entrega:ex02/
+Archivos a entregar:ft_putnbr.c
+Funciones autorizadas:write
+• Escribe una función que muestre un número recibido como parámetro. La función
+deberá ser capaz de procesar todos los valores posibles en una variable de tipoint.
+• El prototipo de la función deberá ser el siguiente:
+void ft_putnbr(int nb);
+• Por ejemplo:
+◦ ft_putnbr(42) muestra “42”.
+10
+--- PAGINA 12 ---
+Capítulo VII
+Ejercicio 03 : ft_atoi
+Ejercicio: 03
+ft_atoi
+Directorio de entrega:ex03/
+Archivos a entregar:ft_atoi.c
+Funciones autorizadas:Ninguna
+• Escribe una función que convierta la parte inicial de la cadena de caracteres a la que
+apunta str en un valor entero de tipo int.
+• La cadena de caracteres puede empezar con un número arbitrario de espacios (tal y como
+lo defineisspace(3))
+• La cadena de caracteres puede contener un número arbitrario de signos“+” y de signos
+“-”. Dependiendo de si el número de signos“-” es par o impar, el número resultante será
+positivo o negativo.
+• A continuación, la función deberá procesar cualquier secuencia de dígitos consecutivos en
+base 10.
+• La función leerá los caracteres de la cadena hasta que alcance el primer carácter que no
+sea un dígito, devolviendo el número encontrado hasta ese momento.
+• No es necesario manejar desbordamiento (overflow) o subdesbordamiento (underflow). En
+estos casos, el valor devuelto por la función queda indefinido.
+• Ejemplo de Resultado :
+$>./a.out " ---+--+1234ab567"
+-1234
+• El prototipo de la función deberá ser el siguiente:
+int ft_atoi(char *str);
+11
+--- PAGINA 13 ---
+Capítulo VIII
+Ejercicio 04 : ft_putnbr_base
+Ejercicio: 04
+ft_putnbr_base
+Directorio de entrega:ex04/
+Archivos a entregar:ft_putnbr_base.c
+Funciones autorizadas:write
+• Escribe una función que muestre en la terminal un número en un sistema de base
+específico.
+• El número se proporciona como unint y la base se representa como unacadena
+de caracteres.
+• Labaseestácompuestaportodoslossímbolosutilizadospararepresentarelnúmero.
+◦ 0123456789 es el sistema de base comúnmente utilizado para representar nú-
+meros decimales.
+◦ 01 es un sistema de base binaria.
+◦ 0123456789ABCDEF es un sistema de base hexadecimal.
+◦ poneyguay es un sistema de base octal.
+• La función debe gestionar números negativos.
+• Si se pasa un parámetro inválido, la función no debe resultados.
+Ejemplos de parámetros inválidos pueden ser:
+◦ La base está vacía o contiene un solo carácter.
+◦ La base contiene caracteres duplicados.
+◦ La base contiene los caracteres“+” o “-”.
+12
+--- PAGINA 14 ---
+C Piscine C 04
+• El prototipo de la función deberá ser el siguiente:
+void ft_putnbr_base(int nbr, char *base);
+13
+--- PAGINA 15 ---
+Capítulo IX
+Ejercicio 05 : ft_atoi_base
+Ejercicio: 05
+ft_atoi_base
+Directorio de entrega:ex05/
+Archivos a entregar:ft_atoi_base.c
+Funciones autorizadas:Ninguna
+• Escribe una función que convierta la parte inicial de la cadena de caracteres a la
+que apuntastr en un valor entero de tipo int.
+• str está en una base específica, pasada como segundo argumento de la función.
+• Exceptuando el sistema de base, la función debe comportarse exactamente como
+ft_atoi.
+• Si un parámetro es inválido, la función debe devolver 0.
+Ejemplos de parámetros inválidos pueden ser:
+◦ La base está vacía o contiene un solo carácter.
+◦ La base contiene caracteres duplicados.
+◦ La base contiene los caracteres“+”, “-” o espacios.
+• El prototipo de la función deberá ser el siguiente:
+int ft_atoi_base(char *str, char *base);
+14
+--- PAGINA 16 ---
+Capítulo X
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado dentro del repositorio será evaluado durante la evaluación. No dudes en comprobar
+varias veces los nombres de los archivos para verificar que sean correctos.
+Recuerda que solo debes entregar los archivos indicados en las
+instrucciones del proyecto.
+15

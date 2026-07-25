@@ -1,3 +1,5 @@
 # claves SSH generadas para ex03 — NUNCA al repo
 _keys/
 .claude/
+__pycache__/
+*.pyc

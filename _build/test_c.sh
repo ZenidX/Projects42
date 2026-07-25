@@ -2,7 +2,7 @@
 # Compila cada ejercicio de C00/C01 con cc -Wall -Wextra -Werror + un main de
 # test, ejecuta y compara salidas/resultados.
 set -u
-C=/mnt/e/WORK/Xavi/Projects42/c
+C=${C_ROOT:-/mnt/e/WORK/Xavi/Projects42/c}
 TMP=$(mktemp -d)
 PASS=0; FAIL=0
 ok()  { echo "PASS: $1"; PASS=$((PASS+1)); }
@@ -110,9 +110,24 @@ int ft_strlen(char *s); int main(void){printf("%d %d",ft_strlen(""),ft_strlen("h
 
 t "c01/ex07 rev_int_tab" c01/ex07/ft_rev_int_tab.c \
   '#include <stdio.h>
-void ft_rev_int_tab(int *t, int s); int main(void){int t[5]={1,2,3,4,5};int u[4]={9,8,7,6};int i;
-ft_rev_int_tab(t,5);ft_rev_int_tab(u,4);
-for(i=0;i<5;i++)printf("%d",t[i]);printf(" ");for(i=0;i<4;i++)printf("%d",u[i]);return 0;}' "54321 6789"
+void ft_rev_int_tab(int *t, int s);
+int main(void)
+{
+	int	t[5] = {1, 2, 3, 4, 5};
+	int	u[4] = {9, 8, 7, 6};
+	int	i;
+
+	ft_rev_int_tab(t, 5);
+	ft_rev_int_tab(u, 4);
+	i = 0;
+	while (i < 5)
+		printf("%d", t[i++]);
+	printf(" ");
+	i = 0;
+	while (i < 4)
+		printf("%d", u[i++]);
+	return (0);
+}' "54321 6789"
 
 t "c01/ex08 sort_int_tab" c01/ex08/ft_sort_int_tab.c \
   '#include <stdio.h>

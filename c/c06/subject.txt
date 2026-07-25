@@ -1,0 +1,257 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 06
+Resumen: este documento corresponde al enunciado del módulo C 06 de la C Piscine de
+42.
+Versión: 8
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 4
+III. Introducción 7
+IV. Ejercicio 00 : ft_print_program_name 8
+V. Ejercicio 01 : ft_print_params 9
+VI. Ejercicio 02 : ft_rev_params 10
+VII. Ejercicio 03 : ft_sort_params 11
+VIII. Entrega y evaluación 12
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• Antes de empezar a hacer los ejercicios deberás registrarte en el proyecto en tu
+intranet. Una vez lo hayas hecho, obtendrás tu repositorio Git. Ahí es donde debes
+trabajar.
+• Los ejercicios han sido ordenados del más sencillo al más complejo. Por lo tanto,
+debeshacerlosenordenyasegurartedequeelejercicioescorrectoantesdecontinuar
+con el siguiente.
+• Los ejercicios de Shell se deben ejecutar con/bin/bash.
+• Los ejercicios de C se deben compilar concc y utilizando las flags -Wall -Wextra
+-Werror.
+• Solamente hay que entregar una funciónmain() si lo que se pide es un programa.
+Si se pide una función se puede entregar elmain() comentado con la batería de
+tests que hayas hecho.
+• Los ejercicios de C se deben escribir de acuerdo ala Norma. Puedes encontrarla en
+la intranet, en el icono de la brújula, FAQ, sección 42, apartado General Pedagogy
+como La Norma .
+• Para ayudarte a comprobar si tus ejercicios cumplenla Norma puedes ayudarte de
+norminette - un programa que aplica ciertos requisitos dela Norma a tu código.
+Si tienes archivos o funciones adicionales, también deben cumplir conla Norma.
+• Lee detenidamente los ejemplos. Podrían dar información que no se especifica en el
+enunciado...
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entrega para todos tus ejercicios. Solo el
+trabajo de tu repositorioGit será evaluado.
+• No puedes dejar en tu directorioningún archivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+2
+--- PAGINA 4 ---
+C Piscine C 06
+• La evaluación de este proyecto consta de dos fases. Primero, las personas con las
+que compartes piscina se encargarán de evaluar tus ejercicios. A continuación, serán
+evaluados por un programa que se llamala Moulinette.
+• Tus funciones no deben terminar de forma inesperada (segfault, bus error, double
+free) excepto en el caso de comportamientos indefinidos. Si esto sucede, tu proyecto
+será considerado no funcional y recibirás un0 durante la evaluación.
+• La Moulinette es muy estricta a la hora de evaluar y está completamente automa-
+tizada. Es imposible discutir con ella sobre tu nota. Por lo tanto, debes mantener
+el rigor en tu código para evitar cualquier sorpresa.
+• La Moulinette utiliza norminette para comprobar tus ejercicios, aunque este
+programa no es exhaustivo en la verificacion dela Norma. Durante las evaluaciones
+por parte de las personas de tu Piscina se comprobará quela Norma es correcta.
+Si se incumple, el proyecto tendrá una puntuación final de0, aunque norminette
+no indique ningún error.
+• ¿Tienes alguna pregunta? Pregunta a la persona de tu derecha. Si no puede ayu-
+darte, prueba con la persona de tu izquierda.
+• ¡Por Loki, por Freyja! ¡¡Piensa fuerte!!
+No te olvides de añadir el encabezado estándar de 42 en cada uno
+de tus archivos .c/.h. ¡La norminette siempre comprobará que el
+encabezado esté presente!
+Ejecuta norminette con el flag -R CheckForbiddenSourceHeader .
+Moulinette también la utilizará.
+3
+--- PAGINA 5 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La C Piscine es intensa. Es tu primer gran desafío en 42: una inmersión profunda en
+la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas a través del es-
+fuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares .
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante consi-
+derar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construye fundamentos sólidos sin atajos.
+☛ Desarolla de forma real habilidades técnicas y transversales.
+☛ Experimenta el aprendizaje entre pares de forma inmersiva , empezando por apren-
+der a aprender y por resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprende sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas que neutralicen evitar errores comunes.
+4
+--- PAGINA 6 ---
+C Piscine C 06
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Infórmate sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener una base adecuada en tecnología y programación.
+• Comprender cómo y por qué la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí,sabemosquelaIAexiste.Ysí,tambiénsabemosquepuederesolvertusproyectos.
+Peroestásaquíparaaprender,noparademostrarquelaIAhaaprendido.Nopierdas
+tiempo solo para demostrar que la IA puede resolver un problema determinado.
+• Aprender en 42 no tiene nada que ver con saber una respuesta, sino con desarrollar
+las habilidades para encontrarla. La IA te dará la respuesta directa, lo que impide
+quedesarrollestupropiorazonamiento.Razonarrequieretiempo,esfuerzoycometer
+errores. Nadie dijo que el proceso iba a ser fácil.
+• Ten en cuenta que, durante los exámenes, no tendrás acceso a la IA (no tenemos
+internetnidispositivosinteligentes).Tevasadarcuentarápidamentesihasconfiado
+demasiadoenlaIAdurantetuprocesodeaprendizajedelaformamásdirecta:frente
+a una hoja en blanco donde vas a tener que escribir tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades transversales y tu capacidad de pensar de forma diferente. Eso es mucho
+más valioso que sentarte a chatear con un bot. Así que, ¡sin miedo! Habla, haz
+preguntas y aprende con el resto de personas en tu Piscina.
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+5
+--- PAGINA 7 ---
+C Piscine C 06
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamos durante 10 minutos y, de repente, todo encaja. Lo entiendo. No entiendo
+algo concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona cómo
+lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+6
+--- PAGINA 8 ---
+Capítulo III
+Introducción
+Diálogo sacado de la películaEl gran Lebowski :
+Walter: Lo siento Smokey, has pisado la raya: es falta.
+Smokey: ¡Una mierda! Apúntame ocho, Nota...
+Walter: Disculpa, apunta un cero, siguiente tú.
+Smokey: Y una mierda Walter, apúntame un ocho Nota...
+Walter: Smokey esto no es Vietnam, en los bolos hay reglas...
+El Nota: Eh, Walter, venga hombre, es Smokey tío: pisó un poquito con el dedo
+gordo, vale... ¡No es más que un juego, tío!
+Walter: Estamos jugando una liga, aquí se decide quién pasa a la siguiente ronda,
+¿me equivoco?
+Smokey: Sí, pero tampoco he...
+Walter: ¿Me equivoco?
+Smokey: Ya, pero no he pisado... Pásame el marcador, Nota... me voy a
+apuntar un ocho.
+Walter: [Saca su pistola] Smokey, amigo, estás a punto de conocer el dolor...
+El Nota: ¡No te pases, tío!
+Walter: [Amenazante] ¡Como te apuntes un ocho, vas a conocer el dolor!
+Smokey: Tío, yo no...
+Walter: ¡Vas a conocer el dolor!
+Smokey: ¿Nota? Este tío es tu compañero...
+Walter: ¿Es que todo el mundo se ha VUELTO LOCO? [Se levanta]
+¿ES QUE SOY EL ÚNICO POR AQUÍ QUE NO SE CAGA EN LAS REGLAS?
+¡APUNTA UN CERO!
+El Nota: Tío, están llamando a la pasma, guarda la pipa...
+Walter: [Apunta su pistola sobre Smokey] ¡APUNTA UN CERO!
+El Nota: Walter, guarda la pipa...
+Smokey: ...
+El Nota: Walter...
+Walter: [Arma su pistola] ¿CREÉIS QUE ESTOY BROMEANDO?
+¡APUNTA UN CERO!
+Smokey: De acuerdo, me he puesto un cero... ¿Ya estás contento? ¡Capullo!
+Walter: [Se tranquiliza]... Una liga es una liga.
+7
+--- PAGINA 9 ---
+Capítulo IV
+Ejercicio 00 :
+ft_print_program_name
+Ejercicio: 00
+ft_print_program_name
+Directorio de entrega: ex00/
+Archivos a entregar: ft_print_program_name.c
+Funciones autorizadas: write
+• Aquí estamos hablando de un programa, por lo tanto tendrás que tener una función
+main en tu archivo.c.
+• Escribe un programa que muestre el nombre del programa seguido de un salto de
+línea.
+• Ejemplo:
+$>./a.out | cat -e
+./a.out$
+$>
+8
+--- PAGINA 10 ---
+Capítulo V
+Ejercicio 01 : ft_print_params
+Ejercicio: 01
+ft_print_params
+Directorio de entrega: ex01/
+Archivos a entregar: ft_print_params.c
+Funciones autorizadas: write
+• Dado que en este ejercicio se te pide un programa, tu archivo.c deberá contener
+una función main.
+• Escribe un programa que muestre los argumentos recibidos en la línea de comandos.
+• El programa deberá mostrar cada agumento en una linea separada y en el mismo
+orden que en la línea de comandos.
+• Debes mostrar todos los argumentos salvoargv[0].
+• Ejemplo:
+$>./a.out test1 test2 test3 | cat -e
+test1$
+test2$
+test3$
+$>
+9
+--- PAGINA 11 ---
+Capítulo VI
+Ejercicio 02 : ft_rev_params
+Ejercicio: 02
+ft_rev_params
+Directorio de entrega: ex02/
+Archivos a entregar: ft_rev_params.c
+Funciones autorizadas: write
+• Dado que en este ejercicio se te pide un programa, tu archivo.c deberá contener
+una función main.
+• Escribe un programa que muestre los argumentos recibidos en la línea de comandos.
+• El programa deberá mostrar cada agumento en una linea separada y en orden
+inverso al de la línea de comandos.
+• Debe mostrar todos los argumentos salvoargv[0].
+10
+--- PAGINA 12 ---
+Capítulo VII
+Ejercicio 03 : ft_sort_params
+Ejercicio: 03
+ft_sort_params
+Directorio de entrega: ex03/
+Archivos a entregar: ft_sort_params.c
+Funciones autorizadas: write
+• Dado que en este ejercicio se te pide un programa, tu archivo.c deberá contener
+una función main.
+• Escribe un programa que muestre los argumentos recibidos en la línea de comandos,
+clasificados según el orden ASCII.
+• Debe mostrar todos los argumentos, salvoargv[0].
+• Los argumentos deberán estar separados por un salto de linea.
+11
+--- PAGINA 13 ---
+Capítulo VIII
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado en el repositorio será evaluado durante la defensa. No dudes en comprobar varias
+veces los nombres de los archivos para verificar que sean correctos.
+Sólo necesitas entregar los archivos requeridos en el enunciado de
+este proyecto.
+12

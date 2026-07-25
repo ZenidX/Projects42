@@ -1,0 +1,402 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 02
+Resumen: este documento corresponde al enunciado del proyecto C 02 de la C Piscine
+de 42.
+Versión: 6
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 4
+III. Introducción 7
+IV. Ejercicio 00 : ft_strcpy 9
+V. Ejercicio 01 : ft_strncpy 10
+VI. Ejercicio 02 : ft_str_is_alpha 11
+VII. Ejercicio 03 : ft_str_is_numeric 12
+VIII. Ejercicio 04 : ft_str_is_lowercase 13
+IX. Ejercicio 05 : ft_str_is_uppercase 14
+X. Ejercicio 06 : ft_str_is_printable 15
+XI. Ejercicio 07 : ft_strupcase 16
+XII. Ejercicio 08 : ft_strlowcase 17
+XIII. Ejercicio 09 : ft_strcapitalize 18
+XIV. Ejercicio 10 : ft_strlcpy 19
+XV. Ejercicio 11 : ft_putstr_non_printable 20
+XVI. Ejercicio 12 : ft_print_memory 21
+XVII. Entrega y evaluación 23
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• Antes de empezar a hacer los ejercicios deberás registrarte en el proyecto en tu
+intranet. Una vez lo hayas hecho, obtendrás tu repositorio Git en el cual debes
+trabajar.
+• Los ejercicios han sido ordenados del más sencillo al más complejo. Por lo tanto,
+debeshacerlosenordenyasegurartedequeelejercicioescorrectoantesdecontinuar
+con el siguiente.
+• Los ejercicios de Shell se deben ejecutar con/bin/bash.
+• Los ejercicios de C se deben compilar concc y utilizando las flags -Wall -Wextra
+-Werror.
+• Solamente hay que entregar una funciónmain() si lo que se pide es un programa.
+Si se pide una función se puede entregar elmain() comentado con la batería de
+tests que hayas hecho.
+• Los ejercicios de C se deben escribir de acuerdo ala Norma. Puedes encontrarla en
+la intranet, en el icono de la brújula, FAQ, sección 42, apartado General Pedagogy
+como La Norma .
+• Para ayudarte a comprobar si tus ejercicios cumplenla Norma puedes ayudarte de
+norminette - un programa que aplica ciertos requisitos dela Norma a tu código.
+Si tienes archivos o funciones adicionales, también deben cumplir conla Norma.
+• Lee detenidamente los ejemplos. Podrían dar información que no se especifica en el
+enunciado...
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entrega para todos tus ejercicios. Solo el
+trabajo de tu repositorioGit será evaluado.
+• No puedes dejar en tu directorioningún archivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+2
+--- PAGINA 4 ---
+C Piscine C 02
+• La evaluación de este proyecto consta de dos fases. Primero, las personas con las
+que compartes piscina se encargarán de evaluar tus ejercicios. A continuación, serán
+evaluados por un programa que se llamala Moulinette.
+• Tus funciones no deben terminar de forma inesperada (segfault, bus error, double
+free) excepto en el caso de comportamientos indefinidos. Si esto sucede, tu proyecto
+será considerado no funcional y recibirás un0 durante la evaluación.
+• La Moulinette es muy estricta a la hora de evaluar y está completamente autom-
+atizada. Es imposible discutir con ella sobre tu nota. Por lo tanto, debes mantener
+el rigor en tu código para evitar cualquier sorpresa.
+• La Moulinette utiliza norminette para comprobar tus ejercicios, aunque este
+programa no es exhaustivo en la verificacion dela Norma. Durante las evaluaciones
+por parte de las personas de tu Piscina se comprobará quela Norma es correcta.
+Si se incumple el proyecto tendrá una puntuación final de0, aunque norminette
+no indique ningún error.
+• ¿Tienes alguna pregunta? Pregunta a la persona de tu derecha. Si no puede ayu-
+darte, prueba con la persona de tu izquierda.
+• ¡Por Loki, por Freyja! ¡¡Piensa fuerte!!
+Para este módulo, la Norminette debe ser ejecutada con el flag -R
+CheckForbiddenSourceHeader. La Moulinette también lo utilizará.
+3
+--- PAGINA 5 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La Piscina de C es intensa. Es tu primer gran desafío en 42: una inmersión profunda
+en la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas, a través del
+esfuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares .
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante con-
+siderar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construir fundamentos sólidos sin atajos.
+☛ Desarollar de forma real habilidades técnicas y transversales.
+☛ Experimentar el aprendizaje entre pares de forma real, empezar a aprender a apren-
+der y a resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprender sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas de mitigación para evitar errores comunes.
+4
+--- PAGINA 6 ---
+C Piscine C 02
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Aprende sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener Una base sólida técnica y en programación.
+• Comprender por qué y cómo la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí, sabemos que la IA existe y que puede resolver tus proyectos, pero estás aquí
+para aprender. Te recomendamos que inviertas 26 días de aprendizaje de calidad
+para resolver los retos que hemos pensado para ti.
+• Aprender en 42 no tiene nada que ver con saber la respuesta. En 42 aprendemos
+desarrollando la capacidad para encontrarla. La IA te dará la respuesta directa,
+lo que impide que desarrolles tu propio razonamiento. Razonar requiere tiempo,
+esfuerzo y equivocare muchas veces.
+• Recuerda que durante los exámenes no tendrás acceso a la IA ni a internet. Te
+darás cuenta rápidamente si has confiado demasiado en la IA durante tu proceso de
+aprendizaje. Te vas a enfrentar a una hoja en blanco donde vas a tener que escribir
+tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades interpersonales y tu capacidad de pensar de forma diferente. Eso es
+mucho más valioso que simplemente chatear con un bot. Así que, ¡que no te supere
+la timidez!: ¡habla, haz preguntas y aprende con el resto de la piscina!
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+5
+--- PAGINA 7 ---
+C Piscine C 02
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamosdurante10minutosy,derepente,todoencaja.Loentiendo.Noentiendoalgo
+concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona de la piscina
+cómo lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+6
+--- PAGINA 8 ---
+Capítulo III
+Introducción
+He aquí un diálogo extraído de la serieSilicon Valley :
+- O sea, ¿por qué no usar Vim en lugar de Emacs? (RISAS)
+- Yo uso Vim en lugar de Emacs.
+- ¡Dios mío, ayúdanos! Vale, eh... ¿sabes qué? Simplemente no creo que esto
+vaya a funcionar. Lo siento mucho. Eh, quiero decir, ¿qué, vamos a traer
+niños a este mundo con eso sobre sus cabezas? Eso no es justo
+para ellos, ¿no crees?
+- ¿Niños? Ni siquiera nos hemos acostado.
+- Y adivina qué, ahora nunca va a pasar, porque de ninguna manera voy a estar con alguien que usa espacios en lugar de tabulaciones.
+- ¡Richard! (PULSA LA BARRA ESPACIADORA VARIAS VECES)
+- Vaya. Vale. Adiós.
+- ¡Una tabulación te ahorra ocho espacios! - (SE DA UN portazo) - (GOLPES)
+. . .
+(RICHARD GIME)
+- ¡Dios mío! Richard, ¿qué ha pasado?
+- Solo intenté bajar las escaleras de ocho en ocho. Pero estoy bien.
+- Nos vemos, Richard.
+- Solo quería dejar claro algo.
+Afortunadamente, no estás obligado a utilizar emacs y su barra espaciadora para
+completar los ejercicios siguientes.
+7
+--- PAGINA 9 ---
+C Piscine C 02
+La meta de hoy
+La puntuación mínima para validar este proyecto es del 50%.
+Depende de ti decidir qué ejercicios te permitirán alcanzar esta puntuación y si quieres
+hacer más o no.
+8
+--- PAGINA 10 ---
+Capítulo IV
+Ejercicio 00 : ft_strcpy
+Ejercicio: 00
+ft_strcpy
+Directorio de entrega: ex00/
+Archivos a entregar: ft_strcpy.c
+Funciones autorizadas: Ninguna
+• Reproduce el comportamiento de la funciónstrcpy (man strcpy).
+• El prototipo de la función deberá ser el siguiente:
+char *ft_strcpy(char *dest, char *src);
+9
+--- PAGINA 11 ---
+Capítulo V
+Ejercicio 01 : ft_strncpy
+Ejercicio: 01
+ft_strncpy
+Directorio de entrega: ex01/
+Archivos a entregar: ft_strncpy.c
+Funciones autorizadas: Ninguna
+• Reproduce el comportamiento de la funciónstrncpy (man strncpy).
+• El prototipo de la función deberá ser el siguiente:
+char *ft_strncpy(char *dest, char *src, unsigned int n);
+10
+--- PAGINA 12 ---
+Capítulo VI
+Ejercicio 02 : ft_str_is_alpha
+Ejercicio: 02
+ft_str_is_alpha
+Directorio de entrega: ex02/
+Archivos a entregar: ft_str_is_alpha.c
+Funciones autorizadas: Ninguna
+• Crea una función que devuelva 1 si el string usado como parámetro contiene única-
+mente caracteres alfabéticos y devuelva 0 si contiene otro tipo de caracteres.
+• El prototipo de la función deberá ser el siguiente:
+int ft_str_is_alpha(char *str);
+• Tendrá que devolver 1 sistr es un string vacío.
+11
+--- PAGINA 13 ---
+Capítulo VII
+Ejercicio 03 : ft_str_is_numeric
+Ejercicio: 03
+ft_str_is_numeric
+Directorio de entrega: ex03/
+Archivos a entregar: ft_str_is_numeric.c
+Funciones autorizadas: Ninguna
+• Crea una función que devuelva 1 si el string usado como parámetro contiene única-
+mente dígitos y devuelva 0 si contiene otro tipo de caracteres.
+• El prototipo de la función deberá ser el siguiente:
+int ft_str_is_numeric(char *str);
+• Tendrá que devolver 1 sistr es un string vacío.
+12
+--- PAGINA 14 ---
+Capítulo VIII
+Ejercicio 04 : ft_str_is_lowercase
+Ejercicio: 04
+ft_str_is_lowercase
+Directorio de entrega: ex04/
+Archivos a entregar: ft_str_is_lowercase.c
+Funciones autorizadas: Ninguna
+• Crea una función que devuelva 1 si el string usado como parámetro contiene úni-
+camente caracteres alfabéticos en minúsculas y devuelva 0 si contiene otro tipo de
+caracteres.
+• El prototipo de la función deberá ser el siguiente:
+int ft_str_is_lowercase(char *str);
+• Tendrá que devolver 1 sistr es un string vacío.
+13
+--- PAGINA 15 ---
+Capítulo IX
+Ejercicio 05 : ft_str_is_uppercase
+Ejercicio: 05
+ft_str_is_uppercase
+Directorio de entrega: ex05/
+Archivos a entregar: ft_str_is_uppercase.c
+Funciones autorizadas: Ninguna
+• Crea una función que devuelva 1 si el string usado como parámetro contiene úni-
+camente caracteres alfabéticos en mayúsculas y devuelva 0 si contiene otro tipo de
+caracteres.
+• El prototipo de la función deberá ser el siguiente:
+int ft_str_is_uppercase(char *str);
+• Tendrá que devolver 1 sistr es un string vacío.
+14
+--- PAGINA 16 ---
+Capítulo X
+Ejercicio 06 : ft_str_is_printable
+Ejercicio: 06
+ft_str_is_printable
+Directorio de entrega: ex06/
+Archivos a entregar: ft_str_is_printable.c
+Funciones autorizadas: Ninguna
+• Crea una función que devuelva 1 si el string usado como parámetro contiene única-
+mente caracteres imprimibles y devuelva 0 si contiene otro tipo de caracteres.
+• El prototipo de la función deberá ser el siguiente:
+int ft_str_is_printable(char *str);
+• Tendrá que devolver 1 sistr es un string vacío.
+15
+--- PAGINA 17 ---
+Capítulo XI
+Ejercicio 07 : ft_strupcase
+Ejercicio: 07
+ft_strupcase
+Directorio de entrega: ex07/
+Archivos a entregar: ft_strupcase.c
+Funciones autorizadas: Ninguna
+• Crea una función que ponga cada letra en mayúscula.
+• El prototipo de la función deberá ser el siguiente:
+char *ft_strupcase(char *str);
+• Deberá devolver str.
+16
+--- PAGINA 18 ---
+Capítulo XII
+Ejercicio 08 : ft_strlowcase
+Ejercicio: 08
+ft_strlowcase
+Directorio de entrega: ex08/
+Archivos a entregar: ft_strlowcase.c
+Funciones autorizadas: Ninguna
+• Crea una función que ponga cada letra en minúscula.
+• El prototipo de la función deberá ser el siguiente:
+char *ft_strlowcase(char *str);
+• Deberá devolver str.
+17
+--- PAGINA 19 ---
+Capítulo XIII
+Ejercicio 09 : ft_strcapitalize
+Ejercicio: 09
+ft_strcapitalize
+Directorio de entrega: ex09/
+Archivos a entregar: ft_strcapitalize.c
+Funciones autorizadas: Ninguna
+• Crea una función que ponga en mayúscula la primera letra de cada palabra y el
+resto, en minúsculas.
+• Una palabra es una secuencia de caracteres alfanuméricos.
+• El prototipo de la función deberá ser el siguiente:
+char *ft_strcapitalize(char *str);
+• Deberá devolver str.
+• Por ejemplo:
+salut, comment tu vas ? 42mots quarante-deux; cinquante+et+un
+• Se convierte en:
+Salut, Comment Tu Vas ? 42mots Quarante-Deux; Cinquante+Et+Un
+18
+--- PAGINA 20 ---
+Capítulo XIV
+Ejercicio 10 : ft_strlcpy
+Ejercicio: 10
+ft_strlcpy
+Directorio de entrega: ex10/
+Archivos a entregar: ft_strlcpy.c
+Funciones autorizadas: Ninguna
+• Reproduce el comportamiento de la funciónstrlcpy (man strlcpy).
+• El prototipo de la función deberá ser el siguiente:
+unsigned int ft_strlcpy(char *dest, char *src, unsigned int size);
+19
+--- PAGINA 21 ---
+Capítulo XV
+Ejercicio 11 :
+ft_putstr_non_printable
+Ejercicio: 11
+ft_putstr_non_printable
+Directorio de entrega: ex11/
+Archivos a entregar: ft_putstr_non_printable.c
+Funciones autorizadas: write
+• Escribe una función que muestre una secuencia de caracteres en la pantalla. Si esta
+secuencia contiene caracteres no imprimibles, deberán ser mostrados en formato
+hexadecimal (en minúsculas) precedidos de una barra invertida (backslash).
+• Por ejemplo, con este parámetro:
+Coucou\ntu vas bien ?
+• La función tendrá que mostrar:
+Coucou\0atu vas bien ?
+• El prototipo de la función deberá ser el siguiente:
+void ft_putstr_non_printable(char *str);
+20
+--- PAGINA 22 ---
+Capítulo XVI
+Ejercicio 12 : ft_print_memory
+Ejercicio: 12
+ft_print_memory
+Directorio de entrega: ex12/
+Archivos a entregar: ft_print_memory.c
+Funciones autorizadas: write
+• Escriba una función que muestre una región de memoria en la pantalla.
+• La visualización de la región de memoria estará dividida en tres “columnas” sepa-
+radas por un espacio:
+◦ La dirección en hexadecimal del primer carácter de la línea seguido de “:”.
+◦ El contenido en hexadecimal, con un espacio cada dos caracteres, deberá ser
+completado con espacios si es preciso (ver el ejemplo a continuación).
+◦ El contenido en caracteres imprimibles.
+• Si un carácter es no imprimible será remplazado por un punto.
+• Cada línea debe contener dieciséis caracteres.
+• Si size es igual a 0, no se muestra nada.
+21
+--- PAGINA 23 ---
+C Piscine C 02
+• Ejemplo:
+$> ./ft_print_memory
+000000010a161f40: 426f 6e6a 6f75 7220 6c65 7320 616d 696e Bonjour les amin
+000000010a161f50: 6368 6573 090a 0963 0720 6573 7420 666f ches...c. est fo
+000000010a161f60: 7509 746f 7574 0963 6520 7175 206f 6e20 u.tout.ce qu on
+000000010a161f70: 7065 7574 2066 6169 7265 2061 7665 6309 peut faire avec.
+000000010a161f80: 0a09 7072 696e 745f 6d65 6d6f 7279 0a0a ..print_memory..
+000000010a161f90: 0a09 6c6f 6c2e 6c6f 6c0a 2000 ..lol.lol. .
+$> ./ft_print_memory | cat -te
+0000000107ff9f40: 426f 6e6a 6f75 7220 6c65 7320 616d 696e Bonjour les amin$
+0000000107ff9f50: 6368 6573 090a 0963 0720 6573 7420 666f ches...c. est fo$
+0000000107ff9f60: 7509 746f 7574 0963 6520 7175 206f 6e20 u.tout.ce qu on $
+0000000107ff9f70: 7065 7574 2066 6169 7265 2061 7665 6309 peut faire avec.$
+0000000107ff9f80: 0a09 7072 696e 745f 6d65 6d6f 7279 0a0a ..print_memory..$
+0000000107ff9f90: 0a09 6c6f 6c2e 6c6f 6c0a 2000 ..lol.lol. .$
+$>
+• El prototipo de la función deberá ser el siguiente:
+void *ft_print_memory(void *addr, unsigned int size);
+• Deberá devolver addr.
+22
+--- PAGINA 24 ---
+Capítulo XVII
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado en el repositorio será evaluado durante la defensa. No dudes en comprobar varias
+veces los nombres de los archivos para verificar que sean correctos.
+Sólo necesitas entregar los archivos requeridos por el enunciado de
+este proyecto.
+23

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 10 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html" class="active">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 10</h1>
+<p class="sub">El módulo de los <strong>archivos y las llamadas al sistema</strong>. Se reimplementan
+utilidades de Unix (<code>cat</code>, <code>tail</code>, <code>hexdump</code>) usando solo
+<code>open</code>, <code>read</code>, <code>write</code> y <code>close</code>. Se aprende qué es un
+descriptor de fichero, cómo se gestionan los errores y los códigos de salida. 4 ejercicios
+(ex00–ex03).</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — display_file</a></li>
+  <li><a href="#ex01">ex01 — cat</a></li>
+  <li><a href="#ex02">ex02 — tail</a></li>
+  <li><a href="#ex03">ex03 — hexdump</a></li>
+</ul>
+
+<div class="trasfondo"><b>La introducción</b> — El enunciado abre con una tanda de preguntas
+absurdas sacadas de <em>¿Qué pasaría si...?</em> de Randall Munroe (el autor de xkcd): desde tirar
+un filete desde tan alto que se cocine al caer, hasta cuándo el ancho de banda de Internet superará
+al de una furgoneta de FedEx cargada de discos. La última pregunta — qué pasaría si todos los
+aspirantes al carnet respondieran al azar — es un guiño a la evaluación automática: la Moulinette
+no responde al azar, compara byte a byte.</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>display_file</h2>
+<div class="meta"><span>Entregable: <b>Makefile</b> + programa</span><span>Funciones: <b>open, read, write, close</b></span></div>
+<p>Un programa <code>ft_display_file</code> que vuelca a la salida estándar el contenido del archivo
+que se le pasa. Sin <code>malloc</code>: buffer de tamaño fijo. Y con los errores exactos que pide
+el enunciado:</p>
+<pre><code>fd = open(argv[1], O_RDONLY);
+if (fd &lt; 0)
+{
+	ft_putstr_fd("Cannot read file.\n", 2);
+	return (1);
+}
+while ((n = read(fd, buf, 4096)) &gt; 0)
+	write(1, buf, n);
+close(fd);</code></pre>
+<p>Sin argumentos imprime <code>File name missing.</code>; con demasiados,
+<code>Too many arguments.</code>; si el archivo no se puede leer, <code>Cannot read file.</code> —
+todos por la salida de error y con salto de línea.</p>
+<div class="trasfondo"><b>Descriptores de fichero y syscalls</b> — Un <em>descriptor de fichero</em>
+(fd) es un simple entero con el que el kernel identifica algo abierto: un archivo, la terminal, un
+socket. Tres están abiertos siempre al arrancar: <code>0</code> es la entrada estándar,
+<code>1</code> la salida estándar, <code>2</code> la salida de error. <code>open</code> devuelve un
+fd nuevo (o <code>-1</code> si falla); <code>read</code> copia bytes del fd a un buffer y devuelve
+cuántos leyó (<code>0</code> = fin de archivo); <code>write</code> los vuelca a otro fd;
+<code>close</code> libera el descriptor. Estas son <strong>llamadas al sistema</strong>: no las
+resuelve tu programa, sino el núcleo del sistema operativo. Aquí, por primera vez, no se usa
+<code>printf</code> ni buffers automáticos: se habla con el disco directamente, en trozos de un
+buffer fijo, que es como funciona todo por debajo.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>cat</h2>
+<div class="meta"><span>Entregable: <b>Makefile</b> + programa</span><span>Funciones: <b>open, read, write, close, strerror, basename</b></span></div>
+<p>Un <code>ft_cat</code> que hace lo mismo que el <code>cat</code> del sistema: concatena los
+archivos que se le pasen (o lee de la entrada estándar si no hay ninguno) y, ante un archivo que
+falla, imprime un error con el formato de <code>cat</code> y sigue con el resto.</p>
+<pre><code>ft_cat: nofile: No such file or directory</code></pre>
+<p>El mensaje se construye con <code>basename(argv[0])</code> (el nombre del programa),
+<code>strerror(errno)</code> (la descripción del error del sistema) y se escribe a la salida de
+error. El código de salida es <code>1</code> si algún archivo falló.</p>
+<div class="trasfondo"><b><code>stderr</code> vs <code>stdout</code>, <code>errno</code> y códigos
+de salida</b> — La razón de tener <em>dos</em> salidas separadas es poder redirigir el resultado
+sin mezclarlo con los avisos: <code>ft_cat *.txt &gt; todo.txt</code> manda el contenido al archivo
+(fd 1) mientras los errores siguen apareciendo en pantalla (fd 2). <code>errno</code> es una
+variable global que el sistema pone al fallar una llamada (por ejemplo, "no existe"); no es legible
+por sí sola, así que <code>strerror(errno)</code> la traduce a texto. <code>basename</code> recorta
+la ruta del programa a solo su nombre, para que el error diga <code>ft_cat:</code> y no la ruta
+entera. Y el <strong>código de salida</strong> (el <code>return</code> del <code>main</code>) es el
+canal por el que un programa le dice a la shell si fue bien (<code>0</code>) o mal (distinto de
+cero): eso es lo que encadenan los <code>&amp;&amp;</code> del módulo de shell.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>tail</h2>
+<div class="meta"><span>Entregable: <b>Makefile</b> + programa</span><span>Funciones: <b>+ malloc, free</b></span></div>
+<p>Un <code>ft_tail</code> que replica <code>tail</code>, gestionando solo la opción <code>-c</code>
+(los últimos N bytes). Con varios archivos, antepone la cabecera <code>==&gt; nombre &lt;==</code>
+como el <code>tail</code> real.</p>
+<pre><code>$ ft_tail -c 5 archivo
+$ ft_tail -c 3 a b
+==&gt; a <span></span>&lt;==
+...
+==&gt; b <span></span>&lt;==
+...</code></pre>
+<p>La solución mide primero el tamaño del archivo leyéndolo entero, calcula cuántos bytes saltar
+(<code>tamaño − N</code>), y en una segunda pasada escribe solo la cola. Acepta la opción pegada
+(<code>-c5</code>) o separada (<code>-c 5</code>).</p>
+<div class="trasfondo"><b>Buffers y el problema de "los últimos N"</b> — <code>tail</code> tiene una
+dificultad de fondo: para dar los <em>últimos</em> bytes hay que llegar primero al final, y un
+archivo se lee de principio a fin. Sin poder saltar directamente (aquí no se usa
+<code>lseek</code>), la vía es leer en bloques con un buffer fijo llevando la cuenta de la posición,
+y empezar a escribir solo cuando se cruza el umbral <code>tamaño − N</code>. Es el primer ejercicio
+que obliga a razonar sobre <em>cuánto</em> se ha leído y no solo <em>qué</em>: el buffer no es el
+archivo entero, es una ventana que se va deslizando. Que <code>read</code> pueda devolver menos
+bytes de los pedidos (y haya que llamarlo en bucle) es la lección que se arrastra desde ex00.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>hexdump</h2>
+<div class="meta"><span>Entregable: <b>Makefile</b> + programa</span><span>Funciones: <b>+ malloc, free</b></span></div>
+<p>Un <code>ft_hexdump</code> que reproduce el <code>hexdump</code> del sistema (formato por
+defecto, sin opciones): el desplazamiento en hexadecimal y, por cada 16 bytes, grupos de dos bytes
+en hexadecimal.</p>
+<pre><code>$ ft_hexdump saludo.txt
+0000000 6548 6c6c 206f 6f77 6c72 2164
+000000c</code></pre>
+<div class="trasfondo"><b>Bytes, endianness y coincidir al byte</b> — El formato por defecto de
+<code>hexdump</code> esconde un detalle revelador: cada grupo son <em>dos</em> bytes leídos como un
+número de 16 bits, y como la máquina es <strong>little-endian</strong> (el byte menos significativo
+va primero en memoria), los dos bytes salen con el orden invertido. Por eso "He" (bytes
+<code>48 65</code>) se imprime <code>6548</code>: el programa lee el par y lo muestra como una
+palabra, byte alto primero. Un byte suelto al final se completa con <code>00</code>. El
+desplazamiento va en hexadecimal, y la línea final repite el total de bytes. Reproducir esto
+<em>exactamente</em> — incluido el relleno con espacios de la última línea para que quede alineada —
+es lo que hace que la salida coincida byte a byte con la herramienta real: la lección de fondo es
+que un archivo no es "texto", es una secuencia de bytes, y ver esos bytes en crudo es lo que
+permite entender formatos, cabeceras y los "números mágicos" del <code>ft_magic</code> de Shell 00.</div>
+</div>
+
+<footer>42.zenidx.com — C 10 · <a href="c11.html">continuar con C 11 →</a></footer>
+</div>
+</body>
+</html>

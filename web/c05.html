@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 05 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html" class="active">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 05</h1>
+<p class="sub">El módulo de la recursión y la aritmética: factorial, potencia, Fibonacci, raíz
+cuadrada, primos y un cierre con las diez reinas. Casi todo se puede hacer de dos maneras —
+con un bucle o llamándose a sí misma— y el módulo te obliga a comparar ambas.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_iterative_factorial</a></li>
+  <li><a href="#ex01">ex01 — ft_recursive_factorial</a></li>
+  <li><a href="#ex02">ex02 — ft_iterative_power</a></li>
+  <li><a href="#ex03">ex03 — ft_recursive_power</a></li>
+  <li><a href="#ex04">ex04 — ft_fibonacci</a></li>
+  <li><a href="#ex05">ex05 — ft_sqrt</a></li>
+  <li><a href="#ex06">ex06 — ft_is_prime</a></li>
+  <li><a href="#ex07">ex07 — ft_find_next_prime</a></li>
+  <li><a href="#ex08">ex08 — ft_ten_queens_puzzle</a></li>
+</ul>
+
+<div class="trasfondo"><b>El concepto que vertebra el módulo: recursión vs. iteración</b> —
+Una función <em>iterativa</em> resuelve el problema con un bucle y unas pocas variables: la
+memoria que usa es constante. Una función <em>recursiva</em> se llama a sí misma con un caso más
+pequeño hasta tocar un <em>caso base</em>; cada llamada pendiente ocupa un marco (<em>stack
+frame</em>) en la pila, con sus parámetros y su punto de retorno. C05 empareja deliberadamente
+factorial y potencia en versión iterativa y recursiva para que veas que resuelven <em>lo mismo</em>
+con costes distintos: la recursión es más corta y se lee como la definición matemática, pero cada
+nivel cuesta pila, y si te olvidas del caso base o no reduces el problema, la pila se desborda
+(<code>stack overflow</code>) y el programa muere. Entender esto aquí, con funciones de tres líneas,
+es lo que te permite después leer un árbol o un backtracking sin perderte. (El prólogo del enunciado
+cita al Sombrero Seleccionador de <em>Harry Potter</em> para acto seguido avisar de que el proyecto
+no va de magia; es el humor absurdo de costumbre.)</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_iterative_factorial</h2>
+<div class="meta"><span>Entrega: <b>ft_iterative_factorial.c</b></span><span>Autorizado: nada</span></div>
+<p>Factorial <em>iterativo</em>: <code>n! = 1·2·3·…·n</code>. Si el argumento no es válido
+(negativo) devuelve <code>0</code>; los desbordamientos no hay que tratarlos.</p>
+<pre><code>int	ft_iterative_factorial(int nb)
+{
+	int	result;
+	int	i;
+
+	if (nb &lt; 0)
+		return (0);
+	result = 1;
+	i = 1;
+	while (i &lt;= nb)
+	{
+		result *= i;
+		i++;
+	}
+	return (result);
+}</code></pre>
+<p>El acumulador arranca en <code>1</code> (el elemento neutro del producto), no en <code>0</code> —
+si empezara en cero todo el resultado sería cero. Con <code>nb == 0</code> el bucle no se ejecuta y
+devuelve <code>1</code>, que es la definición correcta de <code>0! = 1</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El patrón <em>acumulador</em>: una variable
+que guarda el resultado parcial mientras un índice recorre el rango. Es la forma iterativa canónica
+y la base de casi todos los bucles de cómputo que escribirás. Memoria constante, sin pila que crezca.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_recursive_factorial</h2>
+<div class="meta"><span>Entrega: <b>ft_recursive_factorial.c</b></span><span>Autorizado: nada</span></div>
+<p>El mismo factorial, ahora <em>recursivo</em>.</p>
+<pre><code>int	ft_recursive_factorial(int nb)
+{
+	if (nb &lt; 0)
+		return (0);
+	if (nb &lt;= 1)
+		return (1);
+	return (nb * ft_recursive_factorial(nb - 1));
+}</code></pre>
+<p>Dos guardas antes de recurrir: el <em>caso de error</em> (<code>nb &lt; 0 → 0</code>) y el
+<em>caso base</em> (<code>nb &lt;= 1 → 1</code>, que cubre tanto <code>0!</code> como <code>1!</code>).
+Solo cuando ninguno se cumple la función se llama a sí misma con <code>nb - 1</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La estructura de toda función recursiva:
+primero el caso base que <em>detiene</em> la recursión, después el paso que <em>reduce</em> el
+problema hacia ese caso. La expresión <code>nb * ft_recursive_factorial(nb - 1)</code> es literalmente
+la definición matemática <code>n! = n · (n-1)!</code>. Compárala con el bucle de ex00: mismo resultado,
+pero aquí hay <code>nb</code> marcos apilados a la vez. Con un factorial da igual; con recursiones
+profundas empieza a importar.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_iterative_power</h2>
+<div class="meta"><span>Entrega: <b>ft_iterative_power.c</b></span><span>Autorizado: nada</span></div>
+<p>Potencia iterativa <code>nb^power</code>. Si <code>power &lt; 0</code> devuelve <code>0</code>;
+por definición <code>0^0 = 1</code>.</p>
+<pre><code>int	ft_iterative_power(int nb, int power)
+{
+	int	result;
+
+	if (power &lt; 0)
+		return (0);
+	result = 1;
+	while (power &gt; 0)
+	{
+		result *= nb;
+		power--;
+	}
+	return (result);
+}</code></pre>
+<p>Multiplicar <code>nb</code> por sí mismo <code>power</code> veces. El caso <code>0^0</code> sale
+gratis: con <code>power == 0</code> el bucle no entra y queda <code>result = 1</code>, que es la
+convención que pide el enunciado.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el elemento neutro importa. Igual que el
+factorial empieza en 1, la potencia también, porque 1 es el neutro del producto. Y que los casos
+límite (<code>power</code> cero o negativo) no son excepciones que gestionar aparte: se caen solos
+del diseño si eliges bien el valor inicial y la condición del bucle.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_recursive_power</h2>
+<div class="meta"><span>Entrega: <b>ft_recursive_power.c</b></span><span>Autorizado: nada</span></div>
+<p>La misma potencia, recursiva.</p>
+<pre><code>int	ft_recursive_power(int nb, int power)
+{
+	if (power &lt; 0)
+		return (0);
+	if (power == 0)
+		return (1);
+	return (nb * ft_recursive_power(nb, power - 1));
+}</code></pre>
+<p>Caso base <code>power == 0 → 1</code>; paso <code>nb^p = nb · nb^(p-1)</code>. Fíjate en que aquí
+el parámetro que se reduce es <code>power</code>, no <code>nb</code>: <code>nb</code> viaja intacto
+por toda la cadena de llamadas.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en una recursión no todos los argumentos
+cambian. Uno es el que <em>decrece</em> hacia el caso base (<code>power</code>) y otro es un dato fijo
+que se arrastra (<code>nb</code>). Distinguir cuál es cuál es exactamente lo que tendrás que hacer con
+recursiones de verdad, como el backtracking de ex08.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_fibonacci</h2>
+<div class="meta"><span>Entrega: <b>ft_fibonacci.c</b></span><span>Autorizado: nada</span></div>
+<p>Devuelve el elemento <code>index</code> de Fibonacci (0, 1, 1, 2, 3, 5…), con el primero en el
+índice 0. Debe ser <em>recursiva</em>. Si <code>index &lt; 0</code> devuelve <code>-1</code>.</p>
+<pre><code>int	ft_fibonacci(int index)
+{
+	if (index &lt; 0)
+		return (-1);
+	if (index == 0)
+		return (0);
+	if (index == 1)
+		return (1);
+	return (ft_fibonacci(index - 1) + ft_fibonacci(index - 2));
+}</code></pre>
+<p>Aquí hay <em>dos</em> casos base (<code>0</code> y <code>1</code>) porque cada término depende de
+los dos anteriores, y <em>dos</em> llamadas recursivas por nivel.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La recursión <em>en árbol</em>, y su lado
+oscuro. <code>fib(n)</code> vuelve a calcular <code>fib(n-2)</code> por dos caminos distintos, y
+<code>fib(n-3)</code> tres veces, y así: el número de llamadas crece exponencialmente. <code>fib(40)</code>
+ya dispara más de mil millones de llamadas. El enunciado exige la versión recursiva justamente para
+que <em>sientas</em> esa explosión, y para que más adelante entiendas por qué existen la memoización y
+la programación dinámica. La versión iterativa (dos variables que se van pisando) lo haría en O(n) y
+sin pila; que la piscine te prohíba usarla aquí es pedagógico, no práctico.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>ft_sqrt</h2>
+<div class="meta"><span>Entrega: <b>ft_sqrt.c</b></span><span>Autorizado: nada</span></div>
+<p>Raíz cuadrada <em>entera</em>: devuelve la raíz si es exacta, o <code>0</code> si no lo es
+(o si <code>nb</code> no tiene raíz entera).</p>
+<pre><code>int	ft_sqrt(int nb)
+{
+	long	i;
+
+	if (nb &lt; 1)
+		return (0);
+	i = 1;
+	while (i * i &lt; nb)
+		i++;
+	if (i * i == nb)
+		return (i);
+	return (0);
+}</code></pre>
+<p>Se prueban candidatos <code>1, 2, 3…</code> hasta que <code>i·i</code> alcanza o supera
+<code>nb</code>. Si lo iguala exactamente, esa es la raíz; si lo supera sin igualarlo,
+<code>nb</code> no es un cuadrado perfecto y la respuesta es <code>0</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas. (1) El desbordamiento como
+problema de tipos: <code>i·i</code> puede superar los ~2.147 millones que aguanta un <code>int</code>
+antes de que <code>i</code> llegue a la raíz de un <code>nb</code> grande. Declarar <code>i</code> como
+<code>long</code> evita que el producto se desborde y el bucle nunca pare. Es tu primer encuentro con
+"el tipo importa aunque el resultado quepa". (2) Que a veces el algoritmo obvio (probar en orden) es
+suficiente; optimizarlo con búsqueda binaria es una mejora que puedes razonar después.</div>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06</span>ft_is_prime</h2>
+<div class="meta"><span>Entrega: <b>ft_is_prime.c</b></span><span>Autorizado: nada</span></div>
+<p>Devuelve <code>1</code> si <code>nb</code> es primo, <code>0</code> si no. Ni <code>0</code> ni
+<code>1</code> son primos (ni los negativos).</p>
+<pre><code>int	ft_is_prime(int nb)
+{
+	long	i;
+
+	if (nb &lt; 2)
+		return (0);
+	i = 2;
+	while (i * i &lt;= nb)
+	{
+		if (nb % i == 0)
+			return (0);
+		i++;
+	}
+	return (1);
+}</code></pre>
+<p>La clave está en la condición <code>i·i &lt;= nb</code>: no hace falta probar divisores más allá de
+la raíz cuadrada de <code>nb</code>, porque si <code>nb</code> tuviera un divisor mayor que su raíz,
+su pareja sería uno menor que ya habríamos encontrado.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Optimización por razonamiento matemático, no
+por trucos de código. Comprobar divisores hasta <code>nb</code> funciona pero es lento; parar en
+<code>√nb</code> convierte un O(n) en O(√n) y solo requiere entender <em>por qué</em> los divisores
+vienen en parejas. Otra vez <code>long</code> para que <code>i·i</code> no se desborde con primos
+grandes. La aritmética de <code>%</code> (resto) es el detector de divisibilidad de todo el módulo.</div>
+</div>
+
+<div class="card" id="ex07">
+<h2><span class="ex">ex07</span>ft_find_next_prime</h2>
+<div class="meta"><span>Entrega: <b>ft_find_next_prime.c</b></span><span>Autorizado: nada</span></div>
+<p>Devuelve el primo inmediatamente <em>superior o igual</em> a <code>nb</code>.</p>
+<pre><code>static int	ft_is_prime(int nb)
+{
+	/* … idéntica a ex06 … */
+}
+
+int	ft_find_next_prime(int nb)
+{
+	while (!ft_is_prime(nb))
+		nb++;
+	return (nb);
+}</code></pre>
+<p>Se prueba <code>nb</code>, y si no es primo se sube de uno en uno hasta encontrar el primero que
+lo sea. Como el propio <code>nb</code> cuenta, si ya es primo se devuelve tal cual.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La <em>reutilización</em> como diseño: en vez
+de reescribir la primalidad, la encapsulas en un <em>helper</em> y la llamas. Como el helper no debe
+verse desde fuera del archivo, se declara <code>static</code> — tu primera decisión consciente de
+<em>ámbito</em> (qué es público y qué es privado dentro de un <code>.c</code>). La Norma limita a 5
+funciones por archivo y este es un buen ejemplo de por qué partir un problema en piezas pequeñas ayuda
+a que cada una quepa y se lea.</div>
+</div>
+
+<div class="card" id="ex08">
+<h2><span class="ex">ex08</span>ft_ten_queens_puzzle</h2>
+<div class="meta"><span>Entrega: <b>ft_ten_queens_puzzle.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Mostrar todas las formas de colocar diez reinas en un tablero 10×10 sin que ninguna ataque a otra,
+y devolver el número total de soluciones (son 724). Cada solución se imprime como diez cifras: la
+<em>n</em>-ésima cifra es la fila de la reina en la columna <em>n</em>.</p>
+<pre><code>static int	is_valid(int *board, int col, int row)
+{
+	int	i;
+
+	i = 0;
+	while (i &lt; col)
+	{
+		if (board[i] == row)
+			return (0);
+		if (col - i == row - board[i] || col - i == board[i] - row)
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
+static int	solve(int *board, int col)
+{
+	int	row;
+	int	count;
+
+	if (col == 10)
+	{
+		print_board(board);
+		return (1);
+	}
+	row = 0;
+	count = 0;
+	while (row &lt; 10)
+	{
+		if (is_valid(board, col, row))
+		{
+			board[col] = row;
+			count += solve(board, col + 1);
+		}
+		row++;
+	}
+	return (count);
+}</code></pre>
+<p>El truco de la representación: como cada columna lleva exactamente una reina,
+<code>board[col] = row</code> basta para describir el tablero, y así dos reinas nunca comparten
+columna por construcción. <code>is_valid</code> solo tiene que comprobar, contra las reinas ya
+colocadas, la misma <em>fila</em> (<code>board[i] == row</code>) y las dos <em>diagonales</em>
+(cuando la distancia en columnas iguala la distancia en filas).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El <em>backtracking</em>, que es la síntesis de
+todo C05. <code>solve</code> avanza columna a columna probando filas; cuando una fila es válida la fija
+y baja un nivel (recursión), y cuando agota las diez filas de una columna simplemente vuelve —
+"deshace" — y prueba la siguiente opción del nivel anterior. La pila de llamadas <em>es</em> el
+tablero parcial: no necesitas guardar y restaurar estado a mano porque cada marco recuerda su propio
+<code>col</code> y su propio <code>row</code>. Colocar el caso base (<code>col == 10</code>: solución
+completa, imprime y suma 1) y acumular los retornos de las ramas es el mismo esqueleto del factorial
+recursivo, pero ramificado. Si entiendes por qué esto explora exactamente todas las combinaciones
+válidas y ninguna inválida, tienes la llave de laberintos, sudokus y parsers.</div>
+</div>
+
+<footer>42.zenidx.com — C 05 · <a href="c04.html">← C 04</a> · <a href="c06.html">C 06 →</a></footer>
+</div>
+</body>
+</html>

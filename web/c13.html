@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 13 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html" class="active">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 13</h1>
+<p class="sub">Árboles binarios: la estructura donde la recursión deja de ser un truco y pasa a ser la
+forma natural de pensar. Ocho ejercicios sobre creación, los tres recorridos clásicos, el árbol
+binario de búsqueda y un recorrido por niveles que ya pide una cola.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — create_node</a></li>
+  <li><a href="#ex01">ex01 — apply_prefix</a></li>
+  <li><a href="#ex02">ex02 — apply_infix</a></li>
+  <li><a href="#ex03">ex03 — apply_suffix</a></li>
+  <li><a href="#ex04">ex04 — insert_data</a></li>
+  <li><a href="#ex05">ex05 — search_item</a></li>
+  <li><a href="#ex06">ex06 — level_count</a></li>
+  <li><a href="#ex07">ex07 — apply_by_level</a></li>
+</ul>
+
+<div class="trasfondo"><b>La estructura del módulo</b> — El nodo, entregado en <code>ft_btree.h</code>,
+tiene dos hijos en vez del único <code>next</code> de las listas:
+<pre><code>typedef struct s_btree
+{
+	struct s_btree	*left;
+	struct s_btree	*right;
+	void			*item;
+}	t_btree;</code></pre>
+Ese doble enlace lo cambia todo: la estructura ya no es una línea, es una <em>ramificación</em>. Y por
+eso casi todas las funciones se escriben solas de forma recursiva: «haz algo con la raíz, luego repite
+lo mismo con el subárbol izquierdo y con el derecho». Cada rama es, a su vez, un árbol completo — esa
+autosemejanza es lo que hace que la recursión encaje como un guante.</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>btree_create_node</h2>
+<div class="meta"><span>Entregable: <b>btree_create_node.c</b>, <b>ft_btree.h</b></span><span>Autorizadas: <b>malloc</b></span></div>
+<p>Crear un nodo con su <code>item</code> y el resto a 0.</p>
+<pre><code>node = malloc(sizeof(t_btree));
+if (!node)
+	return (NULL);
+node-&gt;left = NULL;
+node-&gt;right = NULL;
+node-&gt;item = item;
+return (node);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El caso base de todo lo que viene. Un nodo
+recién creado es una <em>hoja</em>: sin hijos (<code>left</code> y <code>right</code> a <code>NULL</code>).
+Ese <code>NULL</code> es lo que luego detiene la recursión en cada recorrido; si dejaras los punteros
+sin inicializar, cada recorrido se lanzaría contra memoria basura.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>btree_apply_prefix</h2>
+<div class="meta"><span>Entregable: <b>btree_apply_prefix.c</b>, <b>ft_btree.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Recorrido <strong>preorden</strong>: raíz, luego izquierda, luego derecha.</p>
+<pre><code>if (!root)
+	return ;
+applyf(root-&gt;item);
+btree_apply_prefix(root-&gt;left, applyf);
+btree_apply_prefix(root-&gt;right, applyf);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La plantilla de la recursión sobre árboles:
+comprobar <code>NULL</code> (caso base) y bajar por los dos lados. En preorden se <em>visita antes de
+bajar</em>. Sirve para <em>copiar</em> o <em>serializar</em> un árbol: como la raíz sale primero, quien
+lee la secuencia puede reconstruir la estructura de arriba abajo.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>btree_apply_infix</h2>
+<div class="meta"><span>Entregable: <b>btree_apply_infix.c</b>, <b>ft_btree.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Recorrido <strong>inorden</strong>: izquierda, raíz, derecha.</p>
+<pre><code>if (!root)
+	return ;
+btree_apply_infix(root-&gt;left, applyf);
+applyf(root-&gt;item);
+btree_apply_infix(root-&gt;right, applyf);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El mismo esqueleto, movida una sola línea: la
+visita va <em>entre</em> las dos bajadas. Y ahí está la magia — sobre un árbol binario de búsqueda, el
+inorden saca los elementos <strong>ordenados de menor a mayor</strong>. Cambiar el <em>momento</em> de
+la visita cambia por completo el resultado, con el mismo recorrido.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>btree_apply_suffix</h2>
+<div class="meta"><span>Entregable: <b>btree_apply_suffix.c</b>, <b>ft_btree.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Recorrido <strong>postorden</strong>: izquierda, derecha, raíz.</p>
+<pre><code>if (!root)
+	return ;
+btree_apply_suffix(root-&gt;left, applyf);
+btree_apply_suffix(root-&gt;right, applyf);
+applyf(root-&gt;item);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La tercera posición de la visita: <em>después</em>
+de bajar por ambos lados. Es el orden que necesitas para <strong>liberar</strong> un árbol (borras los
+hijos antes que el padre, o dejarías nodos huérfanos) y para evaluar expresiones: un nodo se calcula
+cuando sus dos operandos ya están resueltos. Preorden, inorden y postorden son la misma recursión con
+la visita en un sitio distinto.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>btree_insert_data</h2>
+<div class="meta"><span>Entregable: <b>btree_insert_data.c</b>, <b>ft_btree.h</b></span><span>Autorizadas: <b>btree_create_node</b></span></div>
+<p>Insertar respetando el orden: los menores a la izquierda, los iguales o mayores a la derecha, usando
+un comparador tipo <code>strcmp</code>.</p>
+<pre><code>if (!*root)
+{
+	*root = btree_create_node(item);
+	return ;
+}
+if (cmpf(item, (*root)-&gt;item) &lt; 0)
+	btree_insert_data(&amp;(*root)-&gt;left, item, cmpf);
+else
+	btree_insert_data(&amp;(*root)-&gt;right, item, cmpf);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Aquí se construye el <strong>árbol binario de
+búsqueda (BST)</strong>: la propiedad de «menores a la izquierda, mayores a la derecha» es la que
+convierte un árbol en un buscador. Se combina la recursión con el <code>t_btree **</code> de C 12: al
+llegar a un hueco (<code>*root == NULL</code>) hay que <em>escribir</em> ahí el nodo nuevo, y para eso
+necesitas la dirección del puntero, no su valor.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>btree_search_item</h2>
+<div class="meta"><span>Entregable: <b>btree_search_item.c</b>, <b>ft_btree.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Buscar el primer <code>item</code> que casa con <code>data_ref</code>, recorriendo en inorden.
+Devuelve <code>NULL</code> si no está.</p>
+<pre><code>if (!root)
+	return (NULL);
+found = btree_search_item(root-&gt;left, data_ref, cmpf);
+if (found)
+	return (found);
+if (cmpf(root-&gt;item, data_ref) == 0)
+	return (root-&gt;item);
+return (btree_search_item(root-&gt;right, data_ref, cmpf));</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Recursión que <em>devuelve valor</em> y corta en
+cuanto encuentra: si el subárbol izquierdo ya trae un resultado, no se mira el resto. El enunciado pide
+orden inorden, así que se busca izquierda → raíz → derecha. Ojo al matiz: aquí se recorre sin
+aprovechar la propiedad del BST; si se aprovechara (ir solo a un lado según el comparador), la búsqueda
+sería O(log n) en un árbol equilibrado — la razón de ser de los árboles de búsqueda.</div>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06</span>btree_level_count</h2>
+<div class="meta"><span>Entregable: <b>btree_level_count.c</b>, <b>ft_btree.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
+<p>Devolver la longitud de la rama más larga (la altura del árbol).</p>
+<pre><code>if (!root)
+	return (0);
+left = btree_level_count(root-&gt;left);
+right = btree_level_count(root-&gt;right);
+if (left &gt; right)
+	return (left + 1);
+return (right + 1);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La recursión que <em>calcula</em> en vez de solo
+recorrer: la altura de un nodo es 1 más la altura de su hijo más alto. El vacío mide 0, una hoja mide 1.
+Es el patrón «resuelve los dos subproblemas y combínalos» (divide y vencerás), y esa altura es la que
+determina si un BST está equilibrado o degenerado en una lista.</div>
+</div>
+
+<div class="card" id="ex07">
+<h2><span class="ex">ex07</span>btree_apply_by_level</h2>
+<div class="meta"><span>Entregable: <b>btree_apply_by_level.c</b>, <b>ft_btree.h</b></span><span>Autorizadas: <b>malloc, free</b></span></div>
+<p>Recorrer el árbol <strong>nivel por nivel</strong> (anchura). A cada nodo se le pasa su nivel y si es
+el primero de su nivel.</p>
+<pre><code>head = new_qnode(root, 0);
+while (head)
+{
+	applyf(head-&gt;node-&gt;item, head-&gt;level, head-&gt;level != prev);
+	prev = head-&gt;level;
+	tail = enqueue_kids(tail, head-&gt;node, head-&gt;level);  /* encola hijos */
+	tmp = head;
+	head = head-&gt;next;
+	free(tmp);
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El recorrido en anchura (BFS) no sale gratis con
+recursión: necesita una <strong>cola</strong> (FIFO). Se saca un nodo, se procesa y se <em>encolan sus
+hijos</em> al final; la cola garantiza que un nivel entero se visita antes que el siguiente. Por eso el
+ejercicio autoriza <code>malloc</code> y <code>free</code>: hay que construir esa cola con nodos
+auxiliares y liberarlos al vaciarla. Es la estructura opuesta a la pila que usa la recursión (que hace,
+implícitamente, un recorrido en profundidad). El flag «primero del nivel» se deduce de comparar el
+nivel actual con el del nodo anterior.</div>
+</div>
+
+<footer>42.zenidx.com — C 13 · fin de los módulos de C Piscine publicados.</footer>
+</div>
+</body>
+</html>

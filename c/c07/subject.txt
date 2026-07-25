@@ -1,0 +1,270 @@
+﻿--- PAGINA 1 ---
+C Piscine
+C 07
+Resumen: este documento corresponde al enunciado del módulo C 07 de la C Piscine de
+42.
+Versión: 6
+--- PAGINA 2 ---
+Índice general
+I. Instrucciones 2
+II. Instrucciones sobre la IA 4
+III. Introducción 7
+IV. Ejercicio 00 : ft_strdup 8
+V. Ejercicio 01 : ft_range 9
+VI. Ejercicio 02 : ft_ultimate_range 10
+VII. Ejercicio 03 : ft_strjoin 11
+VIII. Ejercicio 04 : ft_convert_base 12
+IX. Ejercicio 05 : ft_split 13
+X. Entrega y evaluación 14
+1
+--- PAGINA 3 ---
+Capítulo I
+Instrucciones
+• Esta página será la única referencia: no te fíes de los rumores.
+• Antes de empezar a hacer los ejercicios deberás registrarte en el proyecto en tu
+intranet. Una vez lo hayas hecho, obtendrás tu repositorio Git. Ahí es donde debes
+trabajar.
+• Los ejercicios han sido ordenados del más sencillo al más complejo. Por lo tanto,
+debeshacerlosenordenyasegurartedequeelejercicioescorrectoantesdecontinuar
+con el siguiente.
+• Los ejercicios de Shell se deben ejecutar con/bin/bash.
+• Los ejercicios de C se deben compilar concc y utilizando las flags -Wall -Wextra
+-Werror.
+• Solamente hay que entregar una funciónmain() si lo que se pide es un programa.
+Si se pide una función se puede entregar elmain() comentado con la batería de
+tests que hayas hecho.
+• Los ejercicios de C se deben escribir de acuerdo ala Norma. Puedes encontrarla en
+la intranet, en el icono de la brújula, FAQ, sección 42, apartado General Pedagogy
+como La Norma .
+• Para ayudarte a comprobar si tus ejercicios cumplenla Norma puedes ayudarte de
+norminette - un programa que aplica ciertos requisitos dela Norma a tu código.
+Si tienes archivos o funciones adicionales, también deben cumplir conla Norma.
+• Lee detenidamente los ejemplos. Podrían dar información que no se especifica en el
+enunciado...
+• Asegúrate de que tus directorios y archivos tienen los permisos adecuados.
+• Debes respetar el procedimiento de entrega para todos tus ejercicios. Solo el
+trabajo de tu repositorioGit será evaluado.
+• No puedes dejar en tu directorioningún archivo que no se haya indicado de forma
+explícita en los enunciados de los ejercicios.
+2
+--- PAGINA 4 ---
+C Piscine C 07
+• La evaluación de este proyecto consta de dos fases. Primero, las personas con las
+que compartes piscina se encargarán de evaluar tus ejercicios. A continuación, serán
+evaluados por un programa que se llamala Moulinette.
+• Tus funciones no deben terminar de forma inesperada (segfault, bus error, double
+free) excepto en el caso de comportamientos indefinidos. Si esto sucede, tu proyecto
+será considerado no funcional y recibirás un0 durante la evaluación.
+• La Moulinette es muy estricta a la hora de evaluar y está completamente automa-
+tizada. Es imposible discutir con ella sobre tu nota. Por lo tanto, debes mantener
+el rigor en tu código para evitar cualquier sorpresa.
+• La Moulinette utiliza norminette para comprobar tus ejercicios, aunque este
+programa no es exhaustivo en la verificacion dela Norma. Durante las evaluaciones
+por parte de las personas de tu Piscina se comprobará quela Norma es correcta.
+Si se incumple, el proyecto tendrá una puntuación final de0, aunque norminette
+no indique ningún error.
+• ¿Tienes alguna pregunta? Pregunta a la persona de tu derecha. Si no puede ayu-
+darte, prueba con la persona de tu izquierda.
+• ¡Por Loki, por Freyja! ¡¡Piensa fuerte!!
+Para este módulo, la Norminette debe ser ejecutada con la flag -R
+CheckForbiddenSourceHeader. La Moulinette también la utilizará.
+3
+--- PAGINA 5 ---
+Capítulo II
+Instrucciones sobre la IA
+● Contexto
+La C Piscine es intensa. Es tu primer gran desafío en 42: una inmersión profunda en
+la resolución de problemas, la autonomía y la comunidad.
+Durante esta etapa, tu objetivo principal es construir unas bases sólidas a través del es-
+fuerzo, la repetición y, sobre todo, mediante elaprendizaje entre pares .
+En la era de la IA, los atajos son fáciles de encontrar. Sin embargo, es importante consi-
+derar si el uso que haces de la IA te está ayudando realmente a crecer, o si simplemente
+te está impidiendo desarrollar habilidades reales.
+La Piscina también es una experiencia humana y, por ahora, nada puede reemplazar eso.
+Ni siquiera la IA.
+Para obtener una visión más completa de nuestra postura sobre la IA como herramienta
+de aprendizaje, como parte del plan de estudios de TIC (Tecnologías de la Información
+y la Comunicación) y como una expectativa creciente en el mercado laboral, consulta las
+preguntas frecuentes F AQ disponibles en la intranet.
+● Mensaje principal:
+☛ Construye fundamentos sólidos sin atajos.
+☛ Desarolla de forma real habilidades técnicas y transversales.
+☛ Experimenta el aprendizaje entre pares de forma inmersiva , empezando por apren-
+der a aprender y por resolver nuevos problemas.
+☛ El proceso de aprendizaje es más importante que el resultado.
+☛ Aprende sobre los riesgos asociados a la IA y desarrollar prácticas de control efec-
+tivas y medidas que neutralicen evitar errores comunes.
+4
+--- PAGINA 6 ---
+C Piscine C 07
+● Reglas para la piscina:
+• Aplica la lógica y el razonamiento a las tareas asignadas, especialmente antes de
+recurrir a la IA.
+• No deberías pedir respuestas directas a la IA.
+• Infórmate sobre el enfoque global de 42 sobre la IA.
+● Resultados de esta etapa:
+Durante esta etapa fundamental, obtendrás los siguientes resultados:
+• Obtener una base adecuada en tecnología y programación.
+• Comprender cómo y por qué la IA puede ser peligrosa durante esta fase.
+● Comentarios y ejemplos:
+• Sí,sabemosquelaIAexiste.Ysí,tambiénsabemosquepuederesolvertusproyectos.
+Peroestásaquíparaaprender,noparademostrarquelaIAhaaprendido.Nopierdas
+tiempo solo para demostrar que la IA puede resolver un problema determinado.
+• Aprender en 42 no tiene nada que ver con saber una respuesta, sino con desarrollar
+las habilidades para encontrarla. La IA te dará la respuesta directa, lo que impide
+quedesarrollestupropiorazonamiento.Razonarrequieretiempo,esfuerzoycometer
+errores. Nadie dijo que el proceso iba a ser fácil.
+• Ten en cuenta que, durante los exámenes, no tendrás acceso a la IA (no tenemos
+internetnidispositivosinteligentes).Tevasadarcuentarápidamentesihasconfiado
+demasiadoenlaIAdurantetuprocesodeaprendizajedelaformamásdirecta:frente
+a una hoja en blanco donde vas a tener que escribir tu propio código.
+• El aprendizaje entre pares te expone a diferentes ideas y enfoques, mejorando tus
+habilidades transversales y tu capacidad de pensar de forma diferente. Eso es mucho
+más valioso que sentarte a chatear con un bot. Así que, ¡sin miedo! Habla, haz
+preguntas y aprende con el resto de personas en tu Piscina.
+• Sí, la IA formará parte del plan de estudios, tanto como herramienta de aprendizaje
+como tema en sí mismo. Incluso tendrás la oportunidad de crear tu propio software
+de IA. Para aprender más sobre nuestro enfoque progresivo, puedes consultar la
+documentación disponible en la intranet.
+✓ Buenas prácticas:
+5
+--- PAGINA 7 ---
+C Piscine C 07
+Me atasco en un nuevo concepto. Le pregunto a alguien cercano cómo lo ha abordado.
+Hablamos durante 10 minutos y, de repente, todo encaja. Lo entiendo. No entiendo
+algo concreto del proyecto y no sé cómo continuar. Le pregunto a otra persona cómo
+lo ha abordado, hablamos sobre el tema y, si es necesario, incluso utilizamos otros
+métodos (papel y boli, dibujos, metáforas, etc.) hasta conseguir entenderlo.
+✗ Mala práctica:
+Utilizo la IA en secreto, copio un código que parece correcto. Durante la evaluación
+entre pares, no puedo explicar nada. Suspendo. Durante el examen, sin IA, me vuelvo
+a atascar. Suspendo.
+6
+--- PAGINA 8 ---
+Capítulo III
+Introducción
+He aquí una lista de las criaturas que pueden encontrarse en las famosas mazmorras
+de Naheulbeuk:
+- Todo tipo de zombis;
+- Arañas gigantes;
+- Orcos;
+- Goblins;
+- Trolls de las cavernas;
+- Brujos;
+- Guerreros malditos;
+- Ratas mutantes;
+- Una botella de aceite;
+- Papel higiénico;
+- Dos esponjas;
+- Raviolis.
+7
+--- PAGINA 9 ---
+Capítulo IV
+Ejercicio 00 : ft_strdup
+Ejercicio: 00
+ft_strdup
+Directorio de entrega: ex00/
+Archivos a entregar: ft_strdup.c
+Funciones autorizadas: malloc
+• Reproduce el comportamiento de la funciónstrdup (man strdup).
+• El prototipo de la función deberá ser el siguiente:
+char *ft_strdup(char *src);
+8
+--- PAGINA 10 ---
+Capítulo V
+Ejercicio 01 : ft_range
+Ejercicio: 01
+ft_range
+Directorio de entrega: ex01/
+Archivos a entregar: ft_range.c
+Funciones autorizadas: malloc
+• Escribe una función ft_range que devuelva un array de enteros que contenga
+todos los valores entremin y max.
+• Elvalorde mindebeincluirseenelarray,mientrasqueelvalorde maxdebeexcluirse.
+• El prototipo de la función deberá ser el siguiente:
+int *ft_range(int min, int max);
+• Si min es superior o igual amax, la función deberá devolver “NULL”.
+9
+--- PAGINA 11 ---
+Capítulo VI
+Ejercicio 02 : ft_ultimate_range
+Ejercicio: 02
+ft_ultimate_range
+Directorio de entrega: ex02/
+Archivos a entregar: ft_ultimate_range.c
+Funciones autorizadas: malloc
+• Escribe una función ft_ultimate_range que reserve memoria para un array de
+enteros y lo rellene con todos los valores comprendidos entremin y max.
+• Elvalorde mindebeincluirseenelarray,mientrasqueelvalorde maxdebeexcluirse.
+• El prototipo de la función deberá ser el siguiente:
+int ft_ultimate_range(int **range, int min, int max);
+• La función deberá devolver el tamaño derange, o -1 en caso de error.
+• Si min es superior o igual a max, range deberá apuntar a “NULL” y la función
+deberá devolver 0.
+10
+--- PAGINA 12 ---
+Capítulo VII
+Ejercicio 03 : ft_strjoin
+Ejercicio: 03
+ft_strjoin
+Directorio de entrega: ex03/
+Archivos a entregar: ft_strjoin.c
+Funciones autorizadas: malloc
+• Escribe una función que concatene todas las cadenas de caracteres apuntadas por
+strs, utilizando sep como separador entre ellas.
+• size indica el número de cadenas contenidas enstrs.
+• Si sizees igual a0, la función deberá devolver una cadena vacía que pueda liberarse
+con free().
+• El prototipo de la función deberá ser el siguiente:
+char *ft_strjoin(int size, char **strs, char *sep);
+11
+--- PAGINA 13 ---
+Capítulo VIII
+Ejercicio 04 : ft_convert_base
+Ejercicio: 04
+ft_convert_base
+Directorio de entrega: ex04/
+Archivos a entregar: ft_convert_base.c, ft_convert_base2.c
+Funciones autorizadas: malloc, free
+• Escribe una función que devuelva el resultado de la conversión de la cadenanbr,
+expresada en la basebase_from a la basebase_to.
+• Los parámetros nbr, base_from, base_to no se pueden modificar.
+• La cadena nbr debe seguir las mismas reglas que en ft_atoi_base que puedes en-
+contrar en un módulo anterior. Por lo tanto, cuidado con el signo “+” , el signo “-”
+y con los espacios en blanco.
+• El número representado pornbr debe caber dentro de unentero.
+• Si alguna base no es válida, la función debe devolver “NULL”.
+• Si es preciso que el número devuelto lleve un prefijo, solo se permitirá un único “-”
+al principio, sin espacios ni “+”.
+• El prototipo de la función deberá ser el siguiente:
+char *ft_convert_base(char *nbr, char *base_from, char *base_to);
+12
+--- PAGINA 14 ---
+Capítulo IX
+Ejercicio 05 : ft_split
+Ejercicio: 05
+ft_split
+Directorio de entrega: ex05/
+Archivos a entregar: ft_split.c
+Funciones autorizadas: malloc
+• Escribe una función que divida una cadena de caracteres en base a otra cadena de
+caracteres.
+• Cada carácter decharset debe considerarse como un separador.
+• La función debe devolver un array en el que cada elemento contenga la dirección de
+una cadena de caracteres comprendida entre dos separadores. El último elemento
+del array debe ser NULL para indicar el final del mismo.
+• El array devuelto no puede contener cadenas vacías. Ten esto en cuenta al imple-
+mentar la función.
+• La cadena recibida como argumento no debe modificarse.
+• El prototipo de la función deberá ser el siguiente:
+char **ft_split(char *str, char *charset);
+13
+--- PAGINA 15 ---
+Capítulo X
+Entrega y evaluación
+Entrega tu proyecto en tu repositorioGit como de costumbre. Solo el trabajo entre-
+gado en el repositorio será evaluado durante la evaluación. No dudes en comprobar varias
+veces los nombres de los archivos para verificar que sean correctos.
+Recuerda que solo debes entregar los archivos indicados en el
+enunciado.
+14

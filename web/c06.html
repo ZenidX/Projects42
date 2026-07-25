@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 06 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html" class="active">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 06</h1>
+<p class="sub">El módulo más corto: cuatro ejercicios, y todos son <em>programas</em> con su propia
+función <code>main</code>. El tema es uno solo — los argumentos de la línea de comandos: qué son
+<code>argc</code> y <code>argv</code>, de dónde salen y qué puedes hacer con ellos.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_print_program_name</a></li>
+  <li><a href="#ex01">ex01 — ft_print_params</a></li>
+  <li><a href="#ex02">ex02 — ft_rev_params</a></li>
+  <li><a href="#ex03">ex03 — ft_sort_params</a></li>
+</ul>
+
+<div class="trasfondo"><b>El concepto que vertebra el módulo: quién llama a tu <code>main</code></b> —
+Hasta ahora escribías <em>funciones</em> que evaluaba un tester. Aquí escribes <em>programas</em>, y un
+programa en C empieza en <code>main</code>… pero <code>main</code> no se ejecuta solo: lo llama el
+sistema operativo cuando tecleas <code>./a.out uno dos tres</code>. Y le pasa dos argumentos igual que
+tú se los pasas a cualquier función: <code>int main(int argc, char **argv)</code>. <code>argc</code>
+(<em>argument count</em>) es cuántas palabras había en la línea, contando el propio nombre del programa.
+<code>argv</code> (<em>argument vector</em>) es un array de cadenas con esas palabras: <code>argv[0]</code>
+es siempre el nombre con el que se invocó el programa, <code>argv[1]</code> el primer argumento real, y
+así hasta <code>argv[argc-1]</code>; por convención <code>argv[argc]</code> es <code>NULL</code>. No hay
+magia: es el mismo shell que trabajaste en Shell 00/01 el que trocea tu línea por espacios y te la
+entrega. Todo <code>ls -la</code>, <code>grep patrón fichero</code> o <code>cc -Wall main.c</code> que
+has escrito llega a su <code>main</code> exactamente así. Este módulo es donde por fin ves el otro lado
+del mostrador. (El prólogo reproduce la escena de los bolos de <em>El Gran Lebowski</em>, con Walter
+gritando "¡apunta un cero!"; puro relleno marca de la casa.)</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_print_program_name</h2>
+<div class="meta"><span>Entrega: <b>ft_print_program_name.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Imprimir el nombre del programa (el propio <code>./a.out</code>) seguido de un salto de línea.</p>
+<pre><code>int	main(int argc, char **argv)
+{
+	int	i;
+
+	(void)argc;
+	i = 0;
+	while (argv[0][i])
+	{
+		write(1, &amp;argv[0][i], 1);
+		i++;
+	}
+	write(1, "\n", 1);
+	return (0);
+}</code></pre>
+<p>El nombre está en <code>argv[0]</code>, que es una cadena como cualquier otra: se recorre carácter
+a carácter hasta el <code>'\0'</code>. El <code>(void)argc;</code> es necesario porque compilamos con
+<code>-Wextra -Werror</code> y no usar un parámetro es un aviso que aquí se convierte en error;
+"tocarlo" con el <em>cast</em> a <code>void</code> le dice al compilador "sé que existe y lo ignoro
+a propósito".</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <code>argv[0]</code> no es un extra: es el
+primer elemento y siempre está. De ahí sale el idioma Unix de que un mismo binario se comporte distinto
+según con qué nombre lo llames (un enlace simbólico con otro nombre y un <code>if</code> sobre
+<code>argv[0]</code>). Y aprendes a lidiar con <code>-Werror</code> sin trampas: el cast a <code>void</code>
+es la forma limpia y estándar de silenciar un parámetro no usado.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_print_params</h2>
+<div class="meta"><span>Entrega: <b>ft_print_params.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Imprimir cada argumento en su propia línea, en orden, saltándose <code>argv[0]</code>.</p>
+<pre><code>int	main(int argc, char **argv)
+{
+	int	i;
+
+	i = 1;
+	while (i &lt; argc)
+	{
+		print_str(argv[i]);
+		i++;
+	}
+	return (0);
+}</code></pre>
+<p>El bucle empieza en <code>i = 1</code> para saltar el nombre del programa y llega hasta
+<code>argc - 1</code>. <code>print_str</code> es un pequeño <em>helper</em> <code>static</code> que
+escribe una cadena y su salto de línea (mismo patrón de recorrer hasta el <code>'\0'</code>).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La estructura real de <code>argv</code>: un
+<code>char **</code>, es decir, un array de punteros a cadenas. <code>argv[i]</code> es una cadena
+completa; <code>argv[i][j]</code> es un carácter suelto. Recorrer <code>argv</code> con un índice
+acotado por <code>argc</code> es el modelo mental que necesitarás para cualquier programa de línea de
+comandos, incluidos los que parsean opciones y flags.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_rev_params</h2>
+<div class="meta"><span>Entrega: <b>ft_rev_params.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Lo mismo que ex01 pero en orden <em>inverso</em>: del último argumento al primero (sin
+<code>argv[0]</code>).</p>
+<pre><code>int	main(int argc, char **argv)
+{
+	int	i;
+
+	i = argc - 1;
+	while (i &gt;= 1)
+	{
+		print_str(argv[i]);
+		i--;
+	}
+	return (0);
+}</code></pre>
+<p>El único cambio respecto a ex01 es la dirección del recorrido: se arranca en <code>argc - 1</code>
+(el último) y se baja hasta <code>1</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que recorrer una colección de atrás hacia
+delante es solo cuestión de invertir el índice y la condición, no de tocar los datos. No hace falta
+mover ni copiar nada en <code>argv</code>: cambiamos <em>cómo lo leemos</em>. Es la misma idea que
+verás al invertir una cadena o una lista, pero sin escribir en memoria.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_sort_params</h2>
+<div class="meta"><span>Entrega: <b>ft_sort_params.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Imprimir los argumentos (sin <code>argv[0]</code>) ordenados según el orden ASCII, uno por línea.</p>
+<pre><code>static int	ft_strcmp(char *a, char *b)
+{
+	int	i;
+
+	i = 0;
+	while (a[i] &amp;&amp; a[i] == b[i])
+		i++;
+	return ((unsigned char)a[i] - (unsigned char)b[i]);
+}
+
+static void	sort(char **tab, int size)
+{
+	char	*tmp;
+	int		i;
+
+	i = 1;
+	while (i &lt; size)
+	{
+		if (ft_strcmp(tab[i - 1], tab[i]) &gt; 0)
+		{
+			tmp = tab[i - 1];
+			tab[i - 1] = tab[i];
+			tab[i] = tmp;
+			i = 1;
+		}
+		else
+			i++;
+	}
+}</code></pre>
+<p>Ordenar cadenas necesita saber cuál va "antes": eso lo decide <code>ft_strcmp</code>, que compara
+carácter a carácter y devuelve la diferencia en el primer punto donde difieren. Y ordenar necesita
+<em>mover</em>: pero lo que se intercambia no son las cadenas sino los <em>punteros</em> del array
+<code>tab</code> (por eso <code>tmp</code> es un <code>char *</code>). El algoritmo es un gnome sort,
+el mismo de C01: si el par está desordenado lo intercambia y reinicia; si no, avanza.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos ideas grandes. (1) Comparar cadenas no es
+comparar con <code>==</code> (eso compararía direcciones, no contenido): hay que recorrerlas, y el
+<em>cast</em> a <code>unsigned char</code> asegura que el orden de bytes altos sea el correcto — así se
+comporta el <code>strcmp</code> real. (2) Ordenar un array de punteros mueve las <em>referencias</em>,
+no los datos: barato y sin tocar las cadenas originales, que además no debes modificar. Aquí se juntan
+todo lo del módulo (recorrer <code>argv</code>) con lo de C01 (punteros, swap, sort) — por eso es el
+cierre natural de C06.</div>
+</div>
+
+<footer>42.zenidx.com — C 06 · <a href="c05.html">← C 05</a> · <a href="c07.html">C 07 →</a></footer>
+</div>
+</body>
+</html>

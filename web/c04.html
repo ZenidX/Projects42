@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C 04 — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html" class="active">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — C 04</h1>
+<p class="sub">El puente entre texto y números. Se escriben <code>ft_strlen</code>,
+<code>ft_putstr</code>, <code>ft_putnbr</code>, <code>ft_atoi</code> y sus versiones en base
+arbitraria. 6 ejercicios (ex00–ex05).</p>
+
+<div class="trasfondo"><b>Números, bases y representación</b> — El tema del módulo. Un
+<code>int</code> en memoria es un patrón de bits; «42» es solo <em>una forma de escribirlo</em> en
+base 10. La misma cantidad es <code>101010</code> en binario, <code>2a</code> en hexadecimal o
+<code>52</code> en octal: cambia la notación, no el valor. Convertir texto→número (<code>atoi</code>)
+y número→texto (<code>putnbr</code>) es traducir entre esas representaciones, y hacerlo <em>en
+cualquier base</em> obliga a entender la notación posicional de raíz: cada dígito vale su símbolo por
+la base elevada a su posición. Este módulo también es el primer contacto con los límites del
+<code>int</code> —el <em>overflow</em>— y con el caso más venenoso de todo C: <code>INT_MIN</code>,
+el negativo que no tiene positivo.</p></div>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — ft_strlen</a></li>
+  <li><a href="#ex01">ex01 — ft_putstr</a></li>
+  <li><a href="#ex02">ex02 — ft_putnbr</a></li>
+  <li><a href="#ex03">ex03 — ft_atoi</a></li>
+  <li><a href="#ex04">ex04 — ft_putnbr_base</a></li>
+  <li><a href="#ex05">ex05 — ft_atoi_base</a></li>
+</ul>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>ft_strlen</h2>
+<div class="meta"><span>Prototipo: <b>int ft_strlen(char *str)</b></span></div>
+<p>Contar y devolver el número de caracteres de una cadena.</p>
+<pre><code>int	ft_strlen(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+		i++;
+	return (i);
+}</code></pre>
+<p>Se cuenta avanzando hasta el <code>\0</code>. El índice donde está el terminador coincide con la
+longitud, porque contamos desde 0. Es la operación más básica sobre cadenas y aparece, explícita o
+disimulada, en casi todos los demás ejercicios de la piscina.</p>
+<div class="trasfondo"><b>Concepto — medir cuesta O(n)</b>. En C, saber la longitud de una cadena
+no es gratis: hay que recorrerla entera cada vez. Por eso escribir <code>while (i &lt;
+strlen(s))</code> dentro de un bucle es un clásico error de rendimiento (recorre la cadena en cada
+vuelta). Lenguajes como Python o Rust guardan la longitud aparte justamente para no pagar este peaje.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01</span>ft_putstr</h2>
+<div class="meta"><span>Prototipo: <b>void ft_putstr(char *str)</b></span><span>Autorizada: write</span></div>
+<p>Imprimir una cadena por la salida estándar.</p>
+<pre><code>void	ft_putstr(char *str)
+{
+	int	i;
+
+	i = 0;
+	while (str[i])
+	{
+		write(1, &amp;str[i], 1);
+		i++;
+	}
+}</code></pre>
+<p>Se escribe carácter a carácter con <code>write</code> sobre el descriptor 1 (la salida estándar).
+Se pasa <code>&amp;str[i]</code> porque <code>write</code> quiere una dirección y un número de bytes;
+aquí, un byte cada vez.</p>
+<div class="trasfondo"><b>Concepto — <code>write</code> es la salida de verdad</b>. Sin
+<code>printf</code> (que no está autorizado), toca hablar directamente con el kernel vía la
+<em>syscall</em> <code>write</code>. El <code>1</code> es <code>stdout</code>; el <code>2</code>,
+<code>stderr</code>. Todo lo que imprime tu programa acaba, tarde o temprano, en una llamada como
+esta: <code>printf</code> no es más que una capa cómoda por encima.</div>
+</div>
+
+<div class="card" id="ex02">
+<h2><span class="ex">ex02</span>ft_putnbr</h2>
+<div class="meta"><span>Prototipo: <b>void ft_putnbr(int nb)</b></span><span>Autorizada: write</span></div>
+<p>Mostrar un entero, cubriendo todo el rango de <code>int</code> (incluido el mínimo).</p>
+<pre><code>void	ft_putnbr(int nb)
+{
+	long	n;
+	char	c;
+
+	n = nb;
+	if (n &lt; 0)
+	{
+		write(1, "-", 1);
+		n = -n;
+	}
+	if (n &gt;= 10)
+		ft_putnbr(n / 10);
+	c = n % 10 + '0';
+	write(1, &amp;c, 1);
+}</code></pre>
+<p>Se copia <code>nb</code> a un <code>long</code> antes de nada. La recursión imprime los dígitos en
+orden: para 423, la llamada con <code>42</code> ocurre <em>antes</em> de imprimir el <code>3</code>,
+así que las centenas y decenas salen primero. La conversión dígito→carácter es el
+<code>+ '0'</code> que veíamos en C02, ahora en su uso real.</p>
+<div class="trasfondo"><b>Concepto — <code>INT_MIN</code>, el número maldito</b>. El rango de un
+<code>int</code> es asimétrico: de −2147483648 a +2147483647. El mínimo <em>no tiene</em> positivo
+representable, así que <code>-n</code> con <code>n = INT_MIN</code> se desborda (comportamiento
+indefinido). El truco de copiar a <code>long</code> —que sí tiene sitio para 2147483648— esquiva la
+trampa. Reconocer este caso límite es un rito de paso: casi todo el mundo lo suspende la primera vez.</div>
+</div>
+
+<div class="card" id="ex03">
+<h2><span class="ex">ex03</span>ft_atoi</h2>
+<div class="meta"><span>Prototipo: <b>int ft_atoi(char *str)</b></span></div>
+<p>Convertir el principio de una cadena en un <code>int</code>: espacios iniciales opcionales, una
+tanda de signos <code>+</code>/<code>-</code>, y luego dígitos hasta el primer carácter no numérico.
+Con varios <code>-</code>, el resultado es negativo si su número es impar.</p>
+<pre><code>int	ft_atoi(char *str)
+{
+	int	i;
+	int	sign;
+	int	result;
+
+	i = 0;
+	sign = 1;
+	result = 0;
+	while (str[i] == ' ' || (str[i] &gt;= 9 &amp;&amp; str[i] &lt;= 13))
+		i++;
+	while (str[i] == '+' || str[i] == '-')
+	{
+		if (str[i] == '-')
+			sign = -sign;
+		i++;
+	}
+	while (str[i] &gt;= '0' &amp;&amp; str[i] &lt;= '9')
+	{
+		result = result * 10 + (str[i] - '0');
+		i++;
+	}
+	return (result * sign);
+}</code></pre>
+<p>Tres fases claras: saltar blancos (el espacio 32 y los controles 9–13, que es lo que reconoce
+<code>isspace</code>), procesar los signos acumulando en <code>sign</code> (cada <code>-</code> lo
+invierte), y acumular dígitos con <code>result = result * 10 + dígito</code>. Con la entrada
+<code>" ---+--+1234ab567"</code> hay cinco <code>-</code> (impar) → negativo, y la lectura para en la
+<code>a</code>: sale <code>-1234</code>.</p>
+<div class="trasfondo"><b>Concepto — acumular por posición</b>. El corazón, <code>result * 10 +
+dígito</code>, <em>es</em> la notación posicional en base 10: cada dígito nuevo empuja los anteriores
+una posición a la izquierda (multiplicar por 10) y se suma el actual. Cambia el 10 por otra base y
+tienes ex05. Este patrón de «desplazar y sumar» es la máquina universal de leer números.</div>
+</div>
+
+<div class="card" id="ex04">
+<h2><span class="ex">ex04</span>ft_putnbr_base</h2>
+<div class="meta"><span>Prototipo: <b>void ft_putnbr_base(int nbr, char *base)</b></span><span>Autorizada: write</span></div>
+<p>Imprimir <code>nbr</code> en la base descrita por la cadena <code>base</code>, que enumera sus
+símbolos (<code>"01"</code> = binario, <code>"0123456789ABCDEF"</code> = hexadecimal…). Si la base es
+inválida —menos de 2 símbolos, con repetidos, o con <code>+</code>/<code>-</code>— no se imprime nada.</p>
+<pre><code>static int	ft_base_ok(char *base)
+{
+	int	i;
+	int	j;
+
+	i = 0;
+	while (base[i])
+	{
+		if (base[i] == '+' || base[i] == '-')
+			return (0);
+		j = i + 1;
+		while (base[j])
+		{
+			if (base[i] == base[j])
+				return (0);
+			j++;
+		}
+		i++;
+	}
+	if (i &lt; 2)
+		return (0);
+	return (1);
+}
+
+static void	ft_put_base(long n, char *base, int len)
+{
+	if (n &gt;= len)
+		ft_put_base(n / len, base, len);
+	write(1, &amp;base[n % len], 1);
+}
+
+void	ft_putnbr_base(int nbr, char *base)
+{
+	long	n;
+	int		len;
+
+	if (!ft_base_ok(base))
+		return ;
+	len = ft_baselen(base);
+	n = nbr;
+	if (n &lt; 0)
+	{
+		write(1, "-", 1);
+		n = -n;
+	}
+	ft_put_base(n, base, len);
+}</code></pre>
+<p>Primero se valida la base: rechaza signos, duplicados y longitudes menores que 2. La impresión es
+la misma recursión que <code>ft_putnbr</code>, pero generalizada: en vez de dividir entre 10 se divide
+entre <code>len</code> (el número de símbolos), y en vez de <code>+ '0'</code> se indexa
+<code>base[n % len]</code>. El paso a <code>long</code> vuelve a estar por <code>INT_MIN</code>.
+(<code>ft_baselen</code>, omitida aquí, solo cuenta símbolos de la base.)</p>
+<div class="trasfondo"><b>Concepto — la base es un parámetro, no una constante</b>. Descubrir que
+imprimir en decimal, binario o hex es <em>el mismo algoritmo</em> con distinto divisor es una pequeña
+revelación: la base 10 no tiene nada de especial para la máquina, es una elección humana. Validar la
+entrada (bases con símbolos repetidos no definen una numeración) enseña además a no fiarse jamás de
+lo que te pasan.</div>
+</div>
+
+<div class="card" id="ex05">
+<h2><span class="ex">ex05</span>ft_atoi_base</h2>
+<div class="meta"><span>Prototipo: <b>int ft_atoi_base(char *str, char *base)</b></span></div>
+<p>Como <code>ft_atoi</code>, pero leyendo <code>str</code> en la base dada. Si la base es inválida
+—menos de 2 símbolos, repetidos, o con <code>+</code>, <code>-</code> o espacios— devuelve 0.</p>
+<pre><code>static int	ft_index(char c, char *base)
+{
+	int	i;
+
+	i = 0;
+	while (base[i])
+	{
+		if (base[i] == c)
+			return (i);
+		i++;
+	}
+	return (-1);
+}
+
+static int	ft_convert(char *str, char *base, int len)
+{
+	int	i;
+	int	sign;
+	int	result;
+
+	i = 0;
+	sign = 1;
+	result = 0;
+	while (str[i] == ' ' || (str[i] &gt;= 9 &amp;&amp; str[i] &lt;= 13))
+		i++;
+	while (str[i] == '+' || str[i] == '-')
+	{
+		if (str[i] == '-')
+			sign = -sign;
+		i++;
+	}
+	while (ft_index(str[i], base) &gt;= 0)
+	{
+		result = result * len + ft_index(str[i], base);
+		i++;
+	}
+	return (result * sign);
+}
+
+int	ft_atoi_base(char *str, char *base)
+{
+	if (!ft_base_ok(base))
+		return (0);
+	return (ft_convert(str, base, ft_baselen(base)));
+}</code></pre>
+<p>La estructura calca a <code>ft_atoi</code> (blancos, signos, dígitos), con dos cambios: el valor de
+un símbolo ya no es <code>str[i] - '0'</code> sino su <strong>posición en la base</strong>
+(<code>ft_index</code>), y la acumulación multiplica por <code>len</code> en vez de por 10. El bucle
+de dígitos se detiene en cuanto aparece un carácter que no pertenece a la base
+(<code>ft_index</code> devuelve −1). Aquí la base inválida también incluye espacios, porque un espacio
+como símbolo chocaría con el salto de blancos. (<code>ft_base_ok</code> y <code>ft_baselen</code> son
+las del ejercicio anterior, con el añadido del rechazo de espacios.)</p>
+<div class="trasfondo"><b>Concepto — el símbolo y su valor</b>. En hex, <code>'F'</code> «vale» 15
+porque ocupa la posición 15 de <code>"0123456789ABCDEF"</code>. Separar el <em>glifo</em> (lo que se
+escribe) de su <em>valor</em> (lo que representa) mediante una tabla de posiciones es una idea que
+reaparece por todas partes: codificaciones, tokenizadores, intérpretes. <code>ft_atoi_base</code> es
+su forma más pequeña y honesta.</div>
+</div>
+
+<footer>42.zenidx.com — C 04 · <a href="index.html">← volver al índice</a></footer>
+</div>
+</body>
+</html>
