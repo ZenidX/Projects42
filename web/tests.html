@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tests — cómo preparar el test.c de cada módulo — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Trasfondo</a>
+      <a href="shell00.html">Shell 00</a>
+      <a href="shell01.html">Shell 01</a>
+      <a href="c00.html">C 00</a>
+      <a href="c01.html">C 01</a>
+      <a href="c02.html">C 02</a>
+      <a href="c03.html">C 03</a>
+      <a href="c04.html">C 04</a>
+      <a href="c05.html">C 05</a>
+      <a href="c06.html">C 06</a>
+      <a href="c07.html">C 07</a>
+      <a href="c08.html">C 08</a>
+      <a href="c09.html">C 09</a>
+      <a href="c10.html">C 10</a>
+      <a href="c11.html">C 11</a>
+      <a href="c12.html">C 12</a>
+      <a href="c13.html">C 13</a>
+      <a href="tests.html" class="active">Tests</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cómo preparar el <code>test.c</code> de cada módulo</h1>
+<p class="sub">Cada módulo <code>cXX</code> lleva un <em>runner</em> de tests propio en
+<code>cXX/test/test.c</code>: un único fichero C, sin dependencias, que compila cada ejercicio
+del repo con <code>-Wall -Wextra -Werror</code>, lo ejecuta en un proceso hijo y compara la
+salida byte a byte. Aquí se explica cómo se usan, cómo están hechos por dentro y cómo preparar
+el tuyo para un módulo nuevo.</p>
+
+<ul class="toc">
+  <li><a href="#estructura">1 — Estructura de directorios</a></li>
+  <li><a href="#uso">2 — Compilar y ejecutar el runner</a></li>
+  <li><a href="#anatomia">3 — Anatomía del runner</a></li>
+  <li><a href="#nuevo">4 — Preparar el test.c de un módulo nuevo</a></li>
+  <li><a href="#casos">5 — Añadir casos y ejercicios</a></li>
+  <li><a href="#modulos">6 — Particularidades de cada módulo</a></li>
+  <li><a href="#consejos">7 — Consejos y trampas conocidas</a></li>
+</ul>
+
+<div class="card" id="estructura">
+<h2><span class="ex">1</span>Estructura de directorios</h2>
+<p>El runner busca los ejercicios en una raíz que llamamos <em>repo</em>. Acepta las dos
+estructuras habituales, y la detecta solo:</p>
+<pre><code># En el campus (repo clonado dentro del módulo):
+c06/
+├── repo/
+│   ├── ex00/ft_print_program_name.c
+│   └── ex01/ft_print_params.c
+└── test/
+    └── test.c
+
+# En este repositorio (ejercicios directamente en el módulo):
+c/c06/
+├── ex00/ft_print_program_name.c
+├── ex01/ft_print_params.c
+└── test/
+    └── test.c</code></pre>
+<p>El orden de detección es: <code>repo/ex00</code> → <code>ex00</code> (raíz <code>.</code>) →
+<code>../repo/ex00</code> → <code>..</code>. Y siempre puedes forzarla pasándola como argumento:
+<code>./test/runner /ruta/al/repo</code>.</p>
+<div class="trasfondo"><b>Por qué un runner en C y no un script</b> — En el campus no siempre
+tienes <code>python3</code> ni permisos para instalar nada, pero <code>cc</code> está garantizado.
+Un solo <code>test.c</code> sin dependencias se compila y corre en cualquier máquina de 42. Además,
+con <code>fork</code> + <code>execv</code> el runner controla <code>argv</code>, el stdin y el
+tiempo de ejecución del programa probado — cosas que un script hace peor o no hace.</div>
+</div>
+
+<div class="card" id="uso">
+<h2><span class="ex">2</span>Compilar y ejecutar el runner</h2>
+<pre><code>cd c06                                             # el módulo que sea
+cc -Wall -Wextra -Werror -o test/runner test/test.c
+./test/runner                # autodetecta el repo
+./test/runner repo           # o dile dónde está
+./test/runner repo --extra   # c06: activa también los tests no portables</code></pre>
+<p>La salida es una línea por caso — <code>[OK]</code>, <code>[KO]</code> o <code>[SKIP]</code> —
+y un resumen final. Si un caso falla verás el <code>argv</code> usado, la salida esperada y la
+obtenida (con los <code>\n</code> visibles como escapes), y si el programa murió por señal
+(segfault) o devolvió un exit code raro:</p>
+<pre><code>[KO]   ex03  orden ASCII no alfabetico
+       esperado: "0\nAbc\nabc\nz\n"
+       obtenido: "Abc\n0\nabc\nz\n"
+
+14 OK  1 KO  0 SKIP</code></pre>
+<p>El runner devuelve <b>exit code 1 si algo falla</b> y 0 si todo pasa, así que sirve para un
+hook de git o un CI. Un ejercicio cuyo fichero fuente no existe todavía sale como
+<code>[SKIP]</code>, no como fallo: puedes tener la tabla completa desde el día uno e ir
+haciendo ejercicios.</p>
+<p>Para lanzar los 14 módulos de golpe está <code>c/run_tests.sh</code>:</p>
+<pre><code>bash c/run_tests.sh            # todos
+bash c/run_tests.sh c06 c12    # solo los que pidas</code></pre>
+</div>
+
+<div class="card" id="anatomia">
+<h2><span class="ex">3</span>Anatomía del runner</h2>
+<p>Todos los <code>test.c</code> comparten el mismo esqueleto (el de referencia es
+<code>c00/test/test.c</code>). Tiene tres piezas:</p>
+<p><b>1. La tabla de casos</b> — un array <code>g_cases[]</code> donde cada entrada describe un
+test: qué ejercicio, qué fuentes compilar, qué <code>main</code> de prueba usar y qué salida
+esperar:</p>
+<pre><code>typedef struct s_case
+{
+	const char	*ex;        /* "ex00" (para mensajes)                  */
+	const char	*desc;      /* descripción corta                        */
+	const char	*srcs;      /* fuentes relativas al repo, sep. espacio  */
+	const char	*inc;       /* dir para -I relativo al repo, o NULL     */
+	const char	*main_src;  /* main de test embebido como literal       */
+	const char	*expected;  /* stdout esperado; NULL = usar gen()       */
+	char		*(*gen)(void);  /* genera esperados largos en runtime   */
+}	t_case;</code></pre>
+<p><b>2. La fase de compilación</b> — para cada caso, el runner escribe <code>main_src</code> en
+un <code>main.c</code> dentro de un directorio temporal (<code>mkdtemp</code> en
+<code>/tmp</code>), y lo compila junto a las fuentes del repo:</p>
+<pre><code>cc -Wall -Wextra -Werror [-I repo/inc] repo/exNN/fuente.c main.c -o /tmp/.../prog</code></pre>
+<p>Si no compila, el caso es <code>[KO]</code> y se vuelca el log del compilador. El repo nunca
+se ensucia: todo ocurre en el temporal, que se borra al final.</p>
+<p><b>3. La fase de ejecución</b> — <code>fork()</code>, en el hijo se redirige stdout a un pipe
+con <code>dup2</code>, se arma <code>alarm(5)</code> (mata bucles infinitos) y se hace
+<code>execv</code>. El padre lee todo el pipe, espera con <code>waitpid</code> y compara con
+<code>strcmp</code> contra lo esperado. Señal recibida o salida distinta → <code>[KO]</code>.</p>
+<div class="trasfondo"><b>Los ejercicios son funciones; el main lo pone el test</b> — En casi
+todos los módulos tú entregas una función (<code>ft_strlen</code>, <code>ft_swap</code>…) sin
+<code>main</code>. El runner aporta uno por caso, embebido como literal de cadena: declara el
+prototipo, llama a la función con los argumentos del caso e imprime el resultado por stdout.
+Así cada caso decide exactamente qué observa. La excepción son los módulos de programas
+(c06, c10, el do-op de c11): ahí no hay main que inyectar y lo que se controla es
+<code>argv</code> — ver §6.</div>
+</div>
+
+<div class="card" id="nuevo">
+<h2><span class="ex">4</span>Preparar el test.c de un módulo nuevo</h2>
+<p>Receta, partiendo del runner plantilla:</p>
+<pre><code>1. mkdir -p cXX/test
+2. cp c00/test/test.c cXX/test/test.c
+3. Edita la cabecera del fichero (nombre del módulo).
+4. Cambia el prefijo del temporal:  "cXXtest.XXXXXX"
+   (en main: strcpy(g_tmp, "/tmp/cXXtest.XXXXXX"))
+5. Sustituye la tabla g_cases[] por los casos de tu módulo.
+6. Compila el runner y pásalo; itera hasta ver 0 KO.</code></pre>
+<p>El núcleo (utilidades, compilación, ejecución, colores, resumen) no se toca: solo cambian la
+cabecera, el prefijo del temporal y la tabla. Si el módulo necesita algo que la struct no cubre
+(argv por caso, stdin, stderr…), se extiende la struct con un campo más — es lo que hacen c06,
+c09, c10 y c11 — pero el formato de salida y el resto del esqueleto se mantienen idénticos.</p>
+</div>
+
+<div class="card" id="casos">
+<h2><span class="ex">5</span>Añadir casos y ejercicios</h2>
+<p>Un caso nuevo es una línea más en <code>g_cases[]</code>. Por ejemplo, para probar
+<code>ft_strlen</code> de c01/ex06:</p>
+<pre><code>{"ex06", "strlen basico", "ex06/ft_strlen.c", NULL,
+	"#include &lt;stdio.h&gt;\n"
+	"int ft_strlen(char *s);\n"
+	"int main(void){printf(\"%d %d\", ft_strlen(\"\"), "
+	"ft_strlen(\"hola mundo\"));return 0;}\n",
+	"0 10", NULL},</code></pre>
+<p>Reglas prácticas:</p>
+<pre><code>· srcs admite varias fuentes: "ex02/ft_list_size.c ex00/ft_create_elem.c"
+· inc añade un -I:            inc = "ex00"  →  -I repo/ex00  (headers como ft_list.h)
+· expected = NULL + gen       →  el esperado se calcula en runtime (salidas largas:
+                                  las 120 combinaciones de print_comb, un hexdump…)
+· el main embebido es un literal C: las comillas van escapadas (\")
+  y un salto de línea que el main deba IMPRIMIR se escribe \\n
+  (un \n a secas es un salto en el fichero main.c generado, no en la salida)</code></pre>
+<p>Piensa cada caso como una pregunta concreta: el caso «param vacío» de c06/ex01 pilla a quien
+usa <code>if (argv[i][0])</code> de guarda; el «orden ASCII» de c06/ex03 pilla el sort
+alfabético; los límites <code>INT_MIN</code>/<code>INT_MAX</code> de <code>ft_putnbr</code>
+pillan el overflow de <code>-n</code>. Los casos que solo repiten el enunciado no cazan nada.</p>
+</div>
+
+<div class="card" id="modulos">
+<h2><span class="ex">6</span>Particularidades de cada módulo</h2>
+<table>
+<tr><th>Módulo</th><th>Tipo</th><th>Qué tiene de especial su test.c</th></tr>
+<tr><td><b>c00</b></td><td>funciones</td><td>Es la plantilla. Esperados largos con <code>gen()</code>:
+las combinaciones de <code>print_comb</code>/<code>comb2</code>/<code>combn</code> se generan en
+runtime en vez de incrustar constantes de 40&nbsp;KB.</td></tr>
+<tr><td><b>c01</b></td><td>funciones</td><td>Tabla directa: punteros, swap, div_mod, tablas de int.</td></tr>
+<tr><td><b>c02</b></td><td>funciones</td><td><code>ft_print_memory</code> imprime direcciones reales:
+el runner recorta el prefijo <code>&lt;hex&gt;:&nbsp;</code> de cada línea antes de comparar, y el modelo
+(hex + ascii con <code>.</code>) se calcula con <code>gen()</code>.</td></tr>
+<tr><td><b>c03</b></td><td>funciones</td><td>Tabla directa: strcmp/strcat/strstr/strlcat.</td></tr>
+<tr><td><b>c04</b></td><td>funciones</td><td>Casos sucios de <code>ft_atoi</code>/<code>atoi_base</code>
+(signos múltiples, espacios, bases inválidas) y límites de int.</td></tr>
+<tr><td><b>c05</b></td><td>funciones</td><td>Recursivos vs iterativos, overflow de factorial,
+<code>sqrt</code> de no-cuadrados, primos.</td></tr>
+<tr><td><b>c06</b></td><td>programas</td><td>No hay main que inyectar: cada caso define su
+<code>argv</code> completo, <code>argv[0]</code> incluido — con <code>execv</code> puedes mentir en el
+nombre (<code>pouic</code>, ruta absoluta) y cazar al que lo lleva hardcodeado. El caso
+<code>argc&nbsp;==&nbsp;0</code> no es portable y solo corre con <code>--extra</code>.</td></tr>
+<tr><td><b>c07</b></td><td>funciones</td><td>Todo devuelve memoria de <code>malloc</code>: los mains
+liberan lo que reciben, y conviene pasar el runner también bajo valgrind (§7).</td></tr>
+<tr><td><b>c08</b></td><td>headers</td><td>Se entrega un <code>.h</code>, no un <code>.c</code>: el main
+se compila solo con <code>-I</code> al directorio del ejercicio (casos <em>header-only</em>). La
+existencia se comprueba sobre el propio <code>.h</code>.</td></tr>
+<tr><td><b>c09</b></td><td>make / libft</td><td>Copia las fuentes a un temporal y ahí ejecuta
+<code>libft_creator.sh</code> y el Makefile: <code>all</code>, <code>clean</code> (borra los
+<code>.o</code>, conserva <code>libft.a</code>), <code>fclean</code>, <code>re</code>; verifica con
+<code>nm</code> que la librería exporta los cinco <code>ft_*</code> y enlaza un main contra ella.</td></tr>
+<tr><td><b>c10</b></td><td>programas</td><td>Crea ficheros de prueba en el temporal (texto, binario,
+vacío, sin permisos con <code>chmod 000</code>) y compara contra referencias calculadas en el propio
+runner (equivalentes a <code>cat</code>/<code>tail&nbsp;-c</code>/<code>hexdump</code>). Captura
+también stderr y el exit code, y alimenta stdin por pipe para <code>ft_cat</code>.</td></tr>
+<tr><td><b>c11</b></td><td>mixto</td><td>ex00–ex07 son funciones normales, pero
+<code>do-op</code> (ex05) es un programa de varias fuentes: se compila una vez y se ejecuta con
+una batería de <code>argv</code> (operador desconocido, división por cero, basura en los números…).</td></tr>
+<tr><td><b>c12</b></td><td>funciones + header</td><td>Todos los mains incluyen
+<code>ft_list.h</code> (<code>inc&nbsp;=&nbsp;"ex00"</code>) y enlazan
+<code>ex00/ft_create_elem.c</code> además de la fuente del ejercicio. Helpers <code>mk()</code>
+para montar listas en cada main.</td></tr>
+<tr><td><b>c13</b></td><td>funciones + header</td><td>Igual que c12 con <code>ft_btree.h</code> y
+<code>btree_create_node.c</code>; los mains comparten un árbol de prueba fijo (1..7, raíz 4) para
+que los recorridos prefix/infix/suffix tengan esperados conocidos.</td></tr>
+</table>
+</div>
+
+<div class="card" id="consejos">
+<h2><span class="ex">7</span>Consejos y trampas conocidas</h2>
+<p><b>El escapado es la trampa número uno.</b> El main de test vive dentro de un literal de C:
+toda comilla del main va como <code>\"</code>, y hay dos niveles de <code>\n</code>. Si el main
+debe <em>imprimir</em> un salto, en el literal exterior se escribe <code>\\n</code>; un
+<code>\n</code> simple solo formatea el <code>main.c</code> generado. Si un esperado no cuadra
+por un salto de más o de menos, empieza por aquí — por eso el runner imprime los escapes
+visibles.</p>
+<p><b>SKIP no es un error.</b> Prepara la tabla completa del módulo antes de hacer los
+ejercicios: los que falten saldrán <code>[SKIP]</code> y se irán encendiendo solos según
+entregues ficheros.</p>
+<p><b>El runner no pasa norminette, y no tiene que pasarla.</b> Es herramienta, no entregable:
+no se entrega, no se corrige. Lo que sí debe compilar limpio con
+<code>-Wall -Wextra -Werror</code> es el propio runner (prueba de fuego de tus prototipos) y,
+por supuesto, cada ejercicio.</p>
+<p><b>Memoria:</b> en los módulos con <code>malloc</code> (c07, c12, c13) el runner comprueba
+comportamiento, no fugas. Para fugas, pasa el binario del caso bajo valgrind a mano:</p>
+<pre><code>valgrind --leak-check=full ./test/runner    # los hijos heredan valgrind con --trace-children=yes</code></pre>
+<p><b>No toques el repo desde el test.</b> Todo lo que el runner genera (mains, binarios, logs,
+ficheros de prueba, la libft de c09) vive en el directorio de <code>mkdtemp</code> y muere con
+<code>cleanup()</code>. Si un test necesita un fichero, lo crea en el temporal — nunca junto a
+los ejercicios.</p>
+<div class="trasfondo"><b>La moraleja</b> — Escribir el tester te hace mejor que el tester: para
+diseñar el caso «¿y si <code>argv[0]</code> miente?» tienes que entender <code>execv</code>; para
+el caso «orden ASCII» tienes que saber por qué <code>'0' &lt; 'A' &lt; 'a'</code>. Cada caso que
+se te ocurra es un bug que ya no escribirás. En la piscine el tester eres tú.</div>
+</div>
+
+</div>
+<footer>
+<div class="wrap">42.zenidx.com — apuntes personales de la C Piscine de 42 Barcelona.</div>
+</footer>
+</body>
+</html>
