@@ -1,0 +1,210 @@
+#!/usr/bin/env bash
+# zenpack - elige (o crea) el pack de ejercicios sobre el que se trabaja.
+#
+#   zenpack              menu interactivo con los packs existentes
+#   zenpack c03          selecciona un pack por nombre o por categoria/nombre
+#   zenpack -p           imprime la ruta del pack actual (vacio + salida 1 si no hay)
+#   zenpack -n           va directo a crear un pack nuevo
+#
+# La eleccion se guarda en ~/.local/state/zenidx/current-pack y la leen los
+# demas paneles del layout (zenin, zentest, zcd), asi que cambiar de pack aqui
+# los reapunta a todos sin reiniciar nada.
+#
+# Un pack es un directorio CATEGORIA/NOMBRE bajo ~/zenidx, con repo/, test/,
+# subject.pdf y extra/.
+set -euo pipefail
+
+ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/zenidx"
+STATE_FILE="$STATE_DIR/current-pack"
+
+if [ -t 1 ]; then
+    B=$'\033[1m'; D=$'\033[2m'; G=$'\033[32m'; Y=$'\033[33m'; C=$'\033[36m'; R=$'\033[0m'
+else
+    B=''; D=''; G=''; Y=''; C=''; R=''
+fi
+
+usage() { sed -n '2,16p' "$0" | cut -c3- ; }
+
+# --- estado ----------------------------------------------------------------
+
+current_pack() {
+    [ -r "$STATE_FILE" ] || return 1
+    local p
+    p=$(< "$STATE_FILE")
+    [ -n "$p" ] && [ -d "$p" ] || return 1
+    printf '%s\n' "$p"
+}
+
+set_pack() {
+    mkdir -p "$STATE_DIR"
+    printf '%s\n' "$1" > "$STATE_FILE"
+    printf '%sPack actual:%s %s\n' "$B" "$R" "${1#$ROOT/}"
+}
+
+# --- inventario ------------------------------------------------------------
+
+list_packs() {
+    local cat pack
+    for cat in "$ROOT"/*/; do
+        for pack in "$cat"*/; do
+            [ -d "$pack" ] && printf '%s\n' "${pack%/}"
+        done
+    done
+}
+
+list_categories() {
+    local cat
+    for cat in "$ROOT"/*/; do
+        [ -d "$cat" ] && printf '%s\n' "$(basename "${cat%/}")"
+    done
+}
+
+# Resumen de que contiene un pack, para orientarse en el menu.
+pack_bits() {
+    local p=$1 bits='' n
+    if [ -d "$p/repo" ]; then
+        n=$(find "$p/repo" -maxdepth 1 -type d -name 'ex*' | wc -l)
+        [ "$n" -gt 0 ] && bits="repo(${n}ex)" || bits="repo"
+    fi
+    [ -d "$p/test" ] && bits="$bits test"
+    compgen -G "$p/*subject*.pdf" > /dev/null 2>&1 && bits="$bits subject"
+    [ -d "$p/extra" ] && bits="$bits extra"
+    [ -n "$bits" ] && printf '%s' "$bits" || printf '%s' '-'
+}
+
+# --- creacion --------------------------------------------------------------
+
+valid_name() {
+    case $1 in
+        ''|*/*|.*) return 1 ;;
+        *) [[ $1 =~ ^[A-Za-z0-9._-]+$ ]] ;;
+    esac
+}
+
+# El Makefile de test/ es identico en todos los packs, asi que el pack nuevo
+# hereda el del pack mas reciente que tenga uno.
+seed_test_dir() {
+    local dest=$1 src
+    src=$(find "$ROOT" -mindepth 4 -maxdepth 4 -path '*/test/Makefile' \
+          -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+    if [ -n "$src" ]; then
+        cp "$src" "$dest/test/Makefile"
+        printf '  %sMakefile de test copiado de %s%s\n' "$D" "${src#$ROOT/}" "$R"
+    fi
+}
+
+create_pack() {
+    local cats cat name pack i
+    mapfile -t cats < <(list_categories)
+
+    printf '\n%sCrear un pack nuevo%s\n\n' "$B" "$R"
+    printf '  Categorias existentes:\n'
+    for i in "${!cats[@]}"; do
+        printf '   %s%2d%s) %s\n' "$C" "$((i + 1))" "$R" "${cats[$i]}"
+    done
+    printf '\n'
+    read -r -p "  Categoria (numero, o un nombre nuevo): " cat \
+        || { printf '\n  %scancelado%s\n' "$Y" "$R"; return 1; }
+    [ -n "$cat" ] || { printf '  %scancelado%s\n' "$Y" "$R"; return 1; }
+    if [[ $cat =~ ^[0-9]+$ ]]; then
+        [ "$cat" -ge 1 ] && [ "$cat" -le "${#cats[@]}" ] \
+            || { printf '  %sno hay categoria %s%s\n' "$Y" "$cat" "$R"; return 1; }
+        cat=${cats[$((cat - 1))]}
+    fi
+    valid_name "$cat" || { printf '  %snombre de categoria no valido%s\n' "$Y" "$R"; return 1; }
+
+    read -r -p "  Nombre del pack: " name \
+        || { printf '\n  %scancelado%s\n' "$Y" "$R"; return 1; }
+    valid_name "$name" || { printf '  %snombre de pack no valido%s\n' "$Y" "$R"; return 1; }
+
+    pack="$ROOT/$cat/$name"
+    [ -e "$pack" ] && { printf '  %sya existe %s%s\n' "$Y" "$cat/$name" "$R"; return 1; }
+
+    mkdir -p "$pack"/{repo,test,extra}
+    printf '\n  %screado%s %s%s%s  (repo/ test/ extra/)\n' "$G" "$R" "$B" "$cat/$name" "$R"
+    seed_test_dir "$pack"
+    printf '  %sfalta clonar el repo en %s/repo y dejar el subject.pdf%s\n\n' \
+           "$D" "$cat/$name" "$R"
+
+    set_pack "$pack"
+}
+
+# --- menu ------------------------------------------------------------------
+
+menu() {
+    local packs cur last_cat cat i choice
+    mapfile -t packs < <(list_packs)
+    cur=$(current_pack 2>/dev/null || true)
+
+    if [ "${#packs[@]}" -eq 0 ]; then
+        printf '%sNo hay ningun pack en %s todavia.%s\n' "$Y" "$ROOT" "$R"
+        create_pack
+        return
+    fi
+
+    printf '\n%sPacks de ejercicios%s %sen %s%s\n' "$B" "$R" "$D" "$ROOT" "$R"
+    last_cat=''
+    for i in "${!packs[@]}"; do
+        cat=$(basename "$(dirname "${packs[$i]}")")
+        [ "$cat" != "$last_cat" ] && { printf '\n  %s%s%s\n' "$D" "$cat" "$R"; last_cat=$cat; }
+        if [ "${packs[$i]}" = "$cur" ]; then
+            printf '   %s%2d%s) %s%-10s%s %s%s%s %s<- actual%s\n' \
+                "$C" "$((i + 1))" "$R" "$B" "$(basename "${packs[$i]}")" "$R" \
+                "$D" "$(pack_bits "${packs[$i]}")" "$R" "$G" "$R"
+        else
+            printf '   %s%2d%s) %-10s %s%s%s\n' \
+                "$C" "$((i + 1))" "$R" "$(basename "${packs[$i]}")" \
+                "$D" "$(pack_bits "${packs[$i]}")" "$R"
+        fi
+    done
+
+    printf '\n    %sn%s) crear un pack nuevo\n' "$C" "$R"
+    printf '    %sq%s) salir sin tocar nada\n\n' "$C" "$R"
+
+    if ! read -r -p "Pack [1-${#packs[@]}/n/q]: " choice; then
+        printf '\n%ssin cambios. Vuelve a elegir cuando quieras con `zenpack`.%s\n' "$D" "$R"
+        return 0
+    fi
+    case $choice in
+        ''|q|Q) printf '%ssin cambios%s\n' "$D" "$R"; return 0 ;;
+        n|N)    create_pack ;;
+        *[!0-9]*|'') printf '%sopcion no valida%s\n' "$Y" "$R"; return 1 ;;
+        *)
+            if [ "$choice" -ge 1 ] && [ "$choice" -le "${#packs[@]}" ]; then
+                set_pack "${packs[$((choice - 1))]}"
+            else
+                printf '%sno hay opcion %s%s\n' "$Y" "$choice" "$R"
+                return 1
+            fi
+            ;;
+    esac
+}
+
+# --- seleccion directa por nombre ------------------------------------------
+
+resolve() {
+    local want=$1 packs match=() p
+    mapfile -t packs < <(list_packs)
+    for p in "${packs[@]}"; do
+        if [ "${p#$ROOT/}" = "$want" ] || [ "$(basename "$p")" = "$want" ] || [ "$p" = "$want" ]; then
+            match+=("$p")
+        fi
+    done
+    case "${#match[@]}" in
+        1) printf '%s\n' "${match[0]}" ;;
+        0) printf 'zenpack: no encuentro el pack "%s"\n' "$want" >&2; return 1 ;;
+        *) printf 'zenpack: "%s" es ambiguo: %s\n' "$want" "${match[*]#$ROOT/}" >&2; return 1 ;;
+    esac
+}
+
+# --- entrada ---------------------------------------------------------------
+
+case "${1-}" in
+    -h|--help)  usage; exit 0 ;;
+    -p|--print) current_pack || exit 1; exit 0 ;;
+    -n|--new)   create_pack; exit $? ;;
+    '')         menu; exit $? ;;
+    -*)         usage >&2; exit 2 ;;
+    *)          set_pack "$(resolve "$1")"; exit 0 ;;
+esac

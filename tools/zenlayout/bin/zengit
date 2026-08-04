@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# zengit - git para los repos de entrega (vogsphere) de los packs.
+#
+#   zengit status|add|commit|push|...   cualquier subcomando de git
+#   zengit -l                           lista los repos gestionados y su estado
+#
+# El .git de cada repo de vogsphere NO vive dentro del arbol de trabajo: se
+# guarda en ~/.local/share/zenidx-vogsphere/<slug>.git con core.worktree
+# apuntando de vuelta al pack. Asi el repo de zenidx puede versionar los
+# ficheros de los ejercicios como ficheros normales en vez de como un gitlink
+# (un puntero vacio), y las entregas a vogsphere siguen funcionando igual.
+#
+# Uso normal: te situas dentro del pack (o de su repo/) y llamas a zengit.
+set -euo pipefail
+
+ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
+STORE="${ZENIDX_VOGSPHERE:-$HOME/.local/share/zenidx-vogsphere}"
+
+if [ -t 1 ]; then
+    B=$'\033[1m'; D=$'\033[2m'; R=$'\033[0m'
+else
+    B=''; D=''; R=''
+fi
+
+# packs/c/c03/repo -> c-c03 ; packs/rush/rush00 -> rush-rush00
+slug_for() {
+    printf '%s' "${1#"$ROOT"/}" | sed 's|/repo$||; s|/|-|g'
+}
+
+list_repos() {
+    local gd slug wt
+    for gd in "$STORE"/*.git; do
+        [ -d "$gd" ] || continue
+        slug=$(basename "$gd" .git)
+        wt=$(git --git-dir="$gd" config --get core.worktree || echo '?')
+        printf '%s%-18s%s %s%s%s\n' "$B" "$slug" "$R" "$D" "${wt/#$HOME/\~}" "$R"
+    done
+}
+
+[ "${1:-}" = "-l" ] && { list_repos; exit 0; }
+
+# Sube desde el directorio actual hasta dar con un pack que tenga git-dir.
+dir=$(pwd -P)
+while [ "$dir" != "/" ]; do
+    case "$dir" in
+        "$ROOT"/*)
+            gitdir="$STORE/$(slug_for "$dir").git"
+            if [ -d "$gitdir" ]; then
+                exec git --git-dir="$gitdir" --work-tree="$dir" "$@"
+            fi
+            ;;
+    esac
+    dir=$(dirname "$dir")
+done
+
+printf 'zengit: no estas dentro de un repo de entrega gestionado.\n' >&2
+printf '        situate en un pack bajo %s, o usa "zengit -l".\n' "${ROOT/#$HOME/\~}" >&2
+exit 1

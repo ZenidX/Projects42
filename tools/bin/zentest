@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# zentest - compila y lanza el runner de tests del pack de ejercicios activo.
+#
+#   zentest              salida completa del runner (caso por caso)
+#   zentest --compact    resumen por ejercicio + lista de fallos, para el panel
+#   zentest --pack DIR   fuerza un pack concreto en vez del activo
+#
+# Equivale a `cd <pack>/test && make && ./runner ../repo`, pero cogiendo el
+# pack de `zenpack`, asi que al cambiar de pack el panel se reapunta solo.
+set -uo pipefail
+
+compact=0
+pack=''
+while [ $# -gt 0 ]; do
+    case $1 in
+        -c|--compact) compact=1; shift ;;
+        --pack)       pack=${2-}; shift 2 ;;
+        -h|--help)    sed -n '2,9p' "$0" | cut -c3-; exit 0 ;;
+        *)            printf 'zentest: opcion desconocida %s\n' "$1" >&2; exit 2 ;;
+    esac
+done
+
+# Bajo `watch -c` la salida es una tuberia pero el color si se pinta, de ahi
+# FORCE_COLOR (es lo que usa el panel del layout).
+if [ -t 1 ] || [ -n "${FORCE_COLOR-}" ]; then
+    B=$'\033[1m'; D=$'\033[2m'; G=$'\033[32m'; RED=$'\033[31m'; Y=$'\033[33m'; R=$'\033[0m'
+else
+    B=''; D=''; G=''; RED=''; Y=''; R=''
+fi
+
+if [ -z "$pack" ]; then
+    pack=$(zenpack --print 2>/dev/null) || {
+        printf 'Sin pack seleccionado.\nElige uno con %szenpack%s en el panel de la izquierda.\n' "$B" "$R"
+        exit 0
+    }
+fi
+name=${pack#"${ZENIDX_ROOT:-$HOME/zenidx/packs}"/}
+
+if [ ! -d "$pack/test" ]; then
+    printf '%s%s%s no tiene directorio test/\n' "$B" "$name" "$R"
+    exit 0
+fi
+if [ ! -e "$pack/test/Makefile" ]; then
+    printf '%s%s%s: falta test/Makefile\n' "$B" "$name" "$R"
+    exit 0
+fi
+
+cd "$pack/test"
+
+if ! build=$(make -s 2>&1); then
+    printf '%s%s%s  %sno compila el runner%s\n\n%s\n' "$B" "$name" "$R" "$RED" "$R" "$build"
+    exit 1
+fi
+
+out=$(./runner ../repo 2>&1)
+
+if [ "$compact" -eq 0 ]; then
+    printf '%s\n' "$out"
+    exit 0
+fi
+
+printf '%s\n' "$out" | awk \
+    -v name="$name" -v hora="$(date +%H:%M:%S)" -v maxko="${ZENTEST_KO_MAX:-10}" \
+    -v B="$B" -v D="$D" -v G="$G" -v RED="$RED" -v Y="$Y" -v R="$R" '
+/^── / { ex = $2; order[++n] = ex; ok[ex] = 0; ko[ex] = 0; next }
+/^[[:space:]]*\[OK\]/ { if (ex != "") ok[ex]++; next }
+/^[[:space:]]*\[KO\]/ {
+    if (ex != "") ko[ex]++
+    sub(/^[[:space:]]*\[KO\][[:space:]]*/, "")
+    fallos[++m] = $0
+    next
+}
+/ejercicios/ { resumen = $0 }
+END {
+    printf "%s%s%s %s· tests%s%*s%s\n", B, name, R, D, R, 20, hora, R
+    if (resumen != "") {
+        col = (m > 0 ? RED : G)
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", resumen)
+        printf "%s%s%s\n\n", col, resumen, R
+    } else print ""
+
+    for (i = 1; i <= n; i++) {
+        ex = order[i]
+        tot = ok[ex] + ko[ex]
+        if (tot == 0)      printf "  %-24s %ssin tests%s\n", ex, D, R
+        else if (ko[ex])   printf "  %-24s %s%d/%d%s\n", ex, RED, ok[ex], tot, R
+        else               printf "  %-24s %s%d/%d%s\n", ex, G, ok[ex], tot, R
+    }
+
+    if (m > 0) {
+        printf "\n  %sfallos%s\n", Y, R
+        lim = (m < maxko ? m : maxko)
+        for (i = 1; i <= lim; i++) printf "   %s\n", fallos[i]
+        if (m > lim) printf "   %s(+%d mas, `zentest` para verlos todos)%s\n", D, m - lim, R
+    }
+}'

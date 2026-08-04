@@ -3,3 +3,14 @@ _keys/
 .claude/
 __pycache__/
 *.pyc
+
+# binarios de los runners de test y objetos sueltos
+runner
+a.out
+*.o
+
+# basura de editores
+*.swp
+*.swo
+*~
+nano.*.save

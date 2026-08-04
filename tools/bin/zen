@@ -1,0 +1,265 @@
+#!/usr/bin/env bash
+# zen - menu de configuracion del espacio de trabajo zenidx.
+#
+#   zen                  menu interactivo
+#   zen --apply          regenera el layout de terminator y sale
+#   zen --get CLAVE      imprime un ajuste (layout, n_tree, n_norm, n_test, assist)
+#   zen --set CLAVE=VAL  cambia un ajuste y aplica
+#
+# Los ajustes viven en ~/.config/zenidx/config y de ahi se genera la seccion
+# [layouts] de ~/.config/terminator/config, respetando el resto del fichero
+# (perfiles, keybindings y global_config del usuario no se tocan).
+set -euo pipefail
+
+ZENIDX_ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
+ZENIDX_HOME="$(dirname "$ZENIDX_ROOT")"
+CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zenidx"
+CONF="$CONF_DIR/config"
+SHARE="${XDG_DATA_HOME:-$HOME/.local/share}/zenidx"
+TEMPLATE="$SHARE/layouts.conf.in"
+TERM_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/terminator/config"
+
+if [ -t 1 ]; then
+    B=$'\033[1m'; D=$'\033[2m'; G=$'\033[32m'; Y=$'\033[33m'; C=$'\033[36m'; R=$'\033[0m'
+else
+    B=''; D=''; G=''; Y=''; C=''; R=''
+fi
+
+usage() { sed -n '2,12p' "$0" | cut -c3- ; }
+
+# --- ajustes ---------------------------------------------------------------
+
+layout=default
+n_tree=0.5
+n_norm=0.5
+n_test=0.5
+assist=claude
+
+load() {
+    [ -r "$CONF" ] || return 0
+    local k v
+    while IFS='=' read -r k v; do
+        case $k in
+            layout) layout=$v ;;
+            n_tree) n_tree=$v ;;
+            n_norm) n_norm=$v ;;
+            n_test) n_test=$v ;;
+            assist) assist=$v ;;
+        esac
+    done < "$CONF"
+}
+
+save() {
+    mkdir -p "$CONF_DIR"
+    cat > "$CONF" <<EOF
+# Ajustes del espacio de trabajo zenidx. Los edita \`zen\`.
+layout=$layout
+n_tree=$n_tree
+n_norm=$n_norm
+n_test=$n_test
+assist=$assist
+EOF
+}
+
+# --- generacion del layout de terminator -----------------------------------
+
+# Terminator no expande ~ ni variables en `directory`, asi que la ruta va
+# resuelta. El comando del panel de asistente si lo interpreta la shell.
+render() {
+    local cmd title
+    if [ "$assist" = "claude" ]; then
+        cmd='claude; exec $SHELL'
+        title='claude'
+    else
+        cmd='exec $SHELL'
+        title='shell'
+    fi
+    sed -e "s|@ZENIDX@|$ZENIDX_HOME|g" \
+        -e "s|@N_TREE@|$n_tree|g" \
+        -e "s|@N_NORM@|$n_norm|g" \
+        -e "s|@N_TEST@|$n_test|g" \
+        -e "s|@ASSIST_TITLE@|$title|g" \
+        -e "s|@CMD_ASSIST@|$cmd|g" \
+        "$TEMPLATE"
+}
+
+apply() {
+    local rendered tmp
+    if [ ! -r "$TEMPLATE" ]; then
+        printf '%szen: falta la plantilla %s%s\n' "$Y" "$TEMPLATE" "$R" >&2
+        printf '%sreinstala con tools/install.sh%s\n' "$D" "$R" >&2
+        return 1
+    fi
+    rendered=$(mktemp)
+    render > "$rendered"
+
+    mkdir -p "$(dirname "$TERM_CFG")"
+    if [ ! -f "$TERM_CFG" ]; then
+        {
+            printf '[global_config]\n  handle_size = 0\n  inactive_color_offset = 1.0\n'
+            printf '[keybindings]\n'
+            printf '[profiles]\n  [[default]]\n    use_system_font = False\n'
+            printf '    font = Monospace 9\n    copy_on_selection = True\n'
+            cat "$rendered"
+            printf '[plugins]\n'
+        } > "$TERM_CFG"
+    else
+        cp -f "$TERM_CFG" "$TERM_CFG.bak"
+        tmp=$(mktemp)
+        # Sustituye SOLO la seccion [layouts]; el resto del fichero sobrevive.
+        awk -v LAY="$rendered" '
+            BEGIN { while ((getline l < LAY) > 0) lay = lay l "\n" }
+            /^\[[^[]/ {
+                if ($0 ~ /^\[layouts\]/) { printf "%s", lay; skip = 1; seen = 1; next }
+                skip = 0
+            }
+            !skip { print }
+            END { if (!seen) printf "%s", lay }
+        ' "$TERM_CFG" > "$tmp"
+        mv "$tmp" "$TERM_CFG"
+    fi
+    rm -f "$rendered"
+    return 0
+}
+
+# --- utilidades del menu ---------------------------------------------------
+
+valid_interval() {
+    case $1 in
+        ''|*[!0-9.]*|*.*.*) return 1 ;;
+        .|0|0.0|0.00) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+ask_interval() {
+    local what=$1 cur=$2 v
+    read -r -p "  Intervalo de $what en segundos [$cur]: " v || return 1
+    [ -n "$v" ] || return 1
+    if ! valid_interval "$v"; then
+        printf '  %sintervalo no valido: %s%s\n' "$Y" "$v" "$R"
+        return 1
+    fi
+    printf '%s' "$v"
+}
+
+layout_desc() {
+    case $1 in
+        default) printf 'pack | tree/norminette/tests | asistente+shell  (6 paneles)' ;;
+        focus)   printf 'pack | tree/norminette/tests                    (4 paneles)' ;;
+        tests)   printf 'solo el panel de tests, a pantalla completa' ;;
+        solo)    printf 'una terminal suelta dentro del pack' ;;
+        *)       printf 'desconocido' ;;
+    esac
+}
+
+choose_layout() {
+    local opts=(default focus tests solo) i choice
+    printf '\n  %sLayouts disponibles%s\n\n' "$B" "$R"
+    for i in "${!opts[@]}"; do
+        if [ "${opts[$i]}" = "$layout" ]; then
+            printf '   %s%d%s) %s%-8s%s %s%s%s %s<- actual%s\n' "$C" "$((i + 1))" "$R" \
+                "$B" "${opts[$i]}" "$R" "$D" "$(layout_desc "${opts[$i]}")" "$R" "$G" "$R"
+        else
+            printf '   %s%d%s) %-8s %s%s%s\n' "$C" "$((i + 1))" "$R" \
+                "${opts[$i]}" "$D" "$(layout_desc "${opts[$i]}")" "$R"
+        fi
+    done
+    printf '\n'
+    read -r -p "  Layout [1-${#opts[@]}]: " choice || return 1
+    case $choice in
+        ''|*[!0-9]*) return 1 ;;
+        *) [ "$choice" -ge 1 ] && [ "$choice" -le "${#opts[@]}" ] || return 1
+           layout=${opts[$((choice - 1))]} ;;
+    esac
+}
+
+current_pack_name() {
+    local p
+    if p=$(zenpack --print 2>/dev/null); then
+        printf '%s' "${p#"$ZENIDX_ROOT"/}"
+    else
+        printf '%ssin pack%s' "$Y" "$R"
+    fi
+}
+
+# --- menu ------------------------------------------------------------------
+
+menu() {
+    local choice v
+    while :; do
+        printf '\n%sEspacio de trabajo zen%s  %s%s%s\n\n' "$B" "$R" "$D" "$ZENIDX_HOME" "$R"
+        printf '   pack activo   %s\n' "$(current_pack_name)"
+        printf '   layout        %s%s%s %s%s%s\n\n' \
+            "$B" "$layout" "$R" "$D" "$(layout_desc "$layout")" "$R"
+
+        printf '  %sintervalos de vigilancia%s\n' "$D" "$R"
+        printf '   %s1%s) tree          %ss\n' "$C" "$R" "$n_tree"
+        printf '   %s2%s) norminette    %ss\n' "$C" "$R" "$n_norm"
+        printf '   %s3%s) tests         %ss\n\n' "$C" "$R" "$n_test"
+
+        printf '  %sespacio%s\n' "$D" "$R"
+        printf '   %s4%s) layout            %s\n' "$C" "$R" "$layout"
+        printf '   %s5%s) panel asistente   %s\n' "$C" "$R" "$assist"
+        printf '   %s6%s) cambiar de pack   %s(zenpack)%s\n\n' "$C" "$R" "$D" "$R"
+
+        printf '   %sa%s) aplicar y relanzar terminator\n' "$C" "$R"
+        printf '   %sg%s) guardar sin relanzar\n' "$C" "$R"
+        printf '   %sq%s) salir\n\n' "$C" "$R"
+
+        read -r -p "Opcion: " choice || { printf '\n'; return 0; }
+        case $choice in
+            1) v=$(ask_interval tree "$n_tree") && n_tree=$v ;;
+            2) v=$(ask_interval norminette "$n_norm") && n_norm=$v ;;
+            3) v=$(ask_interval tests "$n_test") && n_test=$v ;;
+            4) choose_layout || printf '  %ssin cambios%s\n' "$D" "$R" ;;
+            5) if [ "$assist" = "claude" ]; then assist=shell; else assist=claude; fi
+               printf '  panel asistente: %s%s%s\n' "$B" "$assist" "$R" ;;
+            6) zenpack || true ;;
+            a|A)
+                save && apply || return 1
+                printf '\n  %sguardado.%s relanzando terminator con el layout %s%s%s...\n\n' \
+                    "$G" "$R" "$B" "$layout" "$R"
+                exec zenlayout ;;
+            g|G)
+                save && apply || return 1
+                printf '\n  %sguardado.%s los paneles cogen los cambios al relanzar %szenlayout%s.\n' \
+                    "$G" "$R" "$B" "$R" ;;
+            q|Q|'') printf '%ssin aplicar cambios pendientes%s\n' "$D" "$R"; return 0 ;;
+            *) printf '  %sopcion no valida%s\n' "$Y" "$R" ;;
+        esac
+    done
+}
+
+# --- entrada ---------------------------------------------------------------
+
+load
+
+case "${1-}" in
+    -h|--help) usage; exit 0 ;;
+    --apply)   apply; exit $? ;;
+    --get)
+        case "${2-}" in
+            layout) printf '%s\n' "$layout" ;;
+            n_tree) printf '%s\n' "$n_tree" ;;
+            n_norm) printf '%s\n' "$n_norm" ;;
+            n_test) printf '%s\n' "$n_test" ;;
+            assist) printf '%s\n' "$assist" ;;
+            *) printf 'zen: clave desconocida "%s"\n' "${2-}" >&2; exit 2 ;;
+        esac
+        exit 0 ;;
+    --set)
+        [ -n "${2-}" ] || { usage >&2; exit 2; }
+        case "${2%%=*}" in
+            layout) layout=${2#*=} ;;
+            n_tree) n_tree=${2#*=} ;;
+            n_norm) n_norm=${2#*=} ;;
+            n_test) n_test=${2#*=} ;;
+            assist) assist=${2#*=} ;;
+            *) printf 'zen: clave desconocida "%s"\n' "${2%%=*}" >&2; exit 2 ;;
+        esac
+        save && apply
+        exit $? ;;
+    '')        menu; exit $? ;;
+    *)         usage >&2; exit 2 ;;
+esac
