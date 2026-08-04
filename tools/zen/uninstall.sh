@@ -13,7 +13,7 @@ CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zenidx"
 TERM_CFG="${XDG_CONFIG_HOME:-$HOME/.config}/terminator/config"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/zenidx"
 
-SCRIPTS=(zen zenpack zenin zenwatch zentest zenshell zenlayout)
+SCRIPTS=(zen zenpack zenin zenwatch zentest zenshell zenlayout zengit)
 
 ALL=0
 case "${1-}" in

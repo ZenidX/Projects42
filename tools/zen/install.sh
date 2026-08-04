@@ -16,7 +16,7 @@ CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zenidx"
 TERM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/terminator"
 PACKS_DIR="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
 
-SCRIPTS=(zen zenpack zenin zenwatch zentest zenshell zenlayout)
+SCRIPTS=(zen zenpack zenin zenwatch zentest zenshell zenlayout zengit)
 
 DRY=0
 case "${1-}" in

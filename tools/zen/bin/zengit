@@ -3,6 +3,7 @@
 #
 #   zengit status|add|commit|push|...   cualquier subcomando de git
 #   zengit -l                           lista los repos gestionados y su estado
+#   zengit -h                           esta ayuda
 #
 # El .git de cada repo de vogsphere NO vive dentro del arbol de trabajo: se
 # guarda en ~/.local/share/zenidx-vogsphere/<slug>.git con core.worktree
@@ -37,7 +38,10 @@ list_repos() {
     done
 }
 
-[ "${1:-}" = "-l" ] && { list_repos; exit 0; }
+case "${1:-}" in
+    -h|--help) sed -n '2,14p' "$0" | cut -c3-; exit 0 ;;
+    -l)        list_repos; exit 0 ;;
+esac
 
 # Sube desde el directorio actual hasta dar con un pack que tenga git-dir.
 dir=$(pwd -P)

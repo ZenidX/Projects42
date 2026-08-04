@@ -16,12 +16,19 @@ ficheros, norminette y tests, refrescándose mientras editas.
 
 ## Instalación
 
+Vive dentro de [ZenidX/Projects42](https://github.com/ZenidX/Projects42), en
+`tools/zen/`. Para instalarlo en otra máquina:
+
 ```sh
-git clone <url> ~/zenidx/tools     # o copia la carpeta a mano
-cd ~/zenidx/tools
+git clone https://github.com/ZenidX/Projects42.git ~/zenidx
+cd ~/zenidx/tools/zen
 ./install.sh --dry-run             # mira qué haría
 ./install.sh
 ```
+
+Si solo quieres el tooling y no los ejercicios, copia la carpeta `tools/zen/`
+a donde sea y lanza el `install.sh` desde ahí: no depende de estar dentro del
+repo.
 
 Abre una terminal nueva y ya tienes `zen`, `zenlayout`, `zenpack`, `zentest`.
 
@@ -47,6 +54,7 @@ zen           menú de configuración del espacio
 zenlayout     abre Terminator con el layout configurado
 zenpack       elige o crea un pack
 zentest       lanza los tests del pack activo
+zengit        git para los repos de entrega (vogsphere)
 zcd repo      salta al repo del pack activo
 ```
 
@@ -80,8 +88,17 @@ zenwatch   envuelve zenin en `watch -n`                   (los paneles)
 zentest    compila y lanza el runner de tests del pack
 zenshell   shell interactiva dentro del pack
 zenlayout  abre Terminator con el layout configurado
+zengit     git para los repos de entrega, con el .git fuera del árbol
 zen        menú de configuración; genera los layouts
 ```
+
+`zengit` resuelve un problema concreto: el `.git` de cada repo de vogsphere no
+vive dentro del pack, sino en `~/.local/share/zenidx-vogsphere/<slug>.git` con
+`core.worktree` apuntando de vuelta. Así el repo de `~/zenidx` puede versionar
+los ficheros de los ejercicios como ficheros normales en lugar de como un
+gitlink vacío, y las entregas siguen funcionando igual. Te sitúas dentro del
+pack y llamas a `zengit status`, `zengit push`, lo que sea. `zengit -l` lista
+los repos gestionados.
 
 Como cada panel resuelve el pack **en cada vuelta del watch**, cambiar de pack
 con `zenpack` reapunta los seis sin reiniciar nada.

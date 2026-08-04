@@ -6,7 +6,7 @@
 /*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/28 17:02:16 by xalara            #+#    #+#             */
-/*   Updated: 2026/07/31 00:23:30 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/04 13:21:18 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 int	ft_base_ok(char *b)
 {
 	int	i;
+	int	j;
 
 	if (!b[0] || !b[1])
 		return (0);
@@ -37,7 +38,6 @@ int	ft_base_ok(char *b)
 
 void	ft_putnbr_base(int nbr, char *base)
 {
-	int	i;
 	int	d;
 	int	b;
 
