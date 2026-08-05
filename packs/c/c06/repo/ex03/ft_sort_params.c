@@ -6,7 +6,7 @@
 /*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/30 11:46:09 by xalara            #+#    #+#             */
-/*   Updated: 2026/07/30 13:01:43 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/05 11:59:34 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@ int	ft_strcmp(char *a, char *b)
 	i = 0;
 	while (a[i] && b[i] && a[i] == b[i])
 		i++;
-	return (a[i] - b[i]);
+	return ((unsigned char)a[i] - (unsigned char)b[i]);
 }
 
 void	ft_swap(char *a, char *b)
