@@ -6,11 +6,12 @@
 /*   By: xalara <xalara@student.42barcelona.co      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/04 01:49:55 by xalara            #+#    #+#             */
-/*   Updated: 2026/08/04 02:08:43 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/10 12:05:59 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
+#include <stdlib.h>
 
 int	ft_strlen(char *str)
 {
@@ -18,9 +19,7 @@ int	ft_strlen(char *str)
 
 	i = 0;
 	while (str[i])
-	{
 		i++;
-	}
 	return (i);
 }
 
@@ -37,31 +36,48 @@ int	ft_strcpy(char *dest, char *src)
 	return (i);
 }
 
-char	*ft_strjoin(int size, char **strs, char *sep)
+int	ft_intstrjoin(int size, char **strs, char *sep)
 {
 	int	i;
 	int	c;
 	int	l_sep;
-	char	*r;
 
 	l_sep = ft_strlen(sep);
 	c = 0;
 	i = 0;
 	while (i < size)
 	{
-		c += ft_strlen(strs[i]);
-		c += l_sep;
+		c += ft_strlen(strs[i]) + l_sep;
 		i++;
 	}
 	c -= l_sep;
-	r = malloc(sizeof(char) * c);
-	c = 0;
+	return (c);
+}
+
+char	*ft_strjoin(int size, char **strs, char *sep)
+{
+	char	*r;
+	int		i;
+	int		j;
+	int		c;
+
+	if (size == 0)
+	{
+		r = (char *)malloc(sizeof(char));
+		r[0] = '\0';
+		return (r);
+	}
+	c = ft_intstrjoin(size, strs, sep);
+	r = (char *)malloc(sizeof(char) * c);
+	j = 0;
 	i = 0;
 	while (i < size - 1)
 	{
-		c += ft_strcpy(&r[c], strs[i]);
-		c += ft_strcpy(&r[c], sep);
+		j += ft_strcpy(&r[j], strs[i]);
+		j += ft_strcpy(&r[j], sep);
 		i++;
 	}
-	r = ft_strcpy(r,
+	j += ft_strcpy(&r[j], strs[i]);
+	r[j] = '\0';
+	return (r);
 }

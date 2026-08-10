@@ -1,45 +1,41 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   fft_strdup.c                                       :+:      :+:    :+:   */
+/*   ft_convert_base2.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
+/*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/07/30 19:32:50 by xalara            #+#    #+#             */
-/*   Updated: 2026/07/30 20:11:04 by xalara           ###   ########.fr       */
+/*   Created: 2026/08/06 13:16:18 by xalara            #+#    #+#             */
+/*   Updated: 2026/08/06 14:55:24 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
+#include <stdlib.h>
 
-int	ft_strlen(char *str)
-{
-	int	i;
-
-	i = 0;
-	while (str[i])
-		i++;
-	return (i);
-}
-
-void	ft_strcpy(char *d, char *s)
+int	ft_strlen(char *s)
 {
 	int	i;
 
 	i = 0;
 	while (s[i])
 	{
-		d[i] = s[i];
 		i++;
 	}
-	d[i] = '\0';
+	return (i);
 }
 
-char	*ft_strdup(char *src)
+char	*ft_char_init(char *s, int size)
 {
-	char	*p;
+	int	i;
 
-	p = (char *)malloc(sizeof(int) * ft_strlen(src));
-	ft_strcpy(p, src)
-	return (p);
+	if (!s)
+		return (NULL);
+	i = 0;
+	while (i < size)
+	{
+		s[i] = '0';
+		i++;
+	}
+	s[i] = '\0';
+	return (s);
 }
