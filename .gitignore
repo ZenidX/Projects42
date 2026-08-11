@@ -9,6 +9,11 @@ runner
 a.out
 *.o
 
+# binarios del laboratorio de lldb
+tools/lldb-lab/lab
+tools/lldb-lab/seg
+tools/lldb-lab/words
+
 # basura de editores
 *.swp
 *.swo

@@ -52,7 +52,7 @@ sudo apt install terminator procps gawk tree
 ```sh
 zen           menú de configuración del espacio
 zenlayout     abre Terminator con el layout configurado
-zenpack       elige o crea un pack
+zenpack       elige o crea un pack (y te deja en su repo/)
 zentest       lanza los tests del pack activo
 zengit        git para los repos de entrega (vogsphere)
 zcd repo      salta al repo del pack activo
@@ -100,6 +100,20 @@ gitlink vacío, y las entregas siguen funcionando igual. Te sitúas dentro del
 pack y llamas a `zengit status`, `zengit push`, lo que sea. `zengit -l` lista
 los repos gestionados.
 
+Para dar de alta uno nuevo, crea el directorio y llama a `zengit init` desde el
+pack. Registra `repo/` si existe, y el propio pack si no (hay packs de las dos
+formas: `c/c06/repo`, pero `rush/rush00` a pelo):
+
+```bash
+mkdir -p ~/zenidx/packs/c/c06/repo
+cd ~/zenidx/packs/c/c06 && zengit init
+zengit remote add origin vogsphere@vogsphere.42<campus>.com:vogsphere/<id>
+```
+
+El árbol de trabajo es siempre el que quedó registrado en el alta, no el
+directorio desde el que llamas: `zengit add .` desde `c/c06` añade lo que hay
+bajo `repo/`, nunca el `subject.pdf` ni el `test/` del pack.
+
 Como cada panel resuelve el pack **en cada vuelta del watch**, cambiar de pack
 con `zenpack` reapunta los seis sin reiniciar nada.
 
@@ -109,7 +123,7 @@ con `zenpack` reapunta los seis sin reiniciar nada.
 ~/.local/bin/zen*                       los scripts
 ~/.local/share/zenidx/layouts.conf.in   plantilla de layouts
 ~/.local/share/zenidx/test/Makefile     semilla para packs nuevos
-~/.local/share/zenidx/zenidx.sh         PATH + función zcd
+~/.local/share/zenidx/zenidx.sh         PATH + funciones zcd y zenpack
 ~/.config/zenidx/config                 ajustes (los edita `zen`)
 ~/.config/terminator/config             solo la sección [layouts]
 ~/.local/state/zenidx/current-pack      pack activo
@@ -154,4 +168,7 @@ Nunca toca `~/zenidx/packs`: tus ejercicios se quedan donde están. La línea
 - `norminette` arranca un Python en cada pasada y es el panel más caro. Si notas
   el portátil caliente, súbelo a 5s desde `zen`.
 - `zcd` es una función de shell y no un script porque un `cd` en un proceso hijo
-  no afectaría a tu shell.
+  no afectaría a tu shell. Por lo mismo, `zenpack` es también una función que
+  envuelve al script `~/.local/bin/zenpack` para poder saltar a `<pack>/repo`
+  al terminar; solo salta si el pack se llegó a elegir (compara la marca de
+  tiempo del fichero de estado), así que salir del menú con `q` no te mueve.

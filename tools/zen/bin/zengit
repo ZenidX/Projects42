@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # zengit - git para los repos de entrega (vogsphere) de los packs.
 #
+#   zengit init [dir]                   da de alta un repo de entrega nuevo
+#   zengit remote add origin <url>      lo enchufa al repo de vogsphere
 #   zengit status|add|commit|push|...   cualquier subcomando de git
 #   zengit -l                           lista los repos gestionados y su estado
 #   zengit -h                           esta ayuda
@@ -12,6 +14,11 @@
 # (un puntero vacio), y las entregas a vogsphere siguen funcionando igual.
 #
 # Uso normal: te situas dentro del pack (o de su repo/) y llamas a zengit.
+# Para dar de alta uno nuevo, crea el directorio y llama a init desde el pack:
+#
+#   mkdir -p ~/zenidx/packs/c/c06/repo
+#   cd ~/zenidx/packs/c/c06 && zengit init
+#   zengit remote add origin vogsphere@vogsphere.42<campus>.com:vogsphere/<id>
 set -euo pipefail
 
 ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
@@ -38,9 +45,52 @@ list_repos() {
     done
 }
 
+# Da de alta un repo de entrega: crea el git-dir en el store y lo apunta al
+# arbol de trabajo. Sin argumento parte del directorio actual; si ese tiene un
+# repo/ dentro es ese el que se registra, que es donde viven los ejercicios y
+# lo que slug_for da por supuesto (packs/c/c06/repo y packs/c/c06 dan el mismo
+# slug, asi que el worktree hay que elegirlo aqui de forma explicita).
+init_repo() {
+    local dir wt slug gitdir
+
+    if ! dir=$(cd "${1:-.}" 2>/dev/null && pwd -P); then
+        printf 'zengit init: no existe el directorio "%s".\n' "${1:-.}" >&2
+        exit 1
+    fi
+    case "$dir" in
+        "$ROOT"/*) ;;
+        *) printf 'zengit init: "%s" no esta bajo %s.\n' \
+               "${dir/#$HOME/\~}" "${ROOT/#$HOME/\~}" >&2
+           exit 1 ;;
+    esac
+    wt=$dir
+    if [ -d "$dir/repo" ]; then
+        wt="$dir/repo"
+    fi
+    slug=$(slug_for "$wt")
+    gitdir="$STORE/$slug.git"
+    if [ -d "$gitdir" ]; then
+        printf 'zengit init: %s ya esta dado de alta (worktree: %s).\n' "$slug" \
+            "$(git --git-dir="$gitdir" config --get core.worktree || echo '?')" >&2
+        exit 1
+    fi
+    mkdir -p "$STORE"
+    git init -q --bare "$gitdir"
+    git --git-dir="$gitdir" config core.bare false
+    git --git-dir="$gitdir" config core.worktree "$wt"
+    git --git-dir="$gitdir" config core.logallrefupdates true
+    printf '%s%s%s dado de alta\n' "$B" "$slug" "$R"
+    printf '  %sworktree%s  %s\n' "$D" "$R" "${wt/#$HOME/\~}"
+    printf '  %sgit-dir %s  %s\n' "$D" "$R" "${gitdir/#$HOME/\~}"
+    printf '  %srama    %s  %s\n' "$D" "$R" \
+        "$(git --git-dir="$gitdir" symbolic-ref --short HEAD)"
+    printf '\nsiguiente paso:\n  %szengit remote add origin <url-vogsphere>%s\n' "$B" "$R"
+}
+
 case "${1:-}" in
-    -h|--help) sed -n '2,14p' "$0" | cut -c3-; exit 0 ;;
+    -h|--help) sed -n '2,21p' "$0" | cut -c3-; exit 0 ;;
     -l)        list_repos; exit 0 ;;
+    init)      shift; init_repo "$@"; exit 0 ;;
 esac
 
 # Sube desde el directorio actual hasta dar con un pack que tenga git-dir.
@@ -50,7 +100,12 @@ while [ "$dir" != "/" ]; do
         "$ROOT"/*)
             gitdir="$STORE/$(slug_for "$dir").git"
             if [ -d "$gitdir" ]; then
-                exec git --git-dir="$gitdir" --work-tree="$dir" "$@"
+                # El worktree es el que quedo registrado en el alta, no el
+                # directorio desde el que llamas: si no, "zengit add ." desde
+                # el pack colaria subject.pdf y test/ en la entrega.
+                wt=$(git --git-dir="$gitdir" config --get core.worktree \
+                    || printf '%s' "$dir")
+                exec git --git-dir="$gitdir" --work-tree="$wt" "$@"
             fi
             ;;
     esac
@@ -59,4 +114,5 @@ done
 
 printf 'zengit: no estas dentro de un repo de entrega gestionado.\n' >&2
 printf '        situate en un pack bajo %s, o usa "zengit -l".\n' "${ROOT/#$HOME/\~}" >&2
+printf '        si es un repo nuevo, dalo de alta con "zengit init".\n' >&2
 exit 1

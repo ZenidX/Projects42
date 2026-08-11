@@ -6,7 +6,7 @@
 /*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/28 18:03:29 by xalara            #+#    #+#             */
-/*   Updated: 2026/07/28 18:15:25 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/04 21:29:52 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,14 +15,14 @@
 int	ft_iterative_factorial(int nbr)
 {
 	int	p;
-	int	i;
 
 	p = 1;
-	i = 1;
-	while (i < nbr)
+	while (nbr > 0)
 	{
-		p *= i;
-		i++;
+		p *= nbr;
+		nbr--;
 	}
+	if (nbr < 0)
+		return (0);
 	return (p);
 }

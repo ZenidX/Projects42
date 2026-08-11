@@ -47,6 +47,12 @@
 /* no como comportamiento indefinido en tiempo de ejecucion. Su main() llega  */
 /* renombrado por -Dmain=...; lo deshacemos para declarar el nuestro.         */
 
+/* Si el subject pide dos archivos (p.ej. ft_convert_base.c y su "2"), el     */
+/* segundo se incluye primero: suele traer los helpers que usa el principal,  */
+/* y asi ya estan definidos en la primera llamada.                            */
+#ifdef FT_SRC2
+# include FT_SRC2
+#endif
 #include FT_SRC
 #undef main
 
@@ -71,6 +77,76 @@ static void	init_colors(void)
 	C_D = "\033[90m";
 	C_0 = "\033[0m";
 }
+
+/* ---------------------------- caso en curso ------------------------------ */
+/* Cada caso se anuncia con CASE(...) ANTES de llamar al codigo del alumno,   */
+/* asi que si revienta el padre puede decir en cual fue: el hijo deja el caso */
+/* en curso en FT_CASEFILE. Al relanzarlo con FT_SKIP=n se salta los n        */
+/* primeros casos y sigue por el siguiente, que es como se llega al final de  */
+/* la tanda aunque uno segfaultee.                                            */
+
+static char			g_case[192];
+static int			g_case_n;
+static int			g_case_skip;
+static const char	*g_case_file;
+
+static void	case_init(void)
+{
+	const char	*s;
+
+	s = getenv("FT_SKIP");
+	if (s)
+		g_case_skip = atoi(s);
+	g_case_file = getenv("FT_CASEFILE");
+}
+
+static void	case_set(const char *fmt, va_list ap)
+{
+	int	fd;
+
+	vsnprintf(g_case, sizeof(g_case), fmt, ap);
+	if (!g_case_file)
+		return ;
+	fd = open(g_case_file, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	if (fd >= 0)
+	{
+		dprintf(fd, "%d\t%s\n", g_case_n - 1, g_case);
+		close(fd);
+	}
+}
+
+/* Afina la etiqueta del caso en curso: mismo caso, mas detalle. Para los     */
+/* helpers que comprueban varias cosas de una sola llamada.                   */
+static void	case_label(const char *fmt, ...)
+	__attribute__((format(printf, 1, 2), unused));
+
+static void	case_label(const char *fmt, ...)
+{
+	va_list	ap;
+
+	va_start(ap, fmt);
+	case_set(fmt, ap);
+	va_end(ap);
+}
+
+/* Devuelve 1 si este caso ya se probo en un intento anterior (hay que        */
+/* saltarselo), 0 si toca ejecutarlo.                                         */
+static int	case_begin(const char *fmt, ...)
+	__attribute__((format(printf, 1, 2)));
+
+static int	case_begin(const char *fmt, ...)
+{
+	va_list	ap;
+
+	if (g_case_n++ < g_case_skip)
+		return (1);
+	va_start(ap, fmt);
+	case_set(fmt, ap);
+	va_end(ap);
+	return (0);
+}
+
+# define CASE(...) do { if (case_begin(__VA_ARGS__)) return ; } while (0)
 
 /* Devuelve s entrecomillado y con los no imprimibles escapados, en uno de    */
 /* cuatro buffers rotatorios (para poder usarlo varias veces en un printf).   */
@@ -110,13 +186,11 @@ static const char	*q(const char *s)
 	return (d);
 }
 
-static int	res(int pass, const char *fmt, ...)
-	__attribute__((format(printf, 2, 3), unused));
+/* Reporta el caso anunciado con CASE(). */
+static int	res(int pass) __attribute__((unused));
 
-static int	res(int pass, const char *fmt, ...)
+static int	res(int pass)
 {
-	va_list	ap;
-
 	if (pass)
 	{
 		g_ok++;
@@ -127,10 +201,7 @@ static int	res(int pass, const char *fmt, ...)
 		g_ko++;
 		printf("  %s[KO]%s   ", C_KO, C_0);
 	}
-	va_start(ap, fmt);
-	vprintf(fmt, ap);
-	va_end(ap);
-	printf("\n");
+	printf("%s\n", g_case);
 	return (pass);
 }
 
@@ -221,12 +292,10 @@ static void	cap_end(void)
 }
 
 /* Compara la ultima captura con exp, reporta y libera g_got.                 */
-static void	cmp_out(const char *exp, const char *fmt, ...)
-	__attribute__((format(printf, 2, 3), unused));
+static void	cmp_out(const char *exp) __attribute__((unused));
 
-static void	cmp_out(const char *exp, const char *fmt, ...)
+static void	cmp_out(const char *exp)
 {
-	va_list	ap;
 	size_t	lg;
 	size_t	le;
 	int		pass;
@@ -244,10 +313,7 @@ static void	cmp_out(const char *exp, const char *fmt, ...)
 		g_ko++;
 		printf("  %s[KO]%s   ", C_KO, C_0);
 	}
-	va_start(ap, fmt);
-	vprintf(fmt, ap);
-	va_end(ap);
-	printf("\n");
+	printf("%s\n", g_case);
 	if (!pass)
 	{
 		detail("esperado %s", q(exp));
@@ -260,6 +326,7 @@ static void	cmp_out(const char *exp, const char *fmt, ...)
 	free(g_got);
 	g_got = NULL;
 }
+
 /* -------------------------------- ex00 ----------------------------------- */
 
 # if FT_EX == 0
@@ -274,9 +341,10 @@ static void	t_strcmp(char *a, char *b, const char *note)
 	int	mine;
 	int	real;
 
+	CASE("ft_strcmp(%s, %s)", q(a), q(b));
 	mine = ft_strcmp(a, b);
 	real = strcmp(a, b);
-	if (!res(sgn(mine) == sgn(real), "ft_strcmp(%s, %s)", q(a), q(b)))
+	if (!res(sgn(mine) == sgn(real)))
 	{
 		detail("esperado signo %+d, obtenido %+d (devuelve %d)",
 			sgn(real), sgn(mine), mine);
@@ -319,9 +387,10 @@ static void	t_strncmp(char *a, char *b, unsigned int n, const char *note)
 	int	mine;
 	int	real;
 
+	CASE("ft_strncmp(%s, %s, %u)", q(a), q(b), n);
 	mine = ft_strncmp(a, b, n);
 	real = strncmp(a, b, n);
-	if (!res(sgn(mine) == sgn(real), "ft_strncmp(%s, %s, %u)", q(a), q(b), n))
+	if (!res(sgn(mine) == sgn(real)))
 	{
 		detail("esperado signo %+d, obtenido %+d (devuelve %d)",
 			sgn(real), sgn(mine), mine);
@@ -364,10 +433,10 @@ static void	t_strcat(const char *d0, const char *s)
 	memset(real, CANARY, sizeof(real));
 	strcpy(mine, d0);
 	strcpy(real, d0);
+	CASE("ft_strcat(%s, %s)", q(d0), q(s));
 	ret = ft_strcat(mine, (char *)s);
 	strcat(real, s);
-	if (!res(ret == mine && memcmp(mine, real, sizeof(mine)) == 0,
-			"ft_strcat(%s, %s)", q(d0), q(s)))
+	if (!res(ret == mine && memcmp(mine, real, sizeof(mine)) == 0))
 	{
 		if (ret != mine)
 			detail("no devuelve el puntero dest que recibio");
@@ -406,10 +475,10 @@ static void	t_strncat(const char *d0, const char *s, unsigned int n)
 	memset(real, CANARY, sizeof(real));
 	strcpy(mine, d0);
 	strcpy(real, d0);
+	CASE("ft_strncat(%s, %s, %u)", q(d0), q(s), n);
 	ret = ft_strncat(mine, (char *)s, n);
 	strncat(real, s, n);
-	if (!res(ret == mine && memcmp(mine, real, sizeof(mine)) == 0,
-			"ft_strncat(%s, %s, %u)", q(d0), q(s), n))
+	if (!res(ret == mine && memcmp(mine, real, sizeof(mine)) == 0))
 	{
 		if (ret != mine)
 			detail("no devuelve el puntero dest que recibio");
@@ -445,9 +514,10 @@ static void	t_strstr(char *hay, char *nee)
 	char	*mine;
 	char	*real;
 
+	CASE("ft_strstr(%s, %s)", q(hay), q(nee));
 	mine = ft_strstr(hay, nee);
 	real = strstr(hay, nee);
-	if (!res(mine == real, "ft_strstr(%s, %s)", q(hay), q(nee)))
+	if (!res(mine == real))
 	{
 		detail("esperado %s, obtenido %s", q(real), q(mine));
 		if (mine && !real)
@@ -516,10 +586,10 @@ static void	t_strlcat(const char *d0, const char *s, unsigned int size)
 	memset(real, CANARY, sizeof(real));
 	strcpy(mine, d0);
 	strcpy(real, d0);
+	CASE("ft_strlcat(%s, %s, %u)", q(d0), q(s), size);
 	rm = ft_strlcat(mine, (char *)s, size);
 	rr = ref_strlcat(real, s, size);
-	if (!res(rm == rr && memcmp(mine, real, sizeof(mine)) == 0,
-			"ft_strlcat(%s, %s, %u)", q(d0), q(s), size))
+	if (!res(rm == rr && memcmp(mine, real, sizeof(mine)) == 0))
 	{
 		if (rm != rr)
 			detail("devuelve %u, esperado %u", rm, rr);
@@ -557,6 +627,7 @@ int	main(void)
 	/* sin buffer: si un caso revienta, lo ya impreso no se pierde */
 	setvbuf(stdout, NULL, _IONBF, 0);
 	init_colors();
+	case_init();
 	run_cases();
 	if (g_ko > 250)
 		return (250);
@@ -570,24 +641,30 @@ int	main(void)
 /* ========================================================================== */
 
 # include <dirent.h>
+# include <signal.h>
 
 # define PATHSZ 4096
 # define TIMEOUT 20
+/* topes de relanzamiento por ejercicio: si revientan (o se cuelgan) mas casos
+   que esto, se corta la tanda en vez de seguir reintentando */
+# define MAX_CRASH 12
+# define MAX_HANG 1
 
 typedef struct s_ex
 {
 	int			id;
 	const char	*dir;
 	const char	*src;
+	const char	*src2;
 }	t_ex;
 
 static const t_ex	g_ex[] = {
-{0, "ex00", "ft_strcmp.c"},
-{1, "ex01", "ft_strncmp.c"},
-{2, "ex02", "ft_strcat.c"},
-{3, "ex03", "ft_strncat.c"},
-{4, "ex04", "ft_strstr.c"},
-{5, "ex05", "ft_strlcat.c"},
+{0, "ex00", "ft_strcmp.c", NULL},
+{1, "ex01", "ft_strncmp.c", NULL},
+{2, "ex02", "ft_strcat.c", NULL},
+{3, "ex03", "ft_strncat.c", NULL},
+{4, "ex04", "ft_strstr.c", NULL},
+{5, "ex05", "ft_strlcat.c", NULL},
 };
 # define N_EX (sizeof(g_ex) / sizeof(g_ex[0]))
 
@@ -789,10 +866,12 @@ static void	warn_if_main(const char *obj)
 	free(txt);
 }
 
-/* Lanza bin en un hijo con timeout. Devuelve el numero de tests KO que       */
-/* reporto, o -1 si murio por una senal.                                      */
-static int	run_child(const char *bin)
+/* Lanza bin en un hijo con timeout, saltandose los skip primeros casos.      */
+/* Devuelve el numero de tests KO que reporto, -1 si no se pudo ejecutar, o   */
+/* -2 si murio por una senal (que deja en *sig).                              */
+static int	run_child(const char *bin, int skip, const char *casefile, int *sig)
 {
+	char	buf[16];
 	pid_t	pid;
 	int		status;
 
@@ -801,6 +880,9 @@ static int	run_child(const char *bin)
 		return (perror("fork"), -1);
 	if (pid == 0)
 	{
+		xsnprintf(buf, sizeof(buf), "%d", skip);
+		setenv("FT_SKIP", buf, 1);
+		setenv("FT_CASEFILE", casefile, 1);
 		alarm(TIMEOUT);
 		execl(bin, bin, (char *)NULL);
 		_exit(127);
@@ -808,15 +890,107 @@ static int	run_child(const char *bin)
 	if (waitpid(pid, &status, 0) == -1)
 		return (-1);
 	if (WIFSIGNALED(status))
-	{
-		printf("  %s[CRASH]%s el test muere con senal %d (%s)\n",
-			C_KO, C_0, WTERMSIG(status), strsignal(WTERMSIG(status)));
-		return (-1);
-	}
+		return (*sig = WTERMSIG(status), -2);
 	if (WEXITSTATUS(status) == 127)
 		return (printf("  %s[KO]%s no se pudo ejecutar el test\n",
 				C_KO, C_0), -1);
 	return (WEXITSTATUS(status));
+}
+
+/* Lee el caso que el hijo dejo anotado antes de reventar. Devuelve su indice */
+/* y copia la descripcion en label, o -1 si no llego a anotar ninguno.        */
+static int	read_case(const char *path, char *label, size_t n)
+{
+	char	*txt;
+	char	*tab;
+	int		idx;
+
+	txt = slurp(path);
+	if (!txt)
+		return (-1);
+	tab = strchr(txt, '\t');
+	if (!tab)
+		return (free(txt), -1);
+	*tab++ = '\0';
+	idx = atoi(txt);
+	tab[strcspn(tab, "\n")] = '\0';
+	snprintf(label, n, "%s", tab);
+	return (free(txt), idx);
+}
+
+/* Un caso que revienta se lleva por delante el proceso entero, asi que el    */
+/* resto de la tanda se quedaba sin probar. Aqui se relanza el binario justo  */
+/* por detras del caso que murio, tantas veces como haga falta (con tope),    */
+/* de modo que el recuento final sale completo y cada crash sale con nombre.  */
+static int	run_bin(const char *bin, const char *casefile)
+{
+	char	label[192];
+	int		ko;
+	int		skip;
+	int		crashes;
+	int		hangs;
+	int		idx;
+	int		sig;
+	int		r;
+
+	ko = 0;
+	skip = 0;
+	crashes = 0;
+	hangs = 0;
+	while (1)
+	{
+		remove(casefile);
+		sig = 0;
+		r = run_child(bin, skip, casefile, &sig);
+		if (r >= 0)
+			return (ko + r);
+		if (r == -1)
+			return (ko > 0 ? ko : -1);
+		idx = read_case(casefile, label, sizeof(label));
+		if (idx < 0)
+			return (printf("  %s[CRASH]%s el test muere con senal %d (%s) "
+					"antes de llegar a ningun caso\n", C_KO, C_0, sig,
+					strsignal(sig)), ko > 0 ? ko : -1);
+		printf("  %s[CRASH]%s %s   %s%s%s\n", C_KO, C_0, label, C_KO,
+			sig == SIGALRM ? "se cuelga (timeout)" : strsignal(sig), C_0);
+		ko++;
+		hangs += (sig == SIGALRM);
+		/* cada cuelgue cuesta TIMEOUT segundos, asi que con esos se es mas
+		   tacano que con los segfaults, que se reintentan al momento */
+		if (idx < skip || ++crashes > MAX_CRASH || hangs >= MAX_HANG)
+			return (printf("  %s[AVISO]%s los casos que quedan no se prueban\n",
+					C_SK, C_0), ko);
+		skip = idx + 1;
+	}
+}
+
+/* Segundo archivo del ejercicio (los que el subject pide por parejas). Se    */
+/* comprueba que existe y que compila suelto, igual que la moulinette, y se   */
+/* devuelve su ruta absoluta en out. 0 = no se puede seguir.                  */
+static int	second_source(const char *repo, const t_ex *ex, char *out,
+		size_t n, const char *log)
+{
+	char	path[PATHSZ];
+	char	cmd[PATHSZ * 3];
+
+	xsnprintf(path, sizeof(path), "%s/%s/%s", repo, ex->dir, ex->src2);
+	if (access(path, R_OK) != 0 || !abs_path(path, out, n))
+	{
+		printf("  %s[KO]%s falta %s, que el subject pide junto a %s\n",
+			C_KO, C_0, ex->src2, ex->src);
+		return (0);
+	}
+	xsnprintf(cmd, sizeof(cmd),
+		"cc -Wall -Wextra -Werror -c -o '%s/%s2.o' '%s' > '%s' 2>&1",
+		g_tmp, ex->dir, out, log);
+	if (system(cmd) != 0)
+	{
+		printf("  %s[COMPILA KO]%s %s con -Wall -Wextra -Werror\n",
+			C_KO, C_0, ex->src2);
+		dump_log(log);
+		return (0);
+	}
+	return (1);
 }
 
 /* Devuelve el numero de tests KO, -1 si el ejercicio no se pudo probar,      */
@@ -825,9 +999,12 @@ static int	do_ex(const char *repo, const char *self, const t_ex *ex)
 {
 	char	src[PATHSZ];
 	char	abs[PATHSZ];
+	char	abs2[PATHSZ];
+	char	def2[PATHSZ];
 	char	obj[PATHSZ];
 	char	bin[PATHSZ];
 	char	log[PATHSZ];
+	char	casef[PATHSZ];
 	char	cmd[PATHSZ * 4];
 
 	printf("%s── %s/%s%s\n", C_B, ex->dir, ex->src, C_0);
@@ -850,12 +1027,17 @@ static int	do_ex(const char *repo, const char *self, const t_ex *ex)
 		return (-1);
 	}
 	warn_if_main(obj);
+	def2[0] = '\0';
+	if (ex->src2 && !second_source(repo, ex, abs2, sizeof(abs2), log))
+		return (-1);
+	if (ex->src2)
+		xsnprintf(def2, sizeof(def2), "-DFT_SRC2='\"%s\"' ", abs2);
 	/* -Wno-return-type: al renombrar main() deja de aplicarsele el trato
 	   especial del estandar y "cae" sin return; ya se comprobo intacto arriba */
 	xsnprintf(cmd, sizeof(cmd),
 		"cc -Wall -Wextra -Werror -Wno-return-type -DFT_EX=%d -DFT_SRC='\"%s\"' "
-		"-Dmain=ft_test_unused_main -o '%s' '%s' > '%s' 2>&1",
-		ex->id, abs, bin, self, log);
+		"%s-Dmain=ft_test_unused_main -o '%s' '%s' > '%s' 2>&1",
+		ex->id, abs, def2, bin, self, log);
 	if (system(cmd) != 0)
 	{
 		printf("  %s[TEST KO]%s no se pudo montar el test (prototipo distinto "
@@ -863,7 +1045,8 @@ static int	do_ex(const char *repo, const char *self, const t_ex *ex)
 		dump_log(log);
 		return (-1);
 	}
-	return (run_child(bin));
+	xsnprintf(casef, sizeof(casef), "%s/%s.case", g_tmp, ex->dir);
+	return (run_bin(bin, casef));
 }
 
 static void	cleanup(void)

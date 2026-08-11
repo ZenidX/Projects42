@@ -10,6 +10,9 @@
 # demas paneles del layout (zenin, zentest, zcd), asi que cambiar de pack aqui
 # los reapunta a todos sin reiniciar nada.
 #
+# La funcion de shell del mismo nombre (shell/zenidx.sh) envuelve este script y
+# ademas deja la shell en <pack>/repo despues de elegir.
+#
 # Un pack es un directorio CATEGORIA/NOMBRE bajo ~/zenidx, con repo/, test/,
 # subject.pdf y extra/.
 set -euo pipefail
@@ -214,5 +217,6 @@ case "${1-}" in
     -n|--new)   create_pack; exit $? ;;
     '')         menu; exit $? ;;
     -*)         usage >&2; exit 2 ;;
-    *)          set_pack "$(resolve "$1")"; exit 0 ;;
+    *)          pack=$(resolve "$1") || exit 1
+                set_pack "$pack"; exit 0 ;;
 esac

@@ -6,7 +6,7 @@
 /*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/28 18:38:23 by xalara            #+#    #+#             */
-/*   Updated: 2026/07/28 20:24:25 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/06 11:10:15 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,25 @@
 
 int	ft_fibonacci(int index)
 {
+	if (index == 0)
+		return (0);
+	else if (index == 1)
+		return (1);
+	else if (index > 1)
+		return (ft_fibonacci(index - 1) + ft_fibonacci(index - 2));
+	else
+		return (-1);
+}
+
+/*
+int	ft_fibonacci(int index)
+{
 	int	a;
 	int	b;
 	int	i;
 
+	if (index < 0)
+		return (-1);
 	a = 0;
 	b = 1;
 	i = 2;
@@ -34,6 +49,7 @@ int	ft_fibonacci(int index)
 	else
 		return (b);
 }
+*/
 /*
 void	ft_putint(int n)
 {

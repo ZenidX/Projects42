@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -53,6 +54,7 @@ typedef struct s_case
 	char		**argv;       /* argv[0] incluido; NULL-terminado */
 	const char	*expected;    /* stdout esperado; NULL = solo comprobar que no crashea */
 	int			extra;        /* 1 = solo con --extra */
+	int			show_in;      /* 1 = muestra el argv enviado tambien cuando pasa */
 }	t_case;
 
 static char	*av00_a[] = {"./ft_print_program_name", NULL};
@@ -75,24 +77,24 @@ static char	*av03_c[] = {"./ft_sort_params", "aa", "a", "aaa", NULL};
 static char	*av03_d[] = {"./ft_sort_params", NULL};
 
 static t_case	g_cases[] = {
-	{"ex00", "nombre relativo",        av00_a, "./ft_print_program_name\n", 0},
-	{"ex00", "nombre sin ./",          av00_b, "pouic\n", 0},
-	{"ex00", "ruta absoluta",          av00_c, "/usr/local/bin/ft_print_program_name\n", 0},
-	{"ex00", "ignora otros args",      av00_d, "./a.out\n", 0},
-	{"ex00", "argc == 0 (solo no crash)", av00_e, NULL, 1},
+	{"ex00", "nombre relativo",        av00_a, "./ft_print_program_name\n", 0, 0},
+	{"ex00", "nombre sin ./",          av00_b, "pouic\n", 0, 0},
+	{"ex00", "ruta absoluta",          av00_c, "/usr/local/bin/ft_print_program_name\n", 0, 0},
+	{"ex00", "ignora otros args",      av00_d, "./a.out\n", 0, 0},
+	{"ex00", "argc == 0 (solo no crash)", av00_e, NULL, 1, 0},
 
-	{"ex01", "tres params",            av01_a, "hola\nque\ntal\n", 0},
-	{"ex01", "sin params",             av01_b, "", 0},
-	{"ex01", "param vacio",            av01_c, "\nx\n", 0},
+	{"ex01", "tres params",            av01_a, "hola\nque\ntal\n", 0, 0},
+	{"ex01", "sin params",             av01_b, "", 0, 0},
+	{"ex01", "param vacio",            av01_c, "\nx\n", 0, 0},
 
-	{"ex02", "tres params al reves",   av02_a, "tal\nque\nhola\n", 0},
-	{"ex02", "sin params",             av02_b, "", 0},
-	{"ex02", "un solo param",          av02_c, "solo\n", 0},
+	{"ex02", "tres params al reves",   av02_a, "tal\nque\nhola\n", 0, 0},
+	{"ex02", "sin params",             av02_b, "", 0, 0},
+	{"ex02", "un solo param",          av02_c, "solo\n", 0, 0},
 
-	{"ex03", "numeros",                av03_a, "1\n2\n3\n", 0},
-	{"ex03", "orden ASCII no alfabetico", av03_b, "0\nAbc\nabc\nz\n", 0},
-	{"ex03", "prefijos",               av03_c, "a\naa\naaa\n", 0},
-	{"ex03", "sin params",             av03_d, "", 0},
+	{"ex03", "numeros",                av03_a, "1\n2\n3\n", 0, 1},
+	{"ex03", "orden ASCII no alfabetico", av03_b, "0\nAbc\nabc\nz\n", 0, 1},
+	{"ex03", "prefijos",               av03_c, "a\naa\naaa\n", 0, 1},
+	{"ex03", "sin params",             av03_d, "", 0, 1},
 };
 #define N_CASES (sizeof(g_cases) / sizeof(g_cases[0]))
 
@@ -101,6 +103,7 @@ static t_case	g_cases[] = {
 static const char	*C_OK = "";
 static const char	*C_KO = "";
 static const char	*C_SK = "";
+static const char	*C_B  = "";
 static const char	*C_D  = "";
 static const char	*C_0  = "";
 
@@ -111,6 +114,7 @@ static void	init_colors(void)
 	C_OK = "\033[32m";
 	C_KO = "\033[31m";
 	C_SK = "\033[33m";
+	C_B  = "\033[1m";
 	C_D  = "\033[90m";
 	C_0  = "\033[0m";
 }
@@ -256,20 +260,6 @@ static int	run_bin(const char *bin, char **argv, char **out, int *sig)
 	return (WIFEXITED(status) ? WEXITSTATUS(status) : -1);
 }
 
-static t_ex	*find_ex(const char *dir)
-{
-	size_t	i;
-
-	i = 0;
-	while (i < N_EX)
-	{
-		if (strcmp(g_ex[i].dir, dir) == 0)
-			return (&g_ex[i]);
-		i++;
-	}
-	return (NULL);
-}
-
 static void	print_argv(char **argv)
 {
 	int	i;
@@ -298,6 +288,72 @@ static void	cleanup(void)
 	}
 }
 
+/* Lanza los casos del ejercicio ex. Devuelve 1 si alguno falla. */
+static int	run_ex_cases(t_ex *ex, int extra, int *ok, int *ko)
+{
+	size_t	i;
+	char	*out;
+	int		sig;
+	int		code;
+	int		roto;
+
+	roto = 0;
+	i = 0;
+	while (i < N_CASES)
+	{
+		t_case	*c = &g_cases[i++];
+
+		if (strcmp(c->ex, ex->dir) != 0)
+			continue ;
+		if (c->extra && !extra)
+		{
+			printf("  %s[EXTRA]%s %s  %sno se prueba sin --extra%s\n",
+				C_SK, C_0, c->desc, C_D, C_0);
+			continue ;
+		}
+		sig = 0;
+		code = run_bin(ex->bin, c->argv, &out, &sig);
+		if (!sig && (!c->expected || (out && strcmp(out, c->expected) == 0)))
+		{
+			(*ok)++;
+			printf("  %s[OK]%s   %s", C_OK, C_0, c->desc);
+			if (c->show_in)
+			{
+				printf("   %s", C_D);
+				print_argv(c->argv);
+				printf(" -> \"");
+				print_escaped(out);
+				printf("\"%s", C_0);
+			}
+			printf("\n");
+			free(out);
+			continue ;
+		}
+		(*ko)++;
+		roto = 1;
+		if (sig)
+			printf("  %s[CRASH]%s %s   %s%s%s\n", C_KO, C_0, c->desc, C_KO,
+				sig == SIGALRM ? "se cuelga (timeout)" : strsignal(sig), C_0);
+		else
+			printf("  %s[KO]%s   %s\n", C_KO, C_0, c->desc);
+		printf("       ");
+		print_argv(c->argv);
+		if (c->expected)
+		{
+			printf("\n       esperado: \"");
+			print_escaped(c->expected);
+			printf("\"\n       obtenido: \"");
+			print_escaped(out);
+			printf("\"");
+		}
+		printf("\n");
+		if (!sig && code != 0)
+			printf("       %ssalida con codigo %d%s\n", C_D, code, C_0);
+		free(out);
+	}
+	return (roto);
+}
+
 int	main(int argc, char **argv)
 {
 	const char	*repo;
@@ -305,6 +361,7 @@ int	main(int argc, char **argv)
 	int			ok;
 	int			ko;
 	int			skipped;
+	int			roto;
 	size_t		i;
 
 	repo = NULL;
@@ -330,69 +387,41 @@ int	main(int argc, char **argv)
 	i = 0;
 	while (i < N_EX)
 	{
-		compile_ex(repo, &g_ex[i]);
-		if (g_ex[i].state == 1)
-		{
-			printf("%s[COMPILA KO]%s %s/%s\n", C_KO, C_0,
-				g_ex[i].dir, g_ex[i].src);
-			dump_log(&g_ex[i]);
-		}
-		i++;
+		compile_ex(repo, &g_ex[i++]);
 	}
 
-	/* fase 2: ejecución de casos */
+	/* fase 2: ejecucion de casos, agrupados por ejercicio para que el panel
+	   pueda dar el X/total de cada uno */
 	ok = 0;
 	ko = 0;
 	skipped = 0;
+	roto = 0;
 	i = 0;
-	while (i < N_CASES)
+	while (i < N_EX)
 	{
-		t_case	*c = &g_cases[i++];
-		t_ex	*ex = find_ex(c->ex);
-		char	*out;
-		int		sig;
-		int		code;
+		t_ex	*ex = &g_ex[i++];
 
-		if (!ex || ex->state != 0 || (c->extra && !extra))
+		printf("%s── %s/%s%s\n", C_B, ex->dir, ex->src, C_0);
+		if (ex->state == 1)
+			printf("  %s[COMPILA KO]%s con -Wall -Wextra -Werror\n", C_KO, C_0);
+		else if (ex->state == 2)
+			printf("  %s[SKIP]%s fuente no encontrado\n", C_SK, C_0);
+		if (ex->state != 0)
 		{
-			skipped++;
-			printf("%s[SKIP]%s %s  %s%s%s\n", C_SK, C_0, c->ex, C_D,
-				(ex && ex->state == 1) ? "no compila"
-				: (c->extra && !extra) ? "test extra (usa --extra)"
-				: "fuente no encontrado", C_0);
+			roto += (ex->state == 1);
+			skipped += (ex->state == 2);
+			dump_log(ex);
+			printf("\n");
 			continue ;
 		}
-		code = run_bin(ex->bin, c->argv, &out, &sig);
-		if (!sig && (!c->expected || (out && strcmp(out, c->expected) == 0)))
-		{
-			ok++;
-			printf("%s[OK]%s   %s  %s\n", C_OK, C_0, c->ex, c->desc);
-		}
-		else
-		{
-			ko++;
-			printf("%s[KO]%s   %s  %s\n", C_KO, C_0, c->ex, c->desc);
-			printf("       ");
-			print_argv(c->argv);
-			if (c->expected)
-			{
-				printf("\n       esperado: \"");
-				print_escaped(c->expected);
-				printf("\"\n       obtenido: \"");
-				print_escaped(out);
-				printf("\"");
-			}
-			printf("\n");
-			if (sig)
-				printf("       %smuere con señal %d (%s)%s\n", C_KO, sig,
-					strsignal(sig), C_0);
-			else if (code != 0)
-				printf("       %ssalida con código %d%s\n", C_D, code, C_0);
-		}
-		free(out);
+		roto += run_ex_cases(ex, extra, &ok, &ko);
+		printf("\n");
 	}
-	printf("\n%s%d OK%s  %s%d KO%s  %s%d SKIP%s\n",
-		C_OK, ok, C_0, C_KO, ko, C_0, C_SK, skipped, C_0);
+	printf("%s%zu ejercicios%s  %s%d con fallos%s  %s%d sin fuente%s",
+		C_B, N_EX, C_0, C_KO, roto, C_0, C_SK, skipped, C_0);
+	if (ko)
+		printf("  %s(%d tests KO)%s", C_KO, ko, C_0);
+	printf("\n");
 	cleanup();
 	return (ko != 0);
 }

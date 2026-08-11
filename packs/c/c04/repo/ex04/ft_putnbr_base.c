@@ -6,18 +6,22 @@
 /*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/28 17:02:16 by xalara            #+#    #+#             */
-/*   Updated: 2026/08/04 13:21:18 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/04 19:36:40 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
+
+void	ft_putnbr_base(int nbr, char *base);
 
 int	ft_base_ok(char *b)
 {
 	int	i;
 	int	j;
 
-	if (!b[0] || !b[1])
+	if (!b[0])
+		return (0);
+	if (!b[1])
 		return (0);
 	i = 0;
 	while (b[i])
@@ -33,7 +37,14 @@ int	ft_base_ok(char *b)
 		}
 		i++;
 	}
-	return (1);
+	return (i);
+}
+
+void	ft_putnbr_base_max(int nbr, char *base, int b, int *d)
+{
+	write(1, "-", 1);
+	ft_putnbr_base(-(nbr + b) / b + 1, base);
+	*d = -(nbr + b) % b;
 }
 
 void	ft_putnbr_base(int nbr, char *base)
@@ -41,22 +52,24 @@ void	ft_putnbr_base(int nbr, char *base)
 	int	d;
 	int	b;
 
-	if (ft_base_ok(base) == 1)
+	b = ft_base_ok(base);
+	if (b)
 	{
-		b = 0;
-		while (base[b])
-			b++;
-		if (nbr < 0)
+		if (nbr == -2147483648)
+			ft_putnbr_base_max(nbr, base, b, &d);
+		else
 		{
-			d = '-';
-			write(1, &d, 1);
-			nbr = -nbr;
+			if (nbr < 0)
+			{
+				write(1, "-", 1);
+				nbr = -nbr;
+			}
+			if (nbr / b > 0)
+			{
+				ft_putnbr_base(nbr / b, base);
+			}
+			d = nbr % b;
 		}
-		if (nbr / b > 0)
-		{
-			ft_putnbr_base(nbr, base);
-		}
-		d = nbr % b;
 		write (1, &base[d], 1);
 	}
 }

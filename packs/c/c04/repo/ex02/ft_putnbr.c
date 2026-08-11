@@ -6,27 +6,31 @@
 /*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/28 16:39:18 by xalara            #+#    #+#             */
-/*   Updated: 2026/08/04 01:15:47 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/04 17:14:44 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
 
-void	ft_putnbr(long nb)
+void	ft_putnbr(int nb)
 {
 	char	d;
 
+	if (nb == -2147483648)
+	{
+		write(1, "-2147483648", 11);
+		return ;
+	}
 	if (nb < 0)
 	{
-		d = '-';
-		write(1, &d, 1);
+		write(1, "-", 1);
 		nb = -nb;
 	}
 	if (nb / 10 > 0)
 	{
 		ft_putnbr(nb / 10);
 	}
-	d = '0' + nb % 10;
+	d = nb % 10 + '0';
 	write(1, &d, 1);
 }
 /*

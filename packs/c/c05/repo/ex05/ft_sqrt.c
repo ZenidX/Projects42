@@ -6,7 +6,7 @@
 /*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/28 20:25:42 by xalara            #+#    #+#             */
-/*   Updated: 2026/07/28 20:29:34 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/05 12:02:32 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,13 +15,13 @@
 int	ft_sqrt(int nb)
 {
 	int	i;
-	int	p;
 
 	i = 1;
-	while (i < nb)
+	while ((long) i * i <= (long) nb)
 	{
 		if (i * i == nb)
 			return (i);
 		i++;
 	}
+	return (0);
 }

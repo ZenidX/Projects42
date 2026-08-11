@@ -61,14 +61,12 @@ char	*ft_strjoin(int size, char **strs, char *sep)
 	int		j;
 	int		c;
 
-	if (size == 0)
-	{
-		r = (char *)malloc(sizeof(char));
-		r[0] = '\0';
-		return (r);
-	}
-	c = ft_intstrjoin(size, strs, sep);
-	r = (char *)malloc(sizeof(char) * c);
+	c = 0;
+	if (size > 0)
+		c = ft_intstrjoin(size, strs, sep);
+	r = (char *)malloc(sizeof(char) * (c + 1));
+	if (!r)
+		return (NULL);
 	j = 0;
 	i = 0;
 	while (i < size - 1)
@@ -77,7 +75,8 @@ char	*ft_strjoin(int size, char **strs, char *sep)
 		j += ft_strcpy(&r[j], sep);
 		i++;
 	}
-	j += ft_strcpy(&r[j], strs[i]);
+	if (size > 0)
+		j += ft_strcpy(&r[j], strs[i]);
 	r[j] = '\0';
 	return (r);
 }

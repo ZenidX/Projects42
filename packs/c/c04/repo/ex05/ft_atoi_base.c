@@ -6,7 +6,7 @@
 /*   By: xalara <marvin@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/07/28 16:51:56 by xalara            #+#    #+#             */
-/*   Updated: 2026/07/31 00:45:33 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/04 21:24:08 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,9 @@ int	ft_base_ok(char *base)
 	i = 0;
 	while (base[i])
 	{
-		if (base[i] == '-' || base[i] == '+' || base[i] == ' ')
+		if (base[i] == '-' || base[i] == '+'
+			|| base[i] == ' '
+			|| (base[i] >= 9 && base[i] <= 13))
 			return (0);
 		j = i + 1;
 		while (base[j])
@@ -68,13 +70,13 @@ int	ft_atoi_base(char *str, char *base)
 	while (str[i] == '+' || str[i] == '-')
 	{
 		if (str[i] == '-')
-			sign = -sign;
+			sign *= -1;
 		i++;
 	}
 	while (str[i] && ft_in_base(str[i], base) >= 0)
 	{
-		result = result * b + ft_in_base(str[i], base);
+		result = result * b + sign * ft_in_base(str[i], base);
 		i++;
 	}
-	return (result * sign);
+	return (result);
 }

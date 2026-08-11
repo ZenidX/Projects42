@@ -95,7 +95,7 @@ ok 'layouts.conf.in (plantilla de layouts de terminator)'
 run install -m 644 "$SRC_DIR/template/test/Makefile" "$SHARE_DIR/test/Makefile"
 ok 'test/Makefile (semilla para packs nuevos)'
 run install -m 644 "$SRC_DIR/shell/zenidx.sh" "$SHARE_DIR/zenidx.sh"
-ok 'zenidx.sh (PATH + funcion zcd)'
+ok 'zenidx.sh (PATH + funciones zcd y zenpack)'
 printf '\n'
 
 # --- 4. integracion de shell ----------------------------------------------
