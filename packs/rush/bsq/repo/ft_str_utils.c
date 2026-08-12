@@ -6,14 +6,20 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/11 02:07:58 by xalara            #+#    #+#             */
-/*   Updated: 2026/08/11 02:20:12 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/11 06:58:04 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
 #include <stdlib.h>
 
-//Se usa...
+int	ft_is_pos(int nbr)
+{
+	if (nbr <= 0)
+		return (0);
+	return (nbr);
+}
+
 int	ft_strlen(char *str)
 {
 	int	len;
@@ -23,20 +29,13 @@ int	ft_strlen(char *str)
 		len++;
 	return (len);
 }
-//Se usa...
-void ft_putstr(char *str)
+
+void	ft_putstr(char *str)
 {
-	write(1, str, ft_sstrlen(str));
+	write(1, str, ft_strlen(str));
 }
 
-/*
-** Devuelve un bloque NUEVO con s1 y s2 pegados, y CONSUME s1: lo libera antes
-** de volver. Pensada para acumular en bucle (s = ft_strcat(s, trozo)), donde
-** el bloque anterior ya no sirve. Por eso s1 tiene que venir del heap: nunca
-** le pases un literal ni un array de la pila. s2 solo se lee, ese no se toca.
-** Si el malloc falla devuelve 0 y s1 se pierde sin liberar.
-*/
-char *ft_strcat(char *s1, char *s2)
+char	*ft_strfreecat(char *s1, char *s2)
 {
 	char	*r;
 	int		i;
@@ -63,16 +62,27 @@ char *ft_strcat(char *s1, char *s2)
 	return (r);
 }
 
-//No se usa...
-int	ft_strncmp(char *s1, char *s2, unsigned int n)
+int	ft_atoi(char *str)
 {
-	unsigned int	i;
+	int	i;
+	int	s;
+	int	r;
 
-	if (n == 0)
-		return (0);
+	r = 0;
+	s = 1;
 	i = 0;
-	while (i < n - 1 && s1[i] && s2[i] && s1[i] == s2[i])
+	while (str[i] == ' ' || (str[i] >= 9 && str[i] <= 13))
 		i++;
-	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
+	if (str[i] == '+' || str[i] == '-')
+	{
+		if (str[i] == '-')
+			s = -1;
+		i++;
+	}
+	while (str[i] >= '0' && str[i] <= '9')
+	{
+		r = r * 10 + s * (str[i] - '0');
+		i++;
+	}
+	return (r);
 }
-

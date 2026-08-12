@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -922,6 +923,19 @@ static int	run_child(const char *bin, int skip, const char *casefile, int *sig)
 		xsnprintf(buf, sizeof(buf), "%d", skip);
 		setenv("FT_SKIP", buf, 1);
 		setenv("FT_CASEFILE", casefile, 1);
+		/* alarm() acota el tiempo, no la memoria: un bucle infinito con
+		   malloc dentro se lleva la RAM de la maquina antes de que salte.
+		   Con el techo, malloc devuelve NULL y el caso falla en el acto. */
+		{
+			struct rlimit	lim;
+
+			lim.rlim_cur = 256UL * 1024 * 1024;
+			lim.rlim_max = 256UL * 1024 * 1024;
+			setrlimit(RLIMIT_AS, &lim);
+			lim.rlim_cur = 0;
+			lim.rlim_max = 0;
+			setrlimit(RLIMIT_CORE, &lim);
+		}
 		alarm(TIMEOUT);
 		execl(bin, bin, (char *)NULL);
 		_exit(127);

@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/08/11 02:20:45 by xalara            #+#    #+#             */
-/*   Updated: 2026/08/11 02:28:20 by xalara           ###   ########.fr       */
+/*   Updated: 2026/08/11 06:35:15 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ int	ft_arrlen(char **arr)
 }
 
 /* Libera un array de (char *) con centinela NULL al final*/
-void ft_free_split(char **arr)
+void	ft_free_split(char **arr)
 {
 	int	i;
 
@@ -39,9 +39,16 @@ void ft_free_split(char **arr)
 	free(arr);
 }
 
-/* Libera el mapa de la estructura mapa como split y la misma estructura*/
-void ft_free_map(t_map map)
+/*
+** Libera el split y la propia estructura. Aguanta que map->map sea NULL porque
+** ft_parse_error puede entrar aqui con el split sin montar todavia.
+*/
+
+void	ft_free_map(t_map *map)
 {
-	ft_free_split(map.map);
+	if (!map)
+		return ;
+	if (map->map)
+		ft_free_split(map->map);
 	free(map);
 }

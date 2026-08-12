@@ -1,17 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_point.h                                         :+:      :+:    :+:   */
+/*   ft_stock_str.h                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/08/10 12:12:29 by xalara            #+#    #+#             */
-/*   Updated: 2026/08/11 12:27:13 by xalara           ###   ########.fr       */
+/*   Created: 2026/08/11 08:15:52 by xalara            #+#    #+#             */
+/*   Updated: 2026/08/11 08:16:58 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-typedef struct s_point
+typedef struct	s_stock_str
 {
-	int	x;
-	int	y;
-}	t_point;
+	int	size;
+	char *str;
+	char *copy;
+}	t_stock_str;

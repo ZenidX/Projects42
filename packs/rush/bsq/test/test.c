@@ -34,6 +34,9 @@
 /*     - va con salto de linea al final, y da igual si sale por stdout o por   */
 /*       stderr (el test los captura juntos)                                   */
 /*     - un mapa sin ningun hueco sale tal cual, sin cuadrado y sin error      */
+/*     - el cuerpo del mapa solo admite vacio y obstaculo: si trae ya el       */
+/*       caracter "lleno", es map error (la lectura habitual en 42; el         */
+/*       enunciado no lo dice con todas las letras)                            */
 /*     - entre dos salidas (o dos "map error") va UNA linea en blanco          */
 /*     - el binario se llama bsq y lo deja el Makefile en la raiz del repo     */
 /*                                                                            */
@@ -49,10 +52,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
 #define PATHSZ 4096
+#define MAXSRC 64
+#define NAMESZ 64
+#define DIAGSZ 200
 #define TIMEOUT 5
 #define BINNAME "bsq"
 #define ERRMSG "map error"
@@ -191,15 +198,98 @@ static int	spit(const char *path, const char *txt)
 	return (n == (ssize_t)len);
 }
 
-static void	dump_log(const char *path)
+/* Escupe el diagnostico como "error: fichero:linea mensaje". El sitio va DENTRO
+   del mensaje a proposito: el panel de zentest recorta el "algo.c:" del
+   principio de linea (en los packs c00-c07 sobra, porque cada ejercicio es un
+   solo fuente), y aqui con seis fuentes hace falta saber cual es. El "error:"
+   tampoco es decorativo: es la palabra por la que filtra el panel. */
+static void	print_diag(const char *kind, char *loc, char *msg)
+{
+	char	*p;
+	size_t	n;
+
+	p = strrchr(loc, '/');
+	if (p)
+		loc = p + 1;
+	n = strlen(loc);
+	while (n > 0 && (loc[n - 1] == ':' || loc[n - 1] == ' '))
+		loc[--n] = '\0';
+	p = strstr(msg, " [-W");
+	if (p)
+		*p = '\0';
+	if (n == 0 || strcmp(loc, "make") == 0)
+		printf("%s%s: %s%s\n", C_D, kind, msg, C_0);
+	else
+		printf("%s%s: %s %s%s\n", C_D, kind, loc, msg, C_0);
+}
+
+/* "bsq.c:(.text+0x95): undefined reference to `ft_print_map'" se queda en
+   "error: bsq.c undefined reference to `ft_print_map'": el offset dentro de
+   .text no le dice nada a nadie. Si delante no hay un fuente ni un objeto
+   (segun el enlazador puede venir "/usr/bin/ld:"), va sin sitio. */
+static void	show_link(char *line, char *msg)
+{
+	char	*p;
+	size_t	n;
+
+	p = strchr(line, ':');
+	if (p && p < msg)
+		*p = '\0';
+	n = strlen(line);
+	if (n < 3 || (strcmp(line + n - 2, ".c") && strcmp(line + n - 2, ".o")))
+		line[0] = '\0';
+	print_diag("error", line, msg);
+}
+
+/* Una linea del log de make. Pasan sus quejas propias (Makefile que ni arranca,
+   regla que falta) y las del enlazador, que es el unico fallo que no se ve
+   compilando fichero a fichero: cada .c puede estar perfecto y faltar aun asi
+   la funcion que los une. Los errores de cc los reparte breakdown(), asi que
+   aqui se ignoran para no contarlos dos veces. */
+static void	show_diag(char *line)
+{
+	char	*msg;
+	size_t	n;
+
+	msg = strstr(line, "undefined reference to ");
+	if (msg)
+		return (show_link(line, msg));
+	msg = strstr(line, "*** ");
+	/* el "[objetivo] Error N" es el resumen de make, no cuenta nada nuevo */
+	if (!msg || strstr(msg, "] Error "))
+		return ;
+	*msg = '\0';
+	msg += 4;
+	n = strlen(msg);
+	while (n > 0 && (msg[n - 1] == '.' || msg[n - 1] == ' '))
+		n--;
+	if (n > 4 && strncmp(msg + n - 4, "Stop", 4) == 0)
+		n -= 4;
+	while (n > 0 && (msg[n - 1] == '.' || msg[n - 1] == ' '))
+		n--;
+	msg[n] = '\0';
+	print_diag("error", line, msg);
+}
+
+/* Vuelca del log lo que dice make por su cuenta. */
+static void	dump_diags(const char *path)
 {
 	char	*log;
+	char	*line;
+	char	*next;
 
 	log = slurp(path);
 	if (!log)
 		return ;
-	if (*log)
-		printf("%s%s%s", C_D, log, C_0);
+	line = log;
+	while (line && *line)
+	{
+		next = strchr(line, '\n');
+		if (next)
+			*next++ = '\0';
+		show_diag(line);
+		line = next;
+	}
 	free(log);
 }
 
@@ -559,6 +649,160 @@ static char	*gen_map(int rows, int cols, int den)
 /*                              COMPILACION                                    */
 /* -------------------------------------------------------------------------- */
 
+static int	run_sh(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+static void	report_ok(const char *label);
+static void	report_ko(const char *label, const char *d1, const char *d2);
+
+/* Deja el diagnostico en out como "linea:col mensaje". El fichero no va porque
+   ya sale en la etiqueta del caso, y el [-Wflag] del final tampoco: en el panel
+   solo come ancho. */
+static void	fmt_diag(char *line, char *out, size_t n)
+{
+	char	*msg;
+	char	*loc;
+	char	*p;
+
+	msg = strstr(line, " error: ");
+	if (!msg)
+		return ((void)snprintf(out, n, "%s", line));
+	*msg = '\0';
+	msg += 8;
+	p = strstr(msg, " [-W");
+	if (p)
+		*p = '\0';
+	loc = strchr(line, ':');
+	if (loc)
+		loc++;
+	else
+		loc = line;
+	p = loc + strlen(loc);
+	while (p > loc && p[-1] == ':')
+		*--p = '\0';
+	snprintf(out, n, "%s %s", loc, msg);
+}
+
+/* Compila un solo fuente y cuenta sus errores, dejando los dos primeros en
+   d1/d2. */
+static int	count_errors(const char *dir, const char *file, char *d1, char *d2)
+{
+	char	log[PATHSZ];
+	char	*txt;
+	char	*line;
+	char	*next;
+	int		errs;
+
+	xsnprintf(log, sizeof(log), "%s/one.log", g_tmp);
+	d1[0] = '\0';
+	d2[0] = '\0';
+	if (run_sh("cc -Wall -Wextra -Werror -c '%s/%s' -o /dev/null > '%s' 2>&1",
+			dir, file, log) == 0)
+		return (0);
+	txt = slurp(log);
+	if (!txt)
+		return (0);
+	errs = 0;
+	line = txt;
+	while (line && *line)
+	{
+		next = strchr(line, '\n');
+		if (next)
+			*next++ = '\0';
+		if (strstr(line, " error: ") && ++errs < 3)
+			fmt_diag(line, (errs == 1) ? d1 : d2, DIAGSZ);
+		line = next;
+	}
+	free(txt);
+	return (errs);
+}
+
+/* readdir no da ningun orden, y una lista que baila entre tandas no hay quien
+   la compare de un vistazo. */
+static void	sort_names(char name[][NAMESZ], int n)
+{
+	char	tmp[NAMESZ];
+	int		i;
+	int		j;
+
+	i = 0;
+	while (i < n)
+	{
+		j = i + 1;
+		while (j < n)
+		{
+			if (strcmp(name[j], name[i]) < 0)
+			{
+				snprintf(tmp, sizeof(tmp), "%s", name[i]);
+				snprintf(name[i], NAMESZ, "%s", name[j]);
+				snprintf(name[j], NAMESZ, "%s", tmp);
+			}
+			j++;
+		}
+		i++;
+	}
+}
+
+static int	list_sources(const char *dir, char name[][NAMESZ], int max)
+{
+	struct dirent	*e;
+	DIR				*d;
+	size_t			len;
+	int				n;
+
+	d = opendir(dir);
+	if (!d)
+		return (0);
+	n = 0;
+	while ((e = readdir(d)) && n < max)
+	{
+		len = strlen(e->d_name);
+		if (e->d_name[0] == '.' || len < 3 || len >= NAMESZ)
+			continue ;
+		if (strcmp(e->d_name + len - 2, ".c") != 0)
+			continue ;
+		snprintf(name[n++], NAMESZ, "%s", e->d_name);
+	}
+	closedir(d);
+	sort_names(name, n);
+	return (n);
+}
+
+/* Reparto de errores por fichero. Con un solo "no compila" y seis fuentes no
+   sabes por donde empezar; asi ves cual esta limpio y cual no. Devuelve
+   cuantos ficheros fallan: si son cero, el que se queja es el Makefile. */
+static int	breakdown(const char *dir)
+{
+	char	name[MAXSRC][NAMESZ];
+	char	label[NAMESZ + 32];
+	char	d1[DIAGSZ];
+	char	d2[DIAGSZ];
+	int		n;
+	int		i;
+	int		bad;
+	int		errs;
+
+	n = list_sources(dir, name, MAXSRC);
+	bad = 0;
+	i = 0;
+	while (i < n)
+	{
+		errs = count_errors(dir, name[i], d1, d2);
+		if (errs == 0)
+		{
+			xsnprintf(label, sizeof(label), "%-22s compila", name[i]);
+			report_ok(label);
+		}
+		else
+		{
+			xsnprintf(label, sizeof(label), "%-22s %d error%s", name[i],
+				errs, (errs == 1) ? "" : "es");
+			report_ko(label, d1[0] ? d1 : NULL, d2[0] ? d2 : NULL);
+			bad++;
+		}
+		i++;
+	}
+	return (bad);
+}
+
 /* Junta los .c de dir entrecomillados. Devuelve cuantos ha encontrado. */
 static int	collect_sources(const char *dir, char *out, size_t n)
 {
@@ -638,17 +882,50 @@ static void	report_ko(const char *label, const char *d1, const char *d2)
 	g_ko++;
 }
 
+/* Cuenta los ficheros de dir acabados en ext. */
+static int	count_ext(const char *dir, const char *ext)
+{
+	struct dirent	*e;
+	DIR				*d;
+	size_t			len;
+	size_t			n;
+	int				count;
+
+	d = opendir(dir);
+	if (!d)
+		return (0);
+	count = 0;
+	n = strlen(ext);
+	while ((e = readdir(d)))
+	{
+		len = strlen(e->d_name);
+		if (len > n && strcmp(e->d_name + len - n, ext) == 0)
+			count++;
+	}
+	closedir(d);
+	return (count);
+}
+
+/* make <regla> en el directorio de trabajo. --no-print-directory quita el
+   "Entering directory /tmp/..." que aqui no le dice nada a nadie. */
+static int	make_rule(const char *dir, const char *rule)
+{
+	char	log[PATHSZ];
+
+	xsnprintf(log, sizeof(log), "%s/mk.log", g_tmp);
+	return (run_sh("make --no-print-directory -C '%s' %s > '%s' 2>&1",
+			dir, rule, log));
+}
+
 /* make dos veces seguidas: la segunda no debe tocar el binario. */
 static void	check_relink(const char *dir, const char *bin)
 {
 	unsigned long long	a[3];
 	unsigned long long	b[3];
-	char				log[PATHSZ];
 
-	xsnprintf(log, sizeof(log), "%s/cc2.log", g_tmp);
 	if (!stamp(bin, a))
 		return ;
-	if (run_sh("make -C '%s' > '%s' 2>&1", dir, log) != 0)
+	if (make_rule(dir, "") != 0)
 		return (report_ko("un segundo make no falla", "make devuelve error "
 				"la segunda vez", NULL));
 	if (!stamp(bin, b))
@@ -656,34 +933,81 @@ static void	check_relink(const char *dir, const char *bin)
 				"el segundo make se ha cargado el binario", NULL));
 	if (a[0] != b[0] || a[1] != b[1] || a[2] != b[2])
 		return (report_ko("el Makefile no hace relink",
-				"un segundo make vuelve a enlazar bsq",
-				"suele ser la regla que no depende de los .o"));
+				"un segundo make vuelve a enlazar " BINNAME,
+				"suele ser la regla que enlaza sin depender de los .o"));
 	report_ok("el Makefile no hace relink");
 }
 
-/* Compila con el Makefile del alumno. Devuelve 1 si sale binario. */
+/* clean se lleva los objetos y deja el programa. */
+static void	check_clean(const char *dir, const char *bin)
+{
+	if (make_rule(dir, "clean") != 0)
+		return (report_ko("make clean", "no hay regla clean o devuelve error",
+				"clean borra los .o, los ficheros objeto"));
+	if (count_ext(dir, ".o") > 0)
+		return (report_ko("make clean borra los .o",
+				"quedan ficheros .o despues de clean", NULL));
+	if (access(bin, F_OK) != 0)
+		return (report_ko("make clean deja el programa",
+				"clean se ha llevado tambien " BINNAME,
+				"borrar el programa es cosa de fclean, no de clean"));
+	report_ok("make clean borra los .o y deja el programa");
+}
+
+/* fclean deja el directorio como estaba, y re lo reconstruye todo. */
+static void	check_fclean_re(const char *dir, const char *bin)
+{
+	if (make_rule(dir, "fclean") != 0)
+		report_ko("make fclean", "no hay regla fclean o devuelve error",
+			"fclean borra los .o y ademas el programa");
+	else if (access(bin, F_OK) == 0)
+		report_ko("make fclean borra el programa",
+			BINNAME " sigue ahi despues de fclean", NULL);
+	else
+		report_ok("make fclean borra los .o y el programa");
+	if (make_rule(dir, "re") != 0)
+		report_ko("make re", "no hay regla re o devuelve error",
+			"re es un fclean seguido de un all");
+	else if (access(bin, X_OK) != 0)
+		report_ko("make re reconstruye el programa",
+			"re no ha dejado " BINNAME, NULL);
+	else
+		report_ok("make re reconstruye el programa desde cero");
+}
+
+/* Compila con el Makefile del alumno y comprueba de paso que las reglas de
+   siempre (all, clean, fclean, re) hacen lo que se espera de ellas.
+   Devuelve 1 si al final hay binario que lanzar. */
 static int	build_make(const char *dir, char *bin, size_t nbin)
 {
 	char	log[PATHSZ];
 
-	xsnprintf(log, sizeof(log), "%s/cc.log", g_tmp);
+	xsnprintf(log, sizeof(log), "%s/mk.log", g_tmp);
 	xsnprintf(bin, nbin, "%s/%s", dir, BINNAME);
-	if (run_sh("make -C '%s' > '%s' 2>&1", dir, log) != 0)
+	if (make_rule(dir, "") != 0)
 	{
-		printf("  %s[COMPILA KO]%s make devuelve error\n", C_KO, C_0);
-		dump_log(log);
-		return (0);
+		printf("  %s[COMPILA KO]%s make no llega a construir el programa\n",
+			C_KO, C_0);
+		dump_diags(log);
+		breakdown(dir);
+		return (g_ko++, 0);
 	}
 	if (access(bin, X_OK) != 0)
 	{
 		printf("  %s[COMPILA KO]%s make no deja un ejecutable llamado %s\n",
 			C_KO, C_0, BINNAME);
-		dump_log(log);
-		return (0);
+		printf("     %srevisa NAME en el Makefile (ojo a los espacios de "
+			"mas)%s\n", C_D, C_0);
+		dump_diags(log);
+		return (g_ko++, 0);
 	}
 	report_ok("make compila y deja ./" BINNAME);
 	check_relink(dir, bin);
-	return (1);
+	check_clean(dir, bin);
+	check_fclean_re(dir, bin);
+	if (access(bin, X_OK) != 0 && make_rule(dir, "") != 0)
+		return (0);
+	return (access(bin, X_OK) == 0);
 }
 
 /* Sin Makefile: cc directo a todos los .c, solo para que la tanda pueda seguir. */
@@ -705,8 +1029,8 @@ static int	build_cc(const char *dir, char *bin, size_t nbin)
 			bin, srcs, log) != 0)
 	{
 		printf("  %s[COMPILA KO]%s con -Wall -Wextra -Werror\n", C_KO, C_0);
-		dump_log(log);
-		return (0);
+		breakdown(dir);
+		return (g_ko++, 0);
 	}
 	printf("  %s[OK]%s   compila %d fuente%s con -Wall -Wextra -Werror\n",
 		C_OK, C_0, n, (n == 1) ? "" : "s");
@@ -781,6 +1105,19 @@ static int	spawn(char *const av[], const char *in_path, char **out)
 			_exit(127);
 		dup2(in, STDIN_FILENO);
 		close(in);
+		/* alarm() acota el tiempo, no la memoria: un bucle infinito con
+		   malloc dentro se lleva la RAM de la maquina antes de que salte.
+		   Con el techo, malloc devuelve NULL y el caso falla en el acto. */
+		{
+			struct rlimit	lim;
+
+			lim.rlim_cur = 256UL * 1024 * 1024;
+			lim.rlim_max = 256UL * 1024 * 1024;
+			setrlimit(RLIMIT_AS, &lim);
+			lim.rlim_cur = 0;
+			lim.rlim_max = 0;
+			setrlimit(RLIMIT_CORE, &lim);
+		}
 		alarm(TIMEOUT);
 		execv("./" BINNAME, av);
 		_exit(127);
@@ -997,7 +1334,7 @@ static const t_err	g_err[] = {
 {"numero negativo", "-3.ox\n...\n...\n...\n", 0},
 {"cabecera sin numero", ".ox\n...\n", 0},
 {"cabecera sin los tres caracteres", "9\n...\n", 0},
-{"vacio y obstaculo iguales", "3.oo\n...\n...\n...\n", 0},
+{"vacio y obstaculo iguales", "3..x\n...\n...\n...\n", 0},
 {"obstaculo y lleno iguales", "3.oo\n...\n...\n...\n", 0},
 {"caracter no imprimible en la cabecera", "2.o\t\n..\n..\n", 0},
 {"faltan lineas", "3.ox\n...\n...\n", 0},
