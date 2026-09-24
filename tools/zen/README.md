@@ -102,17 +102,27 @@ los repos gestionados.
 
 Para dar de alta uno nuevo, crea el directorio y llama a `zengit init` desde el
 pack. Registra `repo/` si existe, y el propio pack si no (hay packs de las dos
-formas: `c/c06/repo`, pero `rush/rush00` a pelo):
+formas: `piscine/005_c03/repo`, pero `piscine/016_rush00` a pelo):
 
 ```bash
-mkdir -p ~/zenidx/packs/c/c06/repo
-cd ~/zenidx/packs/c/c06 && zengit init
+mkdir -p ~/zenidx/packs/cursus/000_C-piscine-reloaded/repo
+cd ~/zenidx/packs/cursus/000_C-piscine-reloaded && zengit init
 zengit remote add origin vogsphere@vogsphere.42<campus>.com:vogsphere/<id>
 ```
 
 El árbol de trabajo es siempre el que quedó registrado en el alta, no el
-directorio desde el que llamas: `zengit add .` desde `c/c06` añade lo que hay
-bajo `repo/`, nunca el `subject.pdf` ni el `test/` del pack.
+directorio desde el que llamas: `zengit add .` desde `piscine/005_c03` añade lo
+que hay bajo `repo/`, nunca el `subject.pdf` ni el `test/` del pack.
+
+El slug sale de la ruta (`piscine/005_c03/repo` → `piscine-005_c03`), así que
+**renombrar o mover un pack deja su git-dir huérfano**. Al moverlo hay que
+renombrar también el `.git` del store y reapuntarlo:
+
+```bash
+cd ~/.local/share/zenidx-vogsphere
+mv viejo.git nuevo.git
+git --git-dir=nuevo.git config core.worktree ~/zenidx/packs/etapa/NNN_nombre/repo
+```
 
 Como cada panel resuelve el pack **en cada vuelta del watch**, cambiar de pack
 con `zenpack` reapunta los seis sin reiniciar nada.
@@ -133,12 +143,59 @@ con `zenpack` reapunta los seis sin reiniciar nada.
 ## Estructura de un pack
 
 ```
-~/zenidx/packs/CATEGORIA/NOMBRE/
+~/zenidx/packs/ETAPA/NNN_nombre/
 ├── repo/          el repo que entregas (ex00, ex01, ...)
 ├── test/          Makefile + test.c -> compila `runner`
 ├── subject.pdf
 └── extra/
 ```
+
+La **etapa** es el tramo de 42 (`piscine`, `cursus`) y el nombre va numerado
+`NNN_`, de `000` a `999`, en el orden en que se hacen los proyectos — que no es
+el alfabético y es el que quieres ver en el menú:
+
+```
+packs/piscine/000_shell00 ... 015_c13, 016_rush00 ... 019_bsq
+packs/cursus/000_C-piscine-reloaded
+```
+
+El número es solo una convención de nombre: `zenpack` lo entiende, pero un pack
+sin numerar sigue funcionando. Para elegir no hace falta teclearlo entero —
+valen el nombre exacto, el nombre sin prefijo y el número suelto, y si hay dos
+candidatos se pide desempatar con la etapa delante:
+
+```sh
+zenpack 005_c03      zenpack c03      zenpack 005      zenpack cursus/000
+```
+
+### Milestones
+
+Una etapa con muchos proyectos por delante se parte en **milestones**, y la
+centena del número dice en cuál cae cada pack: `000`–`099` es el milestone 0,
+`100`–`199` el 1, hasta el 9. Los títulos viven en `ETAPA/.milestones`, una
+línea `N = título` por milestone:
+
+```
+# packs/cursus/.milestones
+0 = rank 00 · arranque
+1 = rank 01 · fundamentos
+```
+
+Con ese fichero, el menú pregunta **primero por el grupo y luego por el pack**,
+en vez de soltar una lista de cincuenta proyectos numerados:
+
+```
+   1) cursus · rank 00 · arranque   1 pack <- actual
+   2) cursus · rank 01 · fundamentos   3 packs
+   3) piscine                     20 packs
+```
+
+Una etapa sin `.milestones` no se parte y se lista entera — que es lo que le va
+a `piscine`. Y cuando solo hay un grupo, el primer paso se salta.
+
+`zenpack -n` pregunta la etapa, el milestone si la etapa los usa, y propone el
+siguiente número libre de esa centena (`100`, `101`, …); si escribes tú un
+`NNN_`, manda el tuyo.
 
 `zentest` equivale a `cd <pack>/test && make && ./runner ../repo`. El `test.c`
 es **propio de cada pack** (sus casos prueban esos ejercicios); el instalador

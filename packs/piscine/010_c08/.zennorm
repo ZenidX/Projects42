@@ -1,0 +1,8 @@
+# Flags extra para la norminette de este pack (los lee zennorm).
+# Una linea por flag; las lineas en blanco y las que empiezan por # se ignoran.
+
+# c08 ex01 y ex02 piden EVEN(x), ODD(x) y ABS(x) en el subject, y ABS necesita
+# un ternario. La norminette v3 lo marca como MACRO_FUNC_FORBIDDEN,
+# PREPROC_CONSTANT y TERNARY_FBIDDEN, asi que sin esto el panel se queda rojo
+# en 7 errores que el propio enunciado te obliga a cometer.
+-R CheckDefine

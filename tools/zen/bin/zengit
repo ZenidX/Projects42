@@ -16,9 +16,13 @@
 # Uso normal: te situas dentro del pack (o de su repo/) y llamas a zengit.
 # Para dar de alta uno nuevo, crea el directorio y llama a init desde el pack:
 #
-#   mkdir -p ~/zenidx/packs/c/c06/repo
-#   cd ~/zenidx/packs/c/c06 && zengit init
+#   mkdir -p ~/zenidx/packs/cursus/000_C-piscine-reloaded/repo
+#   cd ~/zenidx/packs/cursus/000_C-piscine-reloaded && zengit init
 #   zengit remote add origin vogsphere@vogsphere.42<campus>.com:vogsphere/<id>
+#
+# OJO: el slug sale de la ruta, asi que renombrar o mover un pack deja su
+# git-dir huerfano. Hay que renombrar el .git del store igual y reapuntar su
+# core.worktree (`git --git-dir=... config core.worktree <ruta nueva>`).
 set -euo pipefail
 
 ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
@@ -30,7 +34,7 @@ else
     B=''; D=''; R=''
 fi
 
-# packs/c/c03/repo -> c-c03 ; packs/rush/rush00 -> rush-rush00
+# packs/piscine/005_c03/repo -> piscine-005_c03 ; packs/cursus/000_X -> cursus-000_X
 slug_for() {
     printf '%s' "${1#"$ROOT"/}" | sed 's|/repo$||; s|/|-|g'
 }
@@ -48,7 +52,7 @@ list_repos() {
 # Da de alta un repo de entrega: crea el git-dir en el store y lo apunta al
 # arbol de trabajo. Sin argumento parte del directorio actual; si ese tiene un
 # repo/ dentro es ese el que se registra, que es donde viven los ejercicios y
-# lo que slug_for da por supuesto (packs/c/c06/repo y packs/c/c06 dan el mismo
+# lo que slug_for da por supuesto (<pack>/repo y <pack> dan el mismo
 # slug, asi que el worktree hay que elegirlo aqui de forma explicita).
 init_repo() {
     local dir wt slug gitdir
@@ -88,7 +92,7 @@ init_repo() {
 }
 
 case "${1:-}" in
-    -h|--help) sed -n '2,21p' "$0" | cut -c3-; exit 0 ;;
+    -h|--help) sed -n '2,25p' "$0" | cut -c3-; exit 0 ;;
     -l)        list_repos; exit 0 ;;
     init)      shift; init_repo "$@"; exit 0 ;;
 esac

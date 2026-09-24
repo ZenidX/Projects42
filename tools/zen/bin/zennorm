@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# zennorm - lanza `norminette` con los flags que pida el pack activo.
+#
+#   zennorm [ARGS...]      corre norminette en el directorio actual
+#
+# Pensado para el panel: `zenin` ya ha entrado en <pack>/repo cuando esto
+# arranca. Si el pack tiene un fichero .zennorm, sus flags se anteponen a los
+# que vengan por la linea de comandos.
+#
+# Existe por c08: el subject obliga a escribir EVEN(x) y ABS(x), y la norminette
+# v3 prohibe macros con parametros y ternarios. Sin esto el panel se queda rojo
+# para siempre en errores que no puedes arreglar, y acabas ignorandolo. El flag
+# va por pack y no global a proposito: fuera de c08 una macro con parametros si
+# es un error de verdad y la moulinette no te lo va a perdonar.
+set -uo pipefail
+
+if [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+    sed -n '2,15p' "$0" | cut -c3-
+    exit 0
+fi
+
+# El pack se resuelve en cada pasada, igual que en zenin: al cambiarlo con
+# `zenpack` el panel se reapunta sin reiniciar nada.
+flags=()
+if pack=$(zenpack --print 2>/dev/null) && [ -r "$pack/.zennorm" ]; then
+    # Una linea por flag, o varios sueltos; se ignoran comentarios y blancos.
+    while IFS= read -r line || [ -n "$line" ]; do
+        case $line in
+            ''|\#*) continue ;;
+        esac
+        # Sin comillas: la gracia es que "-R CheckDefine" llegue como dos args.
+        # shellcheck disable=SC2206
+        flags+=($line)
+    done < "$pack/.zennorm"
+fi
+
+# Con flags de pack lo decimos: un panel que perdona reglas tiene que
+# ensenarlo, o se te olvida que las perdona.
+if [ ${#flags[@]} -gt 0 ]; then
+    printf '\033[2mflags del pack: %s\033[0m\n' "${flags[*]}"
+fi
+
+exec norminette "${flags[@]}" "$@"

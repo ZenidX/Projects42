@@ -1,51 +1,98 @@
-# Projects42 — xalara @ 42 Barcelona
+# zenidx — xalara @ 42 Barcelona
 
-Enunciados y soluciones de los proyectos de la cuenta **xalara** en la intra de 42.
-Reconstruido el 2026-07-21 (la carpeta llevaba vacía desde enero).
-
-## Estado en la intra
-
-| Proyecto | Estado intra | Aquí |
-|---|---|---|
-| C Piscine Shell 00 | In progress | `shells/shell00/` — resuelto (ex00–ex09) |
-| C Piscine Shell 01 | In progress | `shells/shell01/` — resuelto (ex01–ex08; ex00 es apuntarse al examen) |
-| C Piscine C 00 | no inscrito | `c/c00/` — resuelto (ex00–ex08, ft_putchar → ft_print_combn) |
-| C Piscine C 01 | no inscrito | `c/c01/` — resuelto (ex00–ex08, punteros: ft_ft → ft_sort_int_tab) |
-
-Los módulos de C cumplen la Norma: header 42 (login xalara), tabs, sin `for`, máx. 25
-líneas/función. Verificado con **norminette** (`-R CheckForbiddenSourceHeader`): 18/18 OK.
-Compilados con `cc -Wall -Wextra -Werror` y testeados (19 checks, incl. INT_MIN en
-ft_putnbr y las combinatorias contra generadores de referencia en Python).
-Los `.c` se generan con `_build/gen_c_files.py` (el header 42 se construye ahí);
-tests en `_build/test_c.sh` (corren en docker `python:3.12` en zenidx-linux).
+Enunciados, soluciones y herramientas de los proyectos de la cuenta **xalara** en la
+intra de 42, organizados por **etapa** (`piscine`, `cursus`).
 
 ## Estructura
 
-- `shells/shellNN/subject.pdf` + `subject.txt` — enunciado oficial (ES) y su texto extraído.
-- `shells/shellNN/exMM/` — solo los archivos a entregar de cada ejercicio.
-- `shells/shell00/resources/` — material del proyecto (`a`, `sw.diff` para ex07).
-- `_keys/id_ed25519_shell00` — clave privada de la pareja generada para shell00/ex03
-  (la pública entregable es `shells/shell00/ex03/id_ed25519_pub`).
-- `_build/` — scripts de construcción y test (se ejecutan en WSL Ubuntu).
+```
+packs/            los ejercicios: un directorio por proyecto
+  piscine/        000_shell00 001_shell01 002_c00 … 015_c13 016_rush00 … 019_bsq
+  cursus/         000_C-piscine-reloaded …  (+ .milestones)
+ref/              material de consulta (ref/piscine/NNN_…, 42cursus.md, maestro42.md)
+web/              fuente de 42.zenidx.com (portada + web/piscine/NNN_*.html)
+tools/zen/        el espacio de trabajo: zen, zenpack, zentest, zengit… (ver su README)
+tools/lldb-lab/   laboratorio para practicar con lldb
+_build/           scripts de la época Windows/WSL (rutas `/mnt/e/…`, legado)
+```
 
-## Notas de plataforma (Windows/NTFS)
+### Numeración y milestones
 
-Tres entregables no pueden existir "sueltos" en NTFS y por eso están empaquetados,
+Dentro de cada etapa los proyectos van numerados `NNN_`, de `000` a `999`, **en el
+orden en que se hacen** — que no es el alfabético, y es el que interesa ver en el menú
+de `zenpack`. En piscine ese orden es shells → C → rushes → BSQ; en cursus empieza en
+`000_C-piscine-reloaded`, el primer proyecto de la etapa.
+
+La **centena es el milestone**. El 42cursus va por *ranks* (las quests
+`common-core-rank-00` … `06` de la intra), así que cada rank se queda con su centena y
+el pack cae donde le toca:
+
+```
+packs/cursus/000_C-piscine-reloaded   rank 00 · arranque
+packs/cursus/001_libft                rank 00
+packs/cursus/100_ft_printf            rank 01 · fundamentos
+packs/cursus/200_push_swap            rank 02 · algoritmia y gráficos
+```
+
+Los títulos de cada milestone están en `packs/cursus/.milestones`, y el reparto real de
+proyectos por rank —leído del holy graph— en [`ref/42cursus.md`](ref/42cursus.md).
+`zenpack` pregunta primero por el milestone y luego por el proyecto, para que la lista
+no crezca a cincuenta líneas. Una etapa sin `.milestones` (piscine) se lista entera.
+
+El número es solo una convención de nombre: `zenpack` la entiende (`zenpack c03`,
+`zenpack 005` y `zenpack 005_c03` llevan al mismo sitio) pero no la impone.
+
+### Un pack
+
+```
+packs/ETAPA/NNN_nombre/
+├── repo/          lo que se entrega (ex00, ex01, …)
+├── test/          Makefile + test.c -> compila `runner`   (`zentest`)
+├── subject.pdf    enunciado oficial (algunos con subject.txt extraído)
+├── extra/         material del proyecto
+└── .zennorm       flags extra de norminette, si el subject obliga a saltarse alguna
+```
+
+No todos los packs tienen las cinco cosas: los de C de la segunda mitad están aún sin
+resolver, y `016_rush00` entrega desde la raíz del pack en vez de desde `repo/`.
+
+## Trabajar
+
+```sh
+zenpack                 elige el pack (o créalo: propone el siguiente número libre)
+zenlayout               abre el espacio de Terminator apuntado al pack activo
+zentest                 compila y lanza el runner del pack activo
+zengit push             entrega a vogsphere
+```
+
+Todo esto lo instala `tools/zen/install.sh`; el detalle está en
+[`tools/zen/README.md`](tools/zen/README.md).
+
+## Entregas
+
+Cada proyecto se entrega a su repo de **vogsphere** (la intra da la URL `git@vogsphere…`
+en la página del proyecto). El `.git` de esos repos no vive dentro del pack, sino en
+`~/.local/share/zenidx-vogsphere/<etapa>-<NNN_nombre>.git` con `core.worktree` apuntando
+de vuelta: así este repo versiona los ejercicios como ficheros normales y no como un
+gitlink vacío. Lo gestiona `zengit`.
+
+Como el slug sale de la ruta, **mover o renombrar un pack obliga a renombrar también su
+git-dir** y a reapuntar su `core.worktree`.
+
+## Norma
+
+Los módulos de C cumplen la Norma: header 42 (login xalara), tabs, sin `for`, máximo 25
+líneas por función; compilados con `cc -Wall -Wextra -Werror`. El panel de norminette
+del layout los vigila en cada guardado. `010_c08` lleva un `.zennorm` con
+`-R CheckDefine` porque su propio subject obliga a escribir macros con parámetros y un
+ternario.
+
+## Notas de plataforma
+
+El repo nació en Windows/NTFS y dos entregables de `000_shell00` siguen empaquetados,
 generados desde WSL con permisos y fechas POSIX reales:
 
-- `shell00/ex01/testShell00.tar` — contiene `testShell00` (`-r--r-xr-x`, 40 bytes, Jun 1 23:42).
-- `shell00/ex02/exo2.tar` — los 7 test0..test6 con sus permisos, hard link y symlink.
-- `shell01/ex05/ex05.tar` — el archivo `"\?$*'MaRViN'*$?\"` (nombre ilegal en Windows);
-  se regenera con `ex05/create_marvin.sh` en Linux.
+- `repo/ex01/testShell00.tar` — contiene `testShell00` (`-r--r-xr-x`, 40 bytes, Jun 1 23:42).
+- `repo/ex02/exo2.tar` — los 7 `test0`…`test6` con sus permisos, hard link y symlink.
 
-Todo lo demás son ficheros de texto/scripts normales (con final de línea LF).
-
-## Verificación
-
-`_build/_build_and_test.sh` construye los artefactos y testea cada ejercicio en WSL
-(18 comprobaciones). Última ejecución completa: 2026-07-21, todo en verde.
-
-Para entregar en 42 habría que clonar el repo de vogsphere de cada proyecto
-(la intra da la URL `git@vogsphere...` en la página del proyecto), copiar dentro las
-carpetas `exNN/` y hacer push. Requiere subir antes la clave pública de `ex03` a la
-intra (Settings → SSH keys).
+El resto son ficheros de texto y scripts normales, con final de línea LF.

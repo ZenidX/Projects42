@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # zenpack - elige (o crea) el pack de ejercicios sobre el que se trabaja.
 #
-#   zenpack              menu interactivo con los packs existentes
-#   zenpack c03          selecciona un pack por nombre o por categoria/nombre
+#   zenpack              menu interactivo: primero la etapa, luego el pack
+#   zenpack 005_c03      selecciona un pack por nombre o por etapa/nombre
+#   zenpack c03          vale tambien el nombre sin el numero...
+#   zenpack 005          ...o el numero suelto
 #   zenpack -p           imprime la ruta del pack actual (vacio + salida 1 si no hay)
 #   zenpack -n           va directo a crear un pack nuevo
 #
@@ -13,8 +15,15 @@
 # La funcion de shell del mismo nombre (shell/zenidx.sh) envuelve este script y
 # ademas deja la shell en <pack>/repo despues de elegir.
 #
-# Un pack es un directorio CATEGORIA/NOMBRE bajo ~/zenidx, con repo/, test/,
-# subject.pdf y extra/.
+# Un pack es un directorio ETAPA/NNN_nombre bajo ~/zenidx/packs, con repo/,
+# test/, subject.pdf y extra/. La etapa es el tramo de 42 (piscine, cursus) y el
+# numero, de 000 a 999, es el orden en que se hacen los proyectos, que no es el
+# alfabetico.
+#
+# Una etapa con muchos proyectos por delante se parte en milestones: la centena
+# del numero dice en cual cae cada pack (100_ft_printf -> milestone 1) y los
+# titulos salen de ETAPA/.milestones. El menu pregunta primero por ahi en vez de
+# soltar la lista entera.
 set -euo pipefail
 
 ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
@@ -27,7 +36,104 @@ else
     B=''; D=''; G=''; Y=''; C=''; R=''
 fi
 
-usage() { sed -n '2,16p' "$0" | cut -c3- ; }
+usage() { sed -n '2,26p' "$0" | cut -c3- ; }
+
+# --- numeracion ------------------------------------------------------------
+# El prefijo NNN_ ordena los packs dentro de su etapa. Estas dos son las que
+# saben leerlo; el resto del script trata el nombre como una cadena cualquiera,
+# asi que un pack sin numerar sigue funcionando igual que siempre.
+
+num_of()    { case $1 in [0-9][0-9][0-9]_*) printf '%s' "${1%%_*}" ;; esac; }
+strip_num() { printf '%s' "${1#[0-9][0-9][0-9]_}"; }
+
+# --- milestones ------------------------------------------------------------
+# Una etapa larga se parte en milestones, y la centena del numero dice en cual
+# cae cada pack: 000-099 es el milestone 0, 100-199 el 1, y asi hasta el 9. Los
+# titulos salen de ETAPA/.milestones, una linea "N = titulo" por milestone.
+#
+# Sin ese fichero la etapa no se parte y se lista entera, que es lo que le va a
+# piscine (20 packs de tiron). El cursus si lo usa: con el common core completo
+# la lista plana pasa de 50 packs y elegir se vuelve buscar con la vista.
+
+has_milestones() { [ -r "$ROOT/$1/.milestones" ]; }
+
+band_of() {
+    local n
+    n=$(num_of "$1")
+    [ -n "$n" ] || return 1
+    printf '%d' "$((10#$n / 100))"
+}
+
+milestone_title() {
+    local cat=$1 want=$2 line key
+    [ -r "$ROOT/$cat/.milestones" ] || return 1
+    while IFS= read -r line || [ -n "$line" ]; do
+        case $line in ''|\#*) continue ;; esac
+        key=${line%%=*}
+        key=${key//[[:space:]]/}
+        case $key in ''|*[!0-9]*) continue ;; esac
+        [ "$((10#$key))" -eq "$want" ] || continue
+        line=${line#*=}
+        line=${line#"${line%%[![:space:]]*}"}
+        printf '%s' "${line%"${line##*[![:space:]]}"}"
+        return 0
+    done < "$ROOT/$cat/.milestones"
+    return 1
+}
+
+list_milestones() {
+    local cat=$1 line key
+    [ -r "$ROOT/$cat/.milestones" ] || return 1
+    while IFS= read -r line || [ -n "$line" ]; do
+        case $line in ''|\#*) continue ;; esac
+        key=${line%%=*}
+        key=${key//[[:space:]]/}
+        case $key in ''|*[!0-9]*) continue ;; esac
+        printf '   %s%s%s) %s\n' "$C" "$key" "$R" "$(milestone_title "$cat" "$((10#$key))")"
+    done < "$ROOT/$cat/.milestones"
+}
+
+# La clave de grupo de un pack: su etapa, o etapa:N si la etapa usa milestones.
+group_of() {
+    local cat b
+    cat=$(basename "$(dirname "$1")")
+    if has_milestones "$cat" && b=$(band_of "$(basename "$1")"); then
+        printf '%s:%s' "$cat" "$b"
+    else
+        printf '%s' "$cat"
+    fi
+}
+
+group_label() {
+    local cat=${1%%:*} n t
+    case $1 in
+        *:*) n=${1#*:}
+             if t=$(milestone_title "$cat" "$n"); then
+                 printf '%s · %s' "$cat" "$t"
+             else
+                 printf '%s · milestone %s' "$cat" "$n"
+             fi ;;
+        *)   printf '%s' "$cat" ;;
+    esac
+}
+
+# Los packs llegan ordenados por ruta, asi que cada grupo viene de una pieza;
+# el awk es por si algun dia dejan de venirlo.
+group_keys() {
+    local p
+    for p in "$@"; do
+        group_of "$p"
+        printf '\n'
+    done | awk 'NF && !seen[$0]++'
+}
+
+packs_in_group() {
+    local key=$1 p
+    shift
+    for p in "$@"; do
+        if [ "$(group_of "$p")" = "$key" ]; then printf '%s\n' "$p"; fi
+    done
+}
 
 # --- estado ----------------------------------------------------------------
 
@@ -105,8 +211,35 @@ seed_test_dir() {
     fi
 }
 
+# El siguiente numero libre, para no ir mirando a mano por donde iba la cuenta.
+# Con milestone, dentro de su centena (el 2 va de 200 a 299); sin el, en toda la
+# etapa. Una etapa vacia (o recien inventada) empieza en 000; una que ya existe
+# y no usa numeros no se numera a la fuerza.
+next_prefix() {
+    local cat=$1 band=${2-} p b n max=-1 any=0 lo=0 hi=999
+    if [ -n "$band" ]; then lo=$((band * 100)); hi=$((lo + 99)); fi
+    for p in "$ROOT/$cat"/*/; do
+        [ -d "$p" ] || continue
+        any=1
+        b=$(basename "${p%/}")
+        n=$(num_of "$b")
+        [ -n "$n" ] || continue
+        n=$((10#$n))
+        { [ "$n" -ge "$lo" ] && [ "$n" -le "$hi" ]; } || continue
+        [ "$n" -gt "$max" ] && max=$n
+    done
+    if [ "$max" -ge 0 ]; then
+        [ "$max" -lt "$hi" ] || return 1
+        printf '%03d' "$((max + 1))"
+    elif [ -n "$band" ] || [ "$any" -eq 0 ]; then
+        printf '%03d' "$lo"
+    else
+        return 1
+    fi
+}
+
 create_pack() {
-    local cats cat name pack i
+    local cats cat name pack i prefix band
     mapfile -t cats < <(list_categories)
 
     printf '\n%sCrear un pack nuevo%s\n\n' "$B" "$R"
@@ -125,9 +258,36 @@ create_pack() {
     fi
     valid_name "$cat" || { printf '  %snombre de categoria no valido%s\n' "$Y" "$R"; return 1; }
 
-    read -r -p "  Nombre del pack: " name \
-        || { printf '\n  %scancelado%s\n' "$Y" "$R"; return 1; }
+    # En una etapa con milestones el numero sale de la centena que le toque, asi
+    # que hay que saber en cual cae antes de proponerlo.
+    band=''
+    if has_milestones "$cat"; then
+        printf '\n  Milestones de %s%s%s:\n' "$B" "$cat" "$R"
+        list_milestones "$cat"
+        printf '\n'
+        read -r -p "  Milestone (numero): " band \
+            || { printf '\n  %scancelado%s\n' "$Y" "$R"; return 1; }
+        case $band in
+            ''|*[!0-9]*) printf '  %smilestone no valido%s\n' "$Y" "$R"; return 1 ;;
+        esac
+        band=$((10#$band))
+        [ "$band" -le 9 ] || { printf '  %sel milestone va de 0 a 9%s\n' "$Y" "$R"; return 1; }
+    fi
+
+    prefix=$(next_prefix "$cat" "$band") || prefix=''
+    if [ -n "$prefix" ]; then
+        read -r -p "  Nombre del pack (se le pone el prefijo ${prefix}_): " name \
+            || { printf '\n  %scancelado%s\n' "$Y" "$R"; return 1; }
+    else
+        read -r -p "  Nombre del pack: " name \
+            || { printf '\n  %scancelado%s\n' "$Y" "$R"; return 1; }
+    fi
     valid_name "$name" || { printf '  %snombre de pack no valido%s\n' "$Y" "$R"; return 1; }
+    # Si escribes tu el numero (para meter uno intercalado, o para repetir el de
+    # la intra) manda el tuyo.
+    if [ -n "$prefix" ] && [ -z "$(num_of "$name")" ]; then
+        name="${prefix}_$name"
+    fi
 
     pack="$ROOT/$cat/$name"
     [ -e "$pack" ] && { printf '  %sya existe %s%s\n' "$Y" "$cat/$name" "$R"; return 1; }
@@ -143,8 +303,12 @@ create_pack() {
 
 # --- menu ------------------------------------------------------------------
 
+# Dos pasos: primero el grupo (la etapa, o el milestone dentro de ella) y luego
+# sus packs. Con el common core entero por delante, una sola lista numerada se
+# va a mas de cincuenta lineas y elegir se convierte en buscar con la vista.
+# Cuando solo hay un grupo el primer paso se salta: no hay nada que elegir.
 menu() {
-    local packs cur last_cat cat i choice
+    local packs keys labels counts sel cur key lbl i n choice w
     mapfile -t packs < <(list_packs)
     cur=$(current_pack 2>/dev/null || true)
 
@@ -154,54 +318,124 @@ menu() {
         return
     fi
 
-    printf '\n%sPacks de ejercicios%s %sen %s%s\n' "$B" "$R" "$D" "$ROOT" "$R"
-    last_cat=''
-    for i in "${!packs[@]}"; do
-        cat=$(basename "$(dirname "${packs[$i]}")")
-        [ "$cat" != "$last_cat" ] && { printf '\n  %s%s%s\n' "$D" "$cat" "$R"; last_cat=$cat; }
-        if [ "${packs[$i]}" = "$cur" ]; then
-            printf '   %s%2d%s) %s%-10s%s %s%s%s %s<- actual%s\n' \
-                "$C" "$((i + 1))" "$R" "$B" "$(basename "${packs[$i]}")" "$R" \
-                "$D" "$(pack_bits "${packs[$i]}")" "$R" "$G" "$R"
-        else
-            printf '   %s%2d%s) %-10s %s%s%s\n' \
-                "$C" "$((i + 1))" "$R" "$(basename "${packs[$i]}")" \
-                "$D" "$(pack_bits "${packs[$i]}")" "$R"
-        fi
+    mapfile -t keys < <(group_keys "${packs[@]}")
+    labels=(); counts=(); w=0
+    for key in "${keys[@]}"; do
+        lbl=$(group_label "$key")
+        labels+=("$lbl")
+        n=$(packs_in_group "$key" "${packs[@]}" | wc -l)
+        if [ "$n" -eq 1 ]; then counts+=("1 pack"); else counts+=("$n packs"); fi
+        [ "${#lbl}" -gt "$w" ] && w=${#lbl}
     done
 
-    printf '\n    %sn%s) crear un pack nuevo\n' "$C" "$R"
-    printf '    %sq%s) salir sin tocar nada\n\n' "$C" "$R"
+    while :; do
+        if [ "${#keys[@]}" -eq 1 ]; then
+            key=${keys[0]}
+        else
+            printf '\n%sPacks de ejercicios%s %sen %s%s\n\n' "$B" "$R" "$D" "$ROOT" "$R"
+            for i in "${!keys[@]}"; do
+                if [ -n "$cur" ] && [ "$(group_of "$cur")" = "${keys[$i]}" ]; then
+                    printf '   %s%2d%s) %s%-*s%s %s%8s%s %s<- actual%s\n' \
+                        "$C" "$((i + 1))" "$R" "$B" "$w" "${labels[$i]}" "$R" \
+                        "$D" "${counts[$i]}" "$R" "$G" "$R"
+                else
+                    printf '   %s%2d%s) %-*s %s%8s%s\n' \
+                        "$C" "$((i + 1))" "$R" "$w" "${labels[$i]}" \
+                        "$D" "${counts[$i]}" "$R"
+                fi
+            done
+            printf '\n    %sn%s) crear un pack nuevo\n' "$C" "$R"
+            printf '    %sq%s) salir sin tocar nada\n\n' "$C" "$R"
 
-    if ! read -r -p "Pack [1-${#packs[@]}/n/q]: " choice; then
-        printf '\n%ssin cambios. Vuelve a elegir cuando quieras con `zenpack`.%s\n' "$D" "$R"
-        return 0
-    fi
-    case $choice in
-        ''|q|Q) printf '%ssin cambios%s\n' "$D" "$R"; return 0 ;;
-        n|N)    create_pack ;;
-        *[!0-9]*|'') printf '%sopcion no valida%s\n' "$Y" "$R"; return 1 ;;
-        *)
-            if [ "$choice" -ge 1 ] && [ "$choice" -le "${#packs[@]}" ]; then
-                set_pack "${packs[$((choice - 1))]}"
-            else
+            if ! read -r -p "Etapa [1-${#keys[@]}/n/q]: " choice; then
+                printf '\n%ssin cambios. Vuelve a elegir cuando quieras con `zenpack`.%s\n' "$D" "$R"
+                return 0
+            fi
+            case $choice in
+                ''|q|Q)   printf '%ssin cambios%s\n' "$D" "$R"; return 0 ;;
+                n|N)      create_pack; return $? ;;
+                *[!0-9]*) printf '%sopcion no valida%s\n' "$Y" "$R"; return 1 ;;
+            esac
+            if [ "$choice" -lt 1 ] || [ "$choice" -gt "${#keys[@]}" ]; then
                 printf '%sno hay opcion %s%s\n' "$Y" "$choice" "$R"
                 return 1
             fi
-            ;;
-    esac
+            key=${keys[$((choice - 1))]}
+        fi
+
+        mapfile -t sel < <(packs_in_group "$key" "${packs[@]}")
+        # La columna se ajusta al nombre mas largo del grupo: con los packs
+        # numerados (000_C-piscine-reloaded) un ancho fijo de 10 partia la linea.
+        n=10
+        for i in "${!sel[@]}"; do
+            lbl=$(basename "${sel[$i]}")
+            [ "${#lbl}" -gt "$n" ] && n=${#lbl}
+        done
+
+        printf '\n  %s%s%s\n\n' "$B" "$(group_label "$key")" "$R"
+        for i in "${!sel[@]}"; do
+            if [ "${sel[$i]}" = "$cur" ]; then
+                printf '   %s%2d%s) %s%-*s%s %s%s%s %s<- actual%s\n' \
+                    "$C" "$((i + 1))" "$R" "$B" "$n" "$(basename "${sel[$i]}")" "$R" \
+                    "$D" "$(pack_bits "${sel[$i]}")" "$R" "$G" "$R"
+            else
+                printf '   %s%2d%s) %-*s %s%s%s\n' \
+                    "$C" "$((i + 1))" "$R" "$n" "$(basename "${sel[$i]}")" \
+                    "$D" "$(pack_bits "${sel[$i]}")" "$R"
+            fi
+        done
+
+        printf '\n    %sn%s) crear un pack nuevo\n' "$C" "$R"
+        [ "${#keys[@]}" -gt 1 ] && printf '    %sv%s) volver a las etapas\n' "$C" "$R"
+        printf '    %sq%s) salir sin tocar nada\n\n' "$C" "$R"
+
+        if ! read -r -p "Pack [1-${#sel[@]}/n/q]: " choice; then
+            printf '\n%ssin cambios. Vuelve a elegir cuando quieras con `zenpack`.%s\n' "$D" "$R"
+            return 0
+        fi
+        case $choice in
+            ''|q|Q)   printf '%ssin cambios%s\n' "$D" "$R"; return 0 ;;
+            n|N)      create_pack; return $? ;;
+            v|V)      if [ "${#keys[@]}" -eq 1 ]; then
+                          printf '%ssin cambios%s\n' "$D" "$R"; return 0
+                      fi
+                      continue ;;
+            *[!0-9]*) printf '%sopcion no valida%s\n' "$Y" "$R"; return 1 ;;
+        esac
+        if [ "$choice" -ge 1 ] && [ "$choice" -le "${#sel[@]}" ]; then
+            set_pack "${sel[$((choice - 1))]}"
+            return 0
+        fi
+        printf '%sno hay opcion %s%s\n' "$Y" "$choice" "$R"
+        return 1
+    done
 }
 
 # --- seleccion directa por nombre ------------------------------------------
 
+# Dos pasadas. Primero el nombre tal cual; si nada casa, se prueba otra vez
+# perdonando el prefijo numerico, para que `zenpack c09` y `zenpack 011` sigan
+# llevando a 011_c09 sin teclear el nombre entero. El orden importa: un pack
+# que casa exacto gana, y solo si no hay ninguno se abre la mano.
 resolve() {
-    local want=$1 packs match=() p
+    local want=$1 packs match=() p b cat n
     mapfile -t packs < <(list_packs)
     for p in "${packs[@]}"; do
         if [ "${p#$ROOT/}" = "$want" ] || [ "$(basename "$p")" = "$want" ] || [ "$p" = "$want" ]; then
             match+=("$p")
         fi
     done
+    if [ "${#match[@]}" -eq 0 ]; then
+        for p in "${packs[@]}"; do
+            b=$(basename "$p")
+            cat=$(basename "$(dirname "$p")")
+            if [ "$(strip_num "$b")" = "$want" ] \
+               || [ "$cat/$(strip_num "$b")" = "$want" ] \
+               || { n=$(num_of "$b"); [ -n "$n" ] && { [ "$n" = "$want" ] || [ "$cat/$n" = "$want" ]; }; }; then
+                match+=("$p")
+            fi
+        done
+    fi
     case "${#match[@]}" in
         1) printf '%s\n' "${match[0]}" ;;
         0) printf 'zenpack: no encuentro el pack "%s"\n' "$want" >&2; return 1 ;;
