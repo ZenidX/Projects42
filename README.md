@@ -59,6 +59,7 @@ resolver, y `016_rush00` entrega desde la raíz del pack en vez de desde `repo/`
 ## Trabajar
 
 ```sh
+zenhelp                 qué se puede hacer aquí (y `zenhelp <comando>` para el detalle)
 zenpack                 elige el pack (o créalo: propone el siguiente número libre)
 zenlayout               abre el espacio de Terminator apuntado al pack activo
 zentest                 compila y lanza el runner del pack activo

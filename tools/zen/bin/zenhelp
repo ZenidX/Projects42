@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# zenhelp - que se puede hacer en el espacio de trabajo zenidx.
+#
+#   zenhelp              el mapa completo: todos los comandos por para-que-sirve
+#   zenhelp zenpack      la ayuda propia de un comando (igual que `zenpack -h`)
+#   zenhelp -a           el mapa y ademas todas las ayudas, seguidas
+#
+# Aqui no se documenta nada dos veces: cada script lleva su ayuda en su propia
+# cabecera y zenhelp la va a buscar. Lo que si vive aqui es la vista de
+# conjunto, que es lo unico que ningun script puede contar por si solo.
+set -euo pipefail
+
+ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
+
+if [ -t 1 ]; then
+    B=$'\033[1m'; D=$'\033[2m'; C=$'\033[36m'; Y=$'\033[33m'; R=$'\033[0m'
+else
+    B=''; D=''; C=''; Y=''; R=''
+fi
+
+CMDS=(zen zenlayout zenpack zenshell zentest zennorm zenin zenwatch zengit zenhelp)
+
+usage() { sed -n '2,11p' "$0" | cut -c3- ; }
+
+# Una linea de comando del mapa: el comando en color y su para-que-sirve.
+item() { printf '   %s%-34s%s %s\n' "$C" "$1" "$R" "$2"; }
+head2() { printf '\n  %s%s%s\n' "$B" "$1" "$R"; }
+
+overview() {
+    local pack
+
+    printf '\n%sEspacio de trabajo zenidx%s\n' "$B" "$R"
+    if pack=$(zenpack --print 2>/dev/null); then
+        printf '%s%s  ·  pack activo: %s%s\n' "$D" "$ROOT" "${pack#"$ROOT"/}" "$R"
+    else
+        printf '%s%s  ·  %ssin pack: elige uno con zenpack%s\n' "$D" "$ROOT" "$Y" "$R"
+    fi
+
+    head2 'el espacio'
+    item 'zen' 'menu: layout, intervalos de los paneles, asistente'
+    item 'zenlayout' 'abre Terminator con el layout configurado'
+    item 'zenlayout -l focus' 'abre uno suelto sin tocar la configuracion'
+
+    head2 'elegir pack'
+    item 'zenpack' 'menu: primero la etapa o el milestone, luego el proyecto'
+    item 'zenpack 005_c03 | c03 | 005' 'directo por nombre, sin el numero, o por numero'
+    item 'zenpack cursus/000' 'con la etapa delante, para desempatar'
+    item 'zenpack -n' 'crea uno nuevo con el siguiente numero libre'
+    item 'zenpack -p' 'imprime la ruta del pack activo'
+    item 'zcd [repo]' 'lleva ESTA shell al pack (es una funcion, no un script)'
+    item 'zenshell [repo]' 'abre una shell nueva dentro del pack'
+
+    head2 'mientras trabajas'
+    item 'zentest' 'compila y lanza el runner del pack activo'
+    item 'zentest --compact' 'el resumen por ejercicio que sale en el panel'
+    item 'zentest --pack DIR' 'fuerza un pack concreto en vez del activo'
+    item 'zennorm' 'norminette con los flags que pida el pack (.zennorm)'
+    item 'zenin repo tree' 'ejecuta un comando dentro del pack activo'
+    item 'zenwatch -n 5 repo tree -C' 'lo repite en bucle: es lo que hacen los paneles'
+
+    head2 'entregar a la intra'
+    item 'zengit init' 'da de alta el repo de vogsphere de este pack'
+    item 'zengit remote add origin URL' 'lo enchufa al repo que da la intra'
+    item 'zengit add . / commit / push' 'git normal, pero solo sobre repo/'
+    item 'zengit -l' 'lista los repos de entrega y a donde apuntan'
+
+    head2 'como se llaman las cosas'
+    printf '   %spacks/ETAPA/NNN_nombre/%s   repo/ lo que entregas · test/ sus tests · extra/\n' "$D" "$R"
+    printf '   %sla etapa%s es el tramo de 42 (piscine, cursus) y %sNNN%s el orden real\n' "$D" "$R" "$D" "$R"
+    printf '   %sla centena%s es el milestone; sus titulos, en ETAPA/.milestones\n' "$D" "$R"
+    printf '   %s.zennorm%s en un pack = flags extra de norminette solo para el\n' "$D" "$R"
+
+    head2 'mas detalle'
+    item 'zenhelp <comando>' 'la ayuda propia de ese comando'
+    item 'zenhelp -a' 'el mapa y todas las ayudas seguidas'
+    printf '   %sy los dos README: tools/zen/README.md y el de la raiz%s\n\n' "$D" "$R"
+}
+
+# La ayuda de zcd no esta en ningun script: es una funcion de shell.
+help_zcd() {
+    printf '\n%szcd%s - lleva la shell en la que estas al pack activo.\n\n' "$B" "$R"
+    printf '  zcd          a la raiz del pack\n'
+    printf '  zcd repo     a <pack>/repo\n\n'
+    printf '  %sEs una funcion y no un script porque un cd en un proceso hijo no\n' "$D"
+    printf '  moveria tu shell. La instala la integracion de shell (zenidx.sh).%s\n\n' "$R"
+}
+
+one() {
+    local cmd=$1
+
+    [ "$cmd" = "zcd" ] && { help_zcd; return 0; }
+    case " ${CMDS[*]} " in
+        *" $cmd "*) ;;
+        *) printf 'zenhelp: no conozco "%s". Los que hay: %s y zcd.\n' \
+               "$cmd" "${CMDS[*]}" >&2
+           return 2 ;;
+    esac
+    if ! command -v "$cmd" > /dev/null 2>&1; then
+        printf 'zenhelp: %s no esta instalado (reinstala con tools/zen/install.sh)\n' \
+            "$cmd" >&2
+        return 1
+    fi
+    printf '\n%s── %s%s\n\n' "$B" "$cmd" "$R"
+    "$cmd" -h
+    return 0
+}
+
+all() {
+    local c
+
+    overview
+    for c in "${CMDS[@]}"; do
+        one "$c" || true
+        printf '\n'
+    done
+    help_zcd
+}
+
+case "${1-}" in
+    '')          overview ;;
+    -h|--help)   usage ;;
+    -a|--all)    all ;;
+    -*)          usage >&2; exit 2 ;;
+    *)           one "$1" ;;
+esac

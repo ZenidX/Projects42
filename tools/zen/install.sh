@@ -16,7 +16,7 @@ CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zenidx"
 TERM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/terminator"
 PACKS_DIR="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
 
-SCRIPTS=(zen zenpack zenin zenwatch zentest zenshell zenlayout zengit)
+SCRIPTS=(zen zenpack zenin zenwatch zentest zenshell zenlayout zengit zennorm zenhelp)
 
 DRY=0
 case "${1-}" in
@@ -180,6 +180,7 @@ if ! command -v zen >/dev/null 2>&1; then
     printf '  %s%s no esta en tu PATH todavia.%s\n' "$Y" "$BIN_DIR" "$R"
     printf '  Abre una terminal nueva, o ejecuta:  %s. %s/zenidx.sh%s\n\n' "$B" "$SHARE_DIR" "$R"
 fi
+printf '  %szenhelp%s      que se puede hacer aqui: el mapa completo\n' "$B" "$R"
 printf '  %szen%s          menu de configuracion del espacio\n' "$B" "$R"
 printf '  %szenlayout%s    abre terminator con el layout configurado\n' "$B" "$R"
 printf '  %szenpack%s      elige o crea un pack de ejercicios\n' "$B" "$R"

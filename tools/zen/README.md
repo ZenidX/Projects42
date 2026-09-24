@@ -50,13 +50,19 @@ sudo apt install terminator procps gawk tree
 ## Uso
 
 ```sh
+zenhelp       qué se puede hacer aquí: el mapa completo
 zen           menú de configuración del espacio
 zenlayout     abre Terminator con el layout configurado
 zenpack       elige o crea un pack (y te deja en su repo/)
 zentest       lanza los tests del pack activo
+zennorm       norminette con los flags que pida el pack
 zengit        git para los repos de entrega (vogsphere)
 zcd repo      salta al repo del pack activo
 ```
+
+`zenhelp` sin argumentos lista todo por para-qué-sirve; `zenhelp zengit` enseña
+la ayuda de ese comando y `zenhelp -a` las enseña todas seguidas. No duplica
+nada: cada script lleva su ayuda en su cabecera y `zenhelp` va a buscarla.
 
 El menú de `zen` agrupa lo que se toca a diario: el layout, los intervalos de
 refresco de cada panel de vigilancia y el pack activo. Al aplicar, regenera la
@@ -75,7 +81,7 @@ sección `[layouts]` de Terminator y puede relanzarlo.
 
 ## Cómo está montado
 
-Seis scripts independientes que se comunican por **un fichero de estado**:
+Scripts independientes que se comunican por **un fichero de estado**:
 
 ```
 ~/.local/state/zenidx/current-pack     <- lo escribe zenpack, lo leen todos
@@ -88,8 +94,10 @@ zenwatch   envuelve zenin en `watch -n`                   (los paneles)
 zentest    compila y lanza el runner de tests del pack
 zenshell   shell interactiva dentro del pack
 zenlayout  abre Terminator con el layout configurado
+zennorm    norminette con los flags que pida el pack (.zennorm)
 zengit     git para los repos de entrega, con el .git fuera del árbol
 zen        menú de configuración; genera los layouts
+zenhelp    el mapa de todo lo anterior; delega el detalle en cada -h
 ```
 
 `zengit` resuelve un problema concreto: el `.git` de cada repo de vogsphere no
