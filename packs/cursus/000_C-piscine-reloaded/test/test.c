@@ -389,6 +389,523 @@ static void	run_cases(void)
 
 # endif
 
+/* -------------------------------- ex09 ----------------------------------- */
+
+# if FT_EX == 9
+
+static void	t_ft(int start)
+{
+	int	n;
+
+	n = start;
+	CASE("ft_ft(&n) con n = %d", start);
+	ft_ft(&n);
+	if (!res(n == 42))
+		detail("esperado 42, obtenido %d", n);
+}
+
+static void	run_cases(void)
+{
+	t_ft(0);
+	t_ft(-1);
+	t_ft(42);
+	t_ft(INT_MAX);
+}
+
+# endif
+
+/* -------------------------------- ex10 ----------------------------------- */
+
+# if FT_EX == 10
+
+static void	t_swap(int a, int b)
+{
+	int	x;
+	int	y;
+
+	x = a;
+	y = b;
+	CASE("ft_swap(&a, &b) con a = %d, b = %d", a, b);
+	ft_swap(&x, &y);
+	if (!res(x == b && y == a))
+		detail("esperado a = %d y b = %d, obtenido a = %d y b = %d",
+			b, a, x, y);
+}
+
+/* Con los dos punteros iguales, un swap por XOR mal hecho deja un 0. */
+static void	t_swap_same(void)
+{
+	int	v;
+
+	v = 7;
+	CASE("ft_swap(&a, &a) deja el valor como estaba");
+	ft_swap(&v, &v);
+	if (!res(v == 7))
+		detail("esperado 7, obtenido %d", v);
+}
+
+static void	run_cases(void)
+{
+	t_swap(1, 2);
+	t_swap(0, 0);
+	t_swap(-1, 1);
+	t_swap(42, -42);
+	t_swap(INT_MIN, INT_MAX);
+	t_swap_same();
+}
+
+# endif
+
+/* -------------------------------- ex11 ----------------------------------- */
+
+# if FT_EX == 11
+
+static void	t_div_mod(int a, int b)
+{
+	int	d;
+	int	m;
+
+	d = 0;
+	m = 0;
+	CASE("ft_div_mod(%d, %d, &div, &mod)", a, b);
+	ft_div_mod(a, b, &d, &m);
+	if (!res(d == a / b && m == a % b))
+		detail("esperado div = %d y mod = %d, obtenido div = %d y mod = %d",
+			a / b, a % b, d, m);
+}
+
+static void	run_cases(void)
+{
+	t_div_mod(10, 3);
+	t_div_mod(-10, 3);
+	t_div_mod(10, -3);
+	t_div_mod(-10, -3);
+	t_div_mod(0, 5);
+	t_div_mod(42, 42);
+	t_div_mod(1, 7);
+	t_div_mod(INT_MAX, 2);
+}
+
+# endif
+
+/* ----------------------------- ex12 y ex13 -------------------------------- */
+/* El subject pide 0 "si hay un error": lo unico que lo es sin ambiguedad es  */
+/* un nb negativo. El desbordamiento (13! ya no cabe en un int) no se prueba: */
+/* el subject no dice que devolver y la moulinette tampoco lo mira.           */
+
+# if FT_EX == 12
+
+static void	t_fact(int n, int exp)
+{
+	int	r;
+
+	CASE("ft_iterative_factorial(%d)", n);
+	r = ft_iterative_factorial(n);
+	if (!res(r == exp))
+		detail("esperado %d, obtenido %d", exp, r);
+}
+
+static void	run_cases(void)
+{
+	t_fact(0, 1);
+	t_fact(1, 1);
+	t_fact(2, 2);
+	t_fact(3, 6);
+	t_fact(5, 120);
+	t_fact(10, 3628800);
+	t_fact(12, 479001600);
+	t_fact(-1, 0);
+	t_fact(-42, 0);
+	t_fact(INT_MIN, 0);
+}
+
+# endif
+
+# if FT_EX == 13
+
+static void	t_fact(int n, int exp)
+{
+	int	r;
+
+	CASE("ft_recursive_factorial(%d)", n);
+	r = ft_recursive_factorial(n);
+	if (!res(r == exp))
+		detail("esperado %d, obtenido %d", exp, r);
+}
+
+static void	run_cases(void)
+{
+	t_fact(0, 1);
+	t_fact(1, 1);
+	t_fact(2, 2);
+	t_fact(3, 6);
+	t_fact(5, 120);
+	t_fact(10, 3628800);
+	t_fact(12, 479001600);
+	t_fact(-1, 0);
+	t_fact(-42, 0);
+	t_fact(INT_MIN, 0);
+}
+
+# endif
+
+/* -------------------------------- ex14 ----------------------------------- */
+
+# if FT_EX == 14
+
+static void	t_sqrt(int n, int exp)
+{
+	int	r;
+
+	CASE("ft_sqrt(%d)", n);
+	r = ft_sqrt(n);
+	if (!res(r == exp))
+		detail("esperado %d, obtenido %d", exp, r);
+}
+
+static void	run_cases(void)
+{
+	t_sqrt(0, 0);
+	t_sqrt(1, 1);
+	t_sqrt(4, 2);
+	t_sqrt(9, 3);
+	t_sqrt(144, 12);
+	t_sqrt(1024, 32);
+	t_sqrt(2, 0);
+	t_sqrt(3, 0);
+	t_sqrt(15, 0);
+	t_sqrt(-4, 0);
+	t_sqrt(-1, 0);
+	/* el cuadrado perfecto mas grande que cabe en un int, y el propio tope:
+	   aqui es donde un bucle i * i se desborda y no termina nunca */
+	t_sqrt(2147395600, 46340);
+	t_sqrt(INT_MAX, 0);
+}
+
+# endif
+
+/* -------------------------------- ex15 ----------------------------------- */
+
+# if FT_EX == 15
+
+static void	t_putstr(char *s)
+{
+	CASE("ft_putstr(%s)", q(s));
+	cap_start();
+	ft_putstr(s);
+	cap_end();
+	cmp_out(s);
+}
+
+static void	run_cases(void)
+{
+	char	a[] = "";
+	char	b[] = "hola";
+	char	c[] = "con salto\n";
+	char	d[] = "42 42 42";
+	char	e[] = "\tcon tabulador y acentos raros: \xc3\xb1";
+
+	t_putstr(b);
+	t_putstr(a);
+	t_putstr(c);
+	t_putstr(d);
+	t_putstr(e);
+}
+
+# endif
+
+/* -------------------------------- ex16 ----------------------------------- */
+
+# if FT_EX == 16
+
+static void	t_strlen(char *s)
+{
+	int	r;
+
+	CASE("ft_strlen(%s)", q(s));
+	r = ft_strlen(s);
+	if (!res(r == (int)strlen(s)))
+		detail("esperado %d, obtenido %d", (int)strlen(s), r);
+}
+
+static void	run_cases(void)
+{
+	char	a[] = "";
+	char	b[] = "a";
+	char	c[] = "hola";
+	char	d[] = "cadena bastante mas larga, con espacios y 42";
+	char	e[] = "con\nsaltos\ty tabuladores";
+
+	t_strlen(a);
+	t_strlen(b);
+	t_strlen(c);
+	t_strlen(d);
+	t_strlen(e);
+}
+
+# endif
+
+/* -------------------------------- ex17 ----------------------------------- */
+/* strcmp solo promete el signo, no el valor exacto, asi que se compara eso.  */
+
+# if FT_EX == 17
+
+static int	sgn(int n)
+{
+	if (n > 0)
+		return (1);
+	if (n < 0)
+		return (-1);
+	return (0);
+}
+
+static void	t_strcmp(char *a, char *b)
+{
+	int	got;
+	int	exp;
+
+	CASE("ft_strcmp(%s, %s)", q(a), q(b));
+	got = ft_strcmp(a, b);
+	exp = strcmp(a, b);
+	if (!res(sgn(got) == sgn(exp)))
+		detail("esperado signo %d (strcmp devuelve %d), obtenido %d",
+			sgn(exp), exp, got);
+}
+
+static void	run_cases(void)
+{
+	char	vacia[] = "";
+	char	a[] = "a";
+	char	b[] = "b";
+	char	hola[] = "hola";
+	char	hola2[] = "hola";
+	char	holaa[] = "holaa";
+	char	alto[] = "\xff";
+
+	t_strcmp(hola, hola2);
+	t_strcmp(vacia, vacia);
+	t_strcmp(a, b);
+	t_strcmp(b, a);
+	t_strcmp(hola, holaa);
+	t_strcmp(holaa, hola);
+	t_strcmp(vacia, a);
+	t_strcmp(a, vacia);
+	/* con char firmado, \xff sale negativo y el signo se invierte */
+	t_strcmp(alto, a);
+	t_strcmp(a, alto);
+}
+
+# endif
+
+/* -------------------------------- ex20 ----------------------------------- */
+
+# if FT_EX == 20
+
+static void	t_strdup(char *s)
+{
+	char	*d;
+
+	CASE("ft_strdup(%s)", q(s));
+	d = ft_strdup(s);
+	if (!d)
+	{
+		res(0);
+		detail("devolvio NULL");
+		return ;
+	}
+	if (!res(d != s && strcmp(d, s) == 0))
+	{
+		detail("esperado %s", q(s));
+		detail("obtenido %s%s", q(d), d == s ? " (es el mismo puntero)" : "");
+	}
+	free(d);
+}
+
+/* La copia tiene que ser suya: tocarla no puede mover el original. */
+static void	t_strdup_indep(void)
+{
+	char	src[] = "42";
+	char	*d;
+
+	CASE("la copia es independiente del original");
+	d = ft_strdup(src);
+	if (!d)
+	{
+		res(0);
+		detail("devolvio NULL");
+		return ;
+	}
+	d[0] = 'X';
+	if (!res(src[0] == '4'))
+		detail("al tocar la copia se movio el original: %s", q(src));
+	free(d);
+}
+
+static void	run_cases(void)
+{
+	char	a[] = "";
+	char	b[] = "hola";
+	char	c[] = "una cadena con espacios y un 42 dentro";
+
+	t_strdup(b);
+	t_strdup(a);
+	t_strdup(c);
+	t_strdup_indep();
+}
+
+# endif
+
+/* -------------------------------- ex21 ----------------------------------- */
+
+# if FT_EX == 21
+
+static void	t_range_null(int min, int max)
+{
+	int	*r;
+
+	CASE("ft_range(%d, %d) con min >= max devuelve NULL", min, max);
+	r = ft_range(min, max);
+	if (!res(r == NULL))
+		detail("devolvio un puntero en vez de NULL");
+	free(r);
+}
+
+static void	t_range(int min, int max)
+{
+	int	*r;
+	int	i;
+	int	bad;
+
+	CASE("ft_range(%d, %d)", min, max);
+	r = ft_range(min, max);
+	if (!r)
+	{
+		res(0);
+		detail("devolvio NULL");
+		return ;
+	}
+	i = 0;
+	bad = -1;
+	while (i < max - min)
+	{
+		if (r[i] != min + i && bad < 0)
+			bad = i;
+		i++;
+	}
+	if (!res(bad < 0))
+		detail("en la posicion %d esperaba %d y hay %d", bad, min + bad,
+			r[bad]);
+	free(r);
+}
+
+static void	run_cases(void)
+{
+	t_range(0, 5);
+	t_range(1, 2);
+	t_range(-3, 3);
+	t_range(-10, -5);
+	t_range(40, 43);
+	t_range_null(5, 5);
+	t_range_null(5, 1);
+	t_range_null(0, -3);
+}
+
+# endif
+
+/* -------------------------------- ex25 ----------------------------------- */
+
+# if FT_EX == 25
+
+static int	g_seen[64];
+static int	g_nseen;
+
+static void	collect(int n)
+{
+	if (g_nseen < 64)
+		g_seen[g_nseen] = n;
+	g_nseen++;
+}
+
+static void	t_foreach(int *tab, int len)
+{
+	int	i;
+	int	bad;
+
+	g_nseen = 0;
+	CASE("ft_foreach(tab, %d, f)", len);
+	ft_foreach(tab, len, &collect);
+	if (g_nseen != len)
+	{
+		res(0);
+		detail("esperadas %d llamadas a f, hechas %d", len, g_nseen);
+		return ;
+	}
+	i = 0;
+	bad = -1;
+	while (i < len)
+	{
+		if (g_seen[i] != tab[i] && bad < 0)
+			bad = i;
+		i++;
+	}
+	if (!res(bad < 0))
+		detail("en la llamada %d esperaba %d y llego %d", bad, tab[bad],
+			g_seen[bad]);
+}
+
+static void	run_cases(void)
+{
+	int	tab[] = {1, 2, 3, 42, -7};
+	int	uno[] = {42};
+
+	t_foreach(tab, 5);
+	t_foreach(uno, 1);
+	t_foreach(tab, 0);
+	t_foreach(tab, 3);
+}
+
+# endif
+
+/* -------------------------------- ex26 ----------------------------------- */
+
+# if FT_EX == 26
+
+static int	es_42(char *s)
+{
+	return (strcmp(s, "42") == 0);
+}
+
+static int	no_vacia(char *s)
+{
+	return (s[0] != '\0');
+}
+
+static void	t_count_if(char **tab, int (*f)(char *), const char *fname,
+		int exp)
+{
+	int	r;
+
+	CASE("ft_count_if(tab, %s)", fname);
+	r = ft_count_if(tab, f);
+	if (!res(r == exp))
+		detail("esperado %d, obtenido %d", exp, r);
+}
+
+static void	run_cases(void)
+{
+	char	*tab[] = {"42", "x", "42", "", NULL};
+	char	*vacio[] = {NULL};
+	char	*ninguno[] = {"a", "b", NULL};
+
+	t_count_if(tab, &es_42, "es_42", 2);
+	t_count_if(tab, &no_vacia, "no_vacia", 3);
+	t_count_if(vacio, &es_42, "es_42", 0);
+	t_count_if(vacio, &no_vacia, "no_vacia", 0);
+	t_count_if(ninguno, &es_42, "es_42", 0);
+}
+
+# endif
+
 /* ------------------------------- main hijo -------------------------------- */
 
 int	main(void)
@@ -424,7 +941,10 @@ int	main(void)
 enum
 {
 	EX_C = 0,
-	EX_SHELL = 1
+	EX_SHELL = 1,
+	EX_PROG = 2,
+	EX_HDR = 3,
+	EX_MAKE = 4
 };
 
 typedef struct s_ex
@@ -446,6 +966,25 @@ static const t_ex	g_ex[] = {
 {6, "ex06", "ft_print_alphabet.c", NULL, EX_C},
 {7, "ex07", "ft_print_numbers.c", NULL, EX_C},
 {8, "ex08", "ft_is_negative.c", NULL, EX_C},
+{9, "ex09", "ft_ft.c", NULL, EX_C},
+{10, "ex10", "ft_swap.c", NULL, EX_C},
+{11, "ex11", "ft_div_mod.c", NULL, EX_C},
+{12, "ex12", "ft_iterative_factorial.c", NULL, EX_C},
+{13, "ex13", "ft_recursive_factorial.c", NULL, EX_C},
+{14, "ex14", "ft_sqrt.c", NULL, EX_C},
+{15, "ex15", "ft_putstr.c", NULL, EX_C},
+{16, "ex16", "ft_strlen.c", NULL, EX_C},
+{17, "ex17", "ft_strcmp.c", NULL, EX_C},
+{18, "ex18", "ft_print_params.c", NULL, EX_PROG},
+{19, "ex19", "ft_sort_params.c", NULL, EX_PROG},
+{20, "ex20", "ft_strdup.c", NULL, EX_C},
+{21, "ex21", "ft_range.c", NULL, EX_C},
+{22, "ex22", "ft_abs.h", NULL, EX_HDR},
+{23, "ex23", "ft_point.h", NULL, EX_HDR},
+{24, "ex24", "Makefile", NULL, EX_MAKE},
+{25, "ex25", "ft_foreach.c", NULL, EX_C},
+{26, "ex26", "ft_count_if.c", NULL, EX_C},
+{27, "ex27", "Makefile", NULL, EX_MAKE},
 };
 # define N_EX (sizeof(g_ex) / sizeof(g_ex[0]))
 
@@ -1313,6 +1852,532 @@ static int	do_shell_ex(const char *repo, const t_ex *ex)
 	return (r);
 }
 
+/* ========================================================================== */
+/*                  PROGRAMAS, CABECERAS Y MAKEFILES (ex18-ex27)              */
+/* ========================================================================== */
+/* Lo que aqui se prueba no es una funcion suelta: ex18 y ex19 son programas  */
+/* con su main, ex22 y ex23 son cabeceras (no hay nada que ejecutar hasta que */
+/* no les escribes un main alrededor) y ex24 y ex27 son Makefiles, que se     */
+/* prueban con fuentes de mentira como hace la moulinette.                    */
+
+static int	write_file(const char *path, const char *content)
+{
+	FILE	*f;
+
+	f = fopen(path, "w");
+	if (!f)
+		return (0);
+	fputs(content, f);
+	return (fclose(f) == 0);
+}
+
+/* Compila fuentes sueltos con los flags de la moulinette. 0 = no compila. */
+static int	build(const char *cmd, const char *log)
+{
+	char	full[PATHSZ * 4];
+
+	xsnprintf(full, sizeof(full), "%s > '%s' 2>&1", cmd, log);
+	return (system(full) == 0);
+}
+
+/* Ejecuta cmd dentro de dir separando salida y errores. */
+static void	run_2(const char *dir, const char *cmd, char **out, char **err)
+{
+	char	po[PATHSZ];
+	char	pe[PATHSZ];
+	char	full[PATHSZ * 4];
+
+	xsnprintf(po, sizeof(po), "%s/o.txt", g_tmp);
+	xsnprintf(pe, sizeof(pe), "%s/e.txt", g_tmp);
+	xsnprintf(full, sizeof(full), "cd '%s' && { %s ; } > '%s' 2> '%s'",
+		dir, cmd, po, pe);
+	if (system(full) == -1)
+		fprintf(stderr, "aviso: no se pudo ejecutar %s\n", cmd);
+	*out = slurp(po);
+	*err = slurp(pe);
+}
+
+static void	ck_out(const char *got, const char *exp, const char *label)
+{
+	if (got && strcmp(got, exp) == 0)
+		return ((void)s_res(1, "%s", label));
+	s_res(0, "%s", label);
+	s_detail("esperado %s", sq(exp));
+	s_detail("obtenido %s", sq(got));
+}
+
+/* ---------------------------- ex18 y ex19 -------------------------------- */
+
+static void	argv_label(char **argv, char *out, size_t n)
+{
+	size_t	k;
+	int		i;
+
+	k = 0;
+	i = 1;
+	out[0] = '\0';
+	k += (size_t)snprintf(out + k, n - k, "./a.out");
+	while (argv[i] && k + 4 < n)
+	{
+		k += (size_t)snprintf(out + k, n - k, " \"%s\"", argv[i]);
+		i++;
+	}
+}
+
+/* Lanza el programa del alumno con un argv concreto y devuelve su stdout.   */
+static char	*run_argv(const char *bin, char **argv, int *sig)
+{
+	int		fds[2];
+	int		status;
+	pid_t	pid;
+	char	*out;
+
+	*sig = 0;
+	if (pipe(fds) == -1)
+		return (NULL);
+	pid = fork();
+	if (pid == -1)
+		return (close(fds[0]), close(fds[1]), NULL);
+	if (pid == 0)
+	{
+		dup2(fds[1], STDOUT_FILENO);
+		close(fds[0]);
+		close(fds[1]);
+		alarm(TIMEOUT);
+		execv(bin, argv);
+		_exit(127);
+	}
+	close(fds[1]);
+	out = read_all(fds[0]);
+	close(fds[0]);
+	if (waitpid(pid, &status, 0) != -1 && WIFSIGNALED(status))
+		*sig = WTERMSIG(status);
+	return (out);
+}
+
+static void	prog_case(const char *bin, char **argv, const char *exp)
+{
+	char	label[256];
+	char	*out;
+	int		sig;
+
+	argv_label(argv, label, sizeof(label));
+	out = run_argv(bin, argv, &sig);
+	if (sig)
+	{
+		s_res(0, "%s", label);
+		s_detail("el programa muere con senal %d (%s)", sig, strsignal(sig));
+	}
+	else
+		ck_out(out, exp, label);
+	free(out);
+}
+
+static void	cases_print_params(const char *bin)
+{
+	static char	*a1[] = {"./ft_print_params", "test1", "test2", "test3", NULL};
+	static char	*a2[] = {"./ft_print_params", NULL};
+	static char	*a3[] = {"./ft_print_params", "uno", NULL};
+	static char	*a4[] = {"./ft_print_params", "", "x", NULL};
+
+	prog_case(bin, a1, "test1\ntest2\ntest3\n");
+	prog_case(bin, a3, "uno\n");
+	prog_case(bin, a2, "");
+	prog_case(bin, a4, "\nx\n");
+}
+
+static void	cases_sort_params(const char *bin)
+{
+	static char	*a1[] = {"./ft_sort_params", "z", "a", "m", NULL};
+	static char	*a2[] = {"./ft_sort_params", NULL};
+	static char	*a3[] = {"./ft_sort_params", "b", "B", "a", "A", NULL};
+	static char	*a4[] = {"./ft_sort_params", "42", "42", "1", NULL};
+	static char	*a5[] = {"./ft_sort_params", "solo", NULL};
+
+	prog_case(bin, a1, "a\nm\nz\n");
+	prog_case(bin, a3, "A\nB\na\nb\n");
+	prog_case(bin, a4, "1\n42\n42\n");
+	prog_case(bin, a5, "solo\n");
+	prog_case(bin, a2, "");
+}
+
+static int	do_prog_ex(const char *repo, const t_ex *ex)
+{
+	char	src[PATHSZ];
+	char	bin[PATHSZ];
+	char	log[PATHSZ];
+	char	cmd[PATHSZ * 3];
+
+	xsnprintf(src, sizeof(src), "%s/%s/%s", repo, ex->dir, ex->src);
+	if (access(src, R_OK) != 0)
+	{
+		printf("  %s[SKIP]%s fuente no encontrado (%s)\n", C_SK, C_0, src);
+		hint_other_sources(repo, ex);
+		return (-2);
+	}
+	xsnprintf(log, sizeof(log), "%s/%s.log", g_tmp, ex->dir);
+	xsnprintf(bin, sizeof(bin), "%s/%s.bin", g_tmp, ex->dir);
+	xsnprintf(cmd, sizeof(cmd), "cc -Wall -Wextra -Werror -o '%s' '%s'",
+		bin, src);
+	if (!build(cmd, log))
+	{
+		printf("  %s[COMPILA KO]%s con -Wall -Wextra -Werror\n", C_KO, C_0);
+		dump_log(log);
+		return (-1);
+	}
+	g_sko = 0;
+	if (ex->id == 18)
+		cases_print_params(bin);
+	else
+		cases_sort_params(bin);
+	return (g_sko);
+}
+
+/* ---------------------------- ex22 y ex23 -------------------------------- */
+/* Un probe es un main de mentira alrededor de la cabecera del alumno: es la  */
+/* unica forma de saber si ABS esta bien puesta entre parentesis o si t_point */
+/* tiene los campos que el subject usa.                                       */
+
+static int	probe(const char *dir, const char *hdr, const char *body,
+		const char *label)
+{
+	char	code[PATHSZ * 2];
+	char	cpath[PATHSZ];
+	char	bin[PATHSZ];
+	char	log[PATHSZ];
+	char	cmd[PATHSZ * 3];
+
+	xsnprintf(code, sizeof(code), "#include \"%s\"\n%s\n", hdr, body);
+	xsnprintf(cpath, sizeof(cpath), "%s/probe.c", g_tmp);
+	xsnprintf(bin, sizeof(bin), "%s/probe.bin", g_tmp);
+	xsnprintf(log, sizeof(log), "%s/probe.log", g_tmp);
+	if (!write_file(cpath, code))
+		return (0);
+	xsnprintf(cmd, sizeof(cmd),
+		"cc -Wall -Wextra -Werror -I '%s' -o '%s' '%s'", dir, bin, cpath);
+	if (!build(cmd, log))
+	{
+		s_res(0, "%s", label);
+		dump_log(log);
+		return (0);
+	}
+	s_res(1, "%s", label);
+	return (1);
+}
+
+/* Igual, pero ademas ejecuta y compara la salida. */
+static void	probe_out(const char *dir, const char *hdr, const char *body,
+		const char *exp, const char *label)
+{
+	char	bin[PATHSZ];
+	char	*out;
+	char	*err;
+
+	if (!probe(dir, hdr, body, label))
+		return ;
+	xsnprintf(bin, sizeof(bin), "%s/probe.bin", g_tmp);
+	run_2(g_tmp, "./probe.bin", &out, &err);
+	ck_out(out, exp, "y da el resultado esperado");
+	free(out);
+	free(err);
+}
+
+static void	cases_abs(const char *dir)
+{
+	probe(dir, "ft_abs.h", "int\tmain(void)\n{\n\treturn (ABS(-1) == 1);\n}",
+		"ft_abs.h define ABS y compila");
+	probe_out(dir, "ft_abs.h",
+		"#include <stdio.h>\n"
+		"int\tmain(void)\n"
+		"{\n"
+		"\tint\tv;\n"
+		"\n"
+		"\tv = -7;\n"
+		"\tprintf(\"%d %d %d %d %d\\n\", ABS(-5), ABS(5), ABS(0), ABS(3 - 8), ABS(v));\n"
+		"\treturn (0);\n"
+		"}",
+		"5 5 0 5 7\n",
+		"ABS(x) vale para negativos, positivos y expresiones");
+	probe(dir, "ft_abs.h",
+		"#include \"ft_abs.h\"\n"
+		"int\tmain(void)\n{\n\treturn (ABS(-1) == 1);\n}",
+		"se puede incluir dos veces (tiene guardas)");
+}
+
+static void	cases_point(const char *dir)
+{
+	probe(dir, "ft_point.h",
+		"void\tset_point(t_point *point)\n"
+		"{\n"
+		"\tpoint->x = 42;\n"
+		"\tpoint->y = 21;\n"
+		"}\n"
+		"\n"
+		"int\tmain(void)\n"
+		"{\n"
+		"\tt_point\tpoint;\n"
+		"\n"
+		"\tset_point(&point);\n"
+		"\treturn (0);\n"
+		"}",
+		"compila el main del subject tal cual");
+	probe_out(dir, "ft_point.h",
+		"#include <stdio.h>\n"
+		"int\tmain(void)\n"
+		"{\n"
+		"\tt_point\tp;\n"
+		"\n"
+		"\tp.x = 42;\n"
+		"\tp.y = 21;\n"
+		"\tprintf(\"%d %d\\n\", p.x, p.y);\n"
+		"\treturn (0);\n"
+		"}",
+		"42 21\n",
+		"t_point tiene x e y enteros");
+	probe(dir, "ft_point.h",
+		"#include \"ft_point.h\"\n"
+		"int\tmain(void)\n{\n\tt_point\tp;\n\n\tp.x = 0;\n\treturn (p.x);\n}",
+		"se puede incluir dos veces (tiene guardas)");
+}
+
+static int	do_hdr_ex(const char *repo, const t_ex *ex)
+{
+	char	dir[PATHSZ];
+	char	src[PATHSZ];
+	char	abs[PATHSZ];
+
+	xsnprintf(src, sizeof(src), "%s/%s/%s", repo, ex->dir, ex->src);
+	if (access(src, R_OK) != 0)
+	{
+		printf("  %s[SKIP]%s cabecera no encontrada (%s)\n", C_SK, C_0, src);
+		return (-2);
+	}
+	xsnprintf(dir, sizeof(dir), "%s/%s", repo, ex->dir);
+	if (!abs_path(dir, abs, sizeof(abs)))
+		return (-1);
+	g_sko = 0;
+	if (ex->id == 22)
+		cases_abs(abs);
+	else
+		cases_point(abs);
+	return (g_sko);
+}
+
+/* ------------------------------- ex24 ------------------------------------ */
+/* La moulinette prueba el Makefile con SUS fuentes, no con los del alumno,   */
+/* asi que aqui se monta un proyecto de mentira con las cinco funciones que   */
+/* el subject nombra y se mira que las reglas hagan lo que prometen.          */
+
+static const char	*g_libft_h =
+	"#ifndef LIBFT_H\n# define LIBFT_H\n\n# include <unistd.h>\n\n"
+	"void\tft_putchar(char c);\nvoid\tft_putstr(char *str);\n"
+	"int\t\tft_strcmp(char *s1, char *s2);\nint\t\tft_strlen(char *str);\n"
+	"void\tft_swap(int *a, int *b);\n\n#endif\n";
+
+static int	make_fake_lib(const char *dir)
+{
+	char	path[PATHSZ];
+	int		ok;
+
+	xsnprintf(path, sizeof(path), "mkdir -p '%s/srcs' '%s/includes' '%s/check'",
+		dir, dir, dir);
+	if (system(path) != 0)
+		return (0);
+	xsnprintf(path, sizeof(path), "%s/includes/libft.h", dir);
+	ok = write_file(path, g_libft_h);
+	xsnprintf(path, sizeof(path), "%s/srcs/ft_putchar.c", dir);
+	ok &= write_file(path, "#include \"libft.h\"\n\nvoid\tft_putchar(char c)\n"
+			"{\n\twrite(1, &c, 1);\n}\n");
+	xsnprintf(path, sizeof(path), "%s/srcs/ft_putstr.c", dir);
+	ok &= write_file(path, "#include \"libft.h\"\n\nvoid\tft_putstr(char *str)\n"
+			"{\n\twhile (*str)\n\t\tft_putchar(*str++);\n}\n");
+	xsnprintf(path, sizeof(path), "%s/srcs/ft_strlen.c", dir);
+	ok &= write_file(path, "#include \"libft.h\"\n\nint\tft_strlen(char *str)\n"
+			"{\n\tint\ti;\n\n\ti = 0;\n\twhile (str[i])\n\t\ti++;\n"
+			"\treturn (i);\n}\n");
+	xsnprintf(path, sizeof(path), "%s/srcs/ft_strcmp.c", dir);
+	ok &= write_file(path, "#include \"libft.h\"\n\nint\tft_strcmp(char *s1, "
+			"char *s2)\n{\n\twhile (*s1 && *s1 == *s2)\n\t{\n\t\ts1++;\n"
+			"\t\ts2++;\n\t}\n\treturn (*s1 - *s2);\n}\n");
+	xsnprintf(path, sizeof(path), "%s/srcs/ft_swap.c", dir);
+	ok &= write_file(path, "#include \"libft.h\"\n\nvoid\tft_swap(int *a, "
+			"int *b)\n{\n\tint\tt;\n\n\tt = *a;\n\t*a = *b;\n\t*b = t;\n}\n");
+	xsnprintf(path, sizeof(path), "%s/check/main.c", dir);
+	ok &= write_file(path, "#include \"libft.h\"\n\nint\tmain(void)\n{\n"
+			"\tint\ta;\n\tint\tb;\n\n\ta = 1;\n\tb = 2;\n\tft_swap(&a, &b);\n"
+			"\tft_putstr(\"ok\");\n\tft_putchar('\\n');\n"
+			"\tif (a != 2 || ft_strlen(\"42\") != 2 || ft_strcmp(\"a\", \"a\"))\n"
+			"\t\treturn (1);\n\treturn (0);\n}\n");
+	return (ok);
+}
+
+static int	count_objs(const char *dir)
+{
+	char	cmd[PATHSZ * 2];
+	char	out[PATHSZ];
+	char	*txt;
+	int		n;
+
+	xsnprintf(out, sizeof(out), "%s/objs.txt", g_tmp);
+	xsnprintf(cmd, sizeof(cmd),
+		"find '%s' -name '*.o' | wc -l > '%s' 2>/dev/null", dir, out);
+	if (system(cmd) != 0)
+		return (-1);
+	txt = slurp(out);
+	n = txt ? atoi(txt) : -1;
+	free(txt);
+	return (n);
+}
+
+static void	ck_lib_links(const char *dir)
+{
+	char	cmd[PATHSZ * 3];
+	char	log[PATHSZ];
+	char	*out;
+	char	*err;
+
+	xsnprintf(log, sizeof(log), "%s/link.log", g_tmp);
+	xsnprintf(cmd, sizeof(cmd), "cd '%s' && cc -Wall -Wextra -Werror "
+		"-Iincludes -o check/prog check/main.c libft.a", dir);
+	if (!build(cmd, log))
+	{
+		s_res(0, "la libft.a enlaza y sus funciones responden");
+		dump_log(log);
+		return ;
+	}
+	run_2(dir, "./check/prog", &out, &err);
+	ck_out(out, "ok\n", "la libft.a enlaza y sus funciones responden");
+	free(out);
+	free(err);
+}
+
+static int	ex_makefile_lib(const char *repo, const t_ex *ex)
+{
+	char	dir[PATHSZ];
+	char	cmd[PATHSZ * 3];
+	char	lib[PATHSZ];
+	char	*out;
+	char	*err;
+	int		objs;
+
+	if (!work_dir("make24", dir, sizeof(dir)) || !make_fake_lib(dir))
+		return (-1);
+	xsnprintf(cmd, sizeof(cmd), "cp '%s/%s/Makefile' '%s/Makefile'",
+		repo, ex->dir, dir);
+	if (system(cmd) != 0)
+		return (-1);
+	xsnprintf(lib, sizeof(lib), "%s/libft.a", dir);
+	run_2(dir, "make", &out, &err);
+	free(out);
+	free(err);
+	s_res(access(lib, F_OK) == 0, "make deja libft.a en la raiz");
+	if (access(lib, F_OK) != 0)
+		return (g_sko);
+	run_2(dir, "ar -t libft.a | sort | tr '\\n' ' '", &out, &err);
+	ck_out(out, "ft_putchar.o ft_putstr.o ft_strcmp.o ft_strlen.o ft_swap.o ",
+		"la libreria trae los cinco objetos");
+	free(out);
+	free(err);
+	ck_lib_links(dir);
+	run_2(dir, "make clean", &out, &err);
+	free(out);
+	free(err);
+	objs = count_objs(dir);
+	s_res(objs == 0, "make clean borra los .o");
+	if (objs > 0)
+		s_detail("quedan %d fichero(s) .o", objs);
+	s_res(access(lib, F_OK) == 0, "make clean respeta la libreria");
+	run_2(dir, "make fclean", &out, &err);
+	free(out);
+	free(err);
+	s_res(access(lib, F_OK) != 0, "make fclean borra la libreria");
+	run_2(dir, "make re", &out, &err);
+	free(out);
+	free(err);
+	s_res(access(lib, F_OK) == 0, "make re la vuelve a dejar");
+	return (g_sko);
+}
+
+/* ------------------------------- ex27 ------------------------------------ */
+
+static void	ck_display_errors(const char *dir)
+{
+	char	*out;
+	char	*err;
+
+	run_2(dir, "./ft_display_file", &out, &err);
+	ck_out(err, "File name missing.\n", "sin argumentos avisa por stderr");
+	if (out && *out)
+		s_detail("ademas escribio %s en la salida estandar", sq(out));
+	free(out);
+	free(err);
+	run_2(dir, "./ft_display_file hola.txt otro.txt", &out, &err);
+	ck_out(err, "Too many arguments.\n", "con dos argumentos avisa por stderr");
+	free(out);
+	free(err);
+	run_2(dir, "./ft_display_file no_existe.txt", &out, &err);
+	ck_out(err, "Cannot read file.\n", "con un archivo ilegible avisa por stderr");
+	free(out);
+	free(err);
+}
+
+static int	ex_makefile_display(const char *repo, const t_ex *ex)
+{
+	char	dir[PATHSZ];
+	char	cmd[PATHSZ * 3];
+	char	bin[PATHSZ];
+	char	path[PATHSZ];
+	char	*out;
+	char	*err;
+
+	if (!work_dir("make27", dir, sizeof(dir)))
+		return (-1);
+	xsnprintf(cmd, sizeof(cmd), "cp -r '%s/%s/.' '%s/'", repo, ex->dir, dir);
+	if (system(cmd) != 0)
+		return (-1);
+	xsnprintf(path, sizeof(path), "%s/hola.txt", dir);
+	if (!write_file(path, "42\nes la respuesta\n"))
+		return (-1);
+	xsnprintf(bin, sizeof(bin), "%s/ft_display_file", dir);
+	run_2(dir, "make", &out, &err);
+	free(out);
+	free(err);
+	if (access(bin, X_OK) != 0)
+	{
+		s_res(0, "make deja el binario ft_display_file");
+		return (g_sko);
+	}
+	s_res(1, "make deja el binario ft_display_file");
+	run_2(dir, "./ft_display_file hola.txt", &out, &err);
+	ck_out(out, "42\nes la respuesta\n", "muestra el contenido del archivo");
+	if (err && *err)
+		s_detail("ademas escribio %s en stderr", sq(err));
+	free(out);
+	free(err);
+	ck_display_errors(dir);
+	run_2(dir, "make fclean", &out, &err);
+	free(out);
+	free(err);
+	s_res(access(bin, F_OK) != 0, "make fclean borra el binario");
+	return (g_sko);
+}
+
+static int	do_make_ex(const char *repo, const t_ex *ex)
+{
+	char	src[PATHSZ];
+
+	xsnprintf(src, sizeof(src), "%s/%s/%s", repo, ex->dir, ex->src);
+	if (access(src, R_OK) != 0)
+	{
+		printf("  %s[SKIP]%s Makefile no encontrado (%s)\n", C_SK, C_0, src);
+		return (-2);
+	}
+	g_sko = 0;
+	if (ex->id == 24)
+		return (ex_makefile_lib(repo, ex));
+	return (ex_makefile_display(repo, ex));
+}
+
 /* Devuelve el numero de tests KO, -1 si el ejercicio no se pudo probar,      */
 /* -2 si el fuente no existe (SKIP).                                          */
 static int	do_ex(const char *repo, const char *self, const t_ex *ex)
@@ -1330,6 +2395,12 @@ static int	do_ex(const char *repo, const char *self, const t_ex *ex)
 	printf("%s── %s/%s%s\n", C_B, ex->dir, ex->src, C_0);
 	if (ex->kind == EX_SHELL)
 		return (do_shell_ex(repo, ex));
+	if (ex->kind == EX_PROG)
+		return (do_prog_ex(repo, ex));
+	if (ex->kind == EX_HDR)
+		return (do_hdr_ex(repo, ex));
+	if (ex->kind == EX_MAKE)
+		return (do_make_ex(repo, ex));
 	xsnprintf(src, sizeof(src), "%s/%s/%s", repo, ex->dir, ex->src);
 	if (access(src, R_OK) != 0 || !abs_path(src, abs, sizeof(abs)))
 	{
