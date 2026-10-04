@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/04 01:24:14 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/04 04:57:14 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 05:00:01 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,10 @@ t_list	*ft_lstmap(t_list *lst, void *(*f)(void *), void (*del)(void *))
 		if (!n)
 		{
 			if (del)
+			{
 				del(content);
 				ft_lstclear(&r, del);
+			}
 			return (NULL);
 		}
 		ft_lstadd_back(&r, n);
