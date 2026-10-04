@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_print_params.c                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/24 15:21:25 by xalara            #+#    #+#             */
+/*   Updated: 2026/09/28 21:38:33 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,23 @@
 
 void	ft_putchar(char a);
 
-void	ft_print_numbers(void)
+int	main(int argn, char **argv)
 {
-	char	a;
+	int	i;
+	int	j;
 
-	a = '0';
-	while (a <= '9')
+	if (argn < 2)
+		return (0);
+	i = 1;
+	while (argn > i)
 	{
-		ft_putchar(a);
-		a++;
+		j = 0;
+		while (argv[i][j])
+		{
+			ft_putchar(argv[i][j]);
+			j++;
+		}
+		ft_putchar(10);
+		i++;
 	}
 }

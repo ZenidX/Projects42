@@ -1,27 +1,26 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_putendl_fd.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
+/*   By: besaipid <besaipid@student.42barcelon      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/24 00:13:38 by besaipid          #+#    #+#             */
+/*   Updated: 2026/09/24 00:15:38 by besaipid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
+#include "libft.h"
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+void	ft_putendl_fd(char *s, int fd)
 {
-	char	a;
+	int	i;
 
-	a = '0';
-	while (a <= '9')
+	i = 0;
+	while (s[i])
 	{
-		ft_putchar(a);
-		a++;
+		write(fd, &s[i], 1);
+		i++;
 	}
+	write(fd, "\n", 1);
 }

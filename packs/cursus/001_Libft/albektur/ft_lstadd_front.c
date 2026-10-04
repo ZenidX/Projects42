@@ -1,27 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_lstadd_front.c                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
+/*   By: besaipid <besaipid@student.42barcelon      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/25 03:01:02 by besaipid          #+#    #+#             */
+/*   Updated: 2026/09/25 03:45:02 by besaipid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
+#include "libft.h"
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+void	ft_lstadd_front(t_list **lst, t_list *new)
 {
-	char	a;
-
-	a = '0';
-	while (a <= '9')
+	if (lst)
 	{
-		ft_putchar(a);
-		a++;
+		if (*lst)
+			new->next = *lst;
+		*lst = new;
 	}
 }

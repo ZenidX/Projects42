@@ -489,9 +489,9 @@ static void	run_cases(void)
 # endif
 
 /* ----------------------------- ex12 y ex13 -------------------------------- */
-/* El subject pide 0 "si hay un error": lo unico que lo es sin ambiguedad es  */
-/* un nb negativo. El desbordamiento (13! ya no cabe en un int) no se prueba: */
-/* el subject no dice que devolver y la moulinette tampoco lo mira.           */
+/* El subject pide 0 "si hay un error": un nb negativo, y en ex13 tambien el  */
+/* desbordamiento (13! ya no cabe en un int). La moulinette de ex13 pide      */
+/* ft_recursive_factorial(25) == 0; la de ex12 no prueba el desbordamiento.   */
 
 # if FT_EX == 12
 
@@ -545,6 +545,9 @@ static void	run_cases(void)
 	t_fact(-1, 0);
 	t_fact(-42, 0);
 	t_fact(INT_MIN, 0);
+	t_fact(13, 0);
+	t_fact(25, 0);
+	t_fact(INT_MAX, 0);
 }
 
 # endif
@@ -2340,13 +2343,24 @@ static int	ex_makefile_display(const char *repo, const t_ex *ex)
 		return (-1);
 	xsnprintf(bin, sizeof(bin), "%s/ft_display_file", dir);
 	run_2(dir, "make", &out, &err);
-	free(out);
-	free(err);
 	if (access(bin, X_OK) != 0)
 	{
 		s_res(0, "make deja el binario ft_display_file");
+		/* El caso tipico es copiar la regla de ex24: ar deja un fichero con
+		   el nombre correcto, pero es una libreria y no se puede ejecutar. */
+		if (access(bin, F_OK) == 0)
+			s_detail("%s", "existe pero no es ejecutable: ar archiva una "
+				"libreria, un binario se enlaza: cc ... -o ft_display_file");
+		else if (err && *err)
+			s_detail("make dijo: %s", sq(err));
+		else if (out && *out)
+			s_detail("make dijo: %s", sq(out));
+		free(out);
+		free(err);
 		return (g_sko);
 	}
+	free(out);
+	free(err);
 	s_res(1, "make deja el binario ft_display_file");
 	run_2(dir, "./ft_display_file hola.txt", &out, &err);
 	ck_out(out, "42\nes la respuesta\n", "muestra el contenido del archivo");

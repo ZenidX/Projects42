@@ -1,27 +1,22 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_point.h                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/24 18:48:59 by xalara            #+#    #+#             */
+/*   Updated: 2026/09/28 21:42:17 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
+#ifndef FT_POINT_H
+# define FT_POINT_H
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+typedef struct s_point
 {
-	char	a;
+	int	x;
+	int	y;
+}	t_point;
 
-	a = '0';
-	while (a <= '9')
-	{
-		ft_putchar(a);
-		a++;
-	}
-}
+#endif

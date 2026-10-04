@@ -1,27 +1,30 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_iterative_factorial.c                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/24 14:43:35 by xalara            #+#    #+#             */
+/*   Updated: 2026/09/24 14:56:09 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+int	ft_iterative_factorial(int nb)
 {
-	char	a;
+	int	i;
+	int	j;
 
-	a = '0';
-	while (a <= '9')
+	if (nb < 0)
+		return (0);
+	i = 1;
+	j = 1;
+	while (nb >= j)
 	{
-		ft_putchar(a);
-		a++;
+		i = i * j;
+		j++;
 	}
+	return (i);
 }

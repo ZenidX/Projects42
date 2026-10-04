@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_is_negative.c                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/24 14:28:31 by xalara            #+#    #+#             */
+/*   Updated: 2026/09/24 20:34:58 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,13 @@
 
 void	ft_putchar(char a);
 
-void	ft_print_numbers(void)
+void	ft_is_negative(int n)
 {
 	char	a;
 
-	a = '0';
-	while (a <= '9')
-	{
-		ft_putchar(a);
-		a++;
-	}
+	if (n < 0)
+		a = 'N';
+	else
+		a = 'P';
+	ft_putchar(a);
 }

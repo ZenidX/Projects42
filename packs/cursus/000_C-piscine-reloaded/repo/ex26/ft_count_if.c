@@ -1,27 +1,30 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_count_if.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/24 19:04:08 by xalara            #+#    #+#             */
+/*   Updated: 2026/09/24 19:09:48 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
+#include <stdlib.h>
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+int	ft_count_if(char **tab, int (*f)(char *))
 {
-	char	a;
+	int	i;
+	int	j;
 
-	a = '0';
-	while (a <= '9')
+	i = 0;
+	j = 0;
+	while (tab[i] != 0)
 	{
-		ft_putchar(a);
-		a++;
+		if ((*f)(tab[i]) == 1)
+			j++;
+		i++;
 	}
+	return (j);
 }

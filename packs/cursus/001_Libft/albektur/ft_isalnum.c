@@ -1,27 +1,28 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_isalnum.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
+/*   By: besaipid <besaipid@student.42barcelon      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/21 16:48:13 by besaipid          #+#    #+#             */
+/*   Updated: 2026/09/27 01:31:26 by besaipid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
+#include "libft.h"
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+static int	alpha(int c)
 {
-	char	a;
+	return (((c >= 65 && c <= 90) || (c >= 97 && c <= 122)));
+}
 
-	a = '0';
-	while (a <= '9')
-	{
-		ft_putchar(a);
-		a++;
-	}
+static int	digit(int c)
+{
+	return ((c >= '0' && c <= '9'));
+}
+
+int	ft_isalnum(int c)
+{
+	return ((alpha(c)) || (digit(c)));
 }

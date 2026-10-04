@@ -6,11 +6,13 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/24 14:14:21 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/24 14:26:59 by xalara           ###   ########.fr       */
+/*   Updated: 2026/09/24 20:32:51 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
+
+void	ft_putchar(char a);
 
 void	ft_print_alphabet(void)
 {
@@ -19,7 +21,7 @@ void	ft_print_alphabet(void)
 	a = 'a';
 	while (a <= 'z')
 	{
-		write(1, &a, 1);
+		ft_putchar(a);
 		a++;
 	}
 }

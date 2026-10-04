@@ -1,27 +1,33 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_strdup.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
+/*   By: besaipid <besaipid@student.42barcelon      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/21 23:53:21 by besaipid          #+#    #+#             */
+/*   Updated: 2026/09/22 12:22:05 by besaipid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
+#include "libft.h"
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+char	*ft_strdup(const char *s)
 {
-	char	a;
+	int		i;
+	char	*res;
+	int		len;
 
-	a = '0';
-	while (a <= '9')
+	len = ft_strlen(s);
+	res = malloc(sizeof(char) * len + 1);
+	if (!res)
+		return (NULL);
+	i = 0;
+	while (i < len)
 	{
-		ft_putchar(a);
-		a++;
+		res[i] = s[i];
+		i++;
 	}
+	res[i] = '\0';
+	return (res);
 }

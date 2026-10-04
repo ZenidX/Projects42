@@ -1,0 +1,9 @@
+# Flags extra para la norminette de este pack (los lee zennorm).
+# Una linea por flag; las lineas en blanco y las que empiezan por # se ignoran.
+
+# ex22 pide "una macro ABS que sustituya su argumento por su valor absoluto", y
+# ABS necesita un ternario. La norminette v3 lo marca como MACRO_FUNC_FORBIDDEN,
+# PREPROC_CONSTANT y TERNARY_FBIDDEN. El propio subject lo reconoce: "se te esta
+# pidiendo que hagas algo que, normalmente, esta prohibido por la Norma; esta
+# sera la unica vez que lo autoricemos".
+-R CheckDefine

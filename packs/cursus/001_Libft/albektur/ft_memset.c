@@ -1,27 +1,28 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_memset.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
+/*   By: besaipid <besaipid@student.42barcelon      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/21 20:27:40 by besaipid          #+#    #+#             */
+/*   Updated: 2026/09/22 12:37:19 by besaipid         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <unistd.h>
+#include "libft.h"
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+void	*ft_memset(void *s, int c, size_t n)
 {
-	char	a;
+	size_t				i;
+	unsigned char		*ptr;
 
-	a = '0';
-	while (a <= '9')
+	i = 0;
+	ptr = (unsigned char *)s;
+	while (i < n)
 	{
-		ft_putchar(a);
-		a++;
+		ptr[i] = (char)c;
+		i++;
 	}
+	return (s);
 }

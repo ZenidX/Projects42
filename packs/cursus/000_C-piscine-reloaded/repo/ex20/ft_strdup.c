@@ -1,27 +1,48 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_strdup.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/24 16:33:53 by xalara            #+#    #+#             */
+/*   Updated: 2026/09/24 17:42:08 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
+#include <stdlib.h>
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+int	ft_strlen(char *str)
 {
-	char	a;
+	int	i;
 
-	a = '0';
-	while (a <= '9')
+	i = 0;
+	while (str[i])
+		i++;
+	return (i);
+}
+
+char	*ft_strcopy(char *dest, char *src)
+{
+	int	i;
+
+	i = 0;
+	while (src[i])
 	{
-		ft_putchar(a);
-		a++;
+		dest[i] = src[i];
+		i++;
 	}
+	dest[i] = src[i];
+	return (dest);
+}
+
+char	*ft_strdup(char *src)
+{
+	char	*dest;
+	int		n;
+
+	n = ft_strlen(src);
+	dest = (char *) malloc(sizeof(char) * n);
+	return (ft_strcopy(dest, src));
 }

@@ -1,27 +1,26 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_print_numbers.c                                 :+:      :+:    :+:   */
+/*   ft_foreach.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/24 14:18:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/09/28 21:36:36 by xalara           ###   ########.fr       */
+/*   Created: 2026/09/24 17:36:52 by xalara            #+#    #+#             */
+/*   Updated: 2026/09/28 21:36:02 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <unistd.h>
+#include <stdio.h>
 
-void	ft_putchar(char a);
-
-void	ft_print_numbers(void)
+void	ft_foreach(int *tab, int length, void (*f)(int))
 {
-	char	a;
+	int	i;
 
-	a = '0';
-	while (a <= '9')
+	i = 0;
+	while (i < length)
 	{
-		ft_putchar(a);
-		a++;
+		(*f)(tab[i]);
+		i++;
 	}
 }
