@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/02 02:25:51 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/03 20:19:31 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 03:59:28 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,8 @@ char	*ft_strjoin(char const *s1, char const *s2)
 	l1 = ft_strlen(s1);
 	l2 = ft_strlen(s2);
 	p = (char *)malloc(sizeof(char) * (l1 + l2 + 1));
+	if (!p)
+		return (p);
 	i = 0;
 	while (i < l1)
 	{
@@ -34,5 +36,6 @@ char	*ft_strjoin(char const *s1, char const *s2)
 		p[l1 + i] = s2[i];
 		i++;
 	}
+	p[l1 + i] = '\0';
 	return (p);
 }

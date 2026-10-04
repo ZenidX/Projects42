@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/04 00:16:08 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/04 00:20:29 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 02:26:13 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,10 @@
 
 t_list	*ft_lstnew(void *content)
 {
-	t_list *n;
+	t_list	*n;
 
 	n = (t_list *)malloc(sizeof(t_list));
-	if (n == NULL)
+	if (!n)
 		return (NULL);
 	else
 	{

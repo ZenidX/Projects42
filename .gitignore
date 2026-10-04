@@ -19,3 +19,6 @@ tools/lldb-lab/words
 *.swo
 *~
 nano.*.save
+
+# testers de terceros clonados dentro de un pack (traen su propio .git)
+.libft_tester/

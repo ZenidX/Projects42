@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/04 00:12:33 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/04 00:15:11 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 04:32:08 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,17 @@
 
 void	ft_putnbr_fd(int n, int fd)
 {
-	char	*p;
-	size_t	l;
+	char	d;
+	long	nl;
 
-	p = ft_itoa(n);
-	l = ft_strlen(p);
-	write(fd, p, l);
+	nl = n;
+	if (n < 0)
+	{
+		write(fd, "-", 1);
+		nl = -nl;
+	}
+	if (nl / 10 != 0)
+		ft_putnbr_fd(nl / 10, fd);
+	d = nl % 10 + '0';
+	write(fd, &d, 1);
 }

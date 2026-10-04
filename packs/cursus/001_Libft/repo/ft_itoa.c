@@ -6,13 +6,13 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/02 03:48:45 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/03 23:47:23 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 02:24:45 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 
-static char *ft_char_init(char *r, int d)
+static char	*ft_char_init(char *r, int d)
 {
 	int	i;
 
@@ -23,8 +23,8 @@ static char *ft_char_init(char *r, int d)
 		i++;
 	}
 	r[i] = '\0';
-	return(r);
-} 
+	return (r);
+}
 
 static char	*ft_itoa_real(int n, int d)
 {
@@ -40,7 +40,7 @@ static char	*ft_itoa_real(int n, int d)
 		r = (char *)malloc(sizeof(char) * (d + 2 + neg));
 		r = ft_char_init(r, d + 1 + neg);
 	}
-	if(!r)
+	if (!r)
 		return (NULL);
 	dd = ft_strlen(r);
 	if (neg)
@@ -53,7 +53,7 @@ static char	*ft_itoa_real(int n, int d)
 	return (r);
 }
 
-char *ft_itoa(int n)
+char	*ft_itoa(int n)
 {
 	return (ft_itoa_real(n, 0));
 }

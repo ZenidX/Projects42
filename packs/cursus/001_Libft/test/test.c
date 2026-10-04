@@ -14,15 +14,20 @@
 /*        repo, dejando el .o en un temporal;                                 */
 /*      - mira con nm que no defina simbolos globales sin prefijo ft_ (un     */
 /*        "memmove" del alumno taparia al de la libc con el que se compara);  */
+/*      - si hay norminette, la pasa al archivo;                             */
 /*      - con todos los .o buenos se recompila a si mismo con -DFT_CASES y    */
 /*        lanza ese binario una vez por funcion.                              */
+/*      Al final, norminette de libft.h y el Makefile probado en una copia:   */
+/*      flags, libft.a completo, sin relink, clean, fclean y re.              */
 /*                                                                            */
 /*   b) CASOS (-DFT_CASES). Compara cada ft_ con la funcion original (o con   */
 /*      una referencia escrita aqui cuando la libc no la tiene: strlcpy,      */
 /*      strlcat, strnstr y las de la parte 2). Cada caso corre en un hijo     */
 /*      con timeout, asi que un segfault o un bucle infinito no tumban la     */
 /*      tanda. Los prototipos son weak: si una funcion aun no existe, el      */
-/*      simbolo vale NULL en vez de romper el enlazado.                       */
+/*      simbolo vale NULL en vez de romper el enlazado. malloc/free estan     */
+/*      vigilados: escribir un byte pasado el final de un malloc es KO, y    */
+/*      tambien lo es dejar memoria sin liberar (leak) en un caso que pasa.   */
 /*                                                                            */
 /*   Anadir una funcion = una entrada en g_src + su prototipo weak + una      */
 /*   suite en g_suite.                                                        */
@@ -31,6 +36,7 @@
 
 #define _DEFAULT_SOURCE
 
+#include <errno.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -84,6 +90,8 @@ enum e_st { ST_MISSING, ST_CC_KO, ST_BAD_SYM, ST_FORBID, ST_DEP, ST_OK };
 
 static enum e_st	g_st[N_SRC];
 static char			*g_log[N_SRC];
+static char			*g_norm[N_SRC];
+static int			g_has_norm;
 static char			g_tmp[] = "/tmp/libft_runner.XXXXXX";
 
 /* Funciones externas que el subject autoriza en cada archivo. Por defecto  */
@@ -270,6 +278,80 @@ static void	check_deps(void)
 	}
 }
 
+static void	print_indented(const char *log);
+
+/* Quita las secuencias de color "\033[...m" que mete norminette.          */
+static void	strip_ansi(char *s)
+{
+	char	*e;
+
+	while ((s = strchr(s, '\033')))
+	{
+		e = strchr(s, 'm');
+		if (!e)
+		{
+			*s = '\0';
+			return ;
+		}
+		memmove(s, e + 1, strlen(e + 1) + 1);
+	}
+}
+
+/* Errores de norminette de un archivo, una linea por error y sin colores. */
+/* NULL si pasa (o si norminette no esta instalada).                         */
+static char	*norm_errors(const char *path)
+{
+	char	cmd[4200];
+	char	*out;
+	char	*res;
+	char	*line;
+	char	*w;
+	size_t	len;
+	int		st;
+
+	if (!g_has_norm)
+		return (NULL);
+	snprintf(cmd, sizeof(cmd), "norminette '%s' 2>&1", path);
+	out = capture(cmd, &st);
+	res = NULL;
+	line = strtok(out, "\n");
+	while (line)
+	{
+		if (!strncmp(line, "Error:", 6) || !strncmp(line, "Error ", 6))
+		{
+			strip_ansi(line);
+			w = line + 6;
+			while (*w == ' ')
+				w++;
+			for (char *t = w; *t; t++)
+				if (*t == '\t')
+					*t = ' ';
+			len = res ? strlen(res) : 0;
+			res = realloc(res, len + strlen(w) + 2);
+			res[len] = '\0';
+			strcat(strcat(res, w), "\n");
+		}
+		line = strtok(NULL, "\n");
+	}
+	free(out);
+	return (res);
+}
+
+/* Linea de norminette tras la de compilacion. Devuelve 1 si hay errores.  */
+static int	print_norm(const char *log)
+{
+	if (!g_has_norm)
+		return (0);
+	if (!log)
+	{
+		printf("  %s[OK]%s   norminette\n", C_OK, C_0);
+		return (0);
+	}
+	printf("  %s[KO]%s   norminette\n", C_KO, C_0);
+	print_indented(log);
+	return (1);
+}
+
 static void	compile_all(const char *repo)
 {
 	char	path[4096];
@@ -287,6 +369,7 @@ static void	compile_all(const char *repo)
 			g_st[i] = ST_MISSING;
 		else
 		{
+			g_norm[i] = norm_errors(path);
 			snprintf(cmd, sizeof(cmd),
 				"cc " CFLAGS " -I'%s' -c '%s' -o '%s' 2>&1", repo, path, obj);
 			g_log[i] = capture(cmd, &st);
@@ -371,6 +454,169 @@ static int	run_cases(const char *src)
 	return (WIFEXITED(st) && WEXITSTATUS(st) == 0);
 }
 
+/* Todo lo de un archivo que existe: compilacion, norma y casos. 1 si falla. */
+static int	report_file(size_t i, int cases_ok, const char *cases_log)
+{
+	int	bad;
+
+	if (g_st[i] == ST_CC_KO)
+	{
+		printf("  %s[COMPILA KO]%s con " CFLAGS "\n", C_KO, C_0);
+		print_indented(g_log[i]);
+		print_norm(g_norm[i]);
+		return (1);
+	}
+	if (g_st[i] == ST_BAD_SYM)
+	{
+		printf("  %s[KO]%s   define %s: todo simbolo global debe empezar"
+			" por ft_\n", C_KO, C_0, g_log[i]);
+		print_norm(g_norm[i]);
+		return (1);
+	}
+	printf("  %s[OK]%s   compila con " CFLAGS "\n", C_OK, C_0);
+	bad = print_norm(g_norm[i]);
+	if (g_st[i] == ST_FORBID)
+		return (printf("  %s[KO]%s   usa %s, que el subject no autoriza aqui\n",
+				C_KO, C_0, g_log[i]), 1);
+	if (g_st[i] == ST_DEP)
+		return (printf("  %s[TEST KO]%s llama a %s, que no esta disponible (falta"
+				" su archivo o no pasa sus comprobaciones)\n", C_KO, C_0,
+				g_log[i]), 1);
+	if (!cases_ok)
+	{
+		printf("  %s[TEST KO]%s no se pudo montar el binario de casos\n",
+			C_KO, C_0);
+		print_indented(cases_log);
+		return (1);
+	}
+	if (!run_cases(g_src[i]))
+		bad = 1;
+	return (bad);
+}
+
+static int	check_header(const char *repo)
+{
+	char	path[4096];
+	char	*log;
+	int		bad;
+
+	printf("%s── libft.h%s\n", C_B, C_0);
+	snprintf(path, sizeof(path), "%s/libft.h", repo);
+	if (access(path, F_OK) != 0)
+	{
+		printf("  %s[KO]%s   no existe\n\n", C_KO, C_0);
+		return (1);
+	}
+	printf("  %s[OK]%s   existe\n", C_OK, C_0);
+	log = norm_errors(path);
+	bad = print_norm(log);
+	free(log);
+	printf("\n");
+	return (bad);
+}
+
+/* Ejecuta cmd en sh y devuelve su estado; la salida queda en *out.         */
+static int	sh(char **out, const char *fmt, ...)
+{
+	char	cmd[8192];
+	va_list	ap;
+	int		st;
+
+	va_start(ap, fmt);
+	vsnprintf(cmd, sizeof(cmd), fmt, ap);
+	va_end(ap);
+	free(*out);
+	*out = capture(cmd, &st);
+	return (st);
+}
+
+static int	mk_line(int ok, const char *what, const char *log)
+{
+	printf("  %s%s%s   %s\n", ok ? C_OK : C_KO, ok ? "[OK]" : "[KO]", C_0,
+		what);
+	if (!ok && log && *log)
+		print_indented(log);
+	return (!ok);
+}
+
+/* Lista de ft_ de g_src que existen en el repo y no estan en libft.a.     */
+static char	*missing_in_lib(const char *repo, const char *lib)
+{
+	char	path[4096];
+	char	key[256];
+	char	*defs;
+	char	*miss;
+
+	defs = nm_names(lib, "-g --defined-only");
+	miss = NULL;
+	for (size_t i = 0; i < N_SRC; i++)
+	{
+		snprintf(path, sizeof(path), "%s/%s", repo, g_src[i]);
+		snprintf(key, sizeof(key), " %.*s ", (int)strlen(g_src[i]) - 2,
+			g_src[i]);
+		if (access(path, F_OK) == 0 && !strstr(defs, key))
+		{
+			key[strlen(key) - 1] = '\0';
+			add_name(&miss, key + 1);
+		}
+	}
+	free(defs);
+	return (miss);
+}
+
+/* El Makefile se prueba en una copia (solo .c, .h y Makefile) para no      */
+/* dejar .o ni libft.a en el repo.                                           */
+static int	check_makefile(const char *repo)
+{
+	char	d[4200];
+	char	*out;
+	char	*miss;
+	int		bad;
+	int		st;
+
+	printf("%s── Makefile%s\n", C_B, C_0);
+	out = NULL;
+	snprintf(d, sizeof(d), "%s/mk", g_tmp);
+	if (sh(&out, "test -f '%s/Makefile'", repo) != 0)
+		return (free(out), mk_line(0, "no existe", NULL), printf("\n"), 1);
+	sh(&out, "mkdir -p '%s' && cp '%s'/*.c '%s'/*.h '%s/Makefile' '%s' 2>&1",
+		d, repo, repo, repo, d);
+	bad = mk_line(sh(&out, "grep -q -- -Wall '%s/Makefile' && grep -q -- -Wextra"
+				" '%s/Makefile' && grep -q -- -Werror '%s/Makefile'", d, d, d) == 0,
+			"usa -Wall -Wextra -Werror", NULL);
+	st = sh(&out, "make -C '%s' 2>&1 && test -f '%s/libft.a'", d, d);
+	if (mk_line(st == 0, "make crea libft.a", out))
+	{
+		free(out);
+		printf("\n");
+		return (1);
+	}
+	snprintf(d + strlen(d), sizeof(d) - strlen(d), "/libft.a");
+	miss = missing_in_lib(repo, d);
+	d[strlen(d) - 8] = '\0';
+	bad |= mk_line(!miss, "libft.a contiene todas las funciones", NULL);
+	if (miss)
+		printf("         faltan: %s\n", miss);
+	free(miss);
+	sh(&out, "touch '%s/.stamp' && make -C '%s' >/dev/null 2>&1; find '%s'"
+		" -newer '%s/.stamp' \\( -name '*.o' -o -name libft.a \\) | sed"
+		" 's|.*/||'", d, d, d, d);
+	bad |= mk_line(!*out, "make otra vez no recompila nada (sin relink)", out);
+	st = sh(&out, "make -C '%s' clean >/dev/null 2>&1; ls '%s' | grep '\\.o$';"
+			" test -f '%s/libft.a'", d, d, d);
+	bad |= mk_line(!*out && st == 0, "make clean borra los .o y deja libft.a",
+			*out ? out : "ha borrado libft.a");
+	st = sh(&out, "make -C '%s' fclean >/dev/null 2>&1; test ! -f '%s/libft.a'",
+			d, d);
+	bad |= mk_line(st == 0, "make fclean borra libft.a", NULL);
+	st = sh(&out, "make -C '%s' re >/dev/null 2>&1 && test -f '%s/libft.a'", d,
+			d);
+	bad |= mk_line(st == 0, "make re vuelve a crear libft.a", NULL);
+	free(out);
+	printf("\n");
+	return (bad);
+}
+
 static void	self_path(char *buf, size_t sz, const char *argv0)
 {
 	const char	*slash;
@@ -398,6 +644,9 @@ int	main(int argc, char **argv)
 	printf("repo: %s\ntest: %s\n\n", repo, self);
 	if (!mkdtemp(g_tmp))
 		return (perror("mkdtemp"), 2);
+	g_has_norm = system("command -v norminette >/dev/null 2>&1") == 0;
+	if (!g_has_norm)
+		printf("norminette no esta instalada: no se comprueba la norma\n\n");
 	compile_all(repo);
 	cases_log = build_cases(self, &cases_ok);
 	ko = 0;
@@ -411,50 +660,15 @@ int	main(int argc, char **argv)
 			printf("  %s[SKIP]%s no existe\n", C_SK, C_0);
 			skipped++;
 		}
-		else if (g_st[i] == ST_CC_KO)
-		{
-			printf("  %s[COMPILA KO]%s con " CFLAGS "\n", C_KO, C_0);
-			print_indented(g_log[i]);
-			ko++;
-		}
-		else if (g_st[i] == ST_BAD_SYM)
-		{
-			printf("  %s[KO]%s   define %s: todo simbolo global debe empezar"
-				" por ft_\n", C_KO, C_0, g_log[i]);
-			ko++;
-		}
-		else if (g_st[i] == ST_FORBID)
-		{
-			printf("  %s[OK]%s   compila con " CFLAGS "\n", C_OK, C_0);
-			printf("  %s[KO]%s   usa %s, que el subject no autoriza aqui\n",
-				C_KO, C_0, g_log[i]);
-			ko++;
-		}
-		else if (g_st[i] == ST_DEP)
-		{
-			printf("  %s[OK]%s   compila con " CFLAGS "\n", C_OK, C_0);
-			printf("  %s[TEST KO]%s llama a %s, que no esta disponible (falta su"
-				" archivo o no pasa sus comprobaciones)\n", C_KO, C_0, g_log[i]);
-			ko++;
-		}
-		else if (!cases_ok)
-		{
-			printf("  %s[OK]%s   compila con " CFLAGS "\n", C_OK, C_0);
-			printf("  %s[TEST KO]%s no se pudo montar el binario de casos\n",
-				C_KO, C_0);
-			print_indented(cases_log);
-			ko++;
-		}
 		else
-		{
-			printf("  %s[OK]%s   compila con " CFLAGS "\n", C_OK, C_0);
-			if (!run_cases(g_src[i]))
-				ko++;
-		}
+			ko += report_file(i, cases_ok, cases_log);
 		printf("\n");
 		free(g_log[i]);
+		free(g_norm[i]);
 		i++;
 	}
+	ko += check_header(repo);
+	ko += check_makefile(repo);
 	printf("%s%zu ejercicios%s  %s%d con fallos%s  %s%d sin fuente%s\n",
 		C_B, N_SRC, C_0, C_KO, ko, C_0, C_SK, skipped, C_0);
 	free(cases_log);
@@ -555,6 +769,182 @@ static int	ko(const char *fmt, ...)
 	return (0);
 }
 
+/* ----------------------------- malloc vigilado --------------------------- */
+/* Todo malloc del binario de casos (los del alumno incluidos) pasa por aqui: */
+/* cada bloque lleva delante su tamano y detras G_TAIL bytes de guarda. Si se */
+/* escribe aunque sea un byte de mas (el '\0' sin sitio reservado), la guarda */
+/* cambia y guard_ok() o free() lo dan como KO del caso. Sin esto un desborde */
+/* de 1 byte casi nunca crashea y el caso salia OK. Ademas el bloque nuevo    */
+/* viene relleno de G_JUNK y no de ceros: si falta el '\0' final, se nota.    */
+/* g_live cuenta los bloques vivos: run() da leak si un caso que pasa deja   */
+/* mas de los que habia al empezar (los casos liberan lo que reciben).       */
+
+void	*__libc_malloc(size_t n);
+void	*__libc_realloc(void *p, size_t n);
+void	__libc_free(void *p);
+
+#define G_MAGIC	0x5a454e4755415244ULL
+#define G_TAIL	8
+#define G_JUNK	0xbe
+
+typedef struct s_ghdr
+{
+	size_t				n;
+	unsigned long long	magic;
+}	t_ghdr;
+
+static long					g_live;
+
+static const unsigned char	g_tail[G_TAIL] = {
+	0xa5, 0x5a, 0xa5, 0x5a, 0xa5, 0x5a, 0xa5, 0x5a};
+
+/* Cabecera del bloque si p salio de este malloc, NULL si no.               */
+static t_ghdr	*ghdr(const void *p)
+{
+	t_ghdr	*h;
+
+	if (!p)
+		return (NULL);
+	h = (t_ghdr *)p - 1;
+	return (h->magic == G_MAGIC ? h : NULL);
+}
+
+/* Primer byte de guarda pisado, o -1 si esta intacta.                      */
+static long	tail_hit(const t_ghdr *h)
+{
+	const unsigned char	*t;
+
+	t = (const unsigned char *)(h + 1) + h->n;
+	for (long k = 0; k < G_TAIL; k++)
+		if (t[k] != g_tail[k])
+			return (k);
+	return (-1);
+}
+
+static int	guard_ko(const t_ghdr *h)
+{
+	return (ko("escribe fuera de su memoria: reserva %zu bytes y escribe en"
+			" el byte [%zu] (falta sitio para el '\\0'?)", h->n,
+			h->n + (size_t)tail_hit(h)));
+}
+
+/* 1 si p no se ha desbordado (o no es de este malloc).                     */
+static int	guard_ok(const void *p)
+{
+	t_ghdr	*h;
+
+	h = ghdr(p);
+	if (!h || tail_hit(h) < 0)
+		return (1);
+	return (guard_ko(h));
+}
+
+/* Como guard_ok, y ademas que la cadena acabe en '\0' dentro del bloque.   */
+static int	str_ok(const char *p)
+{
+	t_ghdr	*h;
+
+	if (!guard_ok(p))
+		return (0);
+	h = ghdr(p);
+	if (h && !memchr(p, '\0', h->n))
+		return (ko("la cadena no acaba en '\\0': reserva %zu bytes y ninguno"
+				" es el terminador", h->n));
+	return (1);
+}
+
+void	*malloc(size_t n)
+{
+	t_ghdr	*h;
+
+	if (n > SIZE_MAX - sizeof(t_ghdr) - G_TAIL)
+	{
+		errno = ENOMEM;
+		return (NULL);
+	}
+	h = __libc_malloc(sizeof(t_ghdr) + n + G_TAIL);
+	if (!h)
+		return (NULL);
+	h->n = n;
+	h->magic = G_MAGIC;
+	g_live++;
+	memset(h + 1, G_JUNK, n);
+	memcpy((char *)(h + 1) + n, g_tail, G_TAIL);
+	return (h + 1);
+}
+
+void	*calloc(size_t nmemb, size_t size)
+{
+	void	*p;
+
+	if (size && nmemb > SIZE_MAX / size)
+	{
+		errno = ENOMEM;
+		return (NULL);
+	}
+	p = malloc(nmemb * size);
+	if (p)
+		memset(p, 0, nmemb * size);
+	return (p);
+}
+
+void	free(void *p)
+{
+	t_ghdr	*h;
+
+	if (!p)
+		return ;
+	h = ghdr(p);
+	if (!h)
+	{
+		__libc_free(p);
+		return ;
+	}
+	if (tail_hit(h) >= 0 && g_fd >= 0)
+		_exit(guard_ko(h) ? 0 : 1);
+	h->magic = 0;
+	g_live--;
+	__libc_free(h);
+}
+
+void	*realloc(void *p, size_t n)
+{
+	t_ghdr	*h;
+	void	*q;
+
+	if (!p)
+		return (malloc(n));
+	h = ghdr(p);
+	if (!h)
+		return (__libc_realloc(p, n));
+	if (n == 0)
+	{
+		free(p);
+		return (NULL);
+	}
+	q = malloc(n);
+	if (q)
+	{
+		memcpy(q, p, h->n < n ? h->n : n);
+		free(p);
+	}
+	return (q);
+}
+
+/* Ejecuta el caso y, si pasa, comprueba que no quede memoria sin liberar. */
+static int	check_leaks(t_case f, int i)
+{
+	long	base;
+
+	base = g_live;
+	if (!f(i))
+		return (0);
+	if (g_live > base)
+		return (ko("deja %ld bloque(s) de memoria sin liberar (leak)",
+				g_live - base));
+	return (1);
+}
+
 static void	run(const char *name, t_case f, int i)
 {
 	int		fds[2];
@@ -574,7 +964,7 @@ static void	run(const char *name, t_case f, int i)
 		close(fds[0]);
 		g_fd = fds[1];
 		alarm(2);
-		_exit(f(i) ? 0 : 1);
+		_exit(check_leaks(f, i) ? 0 : 1);
 	}
 	close(fds[1]);
 	len = 0;
@@ -795,7 +1185,8 @@ static void	s_tolower(void)
 /* -------------------------------- strlen --------------------------------- */
 
 static const char	*g_strs[] = {"", "a", "hola mundo", "\xff\x80z",
-	"con\tsalto\n"};
+	"con\tsalto\n", "\t\v\f\r",
+	"Long string test for buffer check............................"};
 
 static int	c_strlen(int i)
 {
@@ -815,7 +1206,8 @@ static void	s_strlen(void)
 /* --------------------------- memset / bzero ------------------------------ */
 
 static const struct { int c; size_t n; }	g_mset[] = {
-	{'x', 4}, {0, 10}, {'x', 0}, {300, 5}, {-1, 3}, {255, 1}};
+	{'x', 4}, {0, 10}, {'x', 0}, {300, 5}, {-1, 3}, {255, 1}, {127, 10},
+	{'*', 1}};
 
 static int	c_memset(int i)
 {
@@ -972,7 +1364,8 @@ static void	s_strlcat(void)
 
 static const struct { const char *s; int c; }	g_chr[] = {
 	{"hola mundo", 'o'}, {"hola mundo", 'h'}, {"hola mundo", 'z'},
-	{"hola mundo", '\0'}, {"hola mundo", 'l' + 256}, {"", 'a'}, {"", '\0'}};
+	{"hola mundo", '\0'}, {"hola mundo", 'l' + 256}, {"", 'a'}, {"", '\0'},
+	{"aaa", 'a'}, {"12321", '2'}, {"abbbc", 'b'}};
 
 static int	c_chr(int i, char *(*ft)(const char *, int),
 	char *(*ref)(const char *, int))
@@ -1017,7 +1410,9 @@ static void	s_strrchr(void)
 static const struct { const char *a; const char *b; size_t n; }	g_cmp[] = {
 	{"abc", "abc", 3}, {"abc", "abd", 3}, {"abc", "abd", 2}, {"abc", "ab", 3},
 	{"ab", "abc", 3}, {"", "", 1}, {"a", "b", 0}, {"\x80", "\x01", 1},
-	{"abc", "abcde", 10}, {"abc\0x", "abc\0y", 5}};
+	{"abc", "abcde", 10}, {"abc\0x", "abc\0y", 5}, {"test", "tost", 1},
+	{"tost", "test", 2}, {"atoms\0", "atoms\0tail", 10}, {"\x80", "", 1},
+	{"12345", "12344", 5}};
 
 static int	c_strncmp(int i)
 {
@@ -1040,7 +1435,9 @@ static void	s_strncmp(void)
 
 static const struct { const char *a; const char *b; size_t n; }	g_mcmp[] = {
 	{"abc", "abc", 3}, {"abc", "abd", 3}, {"abc", "abd", 2},
-	{"\x80", "\x01", 1}, {"ab\0x", "ab\0y", 4}, {"a", "b", 0}};
+	{"\x80", "\x01", 1}, {"ab\0x", "ab\0y", 4}, {"a", "b", 0},
+	{"\x80", "\0", 1}, {"atoms\0tail", "atoms\0head", 10},
+	{"test", "tost", 2}};
 
 static int	c_memcmp(int i)
 {
@@ -1099,7 +1496,11 @@ static void	s_memchr(void)
 static const struct { const char *b; const char *l; size_t n; }	g_nstr[] = {
 	{"hola mundo", "mundo", 10}, {"hola mundo", "mundo", 9},
 	{"hola", "", 4}, {"hola", "", 0}, {"hola", "hola mundo", 20},
-	{"aaab", "aab", 4}, {"hola", "la", 0}, {"", "a", 5}};
+	{"aaab", "aab", 4}, {"hola", "la", 0}, {"", "a", 5},
+	{"lorem ipsum dolor sit amet", "dolor", 17},
+	{"lorem ipsum dolor sit amet", "dolor", 16},
+	{"aaabcabcd", "abcd", 9}, {"aaabcabcd", "abcd", 8},
+	{"12345", "12345", 4}, {"hello", "he", 1}};
 
 static int	c_strnstr(int i)
 {
@@ -1132,7 +1533,8 @@ static void	s_strnstr(void)
 /* --------------------------------- atoi ---------------------------------- */
 
 static const char	*g_atoi[] = {"42", "   -42", "\t\n\v\f\r +7", "+-5", "--5",
-	"12abc", "abc", "2147483647", "-2147483648", "0", "", " - 5", "007"};
+	"12abc", "abc", "2147483647", "-2147483648", "0", "", " - 5", "007",
+	"++42", "   -00123", "9999999999999", "-0", "+", "-"};
 
 static int	c_atoi(int i)
 {
@@ -1153,34 +1555,61 @@ static void	s_atoi(void)
 
 /* --------------------------- calloc / strdup ----------------------------- */
 
+/* null = 1: nmemb * size desborda y tiene que devolver NULL.              */
+static const struct { size_t nm; size_t sz; int null; }	g_cal[] = {
+	{5, sizeof(int), 0}, {SIZE_MAX, 2, 1}, {SIZE_MAX, SIZE_MAX, 1},
+	{0, 10, 0}, {10, 0, 0}, {1, 0, 0}, {1024, 1024, 0}};
+
 static int	c_calloc(int i)
 {
 	unsigned char	*p;
+	size_t			n;
+	t_ghdr			*h;
 
-	if (i == 1)
+	p = ft_calloc(g_cal[i].nm, g_cal[i].sz);
+	if (g_cal[i].null)
 	{
-		p = ft_calloc(SIZE_MAX, 2);
 		if (p)
-			return (ko("nmemb * size desborda: esperado NULL"));
+			return (free(p), ko("nmemb * size desborda: esperado NULL"));
 		return (1);
 	}
-	p = ft_calloc(5, sizeof(int));
 	if (!p)
-		return (ko("devuelve NULL"));
-	for (size_t k = 0; k < 5 * sizeof(int); k++)
+		return (ko("devuelve NULL; con 0 tambien debe devolver un puntero"
+				" que se pueda liberar"));
+	n = g_cal[i].nm * g_cal[i].sz;
+	h = ghdr(p);
+	if (h && h->n < n)
+		return (ko("reserva %zu bytes, esperado %zu", h->n, n));
+	for (size_t k = 0; k < n; k++)
 		if (p[k])
 			return (ko("el byte %zu no es 0", k));
 	free(p);
 	return (1);
 }
 
-static void	s_calloc(void)
+static const char	*sz_name(char *buf, size_t n)
 {
-	run("ft_calloc(5, sizeof(int)) reserva y pone a 0", c_calloc, 0);
-	run("ft_calloc(SIZE_MAX, 2) devuelve NULL (desbordamiento)", c_calloc, 1);
+	if (n == SIZE_MAX)
+		return ("SIZE_MAX");
+	snprintf(buf, 24, "%zu", n);
+	return (buf);
 }
 
-static const char	*g_dup[] = {"hola mundo", "", "\xff\x80z"};
+static void	s_calloc(void)
+{
+	char	a[24];
+	char	b[24];
+
+	RUN_TABLE(g_cal, c_calloc, "ft_calloc(%s, %s) %s",
+		sz_name(a, g_cal[i_].nm), sz_name(b, g_cal[i_].sz),
+		g_cal[i_].null ? "devuelve NULL (desbordamiento)"
+		: "reserva y pone a 0");
+}
+
+static int	cmp_new(char *got, const char *exp);
+
+static const char	*g_dup[] = {"hola mundo", "", "\xff\x80z",
+	"special\nchars\t", "abc\0def"};
 
 static int	c_strdup(int i)
 {
@@ -1191,11 +1620,7 @@ static int	c_strdup(int i)
 		return (ko("devuelve NULL"));
 	if (r == g_dup[i])
 		return (ko("devuelve el mismo puntero, no una copia"));
-	if (strcmp(r, g_dup[i]))
-		return (ko("esperado %s", esc_s(g_dup[i])), ko("obtenido %s",
-				esc_s(r)));
-	free(r);
-	return (1);
+	return (cmp_new(r, g_dup[i]));
 }
 
 static void	s_strdup(void)
@@ -1205,12 +1630,23 @@ static void	s_strdup(void)
 
 /* ------------------------- parte 2: cadenas nuevas ----------------------- */
 
-static int	cmp_new(const char *got, const char *exp)
+static int	cmp_str(const char *got, const char *exp)
 {
 	if (!got)
 		return (ko("esperado %s", esc_s(exp)), ko("obtenido NULL"));
+	if (!str_ok(got))
+		return (0);
 	if (strcmp(got, exp))
 		return (ko("esperado %s", esc_s(exp)), ko("obtenido %s", esc_s(got)));
+	return (1);
+}
+
+/* Como cmp_str, para cadenas nuevas: si esta bien, la libera.             */
+static int	cmp_new(char *got, const char *exp)
+{
+	if (!cmp_str(got, exp))
+		return (0);
+	free(got);
 	return (1);
 }
 
@@ -1218,7 +1654,10 @@ static const struct { const char *s; unsigned int st; size_t n; const char *e; }
 	g_sub[] = {
 	{"hola mundo", 5, 5, "mundo"}, {"hola", 0, 10, "hola"},
 	{"hola", 10, 2, ""}, {"hola", 2, 0, ""}, {"hola", 4, 1, ""},
-	{"hola mundo", 1, 3, "ola"}};
+	{"hola mundo", 1, 3, "ola"}, {"hola", 1, SIZE_MAX, "ola"},
+	{"lorem ipsum dolor sit amet", 12, 40, "dolor sit amet"},
+	{"lorem ipsum dolor sit amet", 30, 5, ""}, {"", 0, 5, ""},
+	{"lorem", 0, 42, "lorem"}, {"abc", 2, 1, "c"}};
 
 static int	c_substr(int i)
 {
@@ -1234,7 +1673,7 @@ static void	s_substr(void)
 
 static const struct { const char *a; const char *b; const char *e; }
 	g_join[] = {{"hola ", "mundo", "hola mundo"}, {"", "", ""},
-	{"a", "", "a"}, {"", "b", "b"}};
+	{"a", "", "a"}, {"", "b", "b"}, {"abc", "defgh", "abcdefgh"}};
 
 static int	c_strjoin(int i)
 {
@@ -1250,7 +1689,10 @@ static void	s_strjoin(void)
 static const struct { const char *s; const char *set; const char *e; }
 	g_trim[] = {{"  hola  ", " ", "hola"}, {"xxhxx", "x", "h"},
 	{"xxx", "x", ""}, {"hola", "", "hola"}, {"", "x", ""},
-	{"ab hola ba", "ab ", "hol"}, {"  ho la  ", " ", "ho la"}};
+	{"ab hola ba", "ab ", "hol"}, {"  ho la  ", " ", "ho la"},
+	{"x", "x", ""}, {" \nhola\n ", " \n", "hola"}, {"hola", "x", "hola"},
+	{"abbcccba", "abc", ""}, {"xxyyzyyx", "xy", "z"}, {"123456", "456", "123"},
+	{"123456", "123", "456"}, {"  \t \n hola \n \t  ", " \n\t", "hola"}};
 
 static int	c_strtrim(int i)
 {
@@ -1263,10 +1705,15 @@ static void	s_strtrim(void)
 		esc_s(g_trim[i_].set));
 }
 
-static const struct { const char *s; char c; const char *e[5]; }	g_split[] = {
+static const struct { const char *s; char c; const char *e[6]; }	g_split[] = {
 	{"  hola  que tal ", ' ', {"hola", "que", "tal", NULL}},
 	{"", ' ', {NULL}}, {"   ", ' ', {NULL}}, {"hola", ' ', {"hola", NULL}},
-	{"a,b,,c", ',', {"a", "b", "c", NULL}}, {"hola", '\0', {"hola", NULL}}};
+	{"a,b,,c", ',', {"a", "b", "c", NULL}}, {"hola", '\0', {"hola", NULL}},
+	{"hola que tal", ' ', {"hola", "que", "tal", NULL}},
+	{"hola ", ' ', {"hola", NULL}},
+	{"--1--2--3--4--5--", '-', {"1", "2", "3", "4", "5", NULL}},
+	{"z", 'z', {NULL}}, {"hello world", 'z', {"hello world", NULL}},
+	{"xxxxxxxxhello", 'x', {"hello", NULL}}, {"word", 'w', {"ord", NULL}}};
 
 static int	c_split(int i)
 {
@@ -1279,6 +1726,8 @@ static int	c_split(int i)
 	k = 0;
 	while (g_split[i].e[k] || r[k])
 	{
+		if (r[k] && !str_ok(r[k]))
+			return (0);
 		if (!g_split[i].e[k])
 			return (ko("sobra la palabra [%d] = %s", k, esc_s(r[k])));
 		if (!r[k])
@@ -1289,6 +1738,11 @@ static int	c_split(int i)
 				ko("palabra [%d]: obtenido %s", k, esc_s(r[k])));
 		k++;
 	}
+	if (!guard_ok(r))
+		return (0);
+	for (k = 0; r[k]; k++)
+		free(r[k]);
+	free(r);
 	return (1);
 }
 
@@ -1298,7 +1752,8 @@ static void	s_split(void)
 		g_split[i_].c ? (char [2]){g_split[i_].c, 0} : "\\0");
 }
 
-static const int	g_itoa[] = {0, 42, -42, 7, INT_MAX, INT_MIN, -1};
+static const int	g_itoa[] = {0, 42, -42, 7, INT_MAX, INT_MIN, -1, 10, -10,
+	100, 12345, -12345, 1000000, -2147483647, -9};
 
 static int	c_itoa(int i)
 {
@@ -1324,33 +1779,130 @@ static void	iter_even_up(unsigned int i, char *c)
 	*c = map_even_up(i, *c);
 }
 
+static char	map_inc(unsigned int i, char c)
+{
+	(void)i;
+	return ((char)(c + 1));
+}
+
+static char	map_idx(unsigned int i, char c)
+{
+	return ((char)(c + i));
+}
+
+/* 'a' hasta el indice 255 y 'b' desde el 256: si el indice se recorta a   */
+/* unsigned char (o a char), vuelve a 0 y todo sale 'a'.                    */
+static char	map_hi(unsigned int i, char c)
+{
+	(void)c;
+	return (i >= 256 ? 'b' : 'a');
+}
+
+static void	iter_inc(unsigned int i, char *c) { *c = map_inc(i, *c); }
+static void	iter_idx(unsigned int i, char *c) { *c = map_idx(i, *c); }
+static void	iter_hi(unsigned int i, char *c) { *c = map_hi(i, *c); }
+
+#define LONG_N	300
+
+/* Compara el resultado de map_hi sin volcar 300 letras: dice donde falla. */
+static int	cmp_long(const char *got, const char *exp)
+{
+	size_t	k;
+
+	if (!got)
+		return (ko("obtenido NULL"));
+	if (!str_ok(got))
+		return (0);
+	k = 0;
+	while (got[k] == exp[k] && exp[k])
+		k++;
+	if (got[k] == exp[k])
+		return (1);
+	if (k == 256)
+		return (ko("en el indice 256 esperado 'b', obtenido %s: el indice se"
+				" recorta a 0-255 (unsigned char?), pasalo como unsigned int",
+				esc(got + k, 1)));
+	return (ko("difiere en el indice %zu: esperado %s, obtenido %s", k,
+			esc(exp + k, 1), esc(got + k, 1)));
+}
+
+/* "xxx...x" de LONG_N y lo que deberia salir con map_hi.                  */
+static void	long_strs(char *s, char *e)
+{
+	memset(s, 'x', LONG_N);
+	s[LONG_N] = '\0';
+	memset(e, 'a', 256);
+	memset(e + 256, 'b', LONG_N - 256);
+	e[LONG_N] = '\0';
+}
+
+static const struct { const char *s; char (*f)(unsigned int, char);
+	void (*it)(unsigned int, char *); const char *e; const char *fn; }
+	g_mapi[] = {
+	{"hola mundo", map_even_up, iter_even_up, "HoLa mUnDo",
+		"mayuscula en indices pares"},
+	{"", map_even_up, iter_even_up, "", "mayuscula en indices pares"},
+	{"abc", map_inc, iter_inc, "bcd", "c + 1"},
+	{"AAAA", map_idx, iter_idx, "ABCD", "c + i"},
+	{"000", map_idx, iter_idx, "012", "c + i"},
+	{NULL, map_hi, iter_hi, NULL, "'b' desde el indice 256 (300 chars)"}};
+
 static int	c_strmapi(int i)
 {
-	if (i == 1)
-		return (cmp_new(ft_strmapi("", map_even_up), ""));
-	return (cmp_new(ft_strmapi("hola mundo", map_even_up), "HoLa mUnDo"));
+	char	s[LONG_N + 1];
+	char	e[LONG_N + 1];
+	char	*r;
+
+	if (!g_mapi[i].s)
+	{
+		long_strs(s, e);
+		r = ft_strmapi(s, g_mapi[i].f);
+		if (!cmp_long(r, e))
+			return (0);
+		free(r);
+		return (1);
+	}
+	return (cmp_new(ft_strmapi(g_mapi[i].s, g_mapi[i].f), g_mapi[i].e));
 }
 
 static void	s_strmapi(void)
 {
-	run("ft_strmapi(\"hola mundo\", f) con f = mayuscula en indices pares",
-		c_strmapi, 0);
-	run("ft_strmapi(\"\", f)", c_strmapi, 1);
+	RUN_TABLE(g_mapi, c_strmapi, "ft_strmapi(%s, f) con f = %s",
+		g_mapi[i_].s ? esc_s(g_mapi[i_].s) : "\"xxx...\"", g_mapi[i_].fn);
 }
 
+/* Filas de g_mapi y despues dos con NULL: no debe reventar.              */
 static int	c_striteri(int i)
 {
-	char	s[] = "hola mundo";
+	char	s[LONG_N + 1];
+	char	e[LONG_N + 1];
 
-	(void)i;
-	ft_striteri(s, iter_even_up);
-	return (cmp_new(s, "HoLa mUnDo"));
+	if (i == NCASES(g_mapi))
+		return (ft_striteri(NULL, iter_inc), 1);
+	if (i == NCASES(g_mapi) + 1)
+	{
+		strcpy(s, "abc");
+		ft_striteri(s, NULL);
+		return (cmp_str(s, "abc"));
+	}
+	if (!g_mapi[i].s)
+		long_strs(s, e);
+	else
+	{
+		strcpy(s, g_mapi[i].s);
+		strcpy(e, g_mapi[i].e);
+	}
+	ft_striteri(s, g_mapi[i].it);
+	return (g_mapi[i].s ? cmp_str(s, e) : cmp_long(s, e));
 }
 
 static void	s_striteri(void)
 {
-	run("ft_striteri(\"hola mundo\", f) con f = mayuscula en indices pares",
-		c_striteri, 0);
+	RUN_TABLE(g_mapi, c_striteri, "ft_striteri(%s, f) con f = %s",
+		g_mapi[i_].s ? esc_s(g_mapi[i_].s) : "\"xxx...\"", g_mapi[i_].fn);
+	run("ft_striteri(NULL, f) no revienta", c_striteri, NCASES(g_mapi));
+	run("ft_striteri(\"abc\", NULL) no revienta ni cambia nada", c_striteri,
+		NCASES(g_mapi) + 1);
 }
 
 /* ------------------------------ put*_fd ---------------------------------- */
@@ -1378,10 +1930,9 @@ static int	check_fd_out(void (*call)(int, int), int arg, const char *exp)
 }
 
 static void	call_putchar(int fd, int a) { ft_putchar_fd((char)a, fd); }
-static void	call_putstr(int fd, int a)
-{
-	ft_putstr_fd(a ? "hola mundo" : "", fd);
-}
+static const char	*g_pstr[] = {"hola mundo", "", "\t\n", "abc\0def"};
+
+static void	call_putstr(int fd, int a) { ft_putstr_fd((char *)g_pstr[a], fd); }
 static void	call_putendl(int fd, int a)
 {
 	ft_putendl_fd(a ? "hola" : "", fd);
@@ -1396,7 +1947,7 @@ static int	c_putchar(int i)
 
 static int	c_putstr(int i)
 {
-	return (check_fd_out(call_putstr, !i, i ? "" : "hola mundo"));
+	return (check_fd_out(call_putstr, i, g_pstr[i]));
 }
 
 static int	c_putendl(int i)
@@ -1404,7 +1955,8 @@ static int	c_putendl(int i)
 	return (check_fd_out(call_putendl, !i, i ? "\n" : "hola\n"));
 }
 
-static const int	g_pnbr[] = {0, 42, -42, INT_MAX, INT_MIN};
+static const int	g_pnbr[] = {0, 42, -42, INT_MAX, INT_MIN, -1, 9, 100,
+	-2147483647, 123456};
 
 static int	c_putnbr(int i)
 {
@@ -1422,8 +1974,7 @@ static void	s_putchar_fd(void)
 
 static void	s_putstr_fd(void)
 {
-	run("ft_putstr_fd(\"hola mundo\", fd)", c_putstr, 0);
-	run("ft_putstr_fd(\"\", fd)", c_putstr, 1);
+	RUN_TABLE(g_pstr, c_putstr, "ft_putstr_fd(%s, fd)", esc_s(g_pstr[i_]));
 }
 
 static void	s_putendl_fd(void)
@@ -1489,29 +2040,62 @@ static t_list	*mk3_heap(char *a, char *b, char *c)
 	return (n0);
 }
 
+static void	free_list(t_list *l, int with_content)
+{
+	t_list	*next;
+
+	while (l)
+	{
+		next = l->next;
+		if (with_content)
+			free(l->content);
+		free(l);
+		l = next;
+	}
+}
+
 static int	c_lstnew(int i)
 {
 	t_list	*n;
 	char	x[] = "x";
+	void	*c;
 
-	(void)i;
-	n = ft_lstnew(x);
+	c = i ? NULL : x;
+	n = ft_lstnew(c);
 	if (!n)
 		return (ko("devuelve NULL"));
-	if (n->content != x)
-		return (ko("content no es el puntero recibido"));
+	if (n->content != c)
+		return (free(n), ko("content no es el puntero recibido"));
 	if (n->next != NULL)
-		return (ko("next no es NULL"));
+		return (free(n), ko("next no es NULL"));
+	free(n);
 	return (1);
 }
 
+/* 0 lista llena, 1 lista vacia, 2-3 new = NULL, 4 lst = NULL.             */
 static int	c_lstadd_front(int i)
 {
 	t_list	*lst;
+	t_list	*head;
 	t_list	n;
 
-	lst = i ? NULL : mk3("a", "b", "c");
-	n = (t_list){"z", (t_list *)0x1};
+	head = mk3("a", "b", "c");
+	lst = (i == 1 || i == 2) ? NULL : head;
+	n = (t_list){"z", i == 1 ? (t_list *)0x1 : NULL};
+	if (i == 2 || i == 3)
+	{
+		ft_lstadd_front(&lst, NULL);
+		if (lst != (i == 2 ? NULL : head))
+			return (ko("con new = NULL, *lst no deberia cambiar"));
+		return (1);
+	}
+	if (i == 4)
+	{
+		ft_lstadd_front(NULL, &n);
+		if (n.next != NULL)
+			return (ko("con lst = NULL, new no deberia cambiar"));
+		return (1);
+	}
 	ft_lstadd_front(&lst, &n);
 	if (lst != &n)
 		return (ko("*lst no apunta al nodo nuevo"));
@@ -1524,143 +2108,219 @@ static int	c_lstadd_front(int i)
 
 static int	c_lstsize(int i)
 {
+	t_list			one;
+	t_list			*l;
 	unsigned int	r;
+	unsigned int	e;
 
-	r = ft_lstsize(i ? NULL : mk3("a", "b", "c"));
-	if (r != (i ? 0u : 3u))
-		return (ko("esperado %d, obtenido %u", i ? 0 : 3, r));
+	one = (t_list){"a", NULL};
+	l = (t_list *[]){mk3("a", "b", "c"), NULL, &one, mk3("a", "b", "c")->next}[i];
+	e = (unsigned int []){3, 0, 1, 2}[i];
+	r = ft_lstsize(l);
+	if (r != e)
+		return (ko("esperado %u, obtenido %u", e, r));
 	return (1);
 }
 
 static int	c_lstlast(int i)
 {
+	t_list	one;
 	t_list	*l;
 	t_list	*r;
 
-	l = i ? NULL : mk3("a", "b", "c");
+	one = (t_list){"a", NULL};
+	l = (t_list *[]){mk3("a", "b", "c"), NULL, &one}[i];
 	r = ft_lstlast(l);
-	if (i && r)
+	if (i == 1 && r)
 		return (ko("con NULL deberia devolver NULL"));
-	if (!i && (!r || r != l->next->next))
+	if (i == 0 && (!r || r != l->next->next))
 		return (ko("no devuelve el ultimo nodo"));
+	if (i == 2 && r != &one)
+		return (ko("con un solo nodo deberia devolver ese nodo"));
 	return (1);
 }
 
+/* 0 lista llena, 1 lista vacia, 2-3 new = NULL, 4 lst = NULL.             */
 static int	c_lstadd_back(int i)
 {
 	t_list	*lst;
+	t_list	*head;
 	t_list	n;
 
-	lst = i ? NULL : mk3("a", "b", "c");
+	head = mk3("a", "b", "c");
+	lst = (i == 1 || i == 2) ? NULL : head;
 	n = (t_list){"z", NULL};
+	if (i == 2 || i == 3)
+	{
+		ft_lstadd_back(&lst, NULL);
+		if (lst != (i == 2 ? NULL : head) || (i == 3 && head->next->next->next))
+			return (ko("con new = NULL, la lista no deberia cambiar"));
+		return (1);
+	}
+	if (i == 4)
+		return (ft_lstadd_back(NULL, &n), 1);
 	ft_lstadd_back(&lst, &n);
-	if (i && lst != &n)
+	if (i == 1 && lst != &n)
 		return (ko("con lista vacia, *lst deberia pasar a ser new"));
-	if (!i && lst->next->next->next != &n)
+	if (i == 0 && lst->next->next->next != &n)
 		return (ko("new no queda al final"));
 	return (1);
 }
 
+/* 0 normal, 1 lst = NULL, 2 del = NULL.                                    */
 static int	c_lstdelone(int i)
 {
 	t_list	*n;
 
-	(void)i;
+	g_del_calls = 0;
+	if (i == 1)
+	{
+		ft_lstdelone(NULL, del_count);
+		if (g_del_calls)
+			return (ko("con lst = NULL no deberia llamar a del"));
+		return (1);
+	}
 	n = malloc(sizeof(t_list));
 	*n = (t_list){"x", NULL};
-	g_del_calls = 0;
+	if (i == 2)
+	{
+		ft_lstdelone(n, NULL);
+		if (!ghdr(n))
+			return (ko("con del = NULL no deberia liberar el nodo"));
+		free(n);
+		return (1);
+	}
 	ft_lstdelone(n, del_count);
 	if (g_del_calls != 1)
 		return (ko("del se llama %d veces, esperado 1", g_del_calls));
 	return (1);
 }
 
+/* 0 a->b->c, 1 lista vacia, 2 lst = NULL, 3 desde el nodo del medio.       */
 static int	c_lstclear(int i)
 {
 	t_list	*lst;
+	t_list	*head;
+	int		e;
 
-	(void)i;
-	lst = mk3_heap("a", "b", "c");
+	head = (i == 0 || i == 3) ? mk3_heap("a", "b", "c") : NULL;
+	lst = i == 3 ? head->next : head;
+	e = (int []){3, 0, 0, 2}[i];
 	g_del_calls = 0;
-	ft_lstclear(&lst, del_count);
-	if (g_del_calls != 3)
-		return (ko("del se llama %d veces, esperado 3", g_del_calls));
+	ft_lstclear(i == 2 ? NULL : &lst, del_count);
+	if (g_del_calls != e)
+		return (ko("del se llama %d veces, esperado %d", g_del_calls, e));
 	if (lst != NULL)
 		return (ko("*lst no queda a NULL"));
+	if (i == 3)
+		free(head);
 	return (1);
 }
 
+/* 0 normal, 1 lst = NULL, 2 f = NULL.                                      */
 static int	c_lstiter(int i)
 {
 	char	a[] = "a";
 	char	b[] = "b";
 	char	c[] = "c";
 
-	(void)i;
-	ft_lstiter(mk3(a, b, c), iter_upper);
-	if (strcmp(a, "A") || strcmp(b, "B") || strcmp(c, "C"))
+	if (i == 1)
+		return (ft_lstiter(NULL, iter_upper), 1);
+	ft_lstiter(mk3(a, b, c), i == 2 ? NULL : iter_upper);
+	if (i == 2 && (strcmp(a, "a") || strcmp(b, "b") || strcmp(c, "c")))
+		return (ko("con f = NULL no deberia cambiar nada"));
+	if (i == 0 && (strcmp(a, "A") || strcmp(b, "B") || strcmp(c, "C")))
 		return (ko("esperado A B C, obtenido %s %s %s", a, b, c));
 	return (1);
 }
 
+/* 0 normal, 1 lst = NULL, 2 f = NULL, 3 del = NULL (aun asi crea la lista). */
 static int	c_lstmap(int i)
 {
 	t_list	*orig;
 	t_list	*r;
 
-	(void)i;
 	orig = mk3("a", "b", "c");
-	r = ft_lstmap(orig, dup_upper, free);
+	r = ft_lstmap(i == 1 ? NULL : orig, i == 2 ? NULL : dup_upper,
+			i == 3 ? NULL : free);
+	if (i == 1 || i == 2)
+	{
+		if (r)
+			return (free_list(r, 0), ko("deberia devolver NULL"));
+		return (1);
+	}
 	if (!r)
 		return (ko("devuelve NULL"));
 	if (r == orig)
 		return (ko("devuelve la lista original, no una nueva"));
 	if (!r->next || !r->next->next || r->next->next->next)
-		return (ko("la lista nueva no tiene 3 nodos"));
+		return (free_list(r, 1), ko("la lista nueva no tiene 3 nodos"));
 	if (strcmp(r->content, "A") || strcmp(r->next->content, "B")
 		|| strcmp(r->next->next->content, "C"))
-		return (ko("contenido esperado A B C"));
+		return (free_list(r, 1), ko("contenido esperado A B C"));
 	if (strcmp(orig->content, "a"))
-		return (ko("ha modificado la lista original"));
+		return (free_list(r, 1), ko("ha modificado la lista original"));
+	free_list(r, 1);
 	return (1);
 }
 
-static void	s_lstnew(void) { run("ft_lstnew(content)", c_lstnew, 0); }
+static void	s_lstnew(void)
+{
+	run("ft_lstnew(content)", c_lstnew, 0);
+	run("ft_lstnew(NULL)", c_lstnew, 1);
+}
 static void	s_lstadd_front(void)
 {
 	run("ft_lstadd_front en lista a->b->c", c_lstadd_front, 0);
 	run("ft_lstadd_front en lista vacia", c_lstadd_front, 1);
+	run("ft_lstadd_front(&vacia, NULL) no revienta", c_lstadd_front, 2);
+	run("ft_lstadd_front(NULL, new) no revienta", c_lstadd_front, 4);
 }
 static void	s_lstsize(void)
 {
 	run("ft_lstsize(a->b->c) == 3", c_lstsize, 0);
 	run("ft_lstsize(NULL) == 0", c_lstsize, 1);
+	run("ft_lstsize(a) == 1", c_lstsize, 2);
+	run("ft_lstsize(b->c) == 2, desde el medio", c_lstsize, 3);
 }
 static void	s_lstlast(void)
 {
 	run("ft_lstlast(a->b->c)", c_lstlast, 0);
 	run("ft_lstlast(NULL)", c_lstlast, 1);
+	run("ft_lstlast(a) con un solo nodo", c_lstlast, 2);
 }
 static void	s_lstadd_back(void)
 {
 	run("ft_lstadd_back en lista a->b->c", c_lstadd_back, 0);
 	run("ft_lstadd_back en lista vacia", c_lstadd_back, 1);
+	run("ft_lstadd_back(&vacia, NULL) no revienta", c_lstadd_back, 2);
+	run("ft_lstadd_back(NULL, new) no revienta", c_lstadd_back, 4);
 }
 static void	s_lstdelone(void)
 {
-	run("ft_lstdelone llama a del una vez", c_lstdelone, 0);
+	run("ft_lstdelone llama a del una vez y libera el nodo", c_lstdelone, 0);
+	run("ft_lstdelone(NULL, del) no revienta", c_lstdelone, 1);
+	run("ft_lstdelone(nodo, NULL) no revienta ni libera", c_lstdelone, 2);
 }
 static void	s_lstclear(void)
 {
 	run("ft_lstclear(a->b->c): del x3 y *lst = NULL", c_lstclear, 0);
+	run("ft_lstclear en lista vacia (*lst = NULL) no hace nada", c_lstclear, 1);
+	run("ft_lstclear(NULL, del) no revienta", c_lstclear, 2);
+	run("ft_lstclear desde el nodo del medio: del x2", c_lstclear, 3);
 }
 static void	s_lstiter(void)
 {
 	run("ft_lstiter(a->b->c, a mayusculas)", c_lstiter, 0);
+	run("ft_lstiter(NULL, f) no revienta", c_lstiter, 1);
+	run("ft_lstiter(lista, NULL) no revienta", c_lstiter, 2);
 }
 static void	s_lstmap(void)
 {
 	run("ft_lstmap(a->b->c, copia en mayusculas, free)", c_lstmap, 0);
+	run("ft_lstmap(NULL, f, free) devuelve NULL", c_lstmap, 1);
+	run("ft_lstmap(lista, NULL, free) devuelve NULL", c_lstmap, 2);
+	run("ft_lstmap(lista, f, NULL) crea la lista igual", c_lstmap, 3);
 }
 
 /* --------------------------------- tabla --------------------------------- */
