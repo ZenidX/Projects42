@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/29 07:37:58 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/01 22:54:39 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 05:12:03 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,7 @@ char	*ft_strchr(const char *s, int c)
 	p = (char *) s;
 	while (*p != (char) c && *p)
 		p++;
-	if (!(*p) && c != 0)
-		return (NULL);
-	else
+	if (*p == (char) c)
 		return (p);
+	return (NULL);
 }

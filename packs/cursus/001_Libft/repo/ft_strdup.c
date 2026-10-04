@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/02 01:45:06 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/02 02:03:44 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 15:19:30 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@ char	*ft_strdup(const char *s)
 
 	l = ft_strlen(s);
 	p = malloc(sizeof(char) * (l + 1));
+	if (!p)
+		return (NULL);
 	i = 0;
 	while (i < l)
 	{

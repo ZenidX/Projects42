@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/02 03:13:33 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/03 22:48:47 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 17:35:40 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,10 +39,28 @@ static int	ft_count_words(char const *s, char c)
 	return (r);
 }
 
-static void	ft_strifcpy(char *dest, char const *src, int ini, int fin)
+static int	ft_free_split(char **r)
 {
 	int	i;
 
+	i = 0;
+	while (r[i])
+	{
+		free(r[i]);
+		i++;
+	}
+	free(r);
+	return (0);
+}
+
+static char	*ft_word_dup(char const *src, int ini, int fin)
+{
+	char	*dest;
+	int		i;
+
+	dest = malloc(fin - ini + 1);
+	if (!dest)
+		return (NULL);
 	i = 0;
 	while (i < fin - ini)
 	{
@@ -50,16 +68,14 @@ static void	ft_strifcpy(char *dest, char const *src, int ini, int fin)
 		i++;
 	}
 	dest[i] = '\0';
+	return (dest);
 }
 
-static void	ft_add_word(char const *s, char **r, char c)
+static int	ft_add_word(char const *s, char **r, char c)
 {
 	int	i[4];
 
-	i[0] = 0;
-	i[1] = 0;
-	i[2] = 0;
-	i[3] = 0;
+	ft_bzero(i, sizeof(i));
 	while (1)
 	{
 		if (s[i[0]] && s[i[0]] != c && i[1] == 0)
@@ -70,8 +86,9 @@ static void	ft_add_word(char const *s, char **r, char c)
 		else if ((s[i[0]] == c || !s[i[0]]) && i[1] == 1)
 		{
 			i[1] = 0;
-			r[i[3]] = (char *)malloc(sizeof(char) * (i[0] - i[2] + 1));
-			ft_strifcpy(r[i[3]], s, i[2], i[0]);
+			r[i[3]] = ft_word_dup(s, i[2], i[0]);
+			if (!r[i[3]])
+				return (ft_free_split(r));
 			i[3]++;
 		}
 		if (!s[i[0]])
@@ -79,6 +96,7 @@ static void	ft_add_word(char const *s, char **r, char c)
 		i[0]++;
 	}
 	r[i[3]] = NULL;
+	return (1);
 }
 
 char	**ft_split(char const *s, char c)
@@ -90,6 +108,8 @@ char	**ft_split(char const *s, char c)
 	r = (char **)malloc(sizeof(char *) * (n_str + 1));
 	if (!r)
 		return (0);
-	ft_add_word(s, r, c);
-	return (r);
+	if (ft_add_word(s, r, c))
+		return (r);
+	else
+		return (NULL);
 }

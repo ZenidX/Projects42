@@ -28,6 +28,9 @@
 /*      simbolo vale NULL en vez de romper el enlazado. malloc/free estan     */
 /*      vigilados: escribir un byte pasado el final de un malloc es KO, y    */
 /*      tambien lo es dejar memoria sin liberar (leak) en un caso que pasa.   */
+/*      Las funciones que reservan se prueban ademas con un malloc que falla  */
+/*      a proposito, y las de memoria con buffers pegados a una pagina sin    */
+/*      permisos, para que leer un byte de mas reviente.                      */
 /*                                                                            */
 /*   Anadir una funcion = una entrada en g_src + su prototipo weak + una      */
 /*   suite en g_suite.                                                        */
@@ -37,6 +40,7 @@
 #define _DEFAULT_SOURCE
 
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdarg.h>
@@ -687,6 +691,7 @@ int	main(int argc, char **argv)
 /* ================================ CASOS ================================== */
 
 #include <ctype.h>
+#include <sys/mman.h>
 
 typedef struct s_list
 {
@@ -778,6 +783,8 @@ static int	ko(const char *fmt, ...)
 /* viene relleno de G_JUNK y no de ceros: si falta el '\0' final, se nota.    */
 /* g_live cuenta los bloques vivos: run() da leak si un caso que pasa deja   */
 /* mas de los que habia al empezar (los casos liberan lo que reciben).       */
+/* Con g_fail_at = k, el malloc numero k desde que se arma devuelve NULL:    */
+/* asi se prueba que cada funcion limpia lo suyo cuando un malloc falla.     */
 
 void	*__libc_malloc(size_t n);
 void	*__libc_realloc(void *p, size_t n);
@@ -794,6 +801,8 @@ typedef struct s_ghdr
 }	t_ghdr;
 
 static long					g_live;
+static long					g_fail_at;
+static long					g_nmalloc;
 
 static const unsigned char	g_tail[G_TAIL] = {
 	0xa5, 0x5a, 0xa5, 0x5a, 0xa5, 0x5a, 0xa5, 0x5a};
@@ -857,7 +866,8 @@ void	*malloc(size_t n)
 {
 	t_ghdr	*h;
 
-	if (n > SIZE_MAX - sizeof(t_ghdr) - G_TAIL)
+	if ((g_fail_at && ++g_nmalloc == g_fail_at)
+		|| n > SIZE_MAX - sizeof(t_ghdr) - G_TAIL)
 	{
 		errno = ENOMEM;
 		return (NULL);
@@ -931,6 +941,19 @@ void	*realloc(void *p, size_t n)
 	return (q);
 }
 
+/* Los avisos de glibc al abortar ("free(): invalid pointer") descuadran   */
+/* la salida; el caso ya sale como CRASH, asi que el stderr del hijo sobra. */
+static void	quiet_stderr(void)
+{
+	int	fd;
+
+	fd = open("/dev/null", O_WRONLY);
+	if (fd < 0)
+		return ;
+	dup2(fd, STDERR_FILENO);
+	close(fd);
+}
+
 /* Ejecuta el caso y, si pasa, comprueba que no quede memoria sin liberar. */
 static int	check_leaks(t_case f, int i)
 {
@@ -963,6 +986,7 @@ static void	run(const char *name, t_case f, int i)
 	{
 		close(fds[0]);
 		g_fd = fds[1];
+		quiet_stderr();
 		alarm(2);
 		_exit(check_leaks(f, i) ? 0 : 1);
 	}
@@ -1105,6 +1129,12 @@ static char	*ref_strnstr(const char *big, const char *lit, size_t len)
 	}
 	return (NULL);
 }
+
+/* Definidas mas abajo, junto a la parte 2. */
+static void	*edge(const void *src, size_t n);
+static void	run_fail(const char *call, int (*f)(void), int first, int step,
+				int n);
+static int	null_ok(void *p);
 
 /* ------------------------------ is / to ---------------------------------- */
 
@@ -1365,7 +1395,7 @@ static void	s_strlcat(void)
 static const struct { const char *s; int c; }	g_chr[] = {
 	{"hola mundo", 'o'}, {"hola mundo", 'h'}, {"hola mundo", 'z'},
 	{"hola mundo", '\0'}, {"hola mundo", 'l' + 256}, {"", 'a'}, {"", '\0'},
-	{"aaa", 'a'}, {"12321", '2'}, {"abbbc", 'b'}};
+	{"aaa", 'a'}, {"12321", '2'}, {"abbbc", 'b'}, {"hola", 256}};
 
 static int	c_chr(int i, char *(*ft)(const char *, int),
 	char *(*ref)(const char *, int))
@@ -1427,10 +1457,25 @@ static int	c_strncmp(int i)
 	return (1);
 }
 
+/* "abc" sin '\0' pegado a memoria protegida: con n = 3 no hay que mirar  */
+/* el byte [3].                                                               */
+static int	c_strncmp_edge(int i)
+{
+	int	r;
+
+	(void)i;
+	r = ft_strncmp(edge("abc", 3), edge("abc", 3), 3);
+	if (r != 0)
+		return (ko("esperado 0, obtenido %d", r));
+	return (1);
+}
+
 static void	s_strncmp(void)
 {
 	RUN_TABLE(g_cmp, c_strncmp, "ft_strncmp(%s, %s, %zu)", esc_s(g_cmp[i_].a),
 		esc_s(g_cmp[i_].b), g_cmp[i_].n);
+	run("ft_strncmp(\"abc\", \"abc\", 3) sin '\\0' detras: no lee el byte [3]",
+		c_strncmp_edge, 0);
 }
 
 static const struct { const char *a; const char *b; size_t n; }	g_mcmp[] = {
@@ -1452,11 +1497,28 @@ static int	c_memcmp(int i)
 	return (1);
 }
 
+/* 0: dos buffers de 3 bytes iguales; 1: n = 0 con buffers vacios.        */
+static int	c_memcmp_edge(int i)
+{
+	size_t	n;
+	int		r;
+
+	n = i ? 0 : 3;
+	r = ft_memcmp(edge("abc", n), edge("abc", n), n);
+	if (r != 0)
+		return (ko("esperado 0, obtenido %d", r));
+	return (1);
+}
+
 static void	s_memcmp(void)
 {
 	RUN_TABLE(g_mcmp, c_memcmp, "ft_memcmp(%s, %s, %zu)",
 		esc(g_mcmp[i_].a, g_mcmp[i_].n ? g_mcmp[i_].n : 1),
 		esc(g_mcmp[i_].b, g_mcmp[i_].n ? g_mcmp[i_].n : 1), g_mcmp[i_].n);
+	run("ft_memcmp de dos buffers de 3 bytes iguales, n = 3: no lee el byte [3]",
+		c_memcmp_edge, 0);
+	run("ft_memcmp(buf, buf, 0) con buffers vacios: no lee nada",
+		c_memcmp_edge, 1);
 }
 
 /* --------------------------------- memchr -------------------------------- */
@@ -1485,10 +1547,31 @@ static int	c_memchr(int i)
 	return (1);
 }
 
+/* 0: 'z' no esta en un buffer de 3; 1: n = 0 con buffer vacio;            */
+/* 2: 'c' es el ultimo byte.                                                 */
+static int	c_memchr_edge(int i)
+{
+	char	*p;
+	void	*r;
+
+	p = edge("abc", i == 1 ? 0 : 3);
+	r = ft_memchr(p, i == 2 ? 'c' : 'z', i == 1 ? 0 : 3);
+	if (i < 2 && r)
+		return (ko("esperado NULL"));
+	if (i == 2 && r != p + 2)
+		return (ko("esperado s + 2"));
+	return (1);
+}
+
 static void	s_memchr(void)
 {
 	RUN_TABLE(g_mchr, c_memchr, "ft_memchr(\"hola\\0mundo\", %d, %zu)",
 		g_mchr[i_].c, g_mchr[i_].n);
+	run("ft_memchr(buf de 3 bytes, 'z', 3): no lee el byte [3]",
+		c_memchr_edge, 0);
+	run("ft_memchr(buf vacio, 'z', 0): no lee nada", c_memchr_edge, 1);
+	run("ft_memchr(buf de 3 bytes, 'c', 3) encuentra el ultimo byte",
+		c_memchr_edge, 2);
 }
 
 /* -------------------------------- strnstr -------------------------------- */
@@ -1500,7 +1583,7 @@ static const struct { const char *b; const char *l; size_t n; }	g_nstr[] = {
 	{"lorem ipsum dolor sit amet", "dolor", 17},
 	{"lorem ipsum dolor sit amet", "dolor", 16},
 	{"aaabcabcd", "abcd", 9}, {"aaabcabcd", "abcd", 8},
-	{"12345", "12345", 4}, {"hello", "he", 1}};
+	{"12345", "12345", 4}, {"hello", "he", 1}, {"", "", 0}, {"", "", 5}};
 
 static int	c_strnstr(int i)
 {
@@ -1595,6 +1678,8 @@ static const char	*sz_name(char *buf, size_t n)
 	return (buf);
 }
 
+static int	f_calloc(void) { return (null_ok(ft_calloc(5, sizeof(int)))); }
+
 static void	s_calloc(void)
 {
 	char	a[24];
@@ -1604,6 +1689,7 @@ static void	s_calloc(void)
 		sz_name(a, g_cal[i_].nm), sz_name(b, g_cal[i_].sz),
 		g_cal[i_].null ? "devuelve NULL (desbordamiento)"
 		: "reserva y pone a 0");
+	run_fail("ft_calloc(5, sizeof(int))", f_calloc, 1, 1, 1);
 }
 
 static int	cmp_new(char *got, const char *exp);
@@ -1623,9 +1709,12 @@ static int	c_strdup(int i)
 	return (cmp_new(r, g_dup[i]));
 }
 
+static int	f_strdup(void) { return (null_ok(ft_strdup("hola"))); }
+
 static void	s_strdup(void)
 {
 	RUN_TABLE(g_dup, c_strdup, "ft_strdup(%s)", esc_s(g_dup[i_]));
+	run_fail("ft_strdup(\"hola\")", f_strdup, 1, 1, 1);
 }
 
 /* ------------------------- parte 2: cadenas nuevas ----------------------- */
@@ -1650,6 +1739,65 @@ static int	cmp_new(char *got, const char *exp)
 	return (1);
 }
 
+/* ------------------- malloc que falla / memoria protegida --------------- */
+
+static int	(*g_fcall)(void);
+
+static int	c_fail(int k)
+{
+	int	r;
+
+	g_nmalloc = 0;
+	g_fail_at = k;
+	r = g_fcall();
+	g_fail_at = 0;
+	return (r);
+}
+
+/* Repite la llamada haciendo fallar el malloc numero first, first + step... */
+/* (n veces). Tiene que devolver NULL sin reventar; los leaks los mira       */
+/* check_leaks como en cualquier caso.                                       */
+static void	run_fail(const char *call, int (*f)(void), int first, int step,
+	int n)
+{
+	char	nm[256];
+
+	g_fcall = f;
+	for (int k = 0; k < n; k++)
+	{
+		snprintf(nm, sizeof(nm), "%s con el malloc n\xc2\xba %d fallando:"
+			" NULL y sin leaks", call, first + k * step);
+		run(nm, c_fail, first + k * step);
+	}
+}
+
+/* Si p no es NULL lo libera y da KO: se esperaba NULL por el malloc fallido. */
+static int	null_ok(void *p)
+{
+	if (!p)
+		return (1);
+	free(p);
+	return (ko("devuelve algo aunque un malloc ha fallado; deberia devolver"
+			" NULL"));
+}
+
+/* Copia n bytes justo antes de una pagina sin permisos: leer un solo byte   */
+/* de mas revienta (sin esto, leer pasado el final casi nunca se nota).      */
+static void	*edge(const void *src, size_t n)
+{
+	long	pg;
+	char	*m;
+
+	pg = sysconf(_SC_PAGESIZE);
+	m = mmap(NULL, (size_t)pg * 2, PROT_READ | PROT_WRITE,
+			MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if (m == MAP_FAILED)
+		return (NULL);
+	mprotect(m + pg, (size_t)pg, PROT_NONE);
+	memcpy(m + pg - n, src, n);
+	return (m + pg - n);
+}
+
 static const struct { const char *s; unsigned int st; size_t n; const char *e; }
 	g_sub[] = {
 	{"hola mundo", 5, 5, "mundo"}, {"hola", 0, 10, "hola"},
@@ -1665,10 +1813,22 @@ static int	c_substr(int i)
 			g_sub[i].e));
 }
 
+/* "hola" pegado a memoria protegida: con start fuera no se lee s[start].   */
+static int	c_substr_edge(int i)
+{
+	return (cmp_new(ft_substr(edge("hola", 5), i ? 4 : 10, i ? 5 : 2), ""));
+}
+
+static int	f_substr(void) { return (null_ok(ft_substr("hola mundo", 5, 5))); }
+
 static void	s_substr(void)
 {
 	RUN_TABLE(g_sub, c_substr, "ft_substr(%s, %u, %zu)", esc_s(g_sub[i_].s),
 		g_sub[i_].st, g_sub[i_].n);
+	run("ft_substr(\"hola\", 10, 2): no lee s[10], fuera de la cadena",
+		c_substr_edge, 0);
+	run("ft_substr(\"hola\", 4, 5): no lee pasado el '\\0'", c_substr_edge, 1);
+	run_fail("ft_substr(\"hola mundo\", 5, 5)", f_substr, 1, 1, 1);
 }
 
 static const struct { const char *a; const char *b; const char *e; }
@@ -1680,10 +1840,13 @@ static int	c_strjoin(int i)
 	return (cmp_new(ft_strjoin(g_join[i].a, g_join[i].b), g_join[i].e));
 }
 
+static int	f_strjoin(void) { return (null_ok(ft_strjoin("hola ", "mundo"))); }
+
 static void	s_strjoin(void)
 {
 	RUN_TABLE(g_join, c_strjoin, "ft_strjoin(%s, %s)", esc_s(g_join[i_].a),
 		esc_s(g_join[i_].b));
+	run_fail("ft_strjoin(\"hola \", \"mundo\")", f_strjoin, 1, 1, 1);
 }
 
 static const struct { const char *s; const char *set; const char *e; }
@@ -1699,10 +1862,13 @@ static int	c_strtrim(int i)
 	return (cmp_new(ft_strtrim(g_trim[i].s, g_trim[i].set), g_trim[i].e));
 }
 
+static int	f_strtrim(void) { return (null_ok(ft_strtrim("  hola  ", " "))); }
+
 static void	s_strtrim(void)
 {
 	RUN_TABLE(g_trim, c_strtrim, "ft_strtrim(%s, %s)", esc_s(g_trim[i_].s),
 		esc_s(g_trim[i_].set));
+	run_fail("ft_strtrim(\"  hola  \", \" \")", f_strtrim, 1, 1, 1);
 }
 
 static const struct { const char *s; char c; const char *e[6]; }	g_split[] = {
@@ -1746,10 +1912,25 @@ static int	c_split(int i)
 	return (1);
 }
 
+static int	f_split(void)
+{
+	char	**r;
+
+	r = ft_split("aa bb cc", ' ');
+	if (!r)
+		return (1);
+	for (int k = 0; r[k]; k++)
+		free(r[k]);
+	free(r);
+	return (ko("devuelve el array aunque un malloc ha fallado; deberia"
+			" liberar lo reservado y devolver NULL"));
+}
+
 static void	s_split(void)
 {
 	RUN_TABLE(g_split, c_split, "ft_split(%s, '%s')", esc_s(g_split[i_].s),
 		g_split[i_].c ? (char [2]){g_split[i_].c, 0} : "\\0");
+	run_fail("ft_split(\"aa bb cc\", ' ')", f_split, 1, 1, 4);
 }
 
 static const int	g_itoa[] = {0, 42, -42, 7, INT_MAX, INT_MIN, -1, 10, -10,
@@ -1763,9 +1944,12 @@ static int	c_itoa(int i)
 	return (cmp_new(ft_itoa(g_itoa[i]), e));
 }
 
+static int	f_itoa(void) { return (null_ok(ft_itoa(-42))); }
+
 static void	s_itoa(void)
 {
 	RUN_TABLE(g_itoa, c_itoa, "ft_itoa(%d)", g_itoa[i_]);
+	run_fail("ft_itoa(-42)", f_itoa, 1, 1, 1);
 }
 
 /* Mayuscula en los indices pares: asi se nota si el indice va mal.         */
@@ -1865,10 +2049,13 @@ static int	c_strmapi(int i)
 	return (cmp_new(ft_strmapi(g_mapi[i].s, g_mapi[i].f), g_mapi[i].e));
 }
 
+static int	f_strmapi(void) { return (null_ok(ft_strmapi("abc", map_inc))); }
+
 static void	s_strmapi(void)
 {
 	RUN_TABLE(g_mapi, c_strmapi, "ft_strmapi(%s, f) con f = %s",
 		g_mapi[i_].s ? esc_s(g_mapi[i_].s) : "\"xxx...\"", g_mapi[i_].fn);
+	run_fail("ft_strmapi(\"abc\", f)", f_strmapi, 1, 1, 1);
 }
 
 /* Filas de g_mapi y despues dos con NULL: no debe reventar.              */
@@ -2264,10 +2451,13 @@ static int	c_lstmap(int i)
 	return (1);
 }
 
+static int	f_lstnew(void) { return (null_ok(ft_lstnew("x"))); }
+
 static void	s_lstnew(void)
 {
 	run("ft_lstnew(content)", c_lstnew, 0);
 	run("ft_lstnew(NULL)", c_lstnew, 1);
+	run_fail("ft_lstnew(\"x\")", f_lstnew, 1, 1, 1);
 }
 static void	s_lstadd_front(void)
 {
@@ -2315,12 +2505,32 @@ static void	s_lstiter(void)
 	run("ft_lstiter(NULL, f) no revienta", c_lstiter, 1);
 	run("ft_lstiter(lista, NULL) no revienta", c_lstiter, 2);
 }
+/* Por nodo hay dos malloc: el strdup de f y el de ft_lstnew. Solo se hace  */
+/* fallar el de ft_lstnew (2, 4, 6): ahi hay que borrar con del lo que      */
+/* devolvio f, limpiar la lista nueva y no tocar la original.               */
+static int	f_lstmap(void)
+{
+	char	a[] = "a";
+	char	b[] = "b";
+	char	c[] = "c";
+	t_list	*r;
+
+	r = ft_lstmap(mk3(a, b, c), dup_upper, free);
+	if (r)
+		return (free_list(r, 1), ko("devuelve una lista aunque un malloc ha"
+				" fallado; deberia limpiar y devolver NULL"));
+	if (strcmp(a, "a") || strcmp(b, "b") || strcmp(c, "c"))
+		return (ko("ha tocado la lista original"));
+	return (1);
+}
+
 static void	s_lstmap(void)
 {
 	run("ft_lstmap(a->b->c, copia en mayusculas, free)", c_lstmap, 0);
 	run("ft_lstmap(NULL, f, free) devuelve NULL", c_lstmap, 1);
 	run("ft_lstmap(lista, NULL, free) devuelve NULL", c_lstmap, 2);
 	run("ft_lstmap(lista, f, NULL) crea la lista igual", c_lstmap, 3);
+	run_fail("ft_lstmap(a->b->c, copia en mayusculas, free)", f_lstmap, 2, 2, 3);
 }
 
 /* --------------------------------- tabla --------------------------------- */

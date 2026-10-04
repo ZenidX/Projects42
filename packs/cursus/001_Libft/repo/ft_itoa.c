@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/02 03:48:45 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/04 02:24:45 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 15:29:48 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,8 @@ static char	*ft_itoa_real(int n, int d)
 	else
 	{
 		r = (char *)malloc(sizeof(char) * (d + 2 + neg));
+		if (!r)
+			return (NULL);
 		r = ft_char_init(r, d + 1 + neg);
 	}
 	if (!r)

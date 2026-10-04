@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/02 02:04:02 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/04 04:12:19 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/04 17:15:33 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,8 +22,10 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	if (len > ft_strlen(s))
 		len = ft_strlen(s) - (size_t) start;
 	p = (char *)malloc(sizeof(char) * (len + 1));
+	if (!p)
+		return (NULL);
 	i = 0;
-	while (s[start + i] && i < len)
+	while (i < len && s[start + i])
 	{
 		p[i] = s[start + i];
 		i++;
