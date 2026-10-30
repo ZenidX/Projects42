@@ -20,10 +20,10 @@
 # numero, de 000 a 999, es el orden en que se hacen los proyectos, que no es el
 # alfabetico.
 #
-# Una etapa con muchos proyectos por delante se parte en milestones: la centena
-# del numero dice en cual cae cada pack (100_ft_printf -> milestone 1) y los
-# titulos salen de ETAPA/.milestones. El menu pregunta primero por ahi en vez de
-# soltar la lista entera.
+# Una etapa con muchos proyectos por delante se parte en milestones, cada uno en
+# su directorio: ETAPA/MN/NNN_nombre (cursus/M1/100_ft_printf). Los titulos salen
+# de ETAPA/.milestones y el menu pregunta primero por ahi en vez de soltar la
+# lista entera.
 set -euo pipefail
 
 ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
@@ -47,21 +47,46 @@ num_of()    { case $1 in [0-9][0-9][0-9]_*) printf '%s' "${1%%_*}" ;; esac; }
 strip_num() { printf '%s' "${1#[0-9][0-9][0-9]_}"; }
 
 # --- milestones ------------------------------------------------------------
-# Una etapa larga se parte en milestones, y la centena del numero dice en cual
-# cae cada pack: 000-099 es el milestone 0, 100-199 el 1, y asi hasta el 9. Los
-# titulos salen de ETAPA/.milestones, una linea "N = titulo" por milestone.
+# Una etapa larga se parte en milestones, uno por directorio: ETAPA/M0, M1...
+# hasta M9, con sus packs dentro. Los titulos salen de ETAPA/.milestones, una
+# linea "N = titulo" por milestone, y la numeracion sigue la centena del
+# milestone (M1 -> 100, 101...) para que el numero no se repita en la etapa y
+# `zenpack 100` siga siendo un nombre unico.
 #
-# Sin ese fichero la etapa no se parte y se lista entera, que es lo que le va a
-# piscine (20 packs de tiron). El cursus si lo usa: con el common core completo
+# Sin milestones la etapa no se parte y se lista entera, que es lo que le va a
+# piscine (20 packs de tiron). El cursus si los usa: con el common core completo
 # la lista plana pasa de 50 packs y elegir se vuelve buscar con la vista.
 
-has_milestones() { [ -r "$ROOT/$1/.milestones" ]; }
+is_mdir()        { case $1 in M[0-9]) return 0 ;; *) return 1 ;; esac; }
+
+has_milestones() {
+    local d
+    [ -r "$ROOT/$1/.milestones" ] && return 0
+    for d in "$ROOT/$1"/M[0-9]/; do [ -d "$d" ] && return 0; done
+    return 1
+}
 
 band_of() {
     local n
     n=$(num_of "$1")
     [ -n "$n" ] || return 1
     printf '%d' "$((10#$n / 100))"
+}
+
+# La etapa es siempre el primer tramo bajo ROOT, este el pack un nivel o dos
+# por debajo.
+etapa_of() { local r=${1#"$ROOT"/}; printf '%s' "${r%%/*}"; }
+
+# El milestone de un pack es el directorio MN que lo contiene. Un pack suelto
+# en una etapa con milestones (de antes de partirla) cae por su centena.
+milestone_of() {
+    local parent
+    parent=$(basename "$(dirname "$1")")
+    if is_mdir "$parent"; then
+        printf '%s' "${parent#M}"
+    else
+        band_of "$(basename "$1")"
+    fi
 }
 
 milestone_title() {
@@ -96,8 +121,8 @@ list_milestones() {
 # La clave de grupo de un pack: su etapa, o etapa:N si la etapa usa milestones.
 group_of() {
     local cat b
-    cat=$(basename "$(dirname "$1")")
-    if has_milestones "$cat" && b=$(band_of "$(basename "$1")"); then
+    cat=$(etapa_of "$1")
+    if has_milestones "$cat" && b=$(milestone_of "$1"); then
         printf '%s:%s' "$cat" "$b"
     else
         printf '%s' "$cat"
@@ -153,11 +178,20 @@ set_pack() {
 
 # --- inventario ------------------------------------------------------------
 
+# Un nivel por debajo de la etapa estan los packs, salvo los directorios MN,
+# que son milestones y tienen los packs un nivel mas abajo.
 list_packs() {
-    local cat pack
+    local cat pack sub
     for cat in "$ROOT"/*/; do
         for pack in "$cat"*/; do
-            [ -d "$pack" ] && printf '%s\n' "${pack%/}"
+            [ -d "$pack" ] || continue
+            if is_mdir "$(basename "$pack")"; then
+                for sub in "$pack"*/; do
+                    [ -d "$sub" ] && printf '%s\n' "${sub%/}"
+                done
+            else
+                printf '%s\n' "${pack%/}"
+            fi
         done
     done
 }
@@ -196,9 +230,13 @@ valid_name() {
 # hecha todavia no hay ninguno, y entonces se usa la plantilla que deja
 # install.sh en ~/.local/share/zenidx.
 seed_test_dir() {
-    local dest=$1 src tpl
-    src=$(find "$ROOT" -mindepth 4 -maxdepth 4 -path '*/test/Makefile' \
-          -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+    local dest=$1 src tpl p
+    # Se miran solo los test/ de los packs: un find a ciegas por profundidad
+    # se colaria en subdirectorios de un pack (001_Libft/albektur/test).
+    src=$(list_packs | while IFS= read -r p; do
+              [ "$p" = "$dest" ] && continue
+              if [ -f "$p/test/Makefile" ]; then stat -c '%Y %n' "$p/test/Makefile"; fi
+          done | sort -rn | head -1 | cut -d' ' -f2-)
     if [ -n "$src" ]; then
         cp "$src" "$dest/test/Makefile"
         printf '  %sMakefile de test copiado de %s%s\n' "$D" "${src#$ROOT/}" "$R"
@@ -218,16 +256,16 @@ seed_test_dir() {
 next_prefix() {
     local cat=$1 band=${2-} p b n max=-1 any=0 lo=0 hi=999
     if [ -n "$band" ]; then lo=$((band * 100)); hi=$((lo + 99)); fi
-    for p in "$ROOT/$cat"/*/; do
-        [ -d "$p" ] || continue
+    while IFS= read -r p; do
+        [ "$(etapa_of "$p")" = "$cat" ] || continue
         any=1
-        b=$(basename "${p%/}")
+        b=$(basename "$p")
         n=$(num_of "$b")
         [ -n "$n" ] || continue
         n=$((10#$n))
         { [ "$n" -ge "$lo" ] && [ "$n" -le "$hi" ]; } || continue
         [ "$n" -gt "$max" ] && max=$n
-    done
+    done < <(list_packs)
     if [ "$max" -ge 0 ]; then
         [ "$max" -lt "$hi" ] || return 1
         printf '%03d' "$((max + 1))"
@@ -239,7 +277,7 @@ next_prefix() {
 }
 
 create_pack() {
-    local cats cat name pack i prefix band
+    local cats cat name pack rel i prefix band
     mapfile -t cats < <(list_categories)
 
     printf '\n%sCrear un pack nuevo%s\n\n' "$B" "$R"
@@ -289,14 +327,16 @@ create_pack() {
         name="${prefix}_$name"
     fi
 
-    pack="$ROOT/$cat/$name"
-    [ -e "$pack" ] && { printf '  %sya existe %s%s\n' "$Y" "$cat/$name" "$R"; return 1; }
+    rel="$cat/$name"
+    [ -n "$band" ] && rel="$cat/M$band/$name"
+    pack="$ROOT/$rel"
+    [ -e "$pack" ] && { printf '  %sya existe %s%s\n' "$Y" "$rel" "$R"; return 1; }
 
     mkdir -p "$pack"/{repo,test,extra}
-    printf '\n  %screado%s %s%s%s  (repo/ test/ extra/)\n' "$G" "$R" "$B" "$cat/$name" "$R"
+    printf '\n  %screado%s %s%s%s  (repo/ test/ extra/)\n' "$G" "$R" "$B" "$rel" "$R"
     seed_test_dir "$pack"
     printf '  %sfalta clonar el repo en %s/repo y dejar el subject.pdf%s\n\n' \
-           "$D" "$cat/$name" "$R"
+           "$D" "$rel" "$R"
 
     set_pack "$pack"
 }
@@ -421,14 +461,15 @@ resolve() {
     local want=$1 packs match=() p b cat n
     mapfile -t packs < <(list_packs)
     for p in "${packs[@]}"; do
-        if [ "${p#$ROOT/}" = "$want" ] || [ "$(basename "$p")" = "$want" ] || [ "$p" = "$want" ]; then
+        if [ "${p#$ROOT/}" = "$want" ] || [ "$(basename "$p")" = "$want" ] || [ "$p" = "$want" ] \
+           || [ "$(etapa_of "$p")/$(basename "$p")" = "$want" ]; then
             match+=("$p")
         fi
     done
     if [ "${#match[@]}" -eq 0 ]; then
         for p in "${packs[@]}"; do
             b=$(basename "$p")
-            cat=$(basename "$(dirname "$p")")
+            cat=$(etapa_of "$p")
             if [ "$(strip_num "$b")" = "$want" ] \
                || [ "$cat/$(strip_num "$b")" = "$want" ] \
                || { n=$(num_of "$b"); [ -n "$n" ] && { [ "$n" = "$want" ] || [ "$cat/$n" = "$want" ]; }; }; then

@@ -57,6 +57,7 @@ zenpack       elige o crea un pack (y te deja en su repo/)
 zentest       lanza los tests del pack activo
 zennorm       norminette con los flags que pida el pack
 zengit        git para los repos de entrega (vogsphere)
+zenlibft      lleva tu libft maestra (lib/libft) a los proyectos y vuelta
 zcd repo      salta al repo del pack activo
 ```
 
@@ -96,9 +97,21 @@ zenshell   shell interactiva dentro del pack
 zenlayout  abre Terminator con el layout configurado
 zennorm    norminette con los flags que pida el pack (.zennorm)
 zengit     git para los repos de entrega, con el .git fuera del árbol
+zenlibft   copia lib/libft a <pack>/repo/libft y trae lo nuevo de vuelta
 zen        menú de configuración; genera los layouts
 zenhelp    el mapa de todo lo anterior; delega el detalle en cada -h
 ```
+
+`zenlibft` existe porque la libft se reutiliza en casi todo el cursus, pero
+vogsphere necesita los ficheros dentro de cada `repo/`: un enlace simbólico no se
+entrega. La maestra vive en `~/zenidx/lib/libft` (ver su README) y `zenlibft` la
+copia al `repo/libft` del pack activo; `zenlibft -b` hace el camino de vuelta con
+lo que hayas añadido en el proyecto, y antes de tocar la maestra comprueba en un
+temporal que cada `.c` nuevo compila, pasa norminette y está en `SRCS`. Solo pisa
+un fichero si el destino no pierde nada (el Makefile se compara por palabras, así
+que añadir un `.c` a una línea de `SRCS` no es un conflicto); si los dos lados han
+cambiado enseña el diff y no lo toca sin `-f`. `zenlibft -l` dice qué packs van
+al día.
 
 `zengit` resuelve un problema concreto: el `.git` de cada repo de vogsphere no
 vive dentro del pack, sino en `~/.local/share/zenidx-vogsphere/<slug>.git` con
@@ -113,8 +126,8 @@ pack. Registra `repo/` si existe, y el propio pack si no (hay packs de las dos
 formas: `piscine/005_c03/repo`, pero `piscine/016_rush00` a pelo):
 
 ```bash
-mkdir -p ~/zenidx/packs/cursus/000_C-piscine-reloaded/repo
-cd ~/zenidx/packs/cursus/000_C-piscine-reloaded && zengit init
+mkdir -p ~/zenidx/packs/cursus/M1/100_ft_printf/repo
+cd ~/zenidx/packs/cursus/M1/100_ft_printf && zengit init
 zengit remote add origin vogsphere@vogsphere.42<campus>.com:vogsphere/<id>
 ```
 
@@ -122,9 +135,11 @@ El árbol de trabajo es siempre el que quedó registrado en el alta, no el
 directorio desde el que llamas: `zengit add .` desde `piscine/005_c03` añade lo
 que hay bajo `repo/`, nunca el `subject.pdf` ni el `test/` del pack.
 
-El slug sale de la ruta (`piscine/005_c03/repo` → `piscine-005_c03`), así que
-**renombrar o mover un pack deja su git-dir huérfano**. Al moverlo hay que
-renombrar también el `.git` del store y reapuntarlo:
+El slug sale de la ruta sin el directorio del milestone (`piscine/005_c03/repo`
+→ `piscine-005_c03`, `cursus/M0/001_Libft/repo` → `cursus-001_Libft`), así que
+**renombrar un pack deja su git-dir huérfano**: hay que renombrar también el
+`.git` del store. Moverlo de sitio, aunque sea de un milestone a otro, solo
+obliga a reapuntar el `core.worktree`:
 
 ```bash
 cd ~/.local/share/zenidx-vogsphere
@@ -151,7 +166,7 @@ con `zenpack` reapunta los seis sin reiniciar nada.
 ## Estructura de un pack
 
 ```
-~/zenidx/packs/ETAPA/NNN_nombre/
+~/zenidx/packs/ETAPA/NNN_nombre/      (o ETAPA/MN/NNN_nombre)
 ├── repo/          el repo que entregas (ex00, ex01, ...)
 ├── test/          Makefile + test.c -> compila `runner`
 ├── subject.pdf
@@ -164,7 +179,7 @@ el alfabético y es el que quieres ver en el menú:
 
 ```
 packs/piscine/000_shell00 ... 015_c13, 016_rush00 ... 019_bsq
-packs/cursus/000_C-piscine-reloaded
+packs/cursus/M0/000_C-piscine-reloaded, M0/001_Libft, M1/100_ft_printf ...
 ```
 
 El número es solo una convención de nombre: `zenpack` lo entiende, pero un pack
@@ -178,10 +193,12 @@ zenpack 005_c03      zenpack c03      zenpack 005      zenpack cursus/000
 
 ### Milestones
 
-Una etapa con muchos proyectos por delante se parte en **milestones**, y la
-centena del número dice en cuál cae cada pack: `000`–`099` es el milestone 0,
-`100`–`199` el 1, hasta el 9. Los títulos viven en `ETAPA/.milestones`, una
-línea `N = título` por milestone:
+Una etapa con muchos proyectos por delante se parte en **milestones**, uno por
+directorio: `ETAPA/M0/`, `ETAPA/M1/`, … hasta `M9/`, con sus packs dentro. La
+numeración sigue la centena del milestone (`M1/100_ft_printf`,
+`M1/101_get_next_line`), así que el número sigue siendo único en la etapa y
+`zenpack 101` lleva al mismo sitio que antes. Los títulos viven en
+`ETAPA/.milestones`, una línea `N = título` por milestone:
 
 ```
 # packs/cursus/.milestones
@@ -198,12 +215,12 @@ en vez de soltar una lista de cincuenta proyectos numerados:
    3) piscine                     20 packs
 ```
 
-Una etapa sin `.milestones` no se parte y se lista entera — que es lo que le va
+Una etapa sin directorios `MN/` ni `.milestones` no se parte y se lista entera — que es lo que le va
 a `piscine`. Y cuando solo hay un grupo, el primer paso se salta.
 
-`zenpack -n` pregunta la etapa, el milestone si la etapa los usa, y propone el
-siguiente número libre de esa centena (`100`, `101`, …); si escribes tú un
-`NNN_`, manda el tuyo.
+`zenpack -n` pregunta la etapa, el milestone si la etapa los usa, crea el pack
+dentro de su `MN/` (y el `MN/` si aún no existe) y propone el siguiente número
+libre de esa centena (`100`, `101`, …); si escribes tú un `NNN_`, manda el tuyo.
 
 `zentest` equivale a `cd <pack>/test && make && ./runner ../repo`. El `test.c`
 es **propio de cada pack** (sus casos prueban esos ejercicios); el instalador

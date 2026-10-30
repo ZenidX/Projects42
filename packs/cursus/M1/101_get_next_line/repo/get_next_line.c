@@ -6,66 +6,107 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/06 12:24:17 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/10 17:33:28 by xalara           ###   ########.fr       */
+/*   Updated: 2026/10/17 03:37:57 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-
-
-char	*gnl_split(char *buf, char *p, int fd)
+char	*gnl_split(char *buf, char *p, char *r)
 {
-	char	*r;
 	char	*q;
-	
-	buf 
 
+	if (!r)
+	{
+		r = gnl_strdup("", 0);
+		if (!r)
+			return (NULL);
+	}
+	q = gnl_strdup(p + 1, gnl_strlen(p));
+	if (!q)
+	{
+		free(r);
+		return (NULL);
+	}
+	r = gnl_strncat(r, buf, gnl_strlen(r) + (p - buf + 1));
+	gnl_strncpy(buf, q, BUFFER_SIZE + 1);
+	free(q);
 	return (r);
 }
 
-char	*gnl_read(char *buf, char *p, char *r, int fd)
+char	*gnl_read_loop(char *buf, int fd, char *r, ssize_t bytes_read)
 {
-	ssize_t bytes_read;
+	char	*p;
 
-	r = gnl_strcat(r, buf);
-	bytes_read = 1;
-	while (!gnl_strchr(buf, '\n') && bytes_read > 0)
+	while (r && bytes_read > 0)
 	{
-		bytes_read = read(fd, buf, BUFFER_SIZE);
-		if (bytes_read < 0)
-		else (bytes_read)
+		buf[bytes_read] = '\0';
+		p = gnl_strchr(buf, CHAR_SEP);
+		if (p)
 		{
-			buf[bytes_read] = '\0';
-			r = gnl_strcat(r, buf);
+			r = gnl_split(buf, p, r);
+			break ;
 		}
 		else
-			
-		i++;
+		{
+			r = gnl_strncat(r, buf, gnl_strlen(r) + bytes_read);
+			buf[0] = '\0';
+			bytes_read = read(fd, buf, BUFFER_SIZE);
+		}
 	}
-	write(1, r, gnl_strlen(r));
+	if (bytes_read < 0)
+	{
+		free(r);
+		return (NULL);
+	}
 	return (r);
+}
+
+char	*gnl_read(char *buf, int fd)
+{
+	char	*r;
+
+	r = gnl_strdup(buf, BUFFER_SIZE + 1);
+	if (!r)
+		return (NULL);
+	buf[0] = '\0';
+	r = gnl_read_loop(buf, fd, r, read(fd, buf, BUFFER_SIZE));
+	return (r);
+}
+
+void	*gnl_set_buffer(char **buf, int fd)
+{
+	if (!buf[fd])
+	{
+		buf[fd] = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
+		if (!buf[fd])
+			return (NULL);
+		buf[fd][0] = '\0';
+		buf[fd][BUFFER_SIZE] = '\0';
+	}
+	return (buf[fd]);
 }
 
 char	*get_next_line(int fd)
 {
-	static char	*buf = NULL;
+	static char	*buf[MAX_FD];
+	char		*p;
 	char		*r;
 
-	if (fd < 0 || BUFFER_SIZE <= 0)
+	if (fd < 0 || fd >= MAX_FD || BUFFER_SIZE <= 0 || !gnl_set_buffer(buf, fd))
 		return (NULL);
-	if (!buf)
-	{
-		buf = malloc(sizeof(char) * (BUFFER_SIZE + 1));
-		buf[0] = '\0';
-		buf[BUFFER_SIZE] = '\0';
-		p = NULL;
-	}
-	else
-		p = gnl_strchr(buf, '\n');
+	r = NULL;
+	p = gnl_strchr(buf[fd], CHAR_SEP);
 	if (!p)
-		r = gnl_read(buf, fd);
+		r = gnl_read(buf[fd], fd);
 	else
-		r = gnl_split(buf, fd);
+		r = gnl_split(buf[fd], p, r);
+	if (!r || r[0] == '\0')
+	{
+		free(r);
+		free(buf[fd]);
+		buf[fd] = NULL;
+		return (NULL);
+	}
 	return (r);
 }

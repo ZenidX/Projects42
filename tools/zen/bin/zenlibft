@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+# zenlibft - lleva tu libft maestra (~/zenidx/lib/libft) a los proyectos y vuelta.
+#
+#   zenlibft             maestra -> <pack>/repo/libft: ensena que cambia y pregunta
+#   zenlibft -b          <pack>/repo/libft -> maestra: lo nuevo que hayas hecho alli
+#   zenlibft -l          que packs llevan libft y si van al dia con la maestra
+#   zenlibft -n          como sin -n (o con -b), pero solo ensena: no copia nada
+#   zenlibft -y          copia sin preguntar
+#   zenlibft -f          copia tambien los ficheros en conflicto (ver abajo)
+#   zenlibft --pack DIR  sobre ese pack en vez del activo
+#   zenlibft -h          esta ayuda
+#
+# Se copian los *.c, *.h y el Makefile del primer nivel; nada de .o, .a ni README.
+# Un fichero solo se pisa si en el destino no se pierde ninguna linea (sin contar
+# las lineas Created/Updated/By de la cabecera de 42):
+#   +  nuevo: solo esta en el origen, se copia
+#   ~  el origen solo anade cosas al destino, se copia
+#   <  el destino va por delante (tiene lo del origen y mas): no se toca, toca
+#      copiar en el otro sentido
+#   !  los dos lados tienen cambios: se ensena el diff y NO se toca sin -f
+#   ?  solo esta en el destino: no se borra nunca
+# Con -b, despues de copiar se compila la maestra (en un temporal) para que no
+# quede nada roto en ella.
+set -euo pipefail
+
+ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
+LIB="${ZENIDX_LIBFT:-$HOME/zenidx/lib/libft}"
+
+if [ -t 1 ]; then
+    B=$'\033[1m'; D=$'\033[2m'; G=$'\033[32m'; Y=$'\033[33m'; C=$'\033[36m'; RED=$'\033[31m'; R=$'\033[0m'
+else
+    B=''; D=''; G=''; Y=''; C=''; RED=''; R=''
+fi
+
+usage() { sed -n '2,22p' "$0" | cut -c3- ; }
+die()   { printf 'zenlibft: %s\n' "$*" >&2; exit 1; }
+short() { printf '%s' "${1/#$HOME/\~}"; }
+
+# Las lineas de la cabecera de 42 que vim reescribe al guardar no cuentan.
+HDR=(-I '^/\*   Updated: ' -I '^/\*   Created: ' -I '^/\*   By: ')
+
+files_in() {
+    [ -d "$1" ] || return 0
+    (cd "$1" && find . -maxdepth 1 -type f \( -name '*.c' -o -name '*.h' -o -name Makefile \) \
+        -printf '%f\n' | sort)
+}
+
+# Clasifica un fichero para copiar de $1 a $2: imprime + ~ < ! ? o nada si ya son
+# iguales. El diff va a una variable y no a un pipe: diff sale con 1 cuando hay
+# diferencias y, con pipefail, eso taparia lo que diga el grep.
+# Del Makefile cuentan las palabras y no las lineas: anadir un .c a una linea de
+# SRCS que ya existia es solo ganar algo, no un conflicto.
+mk_words() { grep -v '^#' "$1" | tr -s '[:space:]\\' '\n' | sort; }
+
+classify() {
+    local src=$1 dst=$2 out loss=0 gain=0
+    if [ ! -f "$dst" ]; then echo '+'; return; fi
+    if [ ! -f "$src" ]; then echo '?'; return; fi
+    if [ "$(basename "$src")" = Makefile ]; then
+        out=$(diff <(mk_words "$dst") <(mk_words "$src")) && return 0
+    else
+        out=$(diff "${HDR[@]}" "$dst" "$src") && return 0
+    fi
+    # '<' = lineas del destino que el origen no tiene: se perderian al copiar.
+    grep -q '^<' <<< "$out" && loss=1
+    grep -q '^>' <<< "$out" && gain=1
+    if [ "$loss" -eq 1 ] && [ "$gain" -eq 1 ]; then echo '!'
+    elif [ "$loss" -eq 1 ]; then echo '<'
+    else echo '~'; fi
+}
+
+# plan SRC DST: rellena PLAN con "marca fichero", solo lo que no esta al dia.
+plan() {
+    local src=$1 dst=$2 f m
+    PLAN=()
+    while read -r f; do
+        [ -n "$f" ] || continue
+        m=$(classify "$src/$f" "$dst/$f")
+        [ -n "$m" ] && PLAN+=("$m $f")
+    done < <({ files_in "$src"; files_in "$dst"; } | sort -u)
+    return 0
+}
+
+count() { local m=$1 n=0 p; for p in "${PLAN[@]}"; do [ "${p%% *}" = "$m" ] && n=$((n + 1)); done; echo "$n"; }
+
+list_packs() {
+    local d pack n down up
+    printf '\n%smaestra%s %s%s%s (%s ficheros)\n\n' "$B" "$R" "$D" "$(short "$LIB")" "$R" \
+        "$(files_in "$LIB" | wc -l)"
+    n=0
+    while read -r d; do
+        [ -n "$d" ] || continue
+        n=$((n + 1))
+        pack=${d%/repo/libft}
+        plan "$LIB" "$d"
+        if [ ${#PLAN[@]} -eq 0 ]; then
+            printf '  %s%-34s%s %sal dia%s\n' "$B" "${pack#"$ROOT"/}" "$R" "$G" "$R"
+        else
+            printf '  %s%-34s%s' "$B" "${pack#"$ROOT"/}" "$R"
+            down=$(( $(count +) + $(count '~') ))
+            up=$(( $(count '<') + $(count '?') ))
+            [ "$down" -gt 0 ] && printf ' %s%d por bajar%s' "$Y" "$down" "$R"
+            [ "$up" -gt 0 ] && printf ' %s%d por subir%s' "$C" "$up" "$R"
+            [ "$(count '!')" -gt 0 ] && printf ' %s%d en conflicto%s' "$RED" "$(count '!')" "$R"
+            printf '\n'
+        fi
+    done < <(find "$ROOT" -type d -path '*/repo/libft' ! -path '*/.libft_tester/*' 2>/dev/null | sort)
+    [ "$n" -eq 0 ] && printf '  %sningun pack lleva repo/libft todavia%s\n' "$D" "$R"
+    printf '\n  %spor bajar = la maestra tiene cosas que el pack no: zenlibft\n' "$D"
+    printf '  por subir = el pack tiene cosas que la maestra no: zenlibft -b\n'
+    printf '  en conflicto = cambios en los dos lados: zenlibft -n ensena el diff%s\n\n' "$R"
+}
+
+# Antes de tocar la maestra: en un temporal, la maestra con los ficheros de $@
+# encima. Cada .c que llega compila suelto y pasa norminette, todos los ft_*.c
+# estan en el Makefile y make saca libft.a. 0 si todo va bien.
+check_master() {
+    local tmp log st f
+    tmp=$(mktemp -d)
+    cp "$LIB"/*.c "$LIB"/*.h "$LIB"/Makefile "$tmp"/
+    for f in "$@"; do cp "$src/$f" "$tmp/$f"; done
+    st=0
+    for f in "$@"; do
+        case "$f" in *.c) ;; *) continue ;; esac
+        if ! log=$(cd "$tmp" && cc -Wall -Wextra -Werror -c "$f" -o /dev/null 2>&1); then
+            printf '  %s-%s %s no compila con -Wall -Wextra -Werror:\n' "$RED" "$R" "$f"
+            printf '%s\n' "$log" | grep 'error' | head -5 | sed 's/^/      /'
+            st=1
+        fi
+    done
+    if command -v norminette > /dev/null 2>&1; then
+        for f in "$@"; do
+            case "$f" in *.c|*.h) ;; *) continue ;; esac
+            if ! log=$(cd "$tmp" && norminette "$f" 2>&1); then
+                printf '  %s-%s %s no pasa norminette:\n' "$RED" "$R" "$f"
+                printf '%s\n' "$log" | grep 'Error:' | head -5 | sed 's/\x1b\[[0-9;]*m//g; s/^/      /'
+                st=1
+            fi
+        done
+    fi
+    for f in "$tmp"/ft_*.c; do
+        f=$(basename "$f")
+        if ! mk_words "$tmp/Makefile" | grep -qxF "$f"; then
+            printf '  %s-%s %s no esta en SRCS del Makefile\n' "$RED" "$R" "$f"
+            st=1
+        fi
+    done
+    if [ "$st" -eq 0 ]; then
+        if log=$(make -C "$tmp" 2>&1) && [ -f "$tmp/libft.a" ]; then
+            printf '  %s+%s la maestra seguira compilando (libft.a)\n' "$G" "$R"
+        else
+            printf '  %s-%s con estos cambios la maestra NO compila:\n' "$RED" "$R"
+            printf '%s\n' "$log" | grep -E 'error|Error' | head -10 | sed 's/^/      /'
+            st=1
+        fi
+    fi
+    rm -rf "$tmp"
+    return "$st"
+}
+
+back=0; dry=0; yes=0; force=0; pack=''
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help) usage; exit 0 ;;
+        -l|--list) [ -d "$LIB" ] || die "no existe la maestra $(short "$LIB")"
+                   list_packs; exit 0 ;;
+        -b|--back) back=1 ;;
+        -n|--dry-run) dry=1 ;;
+        -y|--yes)  yes=1 ;;
+        -f|--force) force=1 ;;
+        --pack)    [ $# -ge 2 ] || die '--pack necesita un directorio'
+                   pack=$2; shift ;;
+        *)         usage >&2; exit 2 ;;
+    esac
+    shift
+done
+
+[ -d "$LIB" ] || die "no existe la maestra $(short "$LIB")"
+if [ -z "$pack" ]; then
+    pack=$(zenpack --print 2>/dev/null) || die 'sin pack activo: elige uno con zenpack (o usa --pack DIR)'
+fi
+pack=$(cd "$pack" 2>/dev/null && pwd -P) || die "no existe el pack $pack"
+[ -d "$pack/repo" ] || die "$(short "$pack") no tiene repo/"
+dest="$pack/repo/libft"
+
+if [ "$back" -eq 1 ]; then
+    [ -d "$dest" ] || die "$(short "$pack") no tiene repo/libft que traer"
+    src=$dest; dst=$LIB
+    printf '\n%s%s%s -> %smaestra%s\n\n' "$B" "${pack#"$ROOT"/}/repo/libft" "$R" "$B" "$R"
+else
+    src=$LIB; dst=$dest
+    printf '\n%smaestra%s -> %s%s%s\n' "$B" "$R" "$B" "${pack#"$ROOT"/}/repo/libft" "$R"
+    [ -d "$dest" ] || printf '%s(el pack no tiene repo/libft: se crea)%s\n' "$Y" "$R"
+    printf '\n'
+fi
+
+plan "$src" "$dst"
+if [ ${#PLAN[@]} -eq 0 ]; then
+    printf '  %sal dia%s: no hay nada que copiar\n\n' "$G" "$R"
+    exit 0
+fi
+
+if [ "$(count +)" -eq ${#PLAN[@]} ] && [ ! -d "$dst" ]; then
+    todo=()
+    for p in "${PLAN[@]}"; do todo+=("${p#* }"); done
+    printf '  %s+%s los %d ficheros de la maestra\n' "$G" "$R" "${#todo[@]}"
+    PLAN=()
+fi
+
+[ -n "${todo+x}" ] || todo=()
+for p in "${PLAN[@]}"; do
+    m=${p%% *}; f=${p#* }
+    case "$m" in
+        '<') if [ "$back" -eq 1 ]; then
+                printf '  %s<%s %s %s(la maestra va por delante: zenlibft)%s\n' "$C" "$R" "$f" "$D" "$R"
+             else
+                printf '  %s<%s %s %s(el pack va por delante: zenlibft -b)%s\n' "$C" "$R" "$f" "$D" "$R"
+             fi ;;
+        +)  printf '  %s+%s %s\n' "$G" "$R" "$f"; todo+=("$f") ;;
+        '~') printf '  %s~%s %s\n' "$Y" "$R" "$f"; todo+=("$f") ;;
+        !)  printf '  %s!%s %s %s(cambios en los dos lados)%s\n' "$RED" "$R" "$f" "$RED" "$R"
+            diff -u "${HDR[@]}" --label "$f (ahora)" --label "$f (tras copiar)" \
+                "$dst/$f" "$src/$f" | sed -n '3,40p' | sed 's/^/      /' || true
+            [ "$force" -eq 1 ] && todo+=("$f") ;;
+        '?') if [ "$back" -eq 1 ]; then
+                printf '  %s? %s solo en la maestra (no se toca)%s\n' "$D" "$f" "$R"
+             else
+                printf '  %s? %s solo en el pack: traelo con zenlibft -b%s\n' "$D" "$f" "$R"
+             fi ;;
+    esac
+done
+printf '\n'
+
+if [ "$(count '!')" -gt 0 ] && [ "$force" -eq 0 ]; then
+    printf '  %slos ! no se copian: arreglalos a mano, o fuerza con -f (el destino pierde\n' "$D"
+    printf '  las lineas que salen con -)%s\n\n' "$R"
+fi
+if [ ${#todo[@]} -eq 0 ]; then
+    exit "$([ "$(count '!')" -gt 0 ] && echo 1 || echo 0)"
+fi
+if [ "$back" -eq 1 ]; then
+    if ! check_master "${todo[@]}"; then
+        printf '\n  %sla maestra no se toca: arreglalo en el pack y repite%s\n\n' "$D" "$R"
+        exit 1
+    fi
+    printf '\n'
+fi
+if [ "$dry" -eq 1 ]; then
+    printf '  %s(-n: no se ha copiado nada)%s\n\n' "$D" "$R"
+    exit 0
+fi
+if [ "$yes" -eq 0 ]; then
+    if [ ! -t 0 ]; then
+        die 'sin terminal para preguntar: repite con -y para copiar'
+    fi
+    printf '  copiar %d fichero(s)? [s/N] ' "${#todo[@]}"
+    read -r ans
+    case "$ans" in s|S|si|SI|y|Y) ;; *) printf '  no se ha copiado nada\n\n'; exit 0 ;; esac
+fi
+
+mkdir -p "$dst"
+for f in "${todo[@]}"; do
+    cp "$src/$f" "$dst/$f"
+done
+printf '  %s+%s copiados %d fichero(s) a %s\n' "$G" "$R" "${#todo[@]}" "$(short "$dst")"
+if [ "$back" -eq 1 ]; then
+    printf '  %sapunta la funcion nueva en la tabla de %s/README.md%s\n' "$D" "$(short "$LIB")" "$R"
+fi
+printf '\n'

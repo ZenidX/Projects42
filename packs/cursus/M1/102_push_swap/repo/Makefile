@@ -18,9 +18,9 @@ CFLAGS	= -Wall -Wextra -Werror
 LIBFT_DIR	= libft
 LIBFT	= $(LIBFT_DIR)/libft.a
 
-SRCS	= push_swap.c parse.c stack.c \
-		  ops_swap.c ops_push.c ops_rotate.c ops_rrotate.c \
-		  sort_small.c sort.c
+SRCS	= push_swap.c parse.c index.c bench.c \
+		  swap.c push.c rotate.c rotate_reverse.c \
+		  sort_simple.c sort_medium.c sort_complex.c sort_adaptive.c
 
 OBJS	= $(SRCS:.c=.o)
 

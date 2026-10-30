@@ -16,13 +16,13 @@
 # Uso normal: te situas dentro del pack (o de su repo/) y llamas a zengit.
 # Para dar de alta uno nuevo, crea el directorio y llama a init desde el pack:
 #
-#   mkdir -p ~/zenidx/packs/cursus/000_C-piscine-reloaded/repo
-#   cd ~/zenidx/packs/cursus/000_C-piscine-reloaded && zengit init
+#   mkdir -p ~/zenidx/packs/cursus/M1/100_ft_printf/repo
+#   cd ~/zenidx/packs/cursus/M1/100_ft_printf && zengit init
 #   zengit remote add origin vogsphere@vogsphere.42<campus>.com:vogsphere/<id>
 #
-# OJO: el slug sale de la ruta, asi que renombrar o mover un pack deja su
-# git-dir huerfano. Hay que renombrar el .git del store igual y reapuntar su
-# core.worktree (`git --git-dir=... config core.worktree <ruta nueva>`).
+# OJO: el slug sale de la ruta, sin el MN del milestone: renombrar un pack deja
+# su git-dir huerfano (hay que renombrar el .git del store igual), y moverlo de
+# sitio obliga a reapuntar `git --git-dir=... config core.worktree <ruta nueva>`.
 set -euo pipefail
 
 ROOT="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
@@ -34,9 +34,12 @@ else
     B=''; D=''; R=''
 fi
 
-# packs/piscine/005_c03/repo -> piscine-005_c03 ; packs/cursus/000_X -> cursus-000_X
+# packs/piscine/005_c03/repo -> piscine-005_c03 ; packs/cursus/M0/000_X -> cursus-000_X
+# El directorio del milestone no entra en el slug: el numero ya es unico en la
+# etapa, y asi pasar un pack de un milestone a otro no deja su git-dir huerfano
+# (basta reapuntar core.worktree).
 slug_for() {
-    printf '%s' "${1#"$ROOT"/}" | sed 's|/repo$||; s|/|-|g'
+    printf '%s' "${1#"$ROOT"/}" | sed 's|/repo$||; s|^\([^/]*\)/M[0-9]/|\1/|; s|/|-|g'
 }
 
 list_repos() {

@@ -18,7 +18,7 @@ else
     B=''; D=''; C=''; Y=''; R=''
 fi
 
-CMDS=(zen zenlayout zenpack zenshell zentest zennorm zenin zenwatch zengit zenhelp)
+CMDS=(zen zenlayout zenpack zenshell zentest zennorm zenin zenwatch zengit zenlibft zenhelp)
 
 usage() { sed -n '2,11p' "$0" | cut -c3- ; }
 
@@ -58,6 +58,11 @@ overview() {
     item 'zenin repo tree' 'ejecuta un comando dentro del pack activo'
     item 'zenwatch -n 5 repo tree -C' 'lo repite en bucle: es lo que hacen los paneles'
 
+    head2 'tu libft (lib/libft, la maestra)'
+    item 'zenlibft' 'la copia a repo/libft del pack activo (ensena y pregunta)'
+    item 'zenlibft -b' 'trae a la maestra lo nuevo que hayas hecho en el pack'
+    item 'zenlibft -l' 'que packs llevan libft y si van al dia'
+
     head2 'entregar a la intra'
     item 'zengit init' 'da de alta el repo de vogsphere de este pack'
     item 'zengit remote add origin URL' 'lo enchufa al repo que da la intra'
@@ -67,7 +72,8 @@ overview() {
     head2 'como se llaman las cosas'
     printf '   %spacks/ETAPA/NNN_nombre/%s   repo/ lo que entregas · test/ sus tests · extra/\n' "$D" "$R"
     printf '   %sla etapa%s es el tramo de 42 (piscine, cursus) y %sNNN%s el orden real\n' "$D" "$R" "$D" "$R"
-    printf '   %sla centena%s es el milestone; sus titulos, en ETAPA/.milestones\n' "$D" "$R"
+    printf '   %spacks/ETAPA/MN/NNN_nombre/%s el pack dentro de su milestone (cursus/M1/100_ft_printf)\n' "$D" "$R"
+    printf '   %sMN%s es el milestone y numera desde N00; sus titulos, en ETAPA/.milestones\n' "$D" "$R"
     printf '   %s.zennorm%s en un pack = flags extra de norminette solo para el\n' "$D" "$R"
 
     head2 'mas detalle'

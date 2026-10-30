@@ -1,14 +1,15 @@
 # Milestones del 42cursus. En la intra son las quests common-core-rank-NN: cada
 # proyecto exige tener terminada la anterior, y el examen de rank la cierra.
-# Aqui el milestone es la centena del numero del pack: 100_ft_printf -> 1.
+# Aqui cada milestone es un directorio MN/ y numera desde N00: M1/100_ft_printf.
 #
-# El reparto de proyectos esta en ref/42cursus.md, leido del holy graph.
+# El reparto de proyectos esta en ref/42cursus.md, leido del holy graph: es el
+# camino 42next (quest 42next), no el del cursus antiguo.
 # Los titulos de abajo son descriptivos, no oficiales: la intra solo numera.
 
 0 = rank 00 · arranque
-1 = rank 01 · fundamentos
-2 = rank 02 · algoritmia y graficos
-3 = rank 03 · procesos y shell
-4 = rank 04 · C++ y redes
-5 = rank 05 · servidores y contenedores
+1 = rank 01 · fundamentos en C
+2 = rank 02 · Python y sistemas
+3 = rank 03 · concurrencia, grafos e IA
+4 = rank 04 · redes, juego y RAG
+5 = rank 05 · contenedores, servidores y agentes
 6 = rank 06 · transcendence

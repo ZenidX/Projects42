@@ -20,13 +20,20 @@
 #  define BUFFER_SIZE 42
 # endif
 
+# ifndef MAX_FD
+#  define MAX_FD 1024
+# endif
+
+# ifndef CHAR_SEP
+#  define CHAR_SEP '\n'
+# endif
+
 char	*get_next_line(int fd);
 
 size_t	gnl_strlen(char *r);
-void	gnl_strcat(char *r, char *p);
-void	gnl_strjoin(char *r, char **p);
-void	gnl_strncpy(char *s, char *buf, ssize_t bytes_read);
-char	*gnl_strchr(const char *s, int c);
-char	*gnl_substr(const char *s, size_t start, size_t len);
+char	*gnl_strchr(char *r, char c);
+char	*gnl_strdup(char *s, size_t l);
+void	gnl_strncpy(char *dst, char *q, size_t n);
+char	*gnl_strncat(char *dst, char *src, size_t n);
 
 #endif

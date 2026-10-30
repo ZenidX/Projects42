@@ -25,5 +25,6 @@ int		ft_print_nbr(int n);
 int		ft_print_unsigned(unsigned int n);
 int		ft_print_hex(unsigned long n, int upper);
 int		ft_print_ptr(void *p);
+int		ft_print_free(char *s);
 
 #endif

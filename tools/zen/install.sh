@@ -16,7 +16,7 @@ CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zenidx"
 TERM_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/terminator"
 PACKS_DIR="${ZENIDX_ROOT:-$HOME/zenidx/packs}"
 
-SCRIPTS=(zen zenpack zenin zenwatch zentest zenshell zenlayout zengit zennorm zenhelp)
+SCRIPTS=(zen zenpack zenin zenwatch zentest zenshell zenlayout zengit zennorm zenlibft zenhelp)
 
 DRY=0
 case "${1-}" in
@@ -127,7 +127,10 @@ printf '\n'
 
 printf '%sPacks%s\n' "$B" "$R"
 if [ -d "$PACKS_DIR" ]; then
-    n=$(find "$PACKS_DIR" -mindepth 2 -maxdepth 2 -type d 2>/dev/null | wc -l)
+    # ETAPA/pack, o ETAPA/MN/pack en las etapas partidas en milestones.
+    n=$({ find "$PACKS_DIR" -mindepth 2 -maxdepth 2 -type d ! -name 'M[0-9]'
+          find "$PACKS_DIR" -mindepth 3 -maxdepth 3 -type d -path '*/M[0-9]/*'
+        } 2>/dev/null | wc -l)
     ok "$PACKS_DIR ($n packs)"
 else
     run mkdir -p "$PACKS_DIR"

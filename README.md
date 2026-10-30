@@ -8,7 +8,8 @@ intra de 42, organizados por **etapa** (`piscine`, `cursus`).
 ```
 packs/            los ejercicios: un directorio por proyecto
   piscine/        000_shell00 001_shell01 002_c00 … 015_c13 016_rush00 … 019_bsq
-  cursus/         000_C-piscine-reloaded …  (+ .milestones)
+  cursus/         M0/ M1/ … un directorio por milestone (+ .milestones)
+lib/libft/        tu libft maestra: Libft + lo que vas añadiendo (`zenlibft` la reparte)
 ref/              material de consulta (ref/piscine/NNN_…, 42cursus.md, maestro42.md)
 web/              fuente de 42.zenidx.com (portada + web/piscine/NNN_*.html)
 tools/zen/        el espacio de trabajo: zen, zenpack, zentest, zengit… (ver su README)
@@ -23,21 +24,22 @@ orden en que se hacen** — que no es el alfabético, y es el que interesa ver e
 de `zenpack`. En piscine ese orden es shells → C → rushes → BSQ; en cursus empieza en
 `000_C-piscine-reloaded`, el primer proyecto de la etapa.
 
-La **centena es el milestone**. El 42cursus va por *ranks* (las quests
-`common-core-rank-00` … `06` de la intra), así que cada rank se queda con su centena y
-el pack cae donde le toca:
+El 42cursus va por **milestones** (los *ranks*, las quests `common-core-rank-00` … `06`
+de la intra), y cada uno tiene su directorio `MN/` dentro de la etapa. La numeración
+sigue la centena del milestone, para que el número no se repita en toda la etapa:
 
 ```
-packs/cursus/000_C-piscine-reloaded   rank 00 · arranque
-packs/cursus/001_libft                rank 00
-packs/cursus/100_ft_printf            rank 01 · fundamentos
-packs/cursus/200_push_swap            rank 02 · algoritmia y gráficos
+packs/cursus/M0/000_C-piscine-reloaded   rank 00 · arranque
+packs/cursus/M0/001_Libft
+packs/cursus/M1/100_ft_printf            rank 01 · fundamentos
+packs/cursus/M1/101_get_next_line
+packs/cursus/M1/102_push_swap
 ```
 
-Los títulos de cada milestone están en `packs/cursus/.milestones`, y el reparto real de
-proyectos por rank —leído del holy graph— en [`ref/42cursus.md`](ref/42cursus.md).
+Los títulos de cada milestone están en `packs/cursus/.milestones`, y el reparto de
+proyectos por rank que da el holy graph en [`ref/42cursus.md`](ref/42cursus.md).
 `zenpack` pregunta primero por el milestone y luego por el proyecto, para que la lista
-no crezca a cincuenta líneas. Una etapa sin `.milestones` (piscine) se lista entera.
+no crezca a cincuenta líneas. Una etapa sin directorios `MN/` (piscine) se lista entera.
 
 El número es solo una convención de nombre: `zenpack` la entiende (`zenpack c03`,
 `zenpack 005` y `zenpack 005_c03` llevan al mismo sitio) pero no la impone.
@@ -45,7 +47,7 @@ El número es solo una convención de nombre: `zenpack` la entiende (`zenpack c0
 ### Un pack
 
 ```
-packs/ETAPA/NNN_nombre/
+packs/ETAPA/NNN_nombre/          (o packs/ETAPA/MN/NNN_nombre/ con milestones)
 ├── repo/          lo que se entrega (ex00, ex01, …)
 ├── test/          Makefile + test.c -> compila `runner`   (`zentest`)
 ├── subject.pdf    enunciado oficial (algunos con subject.txt extraído)
@@ -63,6 +65,7 @@ zenhelp                 qué se puede hacer aquí (y `zenhelp <comando>` para el
 zenpack                 elige el pack (o créalo: propone el siguiente número libre)
 zenlayout               abre el espacio de Terminator apuntado al pack activo
 zentest                 compila y lanza el runner del pack activo
+zenlibft                copia tu libft maestra al repo/libft del pack (`-b` la trae de vuelta)
 zengit push             entrega a vogsphere
 ```
 
@@ -77,8 +80,9 @@ en la página del proyecto). El `.git` de esos repos no vive dentro del pack, si
 de vuelta: así este repo versiona los ejercicios como ficheros normales y no como un
 gitlink vacío. Lo gestiona `zengit`.
 
-Como el slug sale de la ruta, **mover o renombrar un pack obliga a renombrar también su
-git-dir** y a reapuntar su `core.worktree`.
+El slug sale de la ruta sin el `MN/` (`cursus/M0/001_Libft` → `cursus-001_Libft`), así que
+**renombrar un pack obliga a renombrar también su git-dir**, y moverlo de sitio —también
+de un milestone a otro— a reapuntar su `core.worktree`.
 
 ## Norma
 

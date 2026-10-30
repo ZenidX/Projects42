@@ -39,11 +39,11 @@ The point of the project is to learn:
 | File | Contents |
 |---|---|
 | `ft_printf.c` | `ft_printf`: walks the format string and dispatches each conversion |
-| `ft_print_chars.c` | `%c`, `%s` and `%%` |
+| `ft_print_chars.c` | `%c`, `%s` and `%%`, plus `ft_print_free`, which prints and frees an allocated string |
 | `ft_print_nbrs.c` | `%d`, `%i` and `%u` |
 | `ft_print_hex.c` | `%x`, `%X` and `%p` |
 | `ft_printf.h` | prototypes |
-| `libft/` | my libft, built and included in the library |
+| `libft/` | my libft, built and included in the library; it adds `ft_itoa_base` to the Libft functions |
 
 ## Instructions
 
@@ -85,13 +85,26 @@ expects, and calls the function that prints it. Every print function returns
 how many characters it wrote, or `-1` if `write` fails; `ft_printf` adds them
 up and stops at the first error.
 
-Numbers are printed recursively from the most significant digit, using the
-base string `"0123456789"` or `"0123456789abcdef"` (uppercase for `%X`). The
-hexadecimal printer takes an `unsigned long` so that `%p` can reuse it after
-writing `0x`. `%d` handles `INT_MIN`, which has no positive `int` equivalent.
+Characters and strings are written directly with `write`. A `NULL` string
+prints `(null)`.
 
-The output is written directly with `write`, without a buffer, so there is
-nothing to free or flush at the end.
+Numbers are first converted to an allocated string with my libft, and then
+printed:
+
+- `%d` and `%i` use `ft_itoa`, which already handles the sign and `INT_MIN`.
+- `%u`, `%x` and `%X` use `ft_itoa_base(n, base, b, 0)`. It takes an
+  `unsigned long` and the symbols of the base (`"0123456789"`,
+  `"0123456789abcdef"` or `"0123456789ABCDEF"`). It is recursive: each call
+  goes one digit deeper, the deepest call already knows how many digits there
+  are and allocates the string once, and every call writes its digit on the
+  way back.
+- `%p` writes `0x` and reuses the hexadecimal printer, which is why that
+  printer takes an `unsigned long`: an address does not fit in an
+  `unsigned int`. A `NULL` pointer prints `(nil)`, like glibc.
+
+Every number goes through `ft_print_free`, which returns `-1` if the string is
+`NULL` (a failed `malloc`), prints it and frees it. That is the only place
+that frees memory, so a failed allocation or a failed `write` never leaks.
 
 ## Resources
 
@@ -103,12 +116,20 @@ nothing to free or flush at the end.
 
 ### AI usage
 
-I used AI tools (Claude) as a reviewer and a tutor, not to write the library.
-I used them to:
+I used AI tools (Claude) as a tutor and, for part of the code, as a pair
+programmer:
 
-- explain how variadic arguments work and why `%c` is read as an `int`;
-- point out edge cases (`NULL` strings and pointers, `INT_MIN`, a `%` at the
-  end of the format string);
-- explain norminette errors.
+- it set up the starting skeleton: `ft_printf` and `ft_conv`, the split into
+  files and the rule that every printer returns what it wrote or `-1`, and it
+  explained how variadic arguments work and why `%c` is read as an `int`;
+- I wrote `ft_print_char` and `ft_print_str`;
+- `ft_itoa_base` is my function from the piscine (C07). Claude adapted it to
+  `unsigned long`, without the sign, and moved it into my libft;
+- after we agreed on the design (reuse `ft_itoa` and `ft_itoa_base` and free in
+  one helper), Claude wrote `ft_print_free`, the number printers,
+  `ft_print_hex` and `ft_print_ptr`;
+- it pointed out edge cases (`NULL` strings and pointers, `INT_MIN`, failed
+  allocations) and explained norminette errors.
 
-I wrote and fixed the code myself, and tested it.
+I reviewed every function, can explain how each one works, and tested the
+whole library with my test runner.
