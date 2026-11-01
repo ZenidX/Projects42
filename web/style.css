@@ -121,48 +121,83 @@ details[open] summary::before { content: "▾ "; }
 details[open] { padding-bottom: .4rem; }
 details[open] summary { border-bottom: 1px dashed var(--border); margin-bottom: .8rem; }
 
-/* Índice lateral: en pantallas anchas el ul.toc se fija a la izquierda del
-   contenido; en estrechas se queda arriba, en dos columnas. toc.js marca la
-   sección visible con .current. */
+/* Índice lateral, siempre visible.
+   - Desde 900px: barra fija a la izquierda, de arriba abajo; el resto de la
+     página (cabecera incluida) se desplaza a la derecha para dejarle sitio.
+   - Por debajo: toc.js añade un botón "Índice" fijo que abre la barra como
+     panel encima del contenido.
+   toc.js marca con .current la sección que se está leyendo. */
 html { scroll-behavior: smooth; }
 [id] { scroll-margin-top: 1rem; }
-@media (min-width: 1360px) {
+:root { --toc-w: 260px; }
+.toc a.current { color: var(--accent); font-weight: 600; }
+.toc-btn { display: none; }
+.toc {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--toc-w);
+  overflow-y: auto;
+  columns: 1;
+  margin: 0;
+  padding: 1.4rem 1.2rem 2rem 2.1rem;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  font-size: .86rem;
+  z-index: 20;
+}
+.toc::before {
+  content: "Índice";
+  display: block;
+  margin: 0 0 .8rem -.9rem;
+  color: var(--accent);
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.toc li { margin-bottom: .35rem; }
+.toc a { color: var(--muted); text-decoration: none; }
+.toc a:hover { color: var(--fg); }
+.toc a.current { color: var(--accent); }
+@media (min-width: 900px) {
+  body.has-toc { padding-left: var(--toc-w); }
+}
+@media (max-width: 899px) {
   .toc {
-    position: fixed;
-    top: 5.5rem;
-    left: max(1rem, calc(50% - 440px - 250px));
-    width: 220px;
-    max-height: calc(100vh - 7rem);
-    overflow-y: auto;
-    columns: 1;
-    margin: 0;
-    padding: .9rem 1rem .9rem 1.6rem;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: .85rem;
+    width: min(82vw, 300px);
+    transform: translateX(-100%);
+    transition: transform .2s ease;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0);
   }
-  .toc::before {
-    content: "Índice";
+  body.toc-open .toc {
+    transform: none;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .55);
+  }
+  .toc-btn {
     display: block;
-    margin: 0 0 .5rem -.6rem;
-    color: var(--muted);
-    font-size: .75rem;
-    font-weight: 600;
-    letter-spacing: .06em;
-    text-transform: uppercase;
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 30;
+    padding: .6rem 1rem;
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    background: var(--bg2);
+    color: var(--accent);
+    font: 600 .9rem -apple-system, "Segoe UI", Roboto, sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .4);
   }
-  .toc li { margin-bottom: .3rem; }
-  .toc a { color: var(--muted); text-decoration: none; }
-  .toc a:hover { color: var(--fg); }
-  .toc a.current { color: var(--accent); font-weight: 600; }
 }
 
 /* En pantallas estrechas, las tablas anchas se desplazan en horizontal
    dentro de su caja en vez de ensanchar la página. */
-@media (max-width: 760px) {
+@media (max-width: 760px), (min-width: 900px) and (max-width: 1100px) {
   table { display: block; overflow-x: auto; width: auto; max-width: 100%; }
 }
 /* Rutas, URLs y código en línea largos: que partan antes que desbordar. */
 p code, li code, td code, .meta b, p a, li a { overflow-wrap: anywhere; }
-@media (max-width: 760px) { td code { white-space: normal; } }
+@media (max-width: 760px), (min-width: 900px) and (max-width: 1100px) { td code { white-space: normal; } }
