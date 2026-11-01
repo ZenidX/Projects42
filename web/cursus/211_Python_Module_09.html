@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 09 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 09 <span class="tag">pendiente</span></h1>
+<p class="sub">«Cosmic Data»: validación de datos con <strong>Pydantic</strong>. Tres
+ejercicios ambientados en un observatorio espacial que van del modelo básico con
+restricciones por campo a las reglas de negocio y los modelos anidados. Rank 02.
+<strong>Proyecto aún no hecho</strong>: aquí se explica qué pide y qué enseña, sin
+solución.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#ex0">ex0 — space_station</a></li>
+  <li><a href="#ex1">ex1 — alien_contact</a></li>
+  <li><a href="#ex2">ex2 — space_crew</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Datos que llegan de fuera</b> — Las anotaciones de tipo que se
+vienen usando desde el Module 00 no hacen nada al ejecutar: Python las ignora y solo
+<code>mypy</code> las lee, antes de tiempo. Eso basta para tu propio código, pero no para
+los datos que entran desde fuera — un JSON de una API, un CSV, un formulario —, que
+pueden traer cualquier cosa. <strong>Pydantic</strong> (Samuel Colvin, 2017) le da la
+vuelta a la idea: usa esas mismas anotaciones <em>en tiempo de ejecución</em> para
+comprobar y convertir los datos al crear el objeto. Declaras una clase que hereda de
+<code>BaseModel</code>, anotas sus campos, y Pydantic se encarga de rechazar lo que no
+encaja con un mensaje de error detallado o de convertir lo compatible (la cadena
+<code>"2024-03-15T10:00:00"</code> se convierte en un <code>datetime</code>). Es la base de
+FastAPI y de buena parte del Python moderno que habla con el exterior. La versión 2
+(2023) reescribió el núcleo en Rust (<code>pydantic-core</code>) y cambió la API: el
+enunciado exige Pydantic 2.x y avisa de que no se usen los decoradores antiguos de la v1
+como <code>@validator</code>. Y por primera vez en el cursus hay que instalar una
+librería externa, con <code>pip</code> y dentro de un <em>entorno virtual</em>.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o superior</b></span><span>Estilo: <b>flake8</b></span><span>Tipos: <b>mypy</b></span><span>Librería: <b>Pydantic 2.x</b> (vía pip)</span></div>
+<p>Tres directorios, <code>ex0/</code>, <code>ex1/</code> y <code>ex2/</code>, con un
+fichero cada uno. Las reglas generales:</p>
+<ul>
+  <li>Todo el código lleva anotaciones de tipo completas, comprobadas con
+  <code>mypy</code>, y cumple <code>flake8</code>.</li>
+  <li>Pydantic 2.x en todos los ejercicios, instalado con <code>pip</code>. Es obligatorio
+  trabajar en un entorno virtual (se recomiendan <code>venv</code>, <code>virtualenv</code>
+  o <code>conda</code>).</li>
+  <li>Se permiten todas las funciones integradas, los tipos estándar con sus métodos y los
+  módulos de la biblioteca estándar como <code>json</code>, <code>csv</code> o
+  <code>datetime</code>. El «Authorized: None» de cada ejercicio significa que no se añade
+  nada más.</li>
+  <li>El manejo de excepciones debe proteger los datos de corrupciones.</li>
+  <li>Los ejercicios se construyen unos sobre otros y se hacen en orden; se pide comentar
+  el código y usar nombres de variable con significado.</li>
+</ul>
+<p>El enunciado trae como adjunto un generador de datos de prueba
+(<code>data_generator.py</code>), un exportador a JSON, CSV y Python
+(<code>data_exporter.py</code>) y datos ya generados, que se pueden importar para probar
+los modelos. Resume además los tres conceptos clave: <code>BaseModel</code> (la clase base
+de todo modelo), <code>Field(...)</code> (restricciones, descripción y valor por defecto
+de un campo) y <code>@model_validator(mode='after')</code> (validación propia que corre
+después de la de Pydantic).</p>
+<p>Para hacerse una idea de la sintaxis, que no del ejercicio, así se declara un campo con
+restricciones y así se monta el entorno:</p>
+<pre><code>class Planet(BaseModel):
+    name: str = Field(min_length=1, max_length=30)
+    moons: int = Field(ge=0)</code></pre>
+<pre><code>$&gt; python3 -m venv .venv
+$&gt; source .venv/bin/activate
+$&gt; pip install "pydantic&gt;=2"</code></pre>
+</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>space_station</h2>
+<div class="meta"><span>Directorio: <b>ex0/</b></span><span>Entrega: <b>space_station.py</b></span><span>Autorizado: <b>nada más</b></span></div>
+<p>Un modelo <code>SpaceStation</code> con ocho campos validados:</p>
+<ul>
+  <li><code>station_id</code>: cadena de 3 a 10 caracteres.</li>
+  <li><code>name</code>: cadena de 1 a 50 caracteres.</li>
+  <li><code>crew_size</code>: entero de 1 a 20 personas.</li>
+  <li><code>power_level</code> y <code>oxygen_level</code>: flotantes de 0.0 a 100.0
+  (porcentaje).</li>
+  <li><code>last_maintenance</code>: fecha y hora (<code>datetime</code>).</li>
+  <li><code>is_operational</code>: booleano, <code>True</code> por defecto.</li>
+  <li><code>notes</code>: cadena opcional de 200 caracteres como máximo.</li>
+</ul>
+<p>Más una función <code>main()</code> que crea una estación válida y muestra sus datos,
+intenta crear una inválida (por ejemplo con <code>crew_size</code> mayor que 20) y enseña
+el mensaje de error de validación. La salida de ejemplo termina con
+<code>Input should be less than or equal to 20</code>, el mensaje que genera el propio
+Pydantic.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Lo básico de un modelo:
+heredar de <code>BaseModel</code>, anotar cada campo con su tipo y añadirle límites con
+<code>Field</code> (longitudes para cadenas, mínimos y máximos para números), valores por
+defecto y campos opcionales. Y el otro lado: qué pasa cuando los datos no encajan.
+Pydantic no devuelve <code>None</code> ni un código de error como haría una función de C,
+sino que lanza una excepción, <code>ValidationError</code>, que reúne <em>todos</em> los
+fallos encontrados, no solo el primero. El enunciado pide pensar en la conversión
+automática: qué ocurre si a un campo <code>datetime</code> le pasas una cadena con una
+fecha.</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>alien_contact</h2>
+<div class="meta"><span>Directorio: <b>ex1/</b></span><span>Entrega: <b>alien_contact.py</b></span><span>Autorizado: <b>nada más</b></span></div>
+<p>Primero un enum <code>ContactType</code> con cuatro valores: <code>radio</code>,
+<code>visual</code>, <code>physical</code> y <code>telepathic</code>. Luego el modelo
+<code>AlienContact</code>:</p>
+<ul>
+  <li><code>contact_id</code>: cadena de 5 a 15 caracteres.</li>
+  <li><code>timestamp</code>: fecha y hora del contacto.</li>
+  <li><code>location</code>: cadena de 3 a 100 caracteres.</li>
+  <li><code>contact_type</code>: un <code>ContactType</code>.</li>
+  <li><code>signal_strength</code>: flotante de 0.0 a 10.0.</li>
+  <li><code>duration_minutes</code>: entero de 1 a 1440 (24 horas como máximo).</li>
+  <li><code>witness_count</code>: entero de 1 a 100.</li>
+  <li><code>message_received</code>: cadena opcional de 500 caracteres como máximo.</li>
+  <li><code>is_verified</code>: booleano, <code>False</code> por defecto.</li>
+</ul>
+<p>Y, con <code>@model_validator(mode='after')</code>, cuatro reglas de negocio: el
+<code>contact_id</code> empieza por <code>"AC"</code>; un contacto físico tiene que estar
+verificado; uno telepático necesita al menos 3 testigos; y una señal fuerte (más de 7.0)
+debería traer un mensaje recibido. La demostración muestra un informe válido y otros
+inválidos con mensajes claros; el ejemplo termina con
+<code>Telepathic contact requires at least 3 witnesses</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre validar un
+campo y validar el conjunto. <code>Field</code> solo ve un valor cada vez: sabe si
+<code>witness_count</code> está entre 1 y 100, pero no puede saber que el mínimo depende
+de <code>contact_type</code>. Para eso está el validador de modelo en modo
+<code>'after'</code>, que se ejecuta cuando todos los campos ya han pasado su validación
+y tienen su tipo final, de modo que puede compararlos entre sí. Si una regla no se cumple,
+se lanza una excepción y Pydantic la envuelve en su <code>ValidationError</code>. El
+enunciado recuerda el detalle que más se olvida: el validador debe terminar devolviendo
+<code>self</code>. De paso aparece <code>Enum</code>, de la biblioteca estándar: un
+conjunto cerrado de valores con nombre, que Pydantic sabe validar (rechaza
+<code>"smoke_signal"</code> si no está entre los cuatro).</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>space_crew</h2>
+<div class="meta"><span>Directorio: <b>ex2/</b></span><span>Entrega: <b>space_crew.py</b></span><span>Autorizado: <b>nada más</b></span></div>
+<p>Un enum <code>Rank</code> (<code>cadet</code>, <code>officer</code>,
+<code>lieutenant</code>, <code>captain</code>, <code>commander</code>) y dos modelos, uno
+dentro del otro.</p>
+<p><code>CrewMember</code>: <code>member_id</code> (3–10 caracteres), <code>name</code>
+(2–50), <code>rank</code> (un <code>Rank</code>), <code>age</code> (18–80),
+<code>specialization</code> (3–30 caracteres), <code>years_experience</code> (0–50) e
+<code>is_active</code> (<code>True</code> por defecto).</p>
+<p><code>SpaceMission</code>: <code>mission_id</code> (5–15 caracteres),
+<code>mission_name</code> (3–100), <code>destination</code> (3–50),
+<code>launch_date</code> (<code>datetime</code>), <code>duration_days</code> (1–3650, diez
+años como máximo), <code>crew</code> (lista de 1 a 12 <code>CrewMember</code>),
+<code>mission_status</code> (cadena, <code>"planned"</code> por defecto) y
+<code>budget_millions</code> (flotante de 1.0 a 10000.0).</p>
+<p>Reglas de seguridad con <code>@model_validator(mode='after')</code>: el
+<code>mission_id</code> empieza por <code>"M"</code>; hay al menos un comandante o un
+capitán; las misiones largas (más de 365 días) necesitan que el 50 % de la tripulación
+sea experimentada (5 años o más); y todos los tripulantes están activos. La demostración
+enseña una misión válida con su tripulación y una inválida; el ejemplo falla con
+<code>Mission must have at least one Commander or Captain</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Modelos anidados: un campo
+cuyo tipo es otro modelo, o una lista de ellos. Pydantic valida en cascada, así que al
+crear la misión cada tripulante se valida como <code>CrewMember</code> (se le pueden pasar
+diccionarios y los convierte) y la lista en sí tiene sus propios límites de longitud. El
+enunciado plantea la pregunta clave: qué pasa cuando un <code>CrewMember</code> falla
+dentro de una <code>SpaceMission</code> — el error indica la ruta exacta del fallo (qué
+campo, qué posición de la lista, qué subcampo). Las reglas del validador de misión ya no
+miran solo campos sueltos, sino que recorren la tripulación para contar rangos,
+experiencia o estado.</div>
+</div>
+
+<div class="trasfondo" id="delicados"><b>Puntos delicados</b> — Lo que conviene tener
+claro antes de la evaluación:
+<ul>
+  <li><b>v1 frente a v2.</b> Buena parte de los tutoriales y respuestas de internet son de
+  Pydantic 1 (<code>@validator</code>, <code>@root_validator</code>, <code>class
+  Config</code>, <code>.dict()</code>). El enunciado pide la sintaxis de la v2 y lo
+  señala de forma explícita.</li>
+  <li><b>Devolver <code>self</code>.</b> En modo <code>'after'</code> el validador recibe
+  el modelo ya construido y debe devolverlo; si no lo haces, el resultado no es el
+  esperado.</li>
+  <li><b>Errores propios dentro de <code>ValidationError</code>.</b> Lo que lanzas en el
+  validador llega envuelto. Pydantic antepone su propio prefijo al texto
+  (<code>Value error, …</code>), y su método <code>errors()</code> devuelve la lista de
+  fallos con su ubicación y su mensaje: vale la pena mirarlo para mostrar un mensaje
+  limpio como el del ejemplo.</li>
+  <li><b>Conversión automática (modo «lax»).</b> Por defecto Pydantic convierte lo
+  compatible: <code>"6"</code> se acepta en un campo <code>int</code> y una cadena ISO en
+  un <code>datetime</code>. Hay que saber explicar cuándo convierte y cuándo
+  rechaza.</li>
+  <li><b>Enums al mostrar.</b> Un miembro de un enum no se imprime igual que su valor;
+  la salida de ejemplo muestra <code>radio</code> o <code>commander</code>, el valor.</li>
+  <li><b>Opcional no es lo mismo que «con valor por defecto».</b> Un campo
+  <code>str | None</code> sin valor por defecto sigue siendo obligatorio al crear el
+  objeto.</li>
+  <li><b>mypy y Pydantic.</b> El código tiene que pasar <code>mypy</code>, también los
+  validadores y la función <code>main()</code>.</li>
+  <li><b>El entorno virtual.</b> Hay que saber explicar qué es (una carpeta con su propio
+  intérprete y sus propios paquetes, aislada del sistema), por qué se usa y que no se
+  sube al repositorio: se entregan solo los ficheros pedidos.</li>
+</ul></div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Enunciado «Cosmic Data — Discover Pydantic Models &amp; Validation», versión 3.0, en
+<code>packs/cursus/M2/211_Python_Module_09/</code> (<code>en.subject.pdf</code> y su
+extracción <code>subject.txt</code>). Las herramientas de datos adjuntas están en
+<code>extra/data_generator.tar</code>.</p>
+</div>
+
+<footer>42.zenidx.com — Python Module 09 · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

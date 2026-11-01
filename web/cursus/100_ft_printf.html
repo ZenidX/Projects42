@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ft_printf — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — ft_printf</h1>
+<p class="sub">Reimplementar <code>printf</code> con nueve conversiones (<code>cspdiuxX%</code>) y
+empaquetarla en <code>libftprintf.a</code>. El proyecto parece de formato de texto, pero lo que
+enseña de verdad es cómo una función de C puede recibir un número de argumentos que no conoce
+— y cómo construir una librería encima de otra.</p>
+
+<ul class="toc">
+  <li><a href="#variadicas">Funciones variádicas</a></li>
+  <li><a href="#despacho">El despacho por conversión</a></li>
+  <li><a href="#retorno">El valor de retorno</a></li>
+  <li><a href="#chars">%c, %s y %%</a></li>
+  <li><a href="#numeros">%d, %i y %u</a></li>
+  <li><a href="#hex">%x, %X y %p</a></li>
+  <li><a href="#makefile">El Makefile y libft</a></li>
+</ul>
+
+<div class="trasfondo"><b>Por qué printf</b> — En la piscine todo salía por pantalla con
+<code>write</code> y funciones hechas a mano: <code>ft_putnbr</code>, <code>ft_putstr</code>
+(de ahí el subtítulo del enunciado: «porque ft_putnbr() y ft_putstr() no son suficientes»).
+<code>printf</code> es la función que todo programador de C usa a diario y casi nadie ha mirado
+por dentro. El enunciado prohíbe gestionar el buffer interno del printf original (cada carácter
+va directo con <code>write</code>) y solo autoriza <code>malloc</code>, <code>free</code>,
+<code>write</code> y la familia <code>va_*</code>; la libft sí está permitida. El resultado se
+compara byte a byte con el printf de verdad, valor de retorno incluido. Y una vez aprobado,
+<code>ft_printf</code> entra en tu caja de herramientas para todos los proyectos siguientes.</div>
+
+<div class="card" id="variadicas">
+<h2><span class="ex">va_*</span>Funciones variádicas</h2>
+<div class="meta"><span>Entrega: <b>ft_printf.c</b>, <b>ft_printf.h</b></span><span>Autorizado: <b>va_start, va_arg, va_copy, va_end, write</b></span></div>
+<p>El prototipo lo fija el enunciado: <code>int ft_printf(char const *, ...);</code>. Los tres
+puntos dicen «después de <code>format</code> vienen cuantos argumentos quieras, del tipo que
+quieras». El bucle principal del usuario:</p>
+<pre><code>int	ft_printf(const char *format, ...)
+{
+	va_list	ap;
+	int		count;
+	int		ret;
+
+	if (!format)
+		return (-1);
+	va_start(ap, format);
+	count = 0;
+	while (*format)
+	{
+		if (*format == '%' &amp;&amp; *(format + 1))
+			ret = ft_conv(*(++format), &amp;ap);
+		else
+			ret = ft_print_char(*format);
+		if (ret &lt; 0)
+		{
+			va_end(ap);
+			return (-1);
+		}
+		count += ret;
+		format++;
+	}
+	va_end(ap);
+	return (count);
+}</code></pre>
+<p>Las cuatro piezas de <code>&lt;stdarg.h&gt;</code>:</p>
+<ul>
+  <li><code>va_list ap</code> — el «cursor» sobre los argumentos sin nombre.</li>
+  <li><code>va_start(ap, format)</code> — lo coloca justo después del último parámetro con
+  nombre. Por eso una función variádica necesita al menos uno.</li>
+  <li><code>va_arg(ap, tipo)</code> — devuelve el siguiente argumento interpretándolo como
+  <code>tipo</code> y avanza. Nadie comprueba que el tipo sea el correcto: lo dice el formato.</li>
+  <li><code>va_end(ap)</code> — cierra el recorrido. Aquí se llama en las dos salidas: la normal
+  y la de error.</li>
+</ul>
+<p>Un detalle fino: <code>ap</code> se pasa a <code>ft_conv</code> como <code>&amp;ap</code>
+(un <code>va_list *</code>). Así cada <code>va_arg</code> que hace la función auxiliar avanza el
+mismo cursor que ve <code>ft_printf</code>. Pasar el <code>va_list</code> por valor y seguir
+usándolo después en la función que llama no es portable.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en C los argumentos no llevan
+etiqueta de tipo: en la llamada solo viajan bytes, y es el formato el que dice cómo leerlos.
+Si escribes <code>%d</code> y pasas un <code>double</code>, <code>va_arg</code> leerá basura sin
+quejarse — por eso el compilador avisa con <code>-Wformat</code> en el printf real, pero
+no con el tuyo (salvo que lo marques con <code>__attribute__((format))</code>). También aparece la <em>promoción de argumentos por defecto</em>: en la parte
+variádica de una llamada, todo <code>char</code> y <code>short</code> se convierte en
+<code>int</code>, y todo <code>float</code> en <code>double</code>. Es la razón de que
+<code>%c</code> se lea con <code>va_arg(*ap, int)</code> y no con <code>char</code>: el
+<code>char</code> nunca llega como <code>char</code>.</div>
+</div>
+
+<div class="card" id="despacho">
+<h2><span class="ex">cspdiuxX%</span>El despacho por conversión</h2>
+<div class="meta"><span>Entrega: <b>ft_printf.c</b></span><span>Autorizado: <b>va_arg</b></span></div>
+<pre><code>static int	ft_conv(char c, va_list *ap)
+{
+	if (c == 'c')
+		return (ft_print_char(va_arg(*ap, int)));
+	if (c == 's')
+		return (ft_print_str(va_arg(*ap, char *)));
+	if (c == 'p')
+		return (ft_print_ptr(va_arg(*ap, void *)));
+	if (c == 'd' || c == 'i')
+		return (ft_print_nbr(va_arg(*ap, int)));
+	if (c == 'u')
+		return (ft_print_unsigned(va_arg(*ap, unsigned int)));
+	if (c == 'x')
+		return (ft_print_hex(va_arg(*ap, unsigned int), 0));
+	if (c == 'X')
+		return (ft_print_hex(va_arg(*ap, unsigned int), 1));
+	if (c == '%')
+		return (ft_print_char('%'));
+	return (-1);
+}</code></pre>
+<p>Cada letra decide dos cosas a la vez: <em>con qué tipo</em> se saca el argumento y <em>qué
+función</em> lo imprime.</p>
+<table>
+  <tr><th>Conversión</th><th>va_arg</th><th>Imprime</th></tr>
+  <tr><td><code>%c</code></td><td><code>int</code></td><td><code>ft_print_char</code></td></tr>
+  <tr><td><code>%s</code></td><td><code>char *</code></td><td><code>ft_print_str</code></td></tr>
+  <tr><td><code>%p</code></td><td><code>void *</code></td><td><code>ft_print_ptr</code></td></tr>
+  <tr><td><code>%d</code> <code>%i</code></td><td><code>int</code></td><td><code>ft_print_nbr</code></td></tr>
+  <tr><td><code>%u</code></td><td><code>unsigned int</code></td><td><code>ft_print_unsigned</code></td></tr>
+  <tr><td><code>%x</code> <code>%X</code></td><td><code>unsigned int</code></td><td><code>ft_print_hex</code> (minúsculas / mayúsculas)</td></tr>
+  <tr><td><code>%%</code></td><td>— (no consume argumento)</td><td><code>ft_print_char('%')</code></td></tr>
+</table>
+<p>Fíjate en que <code>%%</code> no llama a <code>va_arg</code>: si lo hiciera, desplazaría todos
+los argumentos siguientes una posición.</p>
+<p>Ojo con dos casos fuera del enunciado. Una letra desconocida (<code>%k</code>) hace que
+<code>ft_conv</code> devuelva <code>-1</code> y <code>ft_printf</code> se corta ahí devolviendo
+<code>-1</code>, con lo anterior ya escrito. Y un <code>%</code> suelto al final de la cadena no
+entra en la rama de conversión (por la comprobación <code>*(format + 1)</code>) y se imprime tal
+cual: <code>ft_printf("abc%")</code> escribe <code>abc%</code> y devuelve 4, mientras que glibc
+devuelve <code>-1</code>. Las dos situaciones son comportamiento indefinido en el estándar, así
+que no hay una respuesta «correcta», pero conviene saber qué hace tu versión por si sale en la
+evaluación.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A separar el <em>análisis</em> del
+formato de la <em>impresión</em>: el bucle principal no sabe nada de números ni de cadenas, solo
+reparte trabajo. Es la «estructura extensible» que pide el enunciado: añadir una conversión es
+añadir una línea aquí y una función. También deja claro que el tipo de cada argumento es un
+contrato entre quien escribe el formato y quien lo lee, sin red de seguridad.</div>
+</div>
+
+<div class="card" id="retorno">
+<h2><span class="ex">return</span>El valor de retorno</h2>
+<div class="meta"><span>Entrega: <b>ft_printf.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p><code>printf</code> devuelve el número de caracteres escritos, o un negativo si algo falla.
+El usuario lo resuelve con una regla única para todas las funciones de impresión: <em>cada una
+devuelve cuántos caracteres ha escrito, o <code>-1</code> si <code>write</code> ha fallado</em>.
+El bucle solo suma:</p>
+<pre><code>		if (ret &lt; 0)
+		{
+			va_end(ap);
+			return (-1);
+		}
+		count += ret;</code></pre>
+<p>Por eso <code>ft_print_char</code> y <code>ft_print_str</code> devuelven directamente lo que
+devuelve <code>write</code> (un <code>ssize_t</code>), y las funciones de números devuelven la
+longitud de la cadena que imprimen. <code>%p</code> suma a mano los dos caracteres de
+<code>0x</code> (se ve abajo).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el valor de retorno es parte de
+la interfaz tanto como lo que sale por pantalla, y que los errores hay que propagarlos hacia
+arriba en lugar de ignorarlos. <code>write</code> puede fallar (por ejemplo, si cierras stdout
+con <code>./a.out &gt;&amp;-</code>) y un printf serio tiene que enterarse. Definir un contrato
+común para todas las funciones auxiliares es lo que hace que el conteo quede en dos
+líneas.</div>
+</div>
+
+<div class="card" id="chars">
+<h2><span class="ex">%c %s %%</span>Caracteres y cadenas</h2>
+<div class="meta"><span>Entrega: <b>ft_print_chars.c</b></span><span>Autorizado: <b>write, free</b> (+ libft: <b>ft_strlen</b>)</span></div>
+<pre><code>ssize_t	ft_print_char(int c)
+{
+	unsigned char	chr;
+
+	chr = (unsigned char) c;
+	return (write(1, &amp;chr, 1));
+}
+
+ssize_t	ft_print_str(char *str)
+{
+	if (!str)
+		str = "(null)";
+	return (write(1, str, ft_strlen(str)));
+}</code></pre>
+<p><code>ft_print_char</code> recibe un <code>int</code> (por la promoción) y lo convierte a
+<code>unsigned char</code> antes de escribir, que es exactamente lo que hace el printf real con
+<code>%c</code>. La cadena se escribe de una sola vez con su longitud, no carácter a carácter.</p>
+<p><code>printf("%s", NULL)</code> es comportamiento indefinido según el estándar, pero glibc
+imprime <code>(null)</code> y los testers lo comparan; el usuario reproduce ese resultado.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que «imitar printf» significa imitar
+una implementación concreta (aquí, glibc en Linux) incluso en casos que el estándar deja
+abiertos. Y que la conversión a <code>unsigned char</code> no es decorativa: así se pasa a
+<code>write</code> exactamente un byte con el valor que pidió quien llamó.</div>
+</div>
+
+<div class="card" id="numeros">
+<h2><span class="ex">%d %i %u</span>Números en base 10</h2>
+<div class="meta"><span>Entrega: <b>ft_print_nbrs.c</b>, <b>ft_print_chars.c</b></span><span>Autorizado: <b>malloc, free</b> (+ libft: <b>ft_itoa</b>, <b>ft_itoa_base</b>)</span></div>
+<pre><code>int	ft_print_nbr(int n)
+{
+	return (ft_print_free(ft_itoa(n)));
+}
+
+int	ft_print_unsigned(unsigned int n)
+{
+	return (ft_print_free(ft_itoa_base(n, "0123456789", 10, 0)));
+}</code></pre>
+<p>En vez de reescribir <code>putnbr</code>, el usuario reutiliza su libft: convierte el número
+en una cadena reservada con <code>malloc</code> y la imprime. Para no repetir el
+«imprimir y liberar» en cada sitio, todo pasa por un único helper:</p>
+<pre><code>int	ft_print_free(char *str)
+{
+	int	ret;
+
+	if (!str)
+		return (-1);
+	ret = ft_print_str(str);
+	free(str);
+	return (ret);
+}</code></pre>
+<p>Si <code>malloc</code> falló, la cadena es <code>NULL</code> y se devuelve <code>-1</code>.
+Si no, se imprime y se libera <em>siempre</em>, haya ido bien el <code>write</code> o no. Es el
+único <code>free</code> del proyecto, y por eso no hay forma de dejar un leak por un camino de
+error.</p>
+<p><code>%d</code> e <code>%i</code> usan <code>ft_itoa</code>, que ya gestiona el signo y
+<code>INT_MIN</code>. <code>%u</code> usa <code>ft_itoa_base</code>, una función de la piscine
+(C07) adaptada a <code>unsigned long</code> y añadida a la libft de este repo:</p>
+<pre><code>char	*ft_itoa_base(unsigned long n, char *base, int b, int d)
+{
+	char	*r;
+	int		dd;
+
+	if (n / b != 0)
+		r = ft_itoa_base(n / b, base, b, d + 1);
+	else
+	{
+		r = (char *)malloc(sizeof(char) * (d + 2));
+		r = ft_char_init(r, d + 1);
+	}
+	if (!r)
+		return (NULL);
+	dd = ft_strlen(r);
+	r[dd - 1 - d] = base[n % b];
+	return (r);
+}</code></pre>
+<p>El parámetro <code>d</code> cuenta la profundidad. La llamada más profunda (la de la cifra más
+significativa) ya sabe cuántas cifras hay en total, <code>d + 1</code>, y reserva la cadena una
+sola vez, rellena de <code>'0'</code> por <code>ft_char_init</code>. Luego, a la vuelta de la
+recursión, cada nivel escribe su cifra (<code>n % b</code>) en la posición que le toca, contando
+desde el final.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A reutilizar en lugar de reescribir:
+la libft existe para esto. A cambio aparece una responsabilidad nueva, porque cada número
+impreso cuesta un <code>malloc</code> y alguien tiene que liberarlo; centralizar el
+<code>free</code> en un solo punto es la manera de no tener que pensar en ello en cada
+conversión. Y repasa la descomposición en cifras de C 00: la recursión vuelve a invertir el
+orden «de la última cifra a la primera» gratis, esta vez en cualquier base.</div>
+</div>
+
+<div class="card" id="hex">
+<h2><span class="ex">%x %X %p</span>Hexadecimal y punteros</h2>
+<div class="meta"><span>Entrega: <b>ft_print_hex.c</b></span><span>Autorizado: <b>write, malloc, free</b> (+ libft: <b>ft_itoa_base</b>)</span></div>
+<pre><code>int	ft_print_hex(unsigned long n, int upper)
+{
+	char	*hex;
+
+	if (upper)
+		hex = "0123456789ABCDEF";
+	else
+		hex = "0123456789abcdef";
+	return (ft_print_free(ft_itoa_base(n, hex, 16, 0)));
+}
+
+/* "0x" + la direccion en hex; NULL sale "(nil)", como en glibc. */
+int	ft_print_ptr(void *p)
+{
+	int	ret;
+
+	if (!p)
+		return (ft_print_str("(nil)"));
+	if (ft_print_str("0x") &lt; 0)
+		return (-1);
+	ret = ft_print_hex((unsigned long)p, 0);
+	if (ret &lt; 0)
+		return (-1);
+	return (ret + 2);
+}</code></pre>
+<p>La base no es un número sino una <em>cadena de símbolos</em>: la cifra <code>k</code> se
+escribe como <code>base[k]</code>. Cambiar de minúsculas a mayúsculas es cambiar de cadena; la
+misma <code>ft_itoa_base</code> sirve para base 10 y base 16.</p>
+<p><code>ft_print_hex</code> recibe un <code>unsigned long</code> aunque <code>%x</code> saque un
+<code>unsigned int</code>: es para que <code>%p</code> pueda reutilizarla. En Linux de 64 bits
+una dirección ocupa 8 bytes y no cabe en un <code>unsigned int</code> de 4; el
+<code>unsigned int</code> de <code>%x</code> se amplía sin pérdida al pasar. Así, con
+<code>-1</code> sale <code>ffffffff</code> (el <code>int</code> reinterpretado como
+<code>unsigned int</code>), no <code>ffffffffffffffff</code>.</p>
+<p>Para el puntero <code>NULL</code> el usuario imprime <code>(nil)</code>, que es lo que hace
+glibc. Ojo: es un comportamiento propio de glibc; el printf de macOS imprime
+<code>0x0</code>. Si el corrector prueba en otro sistema, el resultado esperado cambia.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un puntero es, al final, un número
+— una dirección — y que imprimirlo es imprimir ese número en base 16. De paso obliga a pensar
+en tamaños: <code>int</code>, <code>unsigned int</code> y <code>unsigned long</code> no son
+intercambiables, y elegir el tipo del parámetro (aquí, el más ancho) es lo que permite que una
+sola función sirva para dos conversiones. Y que «hexadecimal» no es nada especial: cualquier
+base es una tabla de símbolos más divisiones sucesivas.</div>
+</div>
+
+<div class="card" id="makefile">
+<h2><span class="ex">make</span>El Makefile y la libft</h2>
+<div class="meta"><span>Entrega: <b>Makefile</b>, <b>libft/</b></span><span>Autorizado: <b>ar</b> (libtool prohibido)</span></div>
+<pre><code>NAME	= libftprintf.a
+
+LIBFT_DIR	= libft
+LIBFT	= $(LIBFT_DIR)/libft.a
+
+SRCS	= ft_printf.c ft_print_chars.c ft_print_nbrs.c ft_print_hex.c
+OBJS	= $(SRCS:.c=.o)
+
+all: libft $(NAME)
+
+libft:
+	$(MAKE) -C $(LIBFT_DIR)
+
+$(LIBFT): libft
+
+$(NAME): $(OBJS) $(LIBFT)
+	cp $(LIBFT) $(NAME)
+	ar rcs $(NAME) $(OBJS)
+
+%.o: %.c ft_printf.h $(LIBFT_DIR)/libft.h
+	$(CC) $(CFLAGS) -c $&lt; -o $@</code></pre>
+<p>El enunciado pide que, si usas la libft, la copies en un directorio <code>libft/</code> con
+su propio Makefile, y que el Makefile del proyecto la compile primero. Eso hace la regla falsa
+(<code>.PHONY</code>) <code>libft</code>: delega con <code>$(MAKE) -C libft</code>, y es la libft
+la que decide si tiene algo que recompilar.</p>
+<p>El truco está en la regla de <code>$(NAME)</code>: copia <code>libft.a</code> con el nombre
+<code>libftprintf.a</code> y luego <code>ar rcs</code> le <em>añade</em> los objetos de
+ft_printf. Como un <code>.a</code> no es más que un archivo de <code>.o</code>, el resultado es
+una sola librería con todo dentro, y quien la use enlaza solo con <code>-lftprintf</code>. Sin
+esto, <code>ft_print_str</code> llamaría a un <code>ft_strlen</code> que no está en
+<code>libftprintf.a</code> y el enlazado fallaría.</p>
+<p>Los <code>.o</code> dependen también de los dos headers, así que tocar
+<code>ft_printf.h</code> o <code>libft.h</code> recompila lo necesario. Ejecutar
+<code>make</code> dos veces seguidas solo vuelve a entrar en <code>libft/</code> (que responde
+«Nothing to be done») y no relinka. <code>clean</code> y <code>fclean</code> también delegan en
+la libft.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una librería estática es un
+contenedor de objetos que se puede ampliar, y que las dependencias entre proyectos se resuelven
+con Makefiles que se llaman unos a otros (<code>make -C</code>), cada uno responsable de lo suyo.
+Es la primera vez que la libft deja de ser un proyecto aislado y pasa a ser una pieza que otro
+proyecto consume, que es para lo que existe.</div>
+</div>
+
+<footer>42.zenidx.com — ft_printf · <a href="101_get_next_line.html">continuar con get_next_line →</a></footer>
+</div>
+</body>
+</html>

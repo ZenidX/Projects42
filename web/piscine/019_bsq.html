@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BSQ — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine" class="active">Piscine</a>
+      <a href="../index.html#cursus">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — BSQ</h1>
+<p class="sub">El proyecto final de la piscine: <em>Biggest SQuare</em>. Leer un mapa de un
+fichero, encontrar el mayor cuadrado sin obstáculos y pintarlo. Un programa completo, con
+Makefile, varios ficheros de entrada, entrada estándar, validación estricta y una Moulinette
+que no perdona.</p>
+
+<ul class="toc">
+  <li><a href="#struct">t_map — el estado del programa</a></li>
+  <li><a href="#main">main — uno o varios mapas</a></li>
+  <li><a href="#leer">ft_read_file — leer el mapa</a></li>
+  <li><a href="#cabecera">ft_parse_header — la primera línea</a></li>
+  <li><a href="#validar">ft_parse_map y ft_validate_map</a></li>
+  <li><a href="#solver">ft_bsq_isolver — buscar el cuadrado</a></li>
+  <li><a href="#pintar">ft_print_map — pintar y escribir</a></li>
+  <li><a href="#ojo">Ojo: lo que se escapa</a></li>
+</ul>
+
+<div class="trasfondo"><b>El enunciado</b> — Programa <code>bsq</code>; funciones autorizadas
+<code>open</code>, <code>close</code>, <code>read</code>, <code>write</code>,
+<code>malloc</code>, <code>free</code> y <code>exit</code>. La primera línea del mapa trae el
+número de líneas y, como sus <em>tres últimos</em> caracteres, el carácter vacío, el de
+obstáculo y el de lleno. El programa sustituye vacíos por llenos para dibujar el mayor cuadrado
+posible; si hay empate, el más arriba y, entre esos, el más a la izquierda. Acepta de 1 a n
+ficheros (con una línea en blanco entre salidas) o, sin argumentos, un mapa por la entrada
+estándar. Cualquier mapa inválido es un <code>map error</code>.
+<pre><code>$&gt; cat example_file          $&gt; ./bsq example_file
+9.ox                         .....xxxxxxx...............
+...........................  ....oxxxxxxx...............
+....o......................  .....xxxxxxxo..............
+............o..............  .....xxxxxxx...............
+...........................  ....oxxxxxxx...............
+....o......................  .....xxxxxxx...o...........
+...............o...........  .....xxxxxxx...............
+...........................  ......o..............o.....
+......o..............o.....  ..o.......o................
+..o.......o................</code></pre>
+A diferencia de los rushes, este lo corrige la Moulinette. El código está en
+<code>packs/piscine/019_bsq/repo/</code> y la salida de arriba es la del programa tal
+cual.</div>
+
+<div class="card" id="struct">
+<h2><span class="ex">bsq.h</span>t_map</h2>
+<div class="meta"><span>Entrega: <b>bsq.h</b></span><span>Autorizado: <b>open, close, read, write, malloc, free, exit</b></span></div>
+<p>Todo lo que se sabe de un mapa viaja en una sola estructura. Dos decisiones que conviene
+tener en la cabeza para leer el resto: <code>map[0]</code> es la <em>cabecera</em> (las filas
+van de <code>map[1]</code> a <code>map[height]</code>), y el mejor cuadrado se guarda como
+fila, columna y lado en <code>sq[3]</code>.</p>
+<pre><code>/*
+** obj[0] vacio, obj[1] obstaculo, obj[2] lleno (el orden de la cabecera).
+** map[0] es la cabecera: las filas del mapa van de map[1] a map[height].
+** sq[0] fila, sq[1] columna, sq[2] lado del mayor cuadrado encontrado.
+*/
+typedef struct s_map
+{
+	char	obj[3];
+	char	**map;
+	int		width;
+	int		height;
+	int		sq[3];
+}	t_map;</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A diseñar el estado antes que las
+funciones. Con una estructura bien pensada, cada función recibe un <code>t_map *</code> y la
+Norma (máximo cuatro parámetros) deja de ser un problema. Dejar la cabecera en
+<code>map[0]</code> evita copiar el mapa, a cambio de que todos los índices de fila empiecen en
+1.</div>
+</div>
+
+<div class="card" id="main">
+<h2><span class="ex">main</span>main y ft_run_map</h2>
+<div class="meta"><span>Entrega: <b>bsq.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p><code>ft_run_map</code> hace un mapa de principio a fin: si llega <code>NULL</code> (no se
+pudo leer o no es válido) solo escribe el error; si no, resuelve, pinta y libera.
+<code>main</code> decide de dónde vienen los mapas.</p>
+<pre><code>	if (argc &lt; 2)
+	{
+		ft_run_map(ft_map_from_fd(0));
+		return (0);
+	}
+	i = 1;
+	while (i &lt; argc)
+	{
+		if (i &gt; 1)
+			ft_putstr("\n");
+		ft_run_map(ft_read_map(argv[i]));
+		i++;
+	}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El problema de la valla otra vez
+(C00): la línea en blanco va <em>entre</em> salidas, así que se escribe antes de cada mapa
+menos del primero. Y que cada mapa es independiente: un fichero que no existe en medio de la
+lista da su <code>map error</code> y el programa sigue con el siguiente.</div>
+</div>
+
+<div class="card" id="leer">
+<h2><span class="ex">leer</span>ft_read_file, ft_map_from_fd y ft_read_map</h2>
+<div class="meta"><span>Entrega: <b>ft_read_file_map.c</b>, <b>ft_str_utils.c</b></span><span>Autorizado: <b>open, read, close, malloc, free</b></span></div>
+<p>La lectura es la misma idea que en el Rush 02 (de hecho <code>ft_split.c</code> es idéntico):
+leer a trozos de 255 bytes y pegarlos con <code>ft_strfreecat</code>, que devuelve un bloque
+nuevo y libera el anterior. La lectura está separada en dos niveles para que la entrada estándar
+y los ficheros compartan código: <code>ft_map_from_fd</code> trabaja con cualquier descriptor, y
+<code>ft_read_map</code> solo añade el <code>open</code> y el <code>close</code>.</p>
+<pre><code>	map_str = ft_strifcpy("", 0, 0);
+	n = read(fd, buffer, sizeof(buffer) - 1);
+	while (n &gt; 0)
+	{
+		buffer[n] = '\0';
+		map_str = ft_strfreecat(map_str, buffer);
+		if (!map_str)
+			return (0);
+		n = read(fd, buffer, sizeof(buffer) - 1);
+	}</code></pre>
+<p>Ojo: cada vuelta copia <em>todo</em> lo acumulado para añadir 255 bytes, así que el coste
+crece con el cuadrado del tamaño del fichero. En un mapa de 1000×1000 generado con el script del
+enunciado (1 MB, unas 4000 lecturas), el programa tarda unos 6 segundos, y prácticamente todo
+ese tiempo es la lectura: el mismo mapa con una línea de más, que se rechaza justo después de
+leerlo, tarda lo mismo.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la entrada no siempre cabe en
+un buffer fijo y hay que crecer bajo demanda. Y que crecer de 255 en 255 bytes copiando todo
+cada vez es cuadrático: con el diccionario del Rush 02 no se nota; con un mapa de un megabyte,
+sí. BSQ es el primer proyecto donde el rendimiento se ve sin medir.</div>
+</div>
+
+<div class="card" id="cabecera">
+<h2><span class="ex">cabecera</span>ft_parse_header y ft_check_obj</h2>
+<div class="meta"><span>Entrega: <b>ft_parse_header.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
+<p>Los tres últimos caracteres de la primera línea son vacío, obstáculo y lleno; todo lo de
+delante tiene que ser dígitos. <code>ft_check_obj</code> exige que los tres sean imprimibles
+(32 a 126) y distintos entre sí, y <code>ft_is_pos</code> convierte una altura de 0 o negativa
+en 0, que es el «no válido».</p>
+<pre><code>	h = map-&gt;map[0];
+	len = ft_strlen(h);
+	if (len &lt; 4 || !ft_only_digits(h, len - 3))
+		return (0);
+	map-&gt;obj[0] = h[len - 3];
+	map-&gt;obj[1] = h[len - 2];
+	map-&gt;obj[2] = h[len - 1];
+	if (!ft_check_obj(map))
+		return (0);
+	map-&gt;height = ft_is_pos(ft_atoi(h));
+	return (map-&gt;height != 0);</code></pre>
+<p>Ojo: <code>ft_only_digits</code> mira solo los <code>len - 3</code> primeros caracteres, pero
+<code>ft_atoi(h)</code> lee la cabecera <em>entera</em> mientras haya dígitos. El enunciado
+recuerda que un dígito es un carácter válido para el mapa: con la cabecera
+<code>21ox</code> (2 líneas, vacío <code>'1'</code>), <code>ft_atoi</code> lee 21 y el mapa sale
+como <code>map error</code>. Bastaría con no dejar que la conversión pase de
+<code>len - 3</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A parsear de derecha a izquierda
+cuando el formato lo pide: los símbolos no se reconocen por ser «no dígitos», sino por su
+posición al final. Y a desconfiar de reutilizar una función (<code>ft_atoi</code>) cuyo
+contrato no coincide del todo con lo que necesitas: atoi decide sola dónde para.</div>
+</div>
+
+<div class="card" id="validar">
+<h2><span class="ex">validar</span>ft_parse_map y ft_validate_map</h2>
+<div class="meta"><span>Entrega: <b>ft_parse_map.c</b>, <b>ft_split.c</b></span><span>Autorizado: <b>malloc</b>, <b>free</b></span></div>
+<p>El fichero se parte por <code>'\n'</code>; la cabecera tiene que ser válida y el número de
+líneas tiene que coincidir exactamente con lo prometido. Ese conteo, como explica el propio
+comentario del código, protege dos cosas: que <code>ft_validate_map</code> no se salga del array
+si faltan líneas y que no se acepten líneas de sobra.</p>
+<pre><code>	map-&gt;map = ft_split(map_str, "\n");
+	if (!map-&gt;map || ft_arrlen(map-&gt;map) &lt; 2)
+		return (ft_parse_error(map));
+	if (!ft_parse_header(map))
+		return (ft_parse_error(map));
+	if (ft_arrlen(map-&gt;map) != map-&gt;height + 1)
+		return (ft_parse_error(map));
+	return (ft_validate_map(map));</code></pre>
+<p>Después, todas las filas deben medir lo mismo que la primera y contener solo vacíos u
+obstáculos. El carácter «lleno» dentro del mapa también es error: lo pone el programa.</p>
+<pre><code>		if (ft_strlen(map-&gt;map[i]) != map-&gt;width)
+			return (ft_parse_error(map));
+		j = 0;
+		while (j &lt; map-&gt;width)
+		{
+			if (!ft_is_map(map-&gt;map[i][j], map))
+				return (ft_parse_error(map));
+			j++;
+		}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la mitad de la nota de BSQ son
+mapas inválidos. La Moulinette prueba cabeceras raras, líneas desiguales, caracteres extraños y
+ficheros vacíos, y cada uno tiene que acabar en <code>map error</code> sin fugas: por eso todo
+camino de error pasa por <code>ft_parse_error</code>, que libera el split y la estructura.</div>
+</div>
+
+<div class="card" id="solver">
+<h2><span class="ex">clave</span>ft_bsq_isolver y ft_validate_sq</h2>
+<div class="meta"><span>Entrega: <b>ft_bsq_isolver.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
+<p>El algoritmo recorre el mapa de arriba abajo y de izquierda a derecha. En cada casilla vacía
+intenta hacer crecer un cuadrado con esa casilla como esquina superior izquierda, pero no desde
+1: empieza en <em>el mejor lado encontrado hasta ahora más uno</em>. Un cuadrado igual o más
+pequeño no serviría de nada.</p>
+<pre><code>			if (map-&gt;map[i[0]][i[1]] == map-&gt;obj[0])
+			{
+				tmp = map-&gt;sq[2];
+				while (tmp != -1
+					&amp;&amp; tmp &lt;= map-&gt;height - i[0]
+					&amp;&amp; tmp &lt; map-&gt;width - i[1])
+				{
+					tmp++;
+					ft_validate_sq(map, i, &amp;tmp);
+				}
+			}</code></pre>
+<p><code>ft_validate_sq</code> recorre el cuadrado de lado <code>tmp</code>. Si encuentra un
+obstáculo, pone <code>tmp</code> a −1, lo que corta sus propios bucles y el
+<code>while</code> de fuera (si un cuadrado tiene un obstáculo, todos los mayores desde esa
+esquina también). Si no, y es mayor que el récord, se guarda.</p>
+<pre><code>			if (map-&gt;map[i[0] + j[0]][i[1] + j[1]] == map-&gt;obj[1])
+				*tmp = -1;
+	...
+	if (map-&gt;sq[2] &lt; *tmp)
+	{
+		map-&gt;sq[0] = i[0];
+		map-&gt;sq[1] = i[1];
+		map-&gt;sq[2] = *tmp;
+	}</code></pre>
+<p>El desempate del enunciado sale solo: como se recorre en orden de lectura y el récord solo
+se sustituye con <code>&lt;</code> estricto, un cuadrado del mismo tamaño encontrado más tarde
+(más abajo o más a la derecha) nunca reemplaza al primero. Los límites del <code>while</code>
+garantizan que el cuadrado no se salga por abajo ni por la derecha.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A razonar sobre el coste. Comprobar
+cada casilla con cada tamaño desde cero sería inviable; esta solución poda de dos formas
+(empezar por el récord + 1 y abandonar al primer obstáculo). Aun así, cada casilla vacía revisa
+un cuadrado de (récord + 1)² celdas, así que el coste depende de lo grande que sea la respuesta.
+En los mapas de prueba de 1000×1000 con obstáculos la búsqueda es rápida; lo lento es leer. Y
+el desempate demuestra que el orden de recorrido puede resolver una regla del enunciado sin una
+línea de código extra.</div>
+</div>
+
+<div class="card" id="pintar">
+<h2><span class="ex">salida</span>ft_fill_sq y ft_print_map</h2>
+<div class="meta"><span>Entrega: <b>ft_print_map.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Se pinta sobre el propio mapa (no hace falta copia) y se escribe cada fila de una vez, en vez
+de carácter a carácter. Si no hay ningún cuadrado posible (todo obstáculos), el lado es 0, los
+bucles no entran y el mapa sale tal cual.</p>
+<pre><code>	ft_fill_sq(map);
+	i = 1;
+	while (i &lt;= map-&gt;height)
+	{
+		ft_putstr(map-&gt;map[i]);
+		ft_putstr("\n");
+		i++;
+	}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <code>write</code> es una llamada
+al sistema y cada una cuesta. El comentario del código lo cuantifica: en un mapa de 300×300, 600
+llamadas en vez de 90 000. Es la misma lección que <code>ft_print_comb2</code> (C00) componiendo
+un buffer de 5 bytes, a otra escala.</div>
+</div>
+
+<div class="card" id="ojo">
+<h2><span class="ex">ojo</span>Lo que se escapa</h2>
+<div class="meta"><span>Probado: <b>compilado y ejecutado tal cual</b></span></div>
+<ul>
+<li><b>Cabecera con dígitos como símbolo.</b> Ver <a href="#cabecera">la cabecera</a>:
+<code>21ox</code> da <code>map error</code> en un mapa válido.</li>
+<li><b>Líneas vacías.</b> <code>ft_split</code> funde los <code>'\n'</code> seguidos, así que una
+línea vacía desaparece en lugar de dar error. <code>1.ox</code> seguido de una línea vacía y de
+<code>...</code> se acepta como mapa de una línea.</li>
+<li><b>Último salto de línea.</b> Por la misma razón, un mapa cuya última línea no acaba en
+<code>'\n'</code> se acepta, aunque el enunciado dice que las líneas van separadas por saltos de
+línea.</li>
+<li><b>Lectura cuadrática.</b> Ver <a href="#leer">la lectura</a>: unos 6 s para 1 MB.</li>
+<li><b>Salida del error.</b> <code>map error</code> va a la salida estándar. Este enunciado no dice
+por qué descriptor debe salir; conviene comprobar qué espera la Moulinette.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en un proyecto con Moulinette
+los casos límite no son un extra: son el examen. Un split que «limpia» las líneas vacías es
+cómodo para parsear, pero borra justo la información que hace falta para rechazar un mapa
+mal formado.</div>
+</div>
+
+<footer>42.zenidx.com — BSQ · fin de la piscine · <a href="../index.html#cursus">continuar con el cursus →</a></footer>
+</div>
+</body>
+</html>

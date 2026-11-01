@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rush 00 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine" class="active">Piscine</a>
+      <a href="../index.html#cursus">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — Rush 00</h1>
+<p class="sub">El primer proyecto en grupo. Una función, <code>rush(x, y)</code>, que dibuja un
+rectángulo de <code>x</code> columnas por <code>y</code> filas con letras en las esquinas y los
+bordes. Solo con <code>write</code>, y con un fin de semana para ponerse de acuerdo con gente que
+no conocías el viernes.</p>
+
+<ul class="toc">
+  <li><a href="#rush">rush — el doble bucle</a></li>
+  <li><a href="#print">print_character — qué letra va en cada celda</a></li>
+  <li><a href="#main">main — las pruebas</a></li>
+  <li><a href="#ojo">Ojo: una sola fila o una sola columna</a></li>
+</ul>
+
+<div class="trasfondo"><b>Qué es un rush</b> — Los rushes son los proyectos de fin de semana
+de la piscine: el sistema te asigna un grupo de dos o tres personas y hay que entregar en el
+repositorio común antes del domingo por la noche. No hay Moulinette: se defiende en una
+evaluación en directo donde <em>cualquier</em> miembro del grupo tiene que poder explicar
+cualquier línea. En el Rush 00 cada grupo recibe una de cinco variantes del mismo dibujo (cambian
+los caracteres de las esquinas y los bordes). La de este grupo pone <code>A</code> en la esquina
+superior izquierda y en la inferior derecha, <code>C</code> en las otras dos y <code>B</code> en
+los bordes — el patrón de la variante que el enunciado llama <em>rush04</em>, aunque el fichero
+se llame <code>rush00.c</code>. En el pack no está el PDF del enunciado; lo que sigue sale del
+código.
+<pre><code>$&gt; ./a.out      (rush(5, 3))
+ABBBC
+B   B
+CBBBA</code></pre>
+El código es del grupo (la cabecera 42 de los ficheros la firma el compañero, y
+la última edición de <code>rush00.c</code> es de xalara).</div>
+
+<div class="card" id="rush">
+<h2><span class="ex">ex00</span>rush</h2>
+<div class="meta"><span>Entrega: <b>ex00/rush00.c</b>, <b>ex00/ft_putchar.c</b>, <b>ex00/main.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Recorre el rectángulo fila a fila (<code>i</code>, de 1 a <code>y</code>) y, dentro de cada
+fila, columna a columna (<code>j</code>, de 1 a <code>x</code>). Cada celda se delega a
+<code>print_character</code> y al final de cada fila se escribe el salto de línea. Las medidas
+nulas o negativas no dibujan nada.</p>
+<pre><code>void	rush(int x, int y)
+{
+	int	i;
+	int	j;
+
+	if (x &lt;= 0 || y &lt;= 0)
+		return ;
+	i = 1;
+	while (i &lt;= y)
+	{
+		j = 1;
+		while (j &lt;= x)
+		{
+			print_character(i, j, x, y);
+			j++;
+		}
+		ft_putchar('\n');
+		i++;
+	}
+}</code></pre>
+<p>Un detalle que facilita la lectura: los contadores empiezan en 1, no en 0. Así «primera
+fila» es <code>i == 1</code> y «última fila» es <code>i == y</code>, que se parece mucho a cómo
+se describe el dibujo en español.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A pensar una salida en dos dimensiones
+como una secuencia de bytes: la pantalla no es una cuadrícula, es un flujo de caracteres donde
+<code>'\n'</code> marca dónde empieza la siguiente fila. El bucle exterior son las filas y el
+interior las columnas, y confundirlos (o el orden de <code>x</code> e <code>y</code>) es el error
+típico que la defensa busca.</div>
+</div>
+
+<div class="card" id="print">
+<h2><span class="ex">celda</span>print_character</h2>
+<div class="meta"><span>Entrega: <b>ex00/rush00.c</b></span><span>Autorizado: <b>write</b> (vía ft_putchar)</span></div>
+<p>Toda la lógica del dibujo está en una cadena de <code>if / else if</code> que decide la letra
+según la posición. El orden de las condiciones importa: primero las esquinas
+<code>A</code>, luego las esquinas <code>C</code>, luego cualquier borde, y si no es nada de eso,
+un espacio.</p>
+<pre><code>void	print_character(int i, int j, int x, int y)
+{
+	if ((i == 1 &amp;&amp; j == 1)
+		|| (i == y &amp;&amp; j == x))
+		ft_putchar('A');
+	else if ((i == 1 &amp;&amp; j == x)
+		|| (i == y &amp;&amp; j == 1))
+		ft_putchar('C');
+	else if (i == 1 || i == y
+		|| j == 1 || j == x)
+		ft_putchar('B');
+	else
+		ft_putchar(' ');
+}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una cadena de
+<code>else if</code> es una tabla de prioridades: la primera condición que se cumple gana. Las
+esquinas también son borde, así que si la comprobación de borde fuera primero nunca saldría una
+<code>A</code> ni una <code>C</code>. Separar «qué carácter va aquí» del «recorrer el rectángulo»
+en dos funciones es además lo que hace que el código sea defendible por cualquiera del grupo.</div>
+</div>
+
+<div class="card" id="main">
+<h2><span class="ex">main</span>main</h2>
+<div class="meta"><span>Entrega: <b>ex00/main.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>El enunciado de los Rush 00 deja que el grupo entregue su propio <code>main</code>, y en la
+evaluación se cambia por otros valores. El de este grupo prueba casos normales y los bordes:
+1×1, una fila, una columna, ceros, negativos y uno grande.</p>
+<pre><code>	rush(6, 4);
+	rush(1, 1);
+	rush(1, 4);
+	rush(4, 1);
+	rush(2, 2);
+	rush(0, 6);
+	rush(6, 0);
+	rush(0, 0);
+	rush(-1, 6);
+	rush(6, -1);
+	rush(-3, -5);
+	rush(123, 42);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A probar antes de que te prueben. Un
+main que solo llama a <code>rush(5, 3)</code> no demuestra nada; uno con los casos degenerados
+(0, negativos, 1×N) es la lista de lo que el evaluador va a intentar romper.</div>
+</div>
+
+<div class="card" id="ojo">
+<h2><span class="ex">ojo</span>Una sola fila o una sola columna</h2>
+<div class="meta"><span>Afecta a: <b>print_character</b></span></div>
+<p>Con una sola fila (<code>y == 1</code>), la primera y la última fila son la misma. En la
+última celda se cumplen a la vez «última fila y última columna» (<code>A</code>) y «primera fila
+y última columna» (<code>C</code>), y como la comprobación de <code>A</code> va primero, gana la
+<code>A</code>. Lo mismo pasa con una sola columna. Compilado y ejecutado tal cual:</p>
+<pre><code>rush(5, 1)      rush(1, 5)
+ABBBA           A
+                B
+                B
+                B
+                A</code></pre>
+<p>Ojo: en esta variante del enunciado, los ejemplos de una fila y de una columna terminan en
+<code>C</code> (<code>ABBBC</code> y <code>A B B B C</code> en vertical). Con los rectángulos de
+dos o más filas y columnas (<code>rush(5, 3)</code>, <code>rush(4, 4)</code>) la salida es la
+esperada, y el 1×1 da <code>A</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que los casos degenerados son donde
+dos reglas que nunca chocan en el caso general empiezan a solaparse. Cuando una celda es a la vez
+«primera» y «última», el orden de los <code>if</code> deja de ser un detalle de estilo y pasa a
+decidir el resultado.</div>
+</div>
+
+<footer>42.zenidx.com — Rush 00 · <a href="017_rush01.html">continuar con Rush 01 →</a></footer>
+</div>
+</body>
+</html>

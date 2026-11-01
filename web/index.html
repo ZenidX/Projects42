@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>42.zenidx.com — la piscine de 42, explicada</title>
+<title>42.zenidx.com — 42 Barcelona, explicado</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,31 +11,18 @@
   <div class="wrap">
     <a class="logo" href="index.html">42.zenidx.com</a>
     <nav>
-      <a href="index.html" class="active">Trasfondo</a>
-      <a href="piscine/000_shell00.html">Shell 00</a>
-      <a href="piscine/001_shell01.html">Shell 01</a>
-      <a href="piscine/002_c00.html">C 00</a>
-      <a href="piscine/003_c01.html">C 01</a>
-      <a href="piscine/004_c02.html">C 02</a>
-      <a href="piscine/005_c03.html">C 03</a>
-      <a href="piscine/006_c04.html">C 04</a>
-      <a href="piscine/007_c05.html">C 05</a>
-      <a href="piscine/008_c06.html">C 06</a>
-      <a href="piscine/009_c07.html">C 07</a>
-      <a href="piscine/010_c08.html">C 08</a>
-      <a href="piscine/011_c09.html">C 09</a>
-      <a href="piscine/012_c10.html">C 10</a>
-      <a href="piscine/013_c11.html">C 11</a>
-      <a href="piscine/014_c12.html">C 12</a>
-      <a href="piscine/015_c13.html">C 13</a>
+      <a href="index.html" class="active">Inicio</a>
+      <a href="#piscine">Piscine</a>
+      <a href="#cursus">Cursus</a>
     </nav>
   </div>
 </header>
 <div class="wrap">
 
-<h1>La piscine de 42, explicada</h1>
-<p class="sub">Los módulos Shell de la C Piscine de 42 Barcelona (cuenta <code>xalara</code>):
-cada ejercicio resuelto, explicado y con su trasfondo.</p>
+<h1>42 Barcelona, explicado</h1>
+<p class="sub">La piscine y el cursus de 42 Barcelona (cuenta <code>xalara</code>): cada
+proyecto resuelto, explicado y con su trasfondo. Saltar a la <a href="#piscine">piscine</a>
+o al <a href="#cursus">cursus</a>.</p>
 
 <h2>Qué es 42</h2>
 <p><strong>42</strong> es una escuela de programación fundada en París en 2013 por Xavier Niel
@@ -75,7 +62,7 @@ planeta de los vogones, los burócratas despiadados de la galaxia — el nombre 
 máquina que decide si tu entrega cuenta o no. Los programas de los estudiantes llevan el prefijo
 <code>ft_</code> (<em>forty-two</em>), y el campus se organiza en <em>clusters</em> de iMacs.</div>
 
-<h2>Los módulos</h2>
+<h2 id="piscine">La piscine, módulo a módulo</h2>
 <p>La piscine arranca con dos módulos de <strong>shell</strong> (vivir en la terminal: permisos,
 git, pipes) y sigue con catorce de <strong>C</strong>, de C 00 a C 13, que construyen el lenguaje
 concepto a concepto: primero un solo <code>write</code>, luego punteros, cadenas, memoria
@@ -83,6 +70,9 @@ dinámica, el preprocesador, librerías, punteros a función, listas y árboles.
 documenta el módulo ejercicio a ejercicio con su solución y su <strong>trasfondo</strong>: qué
 concepto nuevo te obliga a aprender cada uno y por qué el lenguaje (o Unix) es como es —
 que es exactamente lo que la secuencia de la piscine está diseñada para enseñar.</p>
+<p>Los fines de semana tocan los <strong>rushes</strong>, proyectos de 48 horas en grupo con
+compañeros que no eliges, y la piscine termina con <strong>BSQ</strong>, el proyecto final:
+encontrar el mayor cuadrado en un mapa, leyendo ficheros de verdad y sin perder memoria.</p>
 
 <div class="grid">
   <a class="mod" href="piscine/000_shell00.html">
@@ -149,17 +139,223 @@ que es exactamente lo que la secuencia de la piscine está diseñada para enseñ
     <div class="t">C 13</div>
     <div class="d">Árboles binarios: recursión estructural y recorridos.</div>
   </a>
+  <a class="mod" href="piscine/016_rush00.html">
+    <div class="t">Rush 00</div>
+    <div class="d">Primer rush en grupo: dibujar un rectángulo con write y el orden de los if.</div>
+  </a>
+  <a class="mod" href="piscine/017_rush01.html">
+    <div class="t">Rush 01</div>
+    <div class="d">Rascacielos: permutaciones numeradas con factoriales y backtracking por filas.</div>
+  </a>
+  <a class="mod" href="piscine/018_rush02.html">
+    <div class="t">Rush 02</div>
+    <div class="d">Números en letras con diccionario: leer ficheros, parsear y cifras como texto.</div>
+  </a>
+  <a class="mod" href="piscine/019_bsq.html">
+    <div class="t">BSQ</div>
+    <div class="d">Proyecto final: el mayor cuadrado de un mapa, validación estricta y Moulinette.</div>
+  </a>
 </div>
 
+<h2 id="cursus">El cursus</h2>
+<p>Quien pasa la piscine entra en el <strong>42cursus</strong>, el <em>common core</em>: unos
+dos años de proyectos que ya no se entregan por días sino a tu ritmo, cada uno con su
+evaluación entre pares y su Moulinette. El cursus se organiza en <strong>ranks</strong>
+(del 00 al 06): cada rank es un grupo de proyectos que hay que terminar, y lo cierra un examen,
+antes de poder pasar al siguiente.</p>
+<p>Esta cuenta va por <strong>42next</strong>, el camino nuevo del common core. Conserva los
+cimientos en C del cursus clásico (Libft, ft_printf, get_next_line) y luego gira hacia Python,
+sistemas, IA y redes en lugar de los gráficos y la shell del camino antiguo. Algunos proyectos
+existen en las dos versiones: el push_swap de 42next, por ejemplo, se hace en pareja y pide
+cuatro estrategias de ordenación y un índice de desorden.</p>
+
+<div class="trasfondo"><b>La librería que te acompaña</b> — El primer proyecto del cursus
+consiste en reescribir media libc en tu propia librería, <code>libft</code>. Las funciones de la
+libc del sistema están prohibidas casi siempre, así que libft se convierte en tu caja de
+herramientas: ft_printf la enlaza, push_swap guarda sus pilas en sus listas <code>t_list</code>, y
+cada proyecto le añade alguna pieza. Por eso merece la pena escribirla bien.</div>
+
+<!-- cursus:begin (generado) -->
+<h3 id="rank0">Rank 00 · arranque</h3>
+<div class="grid">
+  <a class="mod" href="cursus/M0/000_C-piscine-reloaded.html">
+    <div class="t">C-piscine-reloaded</div>
+    <div class="d">Repaso de la piscine en 28 ejercicios: shell, punteros, malloc, structs, Makefile y open/read.</div>
+  </a>
+  <a class="mod" href="cursus/M0/001_Libft.html">
+    <div class="t">Libft</div>
+    <div class="d">43 funciones a mano: libc, memmove, split, itoa con INT_MIN, t_list y libft.a.</div>
+  </a>
+</div>
+<h3 id="rank1">Rank 01 · fundamentos en C</h3>
+<div class="grid">
+  <a class="mod" href="cursus/M1/100_ft_printf.html">
+    <div class="t">ft printf</div>
+    <div class="d">Funciones variádicas: va_arg, promoción de tipos, cspdiuxX%, bases y una libft dentro.</div>
+  </a>
+  <a class="mod" href="cursus/M1/101_get_next_line.html">
+    <div class="t">get next line</div>
+    <div class="d">Variables static: leer a trozos con BUFFER_SIZE, guardar el resto, EOF, leaks y varios fd.</div>
+  </a>
+  <a class="mod" href="cursus/M1/102_push_swap.html">
+    <div class="t">push swap</div>
+    <div class="d">Dos pilas y 11 movimientos: rangos, desorden, selección, chunks, radix y LIS adaptativa.</div>
+  </a>
+  <a class="mod" href="cursus/M1/103_Exam_atonement.html">
+    <div class="t">Exam atonement <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_103_Exam_atonement</div>
+  </a>
+</div>
+<h3 id="rank2">Rank 02 · Python y sistemas</h3>
+<div class="grid">
+  <a class="mod" href="cursus/M2/200_Born2beroot.html">
+    <div class="t">Born2beroot <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_200_Born2beroot</div>
+  </a>
+  <a class="mod" href="cursus/M2/201_A-Maze-ing.html">
+    <div class="t">A-Maze-ing <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_201_A-Maze-ing</div>
+  </a>
+  <a class="mod" href="cursus/M2/202_Python_Module_00.html">
+    <div class="t">Python Module 00</div>
+    <div class="d">Primer Python tras el C: print, input, int(), if, for frente a recursión y tipos con mypy.</div>
+  </a>
+  <a class="mod" href="cursus/M2/203_Python_Module_01.html">
+    <div class="t">Python Module 01 <span class="tag">en curso</span></div>
+    <div class="d">Del script a las clases: __main__, la clase Plant y sus métodos (ex0–ex2 por ahora).</div>
+  </a>
+  <a class="mod" href="cursus/M2/204_Python_Module_02.html">
+    <div class="t">Python Module 02 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_204_Python_Module_02</div>
+  </a>
+  <a class="mod" href="cursus/M2/205_Python_Module_03.html">
+    <div class="t">Python Module 03 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_205_Python_Module_03</div>
+  </a>
+  <a class="mod" href="cursus/M2/206_Python_Module_04.html">
+    <div class="t">Python Module 04 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_206_Python_Module_04</div>
+  </a>
+  <a class="mod" href="cursus/M2/207_Python_Module_05.html">
+    <div class="t">Python Module 05 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_207_Python_Module_05</div>
+  </a>
+  <a class="mod" href="cursus/M2/208_Python_Module_06.html">
+    <div class="t">Python Module 06 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_208_Python_Module_06</div>
+  </a>
+  <a class="mod" href="cursus/M2/209_Python_Module_07.html">
+    <div class="t">Python Module 07 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_209_Python_Module_07</div>
+  </a>
+  <a class="mod" href="cursus/M2/210_Python_Module_08.html">
+    <div class="t">Python Module 08 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_210_Python_Module_08</div>
+  </a>
+  <a class="mod" href="cursus/M2/211_Python_Module_09.html">
+    <div class="t">Python Module 09 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_211_Python_Module_09</div>
+  </a>
+  <a class="mod" href="cursus/M2/212_Python_Module_10.html">
+    <div class="t">Python Module 10 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_212_Python_Module_10</div>
+  </a>
+  <a class="mod" href="cursus/M2/213_Exam_Rank_02.html">
+    <div class="t">Exam Rank 02 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_213_Exam_Rank_02</div>
+  </a>
+</div>
+<h3 id="rank3">Rank 03 · concurrencia, grafos e IA</h3>
+<div class="grid">
+  <a class="mod" href="cursus/M3/300_Codexion.html">
+    <div class="t">Codexion <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_300_Codexion</div>
+  </a>
+  <a class="mod" href="cursus/M3/301_Call_Me_Maybe.html">
+    <div class="t">Call Me Maybe <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_301_Call_Me_Maybe</div>
+  </a>
+  <a class="mod" href="cursus/M3/302_Fly-in.html">
+    <div class="t">Fly-in <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_302_Fly-in</div>
+  </a>
+  <a class="mod" href="cursus/M3/303_Exam_Rank_03.html">
+    <div class="t">Exam Rank 03 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_303_Exam_Rank_03</div>
+  </a>
+</div>
+<h3 id="rank4">Rank 04 · redes, juego y RAG</h3>
+<div class="grid">
+  <a class="mod" href="cursus/M4/400_NetPractice.html">
+    <div class="t">NetPractice <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_400_NetPractice</div>
+  </a>
+  <a class="mod" href="cursus/M4/401_Pac-Man.html">
+    <div class="t">Pac-Man <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_401_Pac-Man</div>
+  </a>
+  <a class="mod" href="cursus/M4/402_RAG_against_the_machine.html">
+    <div class="t">RAG against the machine <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_402_RAG_against_the_machine</div>
+  </a>
+  <a class="mod" href="cursus/M4/403_Exam_Rank_04.html">
+    <div class="t">Exam Rank 04 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_403_Exam_Rank_04</div>
+  </a>
+</div>
+<h3 id="rank5">Rank 05 · contenedores, servidores y agentes</h3>
+<div class="grid">
+  <a class="mod" href="cursus/M5/500_Inception.html">
+    <div class="t">Inception <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_500_Inception</div>
+  </a>
+  <a class="mod" href="cursus/M5/501_Agent_Smith.html">
+    <div class="t">Agent Smith <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_501_Agent_Smith</div>
+  </a>
+  <a class="mod" href="cursus/M5/502_The_Answer_Protocol.html">
+    <div class="t">The Answer Protocol <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_502_The_Answer_Protocol</div>
+  </a>
+  <a class="mod" href="cursus/M5/503_tree_nity.html">
+    <div class="t">tree nity <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_503_tree_nity</div>
+  </a>
+  <a class="mod" href="cursus/M5/504_Exam_Rank_05.html">
+    <div class="t">Exam Rank 05 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_504_Exam_Rank_05</div>
+  </a>
+</div>
+<h3 id="rank6">Rank 06 · transcendence</h3>
+<div class="grid">
+  <a class="mod" href="cursus/M6/600_ft_transcendence.html">
+    <div class="t">ft transcendence <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_600_ft_transcendence</div>
+  </a>
+  <a class="mod" href="cursus/M6/601_ft_resume.html">
+    <div class="t">ft resume <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_601_ft_resume</div>
+  </a>
+  <a class="mod" href="cursus/M6/602_Exam_Rank_06.html">
+    <div class="t">Exam Rank 06 <span class="tag pend">pendiente</span></div>
+    <div class="d">DESC_602_Exam_Rank_06</div>
+  </a>
+</div>
+<!-- cursus:end -->
+
 <h2>Sobre estas soluciones</h2>
-<p>Las soluciones publicadas aquí corresponden a la cuenta <code>xalara</code> de 42 Barcelona
-y están <strong>resueltas y verificadas</strong>: cada ejercicio se probó en un Linux real
+<p>Las soluciones publicadas aquí corresponden a la cuenta <code>xalara</code> de 42 Barcelona.
+Las de la piscine están <strong>resueltas y verificadas</strong>: cada ejercicio se probó en un Linux real
 (Ubuntu/WSL) contra lo que pide el enunciado — permisos y fechas exactos en los tar, salidas
 comparadas con <code>cat -e</code>, positivos y negativos en el archivo mágico, y verificación
 aritmética independiente en el ejercicio de bases. Los enunciados originales (v5.0 y v8.1, en
 español) piden explícitamente no delegar el razonamiento en una IA durante la piscine; esta web
 hace lo contrario de un atajo: cada solución viene con la explicación de por qué funciona,
 que es exactamente lo que la evaluación entre pares te va a exigir.</p>
+<p>Las páginas del cursus siguen la misma idea, pero con proyectos más grandes: en lugar de ir
+ejercicio por ejercicio, recorren el código por capas, en el orden en que conviene entenderlo.
+Los proyectos marcados <span class="tag">en curso</span> se van ampliando a medida que se
+terminan.</p>
 
 <footer>42.zenidx.com — ZenidX. Los enunciados pertenecen a 42; las soluciones y explicaciones
 son propias.</footer>

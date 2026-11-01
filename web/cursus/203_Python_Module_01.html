@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 01 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 01 <span class="tag">en curso</span></h1>
+<p class="sub">«Code Cultivation»: del programa suelto a las clases. El mismo huerto del
+módulo anterior, ahora modelado con objetos. <strong>Módulo en curso</strong>: aquí están
+explicados los ejercicios ya hechos (ex0, ex1 y ex2); el resto se añadirá más adelante.</p>
+
+<p><b>Estado:</b> ex0 y ex1 terminados · ex2 a medias (versión en disco, sin commit) ·
+ex3–ex6 pendientes.</p>
+
+<ul class="toc">
+  <li><a href="#ex0">ex0 — ft_garden_intro</a></li>
+  <li><a href="#ex1">ex1 — ft_garden_data</a></li>
+  <li><a href="#ex2">ex2 — ft_plant_growth</a></li>
+  <li><a href="#pendientes">ex3–ex6 — pendientes</a></li>
+</ul>
+
+<div class="trasfondo"><b>De funciones sueltas a objetos</b> — En el Module 00 cada fichero
+era una sola función y estaba prohibido el bloque <code>if __name__ == "__main__":</code>.
+Este módulo cambia las reglas: ahora cada fichero es un <em>programa</em> que se ejecuta con
+<code>python3 fichero.py</code>, el bloque <code>__main__</code> está permitido y, desde ex1,
+todo debe ir en clases. Las anotaciones de tipo pasan a ser obligatorias en todas las
+funciones y métodos (se comprueban con <strong>mypy</strong>), y sigue mandando
+<strong>flake8</strong>. La progresión del enunciado va paso a paso: variables sueltas → una
+clase → métodos que cambian el estado → constructor → encapsulación → herencia → métodos
+estáticos y de clase. Viniendo de C, la clase es lo que harías con un <code>struct</code> y
+un puñado de funciones que reciben un puntero a él, solo que aquí datos y funciones viajan
+juntos y el puntero se llama <code>self</code>.</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>ft_garden_intro</h2>
+<div class="meta"><span>Entrega: <b>ft_garden_intro.py</b></span><span>Autorizado: <b>print()</b></span></div>
+<pre><code>if __name__ == "__main__":
+    name = "Rose"
+    height = "25 cm"
+    age = "30 days"
+    print("=== Welcome to My Garden ===")
+    print(f"Plant: {name}")
+    print(f"Height: {height}")
+    print(f"Age: {age}")
+    print("")
+    print("=== End of Program ===")</code></pre>
+<pre><code>$&gt; python3 ft_garden_intro.py
+=== Welcome to My Garden ===
+Plant: Rose
+Height: 25 cm
+Age: 30 days
+
+=== End of Program ===</code></pre>
+<p>Tres variables simples y unos <code>print</code>, todo dentro del bloque
+<code>__main__</code>. La altura sale como <code>25 cm</code> (con espacio) en lugar del
+<code>25cm</code> del ejemplo; el enunciado avisa de que la salida no se comprueba de forma
+estricta.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dónde empieza un programa en
+Python. En C la respuesta era fija: <code>main</code>. En Python no hay función principal: el
+intérprete ejecuta el fichero de arriba abajo. <code>__name__</code> es una variable que
+Python rellena solo: vale <code>"__main__"</code> si el fichero se ejecuta directamente, y el
+nombre del módulo si otro fichero lo importa. El <code>if</code> sirve para que el código de
+prueba no se ejecute al importar — justo lo que hacía el <code>main.py</code> del módulo
+anterior con tus funciones. El enunciado anuncia además que en la evaluación habrá que añadir
+en directo la línea <em>shebang</em> (<code>#!/usr/bin/env python3</code>), que permite
+ejecutar el script como <code>./ft_garden_intro.py</code> tras darle permiso de
+ejecución.</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>ft_garden_data</h2>
+<div class="meta"><span>Entrega: <b>ft_garden_data.py</b></span><span>Autorizado: <b>print()</b></span></div>
+<pre><code>class Plant:
+    def __init__(self, name: str, height: str, age: str) -&gt; None:
+        self.name = name
+        self.height = height
+        self.age = age
+
+    def show(self) -&gt; None:
+        print(f"{self.name}: {self.height}, {self.age}")
+
+
+if __name__ == "__main__":
+    plant1 = Plant("Rose", "25cm", "30 days old")
+    plant2 = Plant("Sunflower", "80cm", "45 days old")
+    plant3 = Plant("Cactus", "15cm", "120 days old")
+
+    print("=== Garden Plant Registry ===")
+    plant1.show()
+    plant2.show()
+    plant3.show()</code></pre>
+<pre><code>$&gt; python3 ft_garden_data.py
+=== Garden Plant Registry ===
+Rose: 25cm, 30 days old
+Sunflower: 80cm, 45 days old
+Cactus: 15cm, 120 days old</code></pre>
+<p>Una clase <code>Plant</code> con constructor <code>__init__</code> y un método
+<code>show</code>. Cada <code>Plant(...)</code> crea un objeto nuevo y llama a
+<code>__init__</code> con él como <code>self</code>, que guarda los tres atributos.
+<code>plant1.show()</code> es azúcar para <code>Plant.show(plant1)</code>.</p>
+<p>Una rareza de diseño: la altura y la edad se guardan como cadenas ya formateadas
+(<code>"25cm"</code>, <code>"30 days old"</code>), con las unidades dentro. Para mostrar
+basta, pero en cuanto haya que hacer cuentas con ellas — que es justo lo que pide ex2 —
+habrá que sacar el número del texto. El propio enunciado lo deja caer: «¿qué problemas
+pueden aparecer con más plantas? Puede que tengas que hacer evolucionar tu enfoque».</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La idea de clase como molde: un
+único modelo para todas las plantas en lugar de tres juegos de variables sueltas. Es el
+<code>struct</code> de C con las funciones dentro: <code>self</code> hace el papel del
+puntero al struct que en C pasabas a mano (<code>t_list *lst</code>), y
+<code>__init__</code> el de la función que reservaba e inicializaba el nodo — pero sin
+<code>malloc</code>: Python crea el objeto y lo libera cuando nadie lo usa. El enunciado
+sugería instanciar primero y asignar los atributos después; aquí ya se hace todo en el
+constructor, lo que en realidad corresponde a ex3 («Plant Factory»), y el enunciado lo
+admite.</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>ft_plant_growth <span class="tag">a medias</span></h2>
+<div class="meta"><span>Entrega: <b>ft_plant_growth.py</b></span><span>Autorizado: <b>print(), range(), round()</b></span></div>
+<p>El enunciado pide reutilizar la clase de ex1, añadirle métodos <code>grow()</code> y
+<code>age()</code>, simular una semana de crecimiento día a día y mostrar al final cuánto ha
+crecido. El fichero está todavía a medio camino; esto es lo que hay ahora mismo en
+disco:</p>
+<pre><code>class Plant:
+    def __init__(self, name, height, age):
+        self.name = name
+        self.height = height
+        self.age = age
+
+    def show(self):
+        print(f"{self.name}: {self.height}, {self.age}")
+
+    def grow(self, growth_amount):
+        self.height = f"{int(self.height[:-2]) + growth_amount}cm"
+        self.age = f"{int(self.age.split()[0]) + 1} days old"
+
+    def age(self, days):
+        self.age = f"{int(self.age.split()[0]) + days} days old"</code></pre>
+<p>Como la altura y la edad son cadenas (decisión de ex1), cada método tiene que
+<em>desmontar</em> el texto, operar y volver a montarlo: <code>self.height[:-2]</code> corta
+las dos últimas letras (<code>"cm"</code>) y <code>self.age.split()[0]</code> parte la
+cadena por espacios y se queda con el primer trozo (<code>"30"</code>). <code>grow</code>
+suma la altura y además un día de edad.</p>
+<p>El programa principal se ha movido a una función <code>main()</code>, llamada desde el
+bloque <code>__main__</code>; de momento crea tres plantas y las muestra, igual que ex1:</p>
+<pre><code>$&gt; python3 ft_plant_growth.py
+=== Garden Plant Registry ===
+Rose: 25cm, 30 days old
+Sunflower: 80cm, 45 days old
+Cactus: 15cm, 120 days</code></pre>
+<p>(La tercera planta se creó con <code>"120 days"</code>, sin «old», y así sale.)</p>
+<p>Cosas a tener en cuenta para terminarlo:</p>
+<ul>
+  <li><b>Ojo: el método <code>age</code> queda tapado por el atributo <code>age</code>.</b>
+  En <code>__init__</code>, <code>self.age = age</code> crea un atributo del objeto con ese
+  nombre, y en Python los atributos del objeto se buscan antes que los métodos de la clase.
+  Así que <code>plant.age(1)</code> intenta llamar a una cadena:
+  <pre><code>&gt;&gt;&gt; p = Plant("Rose", "25cm", "30 days old")
+&gt;&gt;&gt; p.grow(1); p.show()
+Rose: 26cm, 31 days old
+&gt;&gt;&gt; p.age(1)
+TypeError: 'str' object is not callable</code></pre>
+  Como el enunciado exige que el método se llame <code>age()</code>, es el atributo el que
+  tendrá que llevar otro nombre.</li>
+  <li><b>Alturas con decimales.</b> El ejemplo del enunciado crece 0,8 cm al día
+  (<code>25.0cm</code> → <code>25.8cm</code>), pero <code>int(self.height[:-2])</code> solo
+  entiende enteros: con <code>"25.8cm"</code> lanzaría <code>ValueError</code>.</li>
+  <li><b>Falta la simulación de la semana</b> (el bucle de 7 días con <code>range</code>) y
+  el resumen «Growth this week».</li>
+  <li><b>flake8 y mypy.</b> A diferencia de ex1, aquí no hay anotaciones de tipo, que en
+  este módulo son obligatorias en todas las funciones y métodos. Y flake8 marca tres avisos
+  (<code>E302</code> y <code>E305</code>: faltan dos líneas en blanco antes y después de
+  <code>main</code>; <code>W291</code>: espacio al final de <code>def main(): </code>).</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un objeto tiene
+<em>estado</em> y que los métodos lo cambian: tras <code>grow()</code> la planta ya no es la
+misma. Y, de rebote, una lección que en C venía impuesta por los tipos: guardar los datos en
+la forma con la que se calcula (números) y convertirlos a texto solo al mostrarlos. En C
+<code>int height</code> no podía contener <code>"cm"</code>; Python te deja meter lo que
+quieras en un atributo, y el precio es tener que parsearlo cada vez. También aparece el
+espacio de nombres compartido de un objeto: atributos y métodos viven en el mismo
+diccionario de nombres, algo que en C, con un <code>struct</code> y funciones aparte, no
+podía chocar.</div>
+</div>
+
+<div class="card" id="pendientes">
+<h2><span class="ex">ex3–ex6</span>Pendientes</h2>
+<p>Se añadirán cuando estén hechos. Según el enunciado:</p>
+<ul>
+  <li><b>ex3 — ft_plant_factory</b>: crear las plantas directamente con sus datos
+  iniciales mediante el constructor (al menos cinco) y mostrarlas.</li>
+  <li><b>ex4 — ft_garden_security</b>: encapsulación con atributos «protegidos»
+  (<code>_height</code>), getters y setters que rechazan alturas y edades negativas.</li>
+  <li><b>ex5 — ft_plant_types</b>: herencia — <code>Flower</code>, <code>Tree</code> y
+  <code>Vegetable</code> derivan de <code>Plant</code> y reutilizan su código con
+  <code>super()</code>.</li>
+  <li><b>ex6 — ft_garden_analytics</b>: métodos estáticos y de clase, una clase anidada para
+  estadísticas, una clase <code>Seed</code> que hereda de <code>Flower</code> y una función
+  que muestra estadísticas de cualquier planta.</li>
+</ul>
+</div>
+
+<footer>42.zenidx.com — Python Module 01 · <a href="202_Python_Module_00.html">← volver a Python Module 00</a></footer>
+</div>
+</body>
+</html>

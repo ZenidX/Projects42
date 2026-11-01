@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C-piscine-reloaded — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — C-piscine-reloaded</h1>
+<p class="sub">El puente entre la piscine y el cursus: 28 ejercicios que recorren en un día lo
+que la piscine contó en un mes — shell, bucles, punteros, cadenas, <code>malloc</code>, macros,
+structs, punteros a función, un <code>Makefile</code> y un programa que lee ficheros. Casi todo
+ya salió en la piscine, así que aquí se va rápido por lo repetido y se para en lo que importa
+para lo que viene: compilar una librería y hablar con el sistema de ficheros.</p>
+
+<ul class="toc">
+  <li><a href="#ex00">ex00 — exo.tar (permisos y enlaces)</a></li>
+  <li><a href="#ex01">ex01–ex05 — z, clean, find_sh, MAC, MaRViN</a></li>
+  <li><a href="#ex06">ex06–ex08 — alfabeto, números, is_negative</a></li>
+  <li><a href="#ex09">ex09–ex11 — ft_ft, ft_swap, ft_div_mod</a></li>
+  <li><a href="#ex12">ex12–ex14 — factoriales y ft_sqrt</a></li>
+  <li><a href="#ex15">ex15–ex17 — putstr, strlen, strcmp</a></li>
+  <li><a href="#ex18">ex18–ex19 — print_params y sort_params</a></li>
+  <li><a href="#ex20">ex20–ex21 — ft_strdup y ft_range</a></li>
+  <li><a href="#ex22">ex22–ex23 — ft_abs.h y ft_point.h</a></li>
+  <li><a href="#ex24">ex24 — Makefile</a></li>
+  <li><a href="#ex25">ex25–ex26 — ft_foreach y ft_count_if</a></li>
+  <li><a href="#ex27">ex27 — display_file</a></li>
+</ul>
+
+<div class="trasfondo"><b>Qué es la Piscine Reloaded</b> — Es el proyecto con el que arranca el
+cursus: un "recopilatorio de los mejores ejercicios" de la C Piscine (así lo llama el enunciado,
+cuyo subtítulo es un muy poco solemne <em>"Eeey, tamo' de vueltaaa..."</em>). No añade temas
+nuevos; su función es que vuelvas a escribir de memoria lo básico antes de Libft, y el enunciado
+pide expresamente no rescatar el código antiguo de la piscine. Lo corrige solo la Moulinette, con
+<code>cc -Wall -Wextra -Werror</code> y la norminette, y los ejercicios están ordenados: uno
+complejo no cuenta si falla uno anterior. Un detalle de reglas que se nota en todo el código: cuando
+la función autorizada es <code>ft_putchar</code>, <em>la Moulinette compila con su propio
+ft_putchar.c</em>. Por eso los ficheros solo declaran el prototipo (<code>void ft_putchar(char a);</code>)
+y no lo definen: si lo definieran, habría dos definiciones y el enlazador fallaría. (El preámbulo
+es una biografía de Edward Snowden, y recomienda el documental <em>Citizenfour</em>; no tiene que
+ver con los ejercicios.)</div>
+
+<div class="card" id="ex00">
+<h2><span class="ex">ex00</span>Dame más... — exo.tar</h2>
+<div class="meta"><span>Entrega: <b>exo.tar</b></span><span>Autorizado: <b>ninguna</b></span></div>
+<p>Reproducir un <code>ls -l</code> exacto de siete entradas (permisos, tamaños, fechas y un
+enlace simbólico) y empaquetarlo con <code>tar -cf exo.tar *</code>. Es el
+<a href="../piscine/000_shell00.html#ex01">testShell00</a> de la piscine, pero con siete ficheros en
+vez de uno. Lo que hay de verdad dentro del tar entregado:</p>
+<pre><code>$ tar -tvf exo.tar
+drwx--xr-x xavilara/xavilara 0 2026-06-01 20:47 test0/
+-rwx--xr-- xavilara/xavilara 4 2026-06-01 21:46 test1
+dr-x---r-- xavilara/xavilara 0 2026-06-01 22:45 test2/
+-r-----r-- xavilara/xavilara 1 2026-06-01 23:44 test3
+-rw-r----x xavilara/xavilara 2 2026-06-01 23:43 test4
+hr-----r-- xavilara/xavilara 0 2026-06-01 23:44 test5 link to test3
+lrwxrwxrwx xavilara/xavilara 0 2026-06-01 22:20 test6 -&gt; test0</code></pre>
+<p>La parte nueva respecto a la piscine está en <code>test3</code> y <code>test5</code>. En el
+<code>ls -l</code> del enunciado los dos tienen un <b>2</b> en la columna de enlaces, los mismos
+permisos, el mismo tamaño y la misma fecha: no son dos ficheros, son <em>dos nombres para el mismo
+fichero</em>, un <strong>enlace duro</strong> (<code>ln test3 test5</code>). El tar lo sabe y no
+guarda dos copias: <code>test5</code> aparece con tipo <code>h</code> y "link to test3". En
+cambio <code>test6</code> es un enlace <em>simbólico</em> (<code>l</code>): un fichero aparte cuyo
+contenido es la ruta <code>test0</code> (5 bytes, de ahí su tamaño en el <code>ls -l</code>).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre nombre y fichero. En
+Unix el fichero de verdad es el <em>inodo</em> (datos + permisos + fechas); los nombres de los
+directorios son solo entradas que apuntan a un inodo, y el contador de enlaces dice cuántas hay. Un
+enlace duro es otra entrada al mismo inodo (por eso comparte permisos y fecha: son literalmente los
+mismos); uno simbólico es un inodo distinto que contiene una ruta y que se rompe si la ruta
+desaparece. El 2 de los directorios <code>test0</code> y <code>test2</code> sale de lo mismo: su
+propio nombre más la entrada <code>.</code> que llevan dentro.</div>
+</div>
+
+<div class="card" id="ex01">
+<h2><span class="ex">ex01–ex05</span>z, clean, find_sh, MAC y MaRViN</h2>
+<div class="meta"><span>Entrega: <b>z</b>, <b>clean</b>, <b>find_sh.sh</b>, <b>MAC.sh</b>, <b>"\?$*'MaRViN'*$?\"</b></span><span>Autorizado: <b>ninguna</b></span></div>
+<p>Los cinco son ejercicios de Shell 00 y Shell 01 repetidos casi palabra por palabra, así que
+basta con el código y el enlace a su explicación completa:</p>
+<pre><code># ex01/z  — <a href="../piscine/000_shell00.html#ex00">Shell 00 · Z</a>
+Z
+
+# ex02/clean  — <a href="../piscine/000_shell00.html#ex08">Shell 00 · clean</a>
+find . -type f \( -name "*~" -o -name "#*#" \) -print -delete
+
+# ex03/find_sh.sh  — <a href="../piscine/001_shell01.html#ex02">Shell 01 · find_sh</a>
+find . -type f -name '*.sh' | sed 's|.*/||; s|\.sh$||'
+
+# ex04/MAC.sh  — <a href="../piscine/001_shell01.html#ex04">Shell 01 · MAC</a>
+ifconfig | awk '/ether/ {print $2}'</code></pre>
+<ul>
+<li><strong>z</strong>: dos bytes, <code>Z</code> y el salto de línea; <code>cat</code> no añade
+nada, así que el salto tiene que estar en el fichero.</li>
+<li><strong>clean</strong>: los paréntesis escapados agrupan el <code>-o</code> (OR) para que
+<code>-type f</code> se aplique a los dos patrones, y <code>-print -delete</code> muestra y borra
+en el mismo comando, que es justo lo que pide la regla de "nada de <code>;</code> ni
+<code>&amp;&amp;</code>".</li>
+<li><strong>find_sh.sh</strong>: el primer <code>s</code> de sed quita todo hasta la última
+<code>/</code> (la ruta) y el segundo quita el <code>.sh</code> final.</li>
+<li><strong>MAC.sh</strong>: en el <code>ifconfig</code> de Linux la MAC va en la línea
+<code>ether xx:xx:...</code>; awk filtra esas líneas e imprime el segundo campo.</li>
+<li><strong>"\?$*'MaRViN'*$?\"</strong> (ex05, <a href="../piscine/001_shell01.html#ex05">Shell 01 ·
+¿Puedes crearlo?</a>): el fichero contiene <code>42</code> sin salto de línea (2 bytes). La
+dificultad era solo crear un nombre lleno de caracteres especiales de la shell.</li>
+</ul>
+<p>Ojo: en el repositorio los tres scripts están con permisos <code>644</code> (git los guarda
+como <code>100644</code>), sin bit de ejecución. El ejemplo del enunciado los lanza como
+<code>./find_sh.sh</code>, que así daría "Permission denied"; con <code>sh find_sh.sh</code>
+funcionan igual.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la shell no se olvida tras la
+piscine: <code>find</code> con sus expresiones, tuberías hacia filtros como <code>sed</code> y
+<code>awk</code>, y el quoting. Son las herramientas con las que más adelante se buscan ficheros,
+se limpian proyectos o se automatizan pruebas, y el cursus da por hecho que las manejas.</div>
+</div>
+
+<div class="card" id="ex06">
+<h2><span class="ex">ex06–ex08</span>ft_print_alphabet, ft_print_numbers, ft_is_negative</h2>
+<div class="meta"><span>Entrega: <b>ft_print_alphabet.c</b>, <b>ft_print_numbers.c</b>, <b>ft_is_negative.c</b></span><span>Autorizado: <b>ft_putchar</b></span></div>
+<p>Los mismos que en <a href="../piscine/002_c00.html#ex01">C 00 · ex01</a>,
+<a href="../piscine/002_c00.html#ex03">ex03</a> y <a href="../piscine/002_c00.html#ex04">ex04</a>,
+con un cambio: ya no se usa <code>write</code> directamente sino <code>ft_putchar</code>, que solo
+se declara.</p>
+<pre><code>void	ft_putchar(char a);
+
+void	ft_is_negative(int n)
+{
+	char	a;
+
+	if (n &lt; 0)
+		a = 'N';
+	else
+		a = 'P';
+	ft_putchar(a);
+}</code></pre>
+<p>Alfabeto y números son el mismo bucle <code>while (a &lt;= 'z')</code> /
+<code>while (a &lt;= '9')</code> sobre un <code>char</code>. En <code>ft_is_negative</code> el
+<code>if</code> solo elige la letra y hay una única llamada de salida al final.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La separación entre
+<em>declaración</em> y <em>definición</em>. El prototipo le dice al compilador cómo se llama la
+función y qué recibe, suficiente para generar la llamada; el cuerpo lo pondrá el enlazador al juntar
+tu <code>.o</code> con el ft_putchar.c de la Moulinette. Es la misma mecánica con la que, en unos
+días, tus programas usarán las funciones de <code>libft.a</code> a través de
+<code>libft.h</code>.</div>
+</div>
+
+<div class="card" id="ex09">
+<h2><span class="ex">ex09–ex11</span>ft_ft, ft_swap, ft_div_mod</h2>
+<div class="meta"><span>Entrega: <b>ft_ft.c</b>, <b>ft_swap.c</b>, <b>ft_div_mod.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
+<p>Punteros como parámetros de salida, exactamente como en
+<a href="../piscine/003_c01.html#ex00">C 01 · ft_ft</a>,
+<a href="../piscine/003_c01.html#ex02">ft_swap</a> y
+<a href="../piscine/003_c01.html#ex03">ft_div_mod</a>:</p>
+<pre><code>*nbr = 42;                 /* ft_ft */
+
+t = *a;                    /* ft_swap */
+*a = *b;
+*b = t;
+
+*div = a / b;              /* ft_div_mod */
+*mod = a % b;</code></pre>
+<p>Ojo: <code>ft_div_mod</code> no comprueba <code>b == 0</code>; dividir entre cero es
+comportamiento indefinido (en la práctica, el programa muere con SIGFPE). El enunciado no dice qué
+hacer en ese caso, así que es una decisión aceptable, pero conviene saberlo.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en C todo se pasa por copia y que la
+única forma de que una función cambie una variable del llamante es recibir su dirección. Es también
+la manera de "devolver dos valores" (cociente y resto) cuando <code>return</code> solo permite uno.</div>
+</div>
+
+<div class="card" id="ex12">
+<h2><span class="ex">ex12–ex14</span>ft_iterative_factorial, ft_recursive_factorial, ft_sqrt</h2>
+<div class="meta"><span>Entrega: <b>ft_iterative_factorial.c</b>, <b>ft_recursive_factorial.c</b>, <b>ft_sqrt.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
+<p>Los ejercicios de <a href="../piscine/007_c05.html#ex00">C 05</a> (factorial
+<a href="../piscine/007_c05.html#ex00">iterativo</a>, <a href="../piscine/007_c05.html#ex01">recursivo</a>
+y <a href="../piscine/007_c05.html#ex05">sqrt</a>). Las dos versiones del factorial:</p>
+<pre><code>/* ex12: iterativo */
+if (nb &lt; 0)
+	return (0);
+i = 1;
+j = 1;
+while (nb &gt;= j)
+{
+	i = i * j;
+	j++;
+}
+return (i);
+
+/* ex13: recursivo */
+if (nb &lt; 0)
+	return (0);
+else if (nb == 0)
+	return (1);
+else if (nb &gt; 12)
+	return (0);
+else
+	return (nb * ft_recursive_factorial(nb - 1));</code></pre>
+<p>La recursiva tiene un detalle interesante: <code>nb &gt; 12</code> devuelve 0, porque 13! ya no
+cabe en un <code>int</code> de 32 bits (12! = 479 001 600, 13! ≈ 6 200 millones). Ojo: la iterativa
+no tiene ese límite, así que con <code>nb &gt;= 13</code> el producto desborda (comportamiento
+indefinido en enteros con signo) y devuelve un valor sin sentido. Las dos funciones del mismo
+proyecto se comportan distinto para la misma entrada.</p>
+<pre><code>int	ft_sqrt(int nb)
+{
+	int	i;
+
+	i = 1;
+	while (i * i != nb &amp;&amp; i &lt; nb)
+		i++;
+	if (nb == 1)
+		return (1);
+	if (i &gt;= nb)
+		return (0);
+	else
+		return (i);
+}</code></pre>
+<p>Búsqueda lineal: sube <code>i</code> hasta que su cuadrado coincide o hasta llegar a
+<code>nb</code>. El caso <code>nb == 1</code> se trata aparte porque ahí <code>i</code> termina
+valiendo <code>nb</code> y la comprobación siguiente lo confundiría con "no hay raíz". Ojo: para
+números grandes que no son cuadrados perfectos, el bucle sigue hasta <code>i = nb</code>; a partir de
+<code>i = 46341</code> el producto <code>i * i</code> se sale del <code>int</code> (desbordamiento,
+comportamiento indefinido) y para <code>nb</code> cercanos a 2 147 483 647 son unos dos mil millones
+de vueltas, al límite de los dos segundos que pide el enunciado.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Recursión frente a iteración sobre el mismo
+problema, y sobre todo que los enteros de la máquina tienen techo. El factorial crece tan deprisa que
+el rango útil de un <code>int</code> acaba en 12; la raíz deja de poder calcularse con
+<code>i * i</code> en 46 340. Saber dónde está ese techo es parte del ejercicio.</div>
+</div>
+
+<div class="card" id="ex15">
+<h2><span class="ex">ex15–ex17</span>ft_putstr, ft_strlen, ft_strcmp</h2>
+<div class="meta"><span>Entrega: <b>ft_putstr.c</b>, <b>ft_strlen.c</b>, <b>ft_strcmp.c</b></span><span>Autorizado: <b>ft_putchar</b> (solo ex15)</span></div>
+<p>Las tres funciones de cadenas básicas, vistas en
+<a href="../piscine/003_c01.html#ex05">C 01 · ft_putstr</a>,
+<a href="../piscine/003_c01.html#ex06">C 01 · ft_strlen</a> y
+<a href="../piscine/005_c03.html#ex00">C 03 · ft_strcmp</a>. <code>ft_putstr</code> y
+<code>ft_strlen</code> son el mismo recorrido <code>while (str[i])</code>: una imprime cada
+carácter, la otra solo cuenta. La que tiene miga es strcmp:</p>
+<pre><code>int	ft_strcmp(char *s1, char *s2)
+{
+	int	i;
+
+	i = 0;
+	while (s1[i] &amp;&amp; s2[i] &amp;&amp; s1[i] == s2[i])
+		i++;
+	return ((unsigned char) s1[i] - (unsigned char) s2[i]);
+}</code></pre>
+<p>Avanza mientras las dos cadenas sigan y coincidan, y devuelve la diferencia del primer carácter
+distinto (o del <code>'\0'</code> de la más corta). La conversión a <code>unsigned char</code> es lo
+que hace la libc real: así un carácter como <code>'é'</code> en UTF-8 (bytes ≥ 128) se ordena
+<em>después</em> de los ASCII y no antes, como pasaría restando <code>char</code> con signo, que es lo habitual en x86.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una cadena en C no es un tipo sino un
+convenio: bytes seguidos que terminan en <code>'\0'</code>. Las tres funciones se reducen a recorrer
+hasta ese cero. Son además tres de las cinco que compilará el Makefile del ex24.</div>
+</div>
+
+<div class="card" id="ex18">
+<h2><span class="ex">ex18–ex19</span>ft_print_params y ft_sort_params</h2>
+<div class="meta"><span>Entrega: <b>ft_print_params.c</b>, <b>ft_sort_params.c</b></span><span>Autorizado: <b>ft_putchar</b></span></div>
+<p>Los dos primeros <em>programas</em> (con <code>main</code>) del proyecto, como en
+<a href="../piscine/008_c06.html#ex01">C 06 · ft_print_params</a> y
+<a href="../piscine/008_c06.html#ex03">C 06 · ft_sort_params</a>. El código llama
+<code>argn</code> a lo que suele llamarse <code>argc</code>; el nombre da igual, lo que cuenta es la
+posición del parámetro. La ordenación de ex19:</p>
+<pre><code>i = 1;
+while (i &lt; (argn))
+{
+	j = i + 1;
+	while (j &lt; argn)
+	{
+		if (ft_strcmp(argv[i], argv[j]) &gt; 0)
+		{
+			temp = argv[i];
+			argv[i] = argv[j];
+			argv[j] = temp;
+		}
+		j++;
+	}
+	i++;
+}
+ft_putarraystr(argn, argv);</code></pre>
+<p>Es una ordenación por intercambio: para cada posición <code>i</code>, compara con todas las
+siguientes y se queda con la menor. Empieza en 1 para no tocar <code>argv[0]</code> (el nombre del
+programa). Lo que se intercambia son los <em>punteros</em> de <code>argv</code>, no las letras: mover
+una dirección cuesta lo mismo sea la cadena larga o corta. <code>ft_strcmp</code> se copia dentro del
+fichero porque en este ejercicio solo se entrega un <code>.c</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <code>argv</code> es un array de
+punteros a cadenas (<code>char **</code>) y que puedes reordenarlo como cualquier array. Es el primer
+contacto con ordenar datos "por referencia", algo que en push_swap o en cualquier estructura de datos
+grande se hace siempre así.</div>
+</div>
+
+<div class="card" id="ex20">
+<h2><span class="ex">ex20–ex21</span>ft_strdup y ft_range</h2>
+<div class="meta"><span>Entrega: <b>ft_strdup.c</b>, <b>ft_range.c</b></span><span>Autorizado: <b>malloc</b></span></div>
+<p>Memoria dinámica, como en <a href="../piscine/009_c07.html#ex00">C 07 · ft_strdup</a> y
+<a href="../piscine/009_c07.html#ex01">C 07 · ft_range</a>.</p>
+<pre><code>char	*ft_strdup(char *src)
+{
+	char	*dest;
+	int		n;
+
+	n = ft_strlen(src);
+	dest = (char *) malloc(sizeof(char) * n);
+	return (ft_strcopy(dest, src));
+}</code></pre>
+<p>Ojo, aquí hay un fallo de verdad: <code>ft_strlen</code> cuenta los caracteres <em>sin</em> el
+<code>'\0'</code>, pero <code>ft_strcopy</code> copia también el terminador
+(<code>dest[i] = src[i]</code> tras el bucle). Se reservan <code>n</code> bytes y se escriben
+<code>n + 1</code>: un byte fuera del bloque (desbordamiento de heap). Muchas veces no se nota porque
+<code>malloc</code> redondea el tamaño hacia arriba, pero <code>valgrind</code> o
+<code>-fsanitize=address</code> lo señalan, y una Moulinette que lo compruebe lo cuenta como error.
+Tampoco se comprueba si <code>malloc</code> devuelve <code>NULL</code> antes de copiar.</p>
+<pre><code>if (max - min &lt; 1)
+	return (NULL);
+r = (int *) malloc(sizeof(int) * (max - min));
+i = 0;
+while (i &lt; max - min)
+{
+	r[i] = min + i;
+	i++;
+}
+return (r);</code></pre>
+<p><code>ft_range</code> calcula el tamaño como <code>max - min</code> y rellena con
+<code>min + i</code>, lo que da el intervalo [min, max) que pide el enunciado. Igual que strdup, no
+comprueba el <code>NULL</code> de malloc; y con extremos muy separados (por ejemplo
+<code>INT_MIN</code> e <code>INT_MAX</code>) la resta <code>max - min</code> desborda el
+<code>int</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A contar bytes. Toda reserva de memoria es
+un contrato de tamaño, y en las cadenas siempre hay un byte más que los caracteres visibles: el
+<code>'\0'</code>. El "más uno" que falta aquí es probablemente el error más repetido de todo C, y
+el de Libft (<code>ft_strdup</code>, <code>ft_substr</code>, <code>ft_strjoin</code>...) depende de
+tenerlo interiorizado.</div>
+</div>
+
+<div class="card" id="ex22">
+<h2><span class="ex">ex22–ex23</span>ft_abs.h y ft_point.h</h2>
+<div class="meta"><span>Entrega: <b>ft_abs.h</b>, <b>ft_point.h</b></span><span>Autorizado: <b>ninguna</b></span></div>
+<p>Dos cabeceras, como en <a href="../piscine/010_c08.html#ex02">C 08 · ft_abs.h</a> y
+<a href="../piscine/010_c08.html#ex03">C 08 · ft_point.h</a>. Ninguna contiene código que se
+ejecute: una define una macro y la otra un tipo.</p>
+<pre><code>#ifndef FT_ABS_H
+# define FT_ABS_H
+
+# define ABS(Value) ((Value) &lt; 0 ? -(Value) : (Value))
+
+#endif</code></pre>
+<p>La macro usa el operador ternario y una macro con parámetros, dos cosas que la Norma prohíbe; el
+propio enunciado avisa de que es "la única vez que lo autoricemos". Los paréntesis alrededor de cada
+<code>(Value)</code> no son decoración: sin ellos, <code>ABS(a - b)</code> se expandiría a
+<code>-a - b</code> en vez de <code>-(a - b)</code>. Lo que no pueden evitar es que
+<code>Value</code> aparezca dos veces: <code>ABS(i++)</code> incrementaría <code>i</code> dos veces.
+Y <code>ABS(INT_MIN)</code> desborda, igual que en el putnbr de la piscine.</p>
+<pre><code>#ifndef FT_POINT_H
+# define FT_POINT_H
+
+typedef struct s_point
+{
+	int	x;
+	int	y;
+}	t_point;
+
+#endif</code></pre>
+<p>Basta con esto para que compile el <code>main</code> del enunciado
+(<code>point-&gt;x = 42; point-&gt;y = 21;</code>). El <code>struct s_point</code> agrupa dos enteros
+bajo un nombre, y el <code>typedef</code> le pone el alias <code>t_point</code> para no tener que
+escribir <code>struct s_point</code> cada vez. Los prefijos <code>s_</code> y <code>t_</code> son
+convención de la Norma: <code>s_</code> para la etiqueta del struct, <code>t_</code> para el tipo.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas del preprocesador y del sistema de
+tipos. La macro enseña que <code>#define</code> es <em>sustitución de texto</em> antes de compilar,
+sin saber nada de C: por eso hay que proteger los argumentos con paréntesis y por eso se evalúan
+tantas veces como aparecen. El struct es la otra mitad: crear tipos propios que agrupan datos. Con
+<code>-&gt;</code> se accede a un campo a través de un puntero (<code>p-&gt;x</code> es
+<code>(*p).x</code>). Y los <em>include guards</em> (<code>#ifndef ... #endif</code>) evitan que, si
+la cabecera se incluye dos veces, el tipo se defina dos veces y falle la compilación. Es exactamente
+el esqueleto que tendrá <code>libft.h</code> con su <code>t_list</code>.</div>
+</div>
+
+<div class="card" id="ex24">
+<h2><span class="ex">ex24</span>Makefile</h2>
+<div class="meta"><span>Entrega: <b>Makefile</b></span><span>Reglas: <b>all, clean, fclean, re</b></span></div>
+<p>Un <code>Makefile</code> que compile <code>libft.a</code> con cinco funciones de los ejercicios
+anteriores (<code>ft_putchar</code>, <code>ft_putstr</code>, <code>ft_strcmp</code>,
+<code>ft_strlen</code>, <code>ft_swap</code>), con las fuentes en <code>srcs/</code>, las cabeceras
+en <code>includes/</code> y la librería en la raíz. Solo se entrega el Makefile; la Moulinette pone
+sus propios ficheros. Es el mismo ejercicio que <a href="../piscine/011_c09.html#ex01">C 09 ·
+Makefile</a>, y en el cursus se vuelve central porque es la base de la entrega de Libft:</p>
+<pre><code>NAME = libft.a
+SRCS = srcs/ft_putchar.c \
+	   srcs/ft_putstr.c \
+	   srcs/ft_strcmp.c \
+	   srcs/ft_strlen.c \
+	   srcs/ft_swap.c
+OBJS = $(SRCS:.c=.o)
+CFLAGS = -Wall -Wextra -Werror -Iincludes
+
+all: $(NAME)
+
+$(NAME): $(OBJS)
+	ar rcs $(NAME) $(OBJS)
+
+%.o: %.c
+	cc $(CFLAGS) -c $&lt; -o $@
+
+clean:
+	rm -f $(OBJS)
+
+fclean: clean
+	rm -f $(NAME)
+
+re: fclean all
+
+.PHONY: all clean fclean re</code></pre>
+<p>Pieza a pieza:</p>
+<ul>
+<li><strong>Variables</strong>: <code>SRCS</code> lista las fuentes a mano, una por línea con
+<code>\</code>. El enunciado avisa "¡Cuidado con los wildcards!": nada de
+<code>$(wildcard srcs/*.c)</code>, porque compilaría cualquier fichero que apareciera en la carpeta
+(y la Norma de 42 lo prohíbe en los Makefile).</li>
+<li><strong><code>OBJS = $(SRCS:.c=.o)</code></strong>: sustitución de sufijo. Convierte la lista
+de <code>.c</code> en la lista de <code>.o</code> sin escribirla dos veces. Los objetos quedan junto
+a sus fuentes, en <code>srcs/</code>.</li>
+<li><strong><code>-Iincludes</code></strong>: añade <code>includes/</code> a las carpetas donde el
+compilador busca los <code>#include "..."</code>. Va dentro de <code>CFLAGS</code>, así que se usa
+en cada compilación.</li>
+<li><strong><code>all: $(NAME)</code></strong>: la primera regla es la que se ejecuta con un
+<code>make</code> a secas; aquí solo dice "lo que quiero es <code>libft.a</code>".</li>
+<li><strong><code>$(NAME): $(OBJS)</code></strong>: la librería depende de los objetos, y se
+construye con <code>ar rcs</code>: <code>r</code> inserta (o reemplaza) los <code>.o</code> en el
+archivo, <code>c</code> lo crea sin avisar si no existe, <code>s</code> escribe el índice de símbolos
+que el enlazador usa para encontrar cada función.</li>
+<li><strong><code>%.o: %.c</code></strong>: regla patrón. Cualquier <code>X.o</code> se hace a
+partir de su <code>X.c</code>. <code>$&lt;</code> es el primer prerequisito (el <code>.c</code>) y
+<code>$@</code> el objetivo (el <code>.o</code>).</li>
+<li><strong>clean / fclean / re</strong>: <code>clean</code> borra objetos; <code>fclean</code>
+depende de <code>clean</code> y además borra la librería; <code>re</code> encadena
+<code>fclean</code> y <code>all</code>.</li>
+<li><strong><code>.PHONY</code></strong>: declara que esas reglas no son ficheros. Sin ella, si
+alguien crea un fichero llamado <code>clean</code>, <code>make clean</code> diría que ya está hecho
+y no borraría nada.</li>
+</ul>
+<p>Una limitación (que el enunciado no pide resolver): los <code>.o</code> dependen solo de su
+<code>.c</code>, no de las cabeceras de <code>includes/</code>. Si cambia un <code>.h</code>,
+<code>make</code> no recompila nada hasta un <code>make re</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es una <strong>librería
+estática</strong> y cómo se construye. <code>libft.a</code> no es más que un archivo
+(<code>ar</code> = archiver, el antepasado de <code>tar</code>) con varios <code>.o</code> dentro y un
+índice. Al enlazar un programa con <code>cc main.c libft.a</code>, el enlazador saca de ahí solo los
+objetos que necesita y los copia en el ejecutable. Y <code>make</code> decide qué rehacer comparando
+fechas: si un <code>.c</code> es más nuevo que su <code>.o</code>, lo recompila; si no, lo deja. Todo
+el cursus en C (Libft, ft_printf, get_next_line, push_swap) se entrega con un Makefile con estas
+mismas reglas, y la evaluación comprueba que no recompile de más.</div>
+</div>
+
+<div class="card" id="ex25">
+<h2><span class="ex">ex25–ex26</span>ft_foreach y ft_count_if</h2>
+<div class="meta"><span>Entrega: <b>ft_foreach.c</b>, <b>ft_count_if.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
+<p>Punteros a función, como en <a href="../piscine/013_c11.html#ex00">C 11 · ft_foreach</a> y
+<a href="../piscine/013_c11.html#ex03">C 11 · ft_count_if</a>:</p>
+<pre><code>void	ft_foreach(int *tab, int length, void (*f)(int))
+{
+	int	i;
+
+	i = 0;
+	while (i &lt; length)
+	{
+		(*f)(tab[i]);
+		i++;
+	}
+}
+
+int	ft_count_if(char **tab, int (*f)(char *))
+{
+	...
+	while (tab[i] != 0)
+	{
+		if ((*f)(tab[i]) == 1)
+			j++;
+		i++;
+	}
+	return (j);
+}</code></pre>
+<p><code>void (*f)(int)</code> se lee "f es un puntero a una función que recibe un
+<code>int</code> y no devuelve nada". <code>(*f)(x)</code> y <code>f(x)</code> son equivalentes en
+C; aquí se usa la forma explícita. <code>ft_count_if</code> recorre hasta el puntero nulo que
+marca el final del array (lo que el enunciado llama "delimitado por 0") y cuenta las veces que
+<code>f</code> devuelve exactamente 1, que es lo que pide la letra del enunciado. En
+<code>ft_foreach.c</code> sobra el <code>#include &lt;stdio.h&gt;</code>, aunque no hace daño.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que las funciones también tienen dirección
+y se pueden pasar como datos. <code>ft_foreach</code> no sabe qué hará con cada número: lo decide
+quien la llama. Es la idea que reaparece en <code>ft_lstiter</code> y <code>ft_lstmap</code> de
+Libft, en <code>qsort</code> de la libc o en los callbacks de cualquier biblioteca.</div>
+</div>
+
+<div class="card" id="ex27">
+<h2><span class="ex">ex27</span>display_file</h2>
+<div class="meta"><span>Entrega: <b>Makefile</b>, <b>ft_display_file.c</b></span><span>Autorizado: <b>open, read, write, close</b></span></div>
+<p>Un programa <code>ft_display_file</code> que muestra el contenido del fichero que recibe como
+argumento, sin <code>malloc</code> (solo un array de tamaño fijo) y con tres mensajes de error
+concretos por la salida de error. Es el <a href="../piscine/012_c10.html#ex00">display_file de
+C 10</a>, el último ejercicio del proyecto y el único que lee de disco.</p>
+<pre><code>void	ft_cat_fd(int fd)
+{
+	char	buf[4096];
+	int		n;
+
+	n = read(fd, buf, sizeof(buf));
+	while (n &gt; 0)
+	{
+		write(1, buf, n);
+		n = read(fd, buf, sizeof(buf));
+	}
+}
+
+int	main(int argc, char **argv)
+{
+	int	fd;
+
+	if (argc &lt; 2)
+	{
+		ft_putstr_fd("File name missing.", 2);
+		return (0);
+	}
+	if (argc &gt; 2)
+	{
+		ft_putstr_fd("Too many arguments.", 2);
+		return (0);
+	}
+	fd = open(argv[1], O_RDONLY);
+	if (fd &lt; 0)
+	{
+		ft_putstr_fd("Cannot read file.", 2);
+		return (1);
+	}
+	ft_cat_fd(fd);
+	close(fd);
+	return (0);
+}</code></pre>
+<p>El orden es: validar el número de argumentos, abrir, volcar y cerrar. El volcado es el bucle
+clásico de lectura: <code>read</code> llena como mucho 4096 bytes y devuelve cuántos leyó;
+<code>write(1, buf, n)</code> escribe <em>esos</em> <code>n</code>, no 4096, porque el último trozo
+casi nunca llena el buffer. Cuando <code>read</code> devuelve 0 es el fin del fichero, y -1 un error;
+los dos cortan el bucle. Así se muestra un fichero de cualquier tamaño con solo 4 KB de memoria. Los
+mensajes salen por el descriptor <code>2</code> y el salto de línea lo añade el propio
+<code>ft_putstr_fd</code> de este fichero (no es el de Libft: escribe la cadena y luego un
+<code>"\n"</code>).</p>
+<p>Ojo con dos detalles. Si <code>open</code> funciona pero <code>read</code> falla (por ejemplo, al
+pasarle un directorio: <code>open</code> con <code>O_RDONLY</code> lo abre, pero <code>read</code>
+devuelve -1), el bucle simplemente no entra y el programa termina sin escribir nada y sin el
+"Cannot read file.". El enunciado dice que los ficheros serán válidos, así que no debería pasar en
+la corrección. Y los códigos de salida no son uniformes: los errores de argumentos devuelven 0 y el
+de lectura 1; el enunciado no exige ninguno en concreto.</p>
+<pre><code>NAME = ft_display_file
+SRCS = ft_display_file.c
+OBJS = $(SRCS:.c=.o)
+CFLAGS = -Wall -Wextra -Werror
+
+all: $(NAME)
+
+$(NAME): $(OBJS)
+	cc $(CFLAGS) $(OBJS) -o $(NAME)
+...
+.PHONY: all clean fclean</code></pre>
+<p>El Makefile es el del ex24 con un cambio en la regla final: en vez de archivar con
+<code>ar</code>, <em>enlaza</em> los objetos en un ejecutable con <code>cc ... -o</code>. Aquí no
+hay regla <code>re</code> porque el enunciado solo pide <code>all</code>, <code>clean</code> y
+<code>fclean</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A hablar con el sistema operativo sin
+intermediarios. <code>open</code>, <code>read</code>, <code>write</code> y <code>close</code> son
+llamadas al sistema: un fichero abierto es solo un número (el descriptor) y leer es pedirle al kernel
+"dame hasta N bytes". El bucle <code>read</code> + <code>write</code> con un buffer fijo es,
+literalmente, el corazón de <code>cat</code>. Y es la antesala directa de get_next_line, donde ese
+mismo <code>read</code> por trozos tendrá que cortarse en líneas y recordar lo que sobró entre
+llamada y llamada. Separar la salida normal (fd 1) de los errores (fd 2) es lo que permite
+<code>./ft_display_file f &gt; copia</code> sin que los mensajes de error acaben dentro de la
+copia.</div>
+</div>
+
+<footer>42.zenidx.com — C-piscine-reloaded · <a href="001_Libft.html">continuar con Libft →</a></footer>
+</div>
+</body>
+</html>

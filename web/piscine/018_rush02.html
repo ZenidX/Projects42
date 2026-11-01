@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rush 02 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine" class="active">Piscine</a>
+      <a href="../index.html#cursus">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — Rush 02</h1>
+<p class="sub">Un programa que escribe números con letras: <code>42</code> →
+<code>forty two</code>. Las palabras no están en el código, salen de un diccionario en un
+fichero que se puede cambiar. Es el primer programa de la piscine que lee un fichero, lo
+parsea, guarda lo leído en memoria dinámica y lo libera todo.</p>
+
+<ul class="toc">
+  <li><a href="#main">main — argumentos y entrada estándar</a></li>
+  <li><a href="#leer">ft_read_file — el fichero entero en una cadena</a></li>
+  <li><a href="#parse">ft_parse_dict — de texto a tabla</a></li>
+  <li><a href="#grupos">write_num — grupos de tres cifras</a></li>
+  <li><a href="#grupo">write_group — de 1 a 999</a></li>
+  <li><a href="#pasadas">ft_write_nbr — dos pasadas</a></li>
+  <li><a href="#memoria">Memoria y Makefile</a></li>
+  <li><a href="#ojo">Ojo: lo que no cumple</a></li>
+</ul>
+
+<div class="trasfondo"><b>El enunciado</b> — Ejecutable <code>rush-02</code>, compilado con
+un Makefile (reglas <code>$(NAME)</code>, <code>clean</code> y <code>fclean</code>). Con un
+argumento, es el número; con dos, el primero es otro diccionario. Si el número no es un entero
+sin signo, <code>Error</code>; si el diccionario está mal o no basta para escribir el número,
+<code>Dict Error</code>. Y una frase en recuadro: <em>«vuestro programa debe ir más allá de
+unsigned int»</em>. El diccionario tiene líneas <code>número : palabra</code>, con espacios
+opcionales que hay que recortar:
+<pre><code>$&gt; ./rush-02 42
+forty two
+$&gt; ./rush-02 100000
+one hundred thousand
+$&gt; ./rush-02 10.4
+Error</code></pre>
+Como bonus se puede añadir «and» y guiones, otro idioma con otro diccionario, o leer números
+de la entrada estándar si el argumento es <code>-</code>. Este grupo hizo el último. Trabajo de
+grupo; el código está en <code>packs/piscine/018_rush02/repo/ex00/</code>.</div>
+
+<div class="card" id="main">
+<h2><span class="ex">main</span>main, get_args y read_stdin</h2>
+<div class="meta"><span>Entrega: <b>ex00/rush02.c</b>, <b>ex00/rush02.h</b></span><span>Autorizado: <b>write</b>, <b>malloc</b>, <b>free</b>, <b>open</b>, <b>read</b>, <b>close</b></span></div>
+<p>El orden de <code>main</code> es: decidir qué es diccionario y qué es número, validar el
+número <em>antes</em> de abrir el diccionario, cargar el diccionario y escribir.</p>
+<pre><code>	get_args(argc, argv, &amp;dict_name, &amp;num);
+	if (!is_stdin(num) &amp;&amp; !ft_is_positive(num))
+	{
+		ft_putstr("Error\n");
+		return (0);
+	}
+	dict = ft_read_dict(dict_name);
+	if (dict == NULL)
+	{
+		ft_putstr("Dict Error\n");
+		return (0);
+	}
+	if (is_stdin(num))
+		read_stdin(dict);
+	else
+		ft_write_nbr(num, dict);
+	ft_free_dict(dict);</code></pre>
+<p>El bonus de la entrada estándar reutiliza piezas: <code>ft_read_file(0)</code> lee del
+descriptor 0 igual que de un fichero, y <code>ft_split(content, "\n")</code> lo trocea en
+líneas. Cada línea se valida y se escribe por separado.</p>
+<pre><code>$&gt; printf "42\n7\n\n1000001\n" | ./rush-02 -
+forty two
+seven
+one million one</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la entrada estándar es un
+descriptor más (el 0). Si <code>ft_read_file</code> recibe un <code>fd</code> en vez de un
+nombre de fichero, el bonus sale casi gratis. Y que el número nunca se convierte a
+<code>int</code>: se valida y se trata como cadena de dígitos, que es la única forma de «ir más
+allá de unsigned int» sin tipos grandes.</div>
+</div>
+
+<div class="card" id="leer">
+<h2><span class="ex">leer</span>ft_read_file y ft_strcat</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_read_dict.c</b>, <b>ex00/ft_strutils.c</b></span><span>Autorizado: <b>read</b>, <b>malloc</b>, <b>free</b></span></div>
+<p>No se sabe de antemano cuánto mide el fichero, así que se lee a trozos de 254 bytes y se va
+pegando cada trozo a lo acumulado. El <code>ft_strcat</code> de este rush no es el de la libc:
+devuelve un bloque nuevo y <em>libera el primero</em>, pensado para usarse como
+<code>s = ft_strcat(s, trozo)</code>. Por eso la cadena inicial es una cadena vacía del heap y
+no el literal <code>""</code>.</p>
+<pre><code>	dict_str = ft_strifcpy("", 0, 0);
+	n = read(fd, buffer, sizeof(buffer) - 1);
+	while (n &gt; 0)
+	{
+		buffer[n] = '\0';
+		dict_str = ft_strcat(dict_str, buffer);
+		n = read(fd, buffer, sizeof(buffer) - 1);
+	}
+	if (n == -1)
+	{
+		free(dict_str);
+		return (0);
+	}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <code>read</code> no lee «el
+fichero»: lee <em>como mucho</em> n bytes y te dice cuántos ha leído (0 al final, −1 si falla).
+El <code>sizeof(buffer) - 1</code> reserva el hueco del <code>'\0'</code> para poder tratar cada
+trozo como cadena. Y la regla de propiedad de memoria: una función que libera su argumento tiene
+que decirlo, porque quien la llame con un literal se lleva un <code>free</code> inválido. El
+comentario del código lo deja escrito.</div>
+</div>
+
+<div class="card" id="parse">
+<h2><span class="ex">parse</span>ft_parse_dict y ft_outspace</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_read_dict.c</b>, <b>ex00/ft_split.c</b></span><span>Autorizado: <b>malloc</b>, <b>free</b></span></div>
+<p>El texto se convierte en un array de <code>t_dict</code> (pares <code>nbr</code> /
+<code>word</code>, ambos cadenas) terminado en una entrada con <code>nbr</code> a 0, igual que
+<code>argv</code> termina en <code>NULL</code>. Primero se parte por <code>'\n'</code> (las
+líneas vacías desaparecen solas en el split), luego cada línea por <code>':'</code>. Si no salen
+exactamente dos trozos, es un <code>Dict Error</code>.</p>
+<pre><code>	while (dict_lines[i])
+	{
+		dict_split = ft_split(dict_lines[i], ":");
+		if (ft_arrlen(dict_split) != 2)
+			return (ft_parse_error(dict, dict_lines, dict_split, i));
+		dict[i].nbr = ft_outspace(dict_split[0]);
+		dict[i].word = ft_outspace(dict_split[1]);
+		ft_free_split(dict_split);
+		i++;
+	}
+	dict[i].nbr = 0;
+	dict[i].word = 0;</code></pre>
+<p><code>ft_outspace</code> recorta espacios por los dos extremos moviendo dos índices hacia
+dentro, y copia lo que queda con <code>ft_strifcpy(str, ini, fin)</code>, que reserva y copia
+el trozo <code>[ini, fin)</code>. El camino de error, <code>ft_parse_error</code>, pone el
+centinela en la entrada <code>i</code> para que <code>ft_free_dict</code> sepa hasta dónde
+liberar.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A diseñar una estructura de datos
+propia (el <code>struct</code> de C11 en un caso real) y a decidir cómo se sabe dónde acaba un
+array dinámico: aquí con un centinela. Y que el camino de error también tiene que liberar todo
+lo reservado hasta ese momento, que es donde suelen aparecer las fugas.</div>
+</div>
+
+<div class="card" id="grupos">
+<h2><span class="ex">clave</span>write_num, group_value y scale_key</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_write_nbr.c</b>, <b>ex00/ft_write_utils.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Así se leen los números en inglés (y en español): en grupos de tres cifras, cada uno
+seguido de su escala. <code>123456789</code> es «123 million, 456 thousand, 789». El número
+nunca pasa a entero: <code>exp</code> es la potencia de 10 del grupo (0, 3, 6…), y
+<code>group_value</code> saca las tres cifras de esas posiciones de la cadena. Esas sí caben en
+un <code>int</code>, porque nunca pasan de 999.</p>
+<pre><code>	len = ft_strlen(nbr);
+	exp = ((len + 2) / 3 - 1) * 3;
+	while (exp &gt;= 0)
+	{
+		v = group_value(nbr, len, exp);
+		if (v &gt; 0)
+		{
+			if (!write_group(v, dict, do_write, first))
+				return (0);
+			if (exp &gt; 0)
+			{
+				if (!put_word(dict, scale_key(buf, exp), do_write, first))
+					return (0);
+			}
+		}
+		exp -= 3;
+	}</code></pre>
+<p>Para buscar la escala en el diccionario no hace falta calcular 10<sup>exp</sup>:
+<code>scale_key</code> escribe la clave como texto, un <code>'1'</code> y <code>exp</code>
+ceros. Las claves del diccionario son cadenas y se comparan con <code>ft_strcmp</code>, así que
+<code>"1000000000000000000000000000000000000"</code> (undecillion) funciona igual que
+<code>"1000"</code>. Los grupos a cero se saltan enteros: por eso <code>1000000</code> da
+<code>one million</code> y no «one million zero thousand».</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un número es una
+<em>representación</em>: si el problema no pide aritmética, no hace falta convertirlo, y
+trabajar con los dígitos como texto elimina el límite de tamaño. Es la misma descomposición
+posicional de <code>ft_putnbr</code> (C00), pero de tres en tres cifras y sin división.</div>
+</div>
+
+<div class="card" id="grupo">
+<h2><span class="ex">grupo</span>write_group y find_word</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_write_nbr.c</b>, <b>ex00/ft_write_utils.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Un grupo de 1 a 999: las centenas como «cifra + hundred», y para los dos últimos dígitos
+primero se busca el número entero en el diccionario. Del 0 al 20 y las decenas tienen clave
+propia; si no está (21, 47…), se compone con decena + unidad.</p>
+<pre><code>	if (d &gt;= 100)
+	{
+		if (!put_word(dict, ft_itokey(buf, d / 100), do_write, first))
+			return (0);
+		if (!put_word(dict, "100", do_write, first))
+			return (0);
+	}
+	r = d % 100;
+	if (r == 0)
+		return (1);
+	if (find_word(dict, ft_itokey(buf, r)))
+		return (put_word(dict, ft_itokey(buf, r), do_write, first));
+	if (!put_word(dict, ft_itokey(buf, (r / 10) * 10), do_write, first))
+		return (0);</code></pre>
+<p>Buscar primero la clave exacta tiene un efecto bonito: si alguien añade
+<code>42: the answer</code> a un diccionario, el programa lo usa. <code>find_word</code> es una
+búsqueda lineal por la tabla, suficiente para cuarenta entradas.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A no meter datos en el código. El
+programa no sabe inglés: sabe la <em>estructura</em> de los números (centenas, decenas,
+escalas) y le pide las palabras al diccionario. Cambiar el fichero cambia el idioma, que es la
+idea detrás del bonus. La separación entre lógica y datos es la que luego verás en
+configuraciones, traducciones y plantillas.</div>
+</div>
+
+<div class="card" id="pasadas">
+<h2><span class="ex">salida</span>ft_write_nbr y put_word — dos pasadas</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_write_nbr.c</b></span><span>Autorizado: <b>write</b></span></div>
+<p>Si al diccionario le falta una palabra a mitad de número, no debería salir media frase y
+luego <code>Dict Error</code>. La solución del grupo: <code>write_num</code> recibe un
+<code>do_write</code>, y se llama dos veces. La primera en seco, solo comprobando que todas las
+claves existen; la segunda, escribiendo. <code>put_word</code> pone el espacio
+<em>antes</em> de cada palabra salvo la primera (<code>first</code>).</p>
+<pre><code>	while (nbr[0] == '0' &amp;&amp; nbr[1])
+		nbr++;
+	...
+	if (!write_num(nbr, dict, 0, &amp;first))
+	{
+		ft_putstr("Dict Error\n");
+		return ;
+	}
+	first = 1;
+	write_num(nbr, dict, 1, &amp;first);
+	write(1, "\n", 1);</code></pre>
+<p>Los ceros de delante se saltan (<code>007</code> → <code>seven</code>) y el cero, que no
+tiene grupos, se trata aparte con la clave <code>"0"</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una salida a medias es peor que
+un error limpio, y que validar todo antes de escribir nada es una técnica general (las bases de
+datos lo llaman transacción). También el problema de la valla de C00, otra vez: el separador va
+<em>entre</em> palabras, y la bandera <code>first</code> es la forma de no poner un espacio de
+más.</div>
+</div>
+
+<div class="card" id="memoria">
+<h2><span class="ex">extra</span>Memoria y Makefile</h2>
+<div class="meta"><span>Entrega: <b>ex00/Makefile</b>, <b>ex00/numbers.dict</b></span><span>Probado con: <b>-fsanitize=address</b></span></div>
+<p>Todo lo que se reserva se libera: el split de líneas, cada split de línea, la cadena del
+fichero y el diccionario. Compilado con AddressSanitizer y probado con números normales, el
+cero, errores y el diccionario alternativo, no aparecen fugas. El Makefile hace que cada
+<code>.o</code> dependa también de <code>rush02.h</code>, para que cambiar el header recompile
+lo que lo usa:</p>
+<pre><code>%.o: %.c rush02.h
+	$(CC) $(FLAGS) -c $&lt; -o $@</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El enunciado avisa de que la memoria
+se revisa en la evaluación. Es la primera vez que «funciona» no basta: también hay que demostrar
+que no se pierde nada por el camino, y para eso hay que saber, para cada <code>malloc</code>,
+quién es responsable de su <code>free</code>.</div>
+</div>
+
+<div class="card" id="ojo">
+<h2><span class="ex">ojo</span>Lo que no cumple</h2>
+<div class="meta"><span>Probado: <b>compilado y ejecutado tal cual</b></span></div>
+<ul>
+<li><b>Espacios internos.</b> El ejemplo del enunciado tiene <code>20    :     hey     everybody !</code>
+y espera <code>hey everybody !</code>, con un solo espacio. <code>ft_outspace</code> solo recorta
+los extremos, así que el programa escribe <code>hey     everybody !</code> tal cual.</li>
+<li><b>Dos puntos en el valor.</b> El valor puede ser «cualquier carácter imprimible», pero la
+línea se parte por <em>todos</em> los <code>':'</code>: <code>20: a:b</code> da tres trozos y
+<code>Dict Error</code>.</li>
+<li><b>Números de 49 cifras o más.</b> Ojo: <code>write_num</code> usa <code>char buf[48]</code>
+para la clave de escala, y <code>scale_key</code> escribe <code>exp + 2</code> bytes sin mirar el
+tamaño. Hasta 39 cifras escribe el número; de 40 a 48, <code>Dict Error</code> como debe ser; con
+49 o más, AddressSanitizer marca un <em>stack-buffer-overflow</em> en <code>scale_key</code>
+durante la pasada en seco.</li>
+<li><b>Claves sin validar.</b> No se comprueba que la parte izquierda sea un número, ni que una
+línea de solo espacios sea «vacía» (da <code>Dict Error</code>).</li>
+<li><b>Fichero suelto.</b> En <code>ex00/</code> hay un <code>.ft_read_dict.c.swp</code> (copia de
+trabajo de vim); no está en git, así que no llega a la entrega.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A leer los ejemplos del enunciado como
+casos de prueba. Los dos primeros puntos están literalmente en él; el tercero es la otra cara de
+«ir más allá de unsigned int»: quitar un límite (el del tipo) y dejar otro escondido (el de un
+buffer fijo).</div>
+</div>
+
+<footer>42.zenidx.com — Rush 02 · <a href="019_bsq.html">continuar con BSQ →</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rush 01 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine" class="active">Piscine</a>
+      <a href="../index.html#cursus">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>C Piscine — Rush 01</h1>
+<p class="sub">El puzle de los rascacielos (<em>skyscrapers</em>): rellenar una cuadrícula
+N×N con alturas de 1 a N sabiendo cuántos edificios se ven desde cada borde. El primer
+problema de la piscine que no se resuelve con una fórmula, sino probando — y que obliga a
+pensar en cuánto cuesta probar.</p>
+
+<ul class="toc">
+  <li><a href="#entrada">Entrada — validar y leer las pistas</a></li>
+  <li><a href="#vistas">Contar edificios visibles</a></li>
+  <li><a href="#perm">ft_ordcom — la permutación número k</a></li>
+  <li><a href="#solver">ft_skyline_isolver — backtracking por filas</a></li>
+  <li><a href="#columnas">Columnas: solo al final</a></li>
+  <li><a href="#salida">ft_putmatrix — la salida</a></li>
+  <li><a href="#ojo">Ojo: límites y coste</a></li>
+</ul>
+
+<div class="trasfondo"><b>El puzle</b> — Cada casilla es un edificio de altura 1…N; en cada
+fila y en cada columna no se repite ninguna altura (es un cuadrado latino). Alrededor de la
+cuadrícula hay 4N pistas: cuántos edificios ve alguien que mira desde ese borde, teniendo en
+cuenta que uno alto tapa a los bajos que tiene detrás. El programa recibe las pistas en un solo
+argumento, en este orden: columnas vistas desde arriba, columnas desde abajo, filas desde la
+izquierda y filas desde la derecha. Si hay solución la imprime; si no, <code>Error</code>.
+<pre><code>$&gt; ./rush-01 "4 3 2 1 1 2 2 2 4 3 2 1 1 2 2 2"
+1 2 3 4
+2 3 4 1
+3 4 1 2
+4 1 2 3</code></pre>
+El enunciado clásico es de 4×4; este grupo lo generalizó para que el tamaño salga del número de
+pistas (de 3×3 en adelante). No hay PDF del enunciado en el pack. Es trabajo de grupo: la
+cabecera de <code>rush01.c</code> la firma otra persona del grupo; el repo vive en
+<code>packs/piscine/017_rush01/repo/ex00/</code>.</div>
+
+<div class="card" id="entrada">
+<h2><span class="ex">entrada</span>ft_is_valid_arg y ft_parse_arg</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_is_valid_arg.c</b>, <b>ex00/ft_parse_arg.c</b></span><span>Usa: <b>write</b></span></div>
+<p>La validación es una pequeña máquina de dos estados: <code>check</code> vale 0 cuando se
+espera un dígito y 1 cuando se espera un espacio. Así se aceptan solo dígitos sueltos
+separados por un espacio. El número de pistas tiene que ser múltiplo de 4, y el tamaño es ese
+número dividido entre 4.</p>
+<pre><code>	while (*str)
+	{
+		if (('1' &lt;= *str &amp;&amp; *str &lt;= '9') &amp;&amp; !check)
+		{
+			length++;
+			check = 1;
+			str++;
+		}
+		else if (*str == ' ' &amp;&amp; check)
+		{
+			check = 0;
+			str++;
+		}
+		else
+			break ;
+	}
+	if (length % 4 == 0)
+		return (length / 4);
+	return (0);</code></pre>
+<p>Después, <code>ft_parse_arg</code> vuelca los dígitos en <code>int inp[4][9]</code>: una
+fila por borde (arriba, abajo, izquierda, derecha) y <code>size</code> pistas en cada una. Aquí
+sí se comprueba que ninguna pista pase de <code>size</code>.</p>
+<pre><code>		if (j &gt;= size)
+		{
+			j = 0;
+			i++;
+		}
+		if ('1' &lt;= *str &amp;&amp; *str &lt;= ('0' + size))
+		{
+			inp[i][j] = *str - 0x30;
+			j++;
+		}</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que validar la entrada es la mitad
+del programa. Un parser con estado (<code>check</code>) es la forma más simple de reconocer un
+formato, y es el germen de los autómatas que aparecerán más adelante (minishell, por ejemplo).
+Y que las tablas de tamaño fijo (<code>[4][9]</code>) imponen un tope que hay que defender en
+<code>main</code>.</div>
+</div>
+
+<div class="card" id="vistas">
+<h2><span class="ex">vistas</span>ft_check_row_left / right, ft_check_col_top / bottom</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_check_row.c</b>, <b>ex00/ft_check_col.c</b></span><span>Usa: <b>write</b></span></div>
+<p>Contar cuántos edificios se ven es llevar el máximo visto hasta ahora: cada vez que aparece
+uno más alto que todos los anteriores, se ve, y pasa a ser el nuevo máximo. Las cuatro
+funciones son la misma idea recorriendo en cuatro sentidos; para mirar desde la derecha o desde
+abajo se lee el índice al revés (<code>size - i - 1</code>).</p>
+<pre><code>	while (i &lt; size)
+	{
+		if (max &lt; pos[p][i])
+		{
+			max = pos[p][i];
+			count++;
+		}
+		i++;
+	}
+	if (count == inp[2][p])
+		return (1);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A traducir una regla del mundo real
+(«uno alto tapa a los de detrás») a un invariante de bucle: «<code>max</code> es el edificio más
+alto visto hasta <code>i</code>». Escribir la misma función cuatro veces cambiando solo el
+recorrido también deja ver el coste de no tener todavía punteros a función (C11).</div>
+</div>
+
+<div class="card" id="perm">
+<h2><span class="ex">clave</span>ft_ordcom — la permutación número k</h2>
+<div class="meta"><span>Entrega: <b>ex00/rush01.c</b>, <b>ex00/ft_factorial.c</b></span><span>Usa: <b>write</b></span></div>
+<p>La pieza más original del rush. Una fila válida es una permutación de 1…N, y hay N! de
+ellas. En vez de generarlas con recursión, el grupo las <em>numera</em>: dada una
+<code>i</code> entre 0 y N!−1, <code>ft_ordcom</code> construye directamente la permutación que
+ocupa ese puesto en orden lexicográfico. <code>ava</code> marca qué alturas están ya usadas
+(0 = libre).</p>
+<pre><code>	j = 0;
+	while (j &lt; size)
+	{
+		t = i / ft_factorial(size - 1 - j);
+		i_ava = 0;
+		while (i_ava &lt; size &amp;&amp; t &gt;= 0)
+		{
+			if (ava[i_ava] == 0)
+				t--;
+			i_ava++;
+		}
+		ava[i_ava - 1] = 1;
+		pos[p][j] = i_ava;
+		i = i % ft_factorial(size - 1 - j);
+		j++;
+	}</code></pre>
+<p>Es el sistema factorial de numeración: en la posición <code>j</code>, el cociente
+<code>i / (N−1−j)!</code> dice cuál de las alturas <em>que quedan libres</em> va ahí, y el resto
+pasa a la posición siguiente. Por ejemplo, con N = 4 e <code>i = 10</code>:</p>
+<table>
+<tr><th>posición</th><th>cociente</th><th>libres</th><th>elige</th><th>resto</th></tr>
+<tr><td>0</td><td><code>10 / 3! = 1</code></td><td>1 2 3 4</td><td>la 2.ª → <b>2</b></td><td><code>10 % 6 = 4</code></td></tr>
+<tr><td>1</td><td><code>4 / 2! = 2</code></td><td>1 3 4</td><td>la 3.ª → <b>4</b></td><td><code>4 % 2 = 0</code></td></tr>
+<tr><td>2</td><td><code>0 / 1! = 0</code></td><td>1 3</td><td>la 1.ª → <b>1</b></td><td>0</td></tr>
+<tr><td>3</td><td><code>0 / 0! = 0</code></td><td>3</td><td>la 1.ª → <b>3</b></td><td>0</td></tr>
+</table>
+<p>La permutación número 10 es <code>2 4 1 3</code>. <code>ft_setcom</code> solo prepara
+<code>ava</code> (libres las <code>size</code> primeras, ocupadas el resto) antes de llamar a
+<code>ft_ordcom</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que se puede numerar un espacio de
+búsqueda: si sabes contar las soluciones posibles (N!), puedes recorrerlas con un simple entero
+en lugar de con estructuras. Es la misma idea que hay detrás de convertir un número de base 10
+a otra base (C04), solo que aquí cada cifra tiene su propia base. De paso, el ejercicio de
+factorial de C05 deja de ser un ejercicio y se convierte en herramienta.</div>
+</div>
+
+<div class="card" id="solver">
+<h2><span class="ex">solver</span>ft_skyline_isolver — backtracking por filas</h2>
+<div class="meta"><span>Entrega: <b>ex00/rush01.c</b></span><span>Usa: <b>write</b></span></div>
+<p>La recursión va fila a fila (<code>p</code>). Para la fila actual prueba las N!
+permutaciones; si una cumple las pistas de izquierda y derecha, baja a la fila siguiente. Si
+desde ahí se llega a una solución, devuelve 1 hacia arriba sin probar más; si no, sigue con la
+siguiente permutación de esta fila.</p>
+<pre><code>	while (i_com &lt; ft_factorial(size) &amp;&amp; p &lt; size)
+	{
+		ft_setcom(pos, size, i_com, p);
+		if (ft_check_row_left(inp, size, pos, p)
+			&amp;&amp; ft_check_row_right(inp, size, pos, p))
+		{
+			r = ft_skyline_isolver(inp, size, pos, p + 1);
+			if (r == 1)
+				return (r);
+		}
+		i_com++;
+	}
+	if (p == size)
+		r = ft_check_col(inp, size, pos) &amp;&amp; ft_diff_col(pos, size);
+	else
+		r = 0;
+	return (r);</code></pre>
+<p>Cuando <code>p == size</code> el bucle ni entra: todas las filas están puestas y lo que queda
+es comprobar las columnas. Ese es el caso base.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El esqueleto del backtracking:
+elegir, comprobar, bajar un nivel y, si falla, deshacer y probar la siguiente opción. Aquí
+«deshacer» es gratis porque la fila <code>p</code> se sobrescribe con la siguiente permutación.
+Es el mismo patrón que <code>ft_print_combn</code> (C00) o las diez reinas (C05), ahora con
+poda: las filas que no cumplen sus pistas cortan una rama entera.</div>
+</div>
+
+<div class="card" id="columnas">
+<h2><span class="ex">final</span>Columnas: ft_check_col y ft_diff_col</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_check_col.c</b>, <b>ex00/ft_diff_col.c</b></span><span>Usa: <b>write</b></span></div>
+<p>Las filas no repiten alturas por construcción (son permutaciones), pero las columnas sí
+podrían. <code>ft_diff_col</code> compara cada casilla con todas las de debajo en su columna, y
+<code>ft_check_col</code> comprueba las pistas de arriba y de abajo. Las dos se ejecutan solo
+cuando la cuadrícula está completa.</p>
+<pre><code>			z = i + 1;
+			while (z &lt; size)
+			{
+				if (pos[i][j] == pos[z][j] &amp;&amp; i != z)
+					return (0);
+				z++;
+			}</code></pre>
+<p>(El <code>i != z</code> sobra: <code>z</code> empieza en <code>i + 1</code>.)</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dónde poner cada comprobación es una
+decisión de diseño con consecuencias de rendimiento. Comprobar las columnas al final es lo más
+sencillo de escribir, pero significa que una columna con dos alturas iguales en las dos
+primeras filas no se detecta hasta haber rellenado todas las demás.</div>
+</div>
+
+<div class="card" id="salida">
+<h2><span class="ex">salida</span>ft_putmatrix y main</h2>
+<div class="meta"><span>Entrega: <b>ex00/ft_putmatrix.c</b>, <b>ex00/rush01.c</b></span><span>Usa: <b>write</b></span></div>
+<p><code>ft_putmatrix</code> escribe cada altura como dígito, con espacio entre columnas y salto
+de línea al final de la fila. <code>main</code> encadena todo y responde <code>Error</code> (con
+código de salida 1) si falta el argumento, si el número de pistas no cuadra o si no hay
+solución.</p>
+<pre><code>	size = ft_is_valid_arg(argv[1]);
+	if (size &lt; 3 || size &gt; 10)
+	{
+		write(1, "Error\n", 6);
+		return (1);
+	}
+	ft_parse_arg(inp, argv[1], size);
+	if (ft_skyline_isolver(inp, size, sol, 0))
+		ft_putmatrix(sol, size);</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A separar el programa en piezas que
+se pueden probar solas (parsear, resolver, imprimir) y repartirlas en el grupo. Ocho ficheros
+para un rush de fin de semana es justo eso: cada persona se lleva una pieza, pero en la defensa
+hay que saber explicar las de los demás.</div>
+</div>
+
+<div class="card" id="ojo">
+<h2><span class="ex">ojo</span>Límites y coste</h2>
+<div class="meta"><span>Probado: <b>3×3, 4×4 y 5×5 resuelven al instante; 6×6 no termina en 60 s</b></span></div>
+<ul>
+<li><b>Tope de tamaño.</b> Ojo: <code>main</code> acepta <code>size</code> hasta 10, pero las
+tablas son de 9 (<code>inp[4][9]</code>, <code>pos[9][9]</code>). Con 40 pistas,
+<code>ft_parse_arg</code> escribe fuera de <code>inp</code> (AddressSanitizer lo marca como
+<em>stack-buffer-overflow</em>). La comprobación debería cortar en 9.</li>
+<li><b>9×9.</b> En <code>ft_ordcom</code>, <code>while (ava[size] == 0) size++;</code> busca el
+primer 1 que puso <code>ft_setcom</code>; con tamaño 9 no hay ninguno dentro del array y la
+lectura sigue en <code>ava[9]</code>, fuera de rango.</li>
+<li><b>Retorno ignorado.</b> <code>ft_parse_arg</code> devuelve 0 si una pista pasa de
+<code>size</code>, pero <code>main</code> no lo mira: el resto de <code>inp</code> queda sin
+inicializar. En la práctica sale <code>Error</code> porque no hay solución, pero es por
+casualidad.</li>
+<li><b>Coste.</b> Cada fila prueba N! permutaciones y las columnas solo se miran al final, así
+que en el peor caso son (N!)<sup>N</sup> cuadrículas: 24<sup>4</sup> ≈ 330 000 para 4×4, pero
+720<sup>6</sup> ≈ 1,4·10<sup>17</sup> para 6×6. La poda por filas salva el 5×5; el 6×6 ya no.
+Además <code>ft_factorial</code> se recalcula en cada vuelta del bucle.</li>
+<li><b>Restos.</b> En <code>ft_factorial.c</code> queda comentada una versión con los valores a
+mano, donde 8! y 9! están mal (<code>40200</code> y <code>361800</code>; son 40320 y 362880).
+No se usa, pero se entrega.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que «funciona con el ejemplo» no es lo
+mismo que «funciona». Generalizar de 4×4 a N×N es buena idea, pero trae dos obligaciones: que
+los límites de las tablas coincidan con los que acepta <code>main</code>, y que el algoritmo
+aguante el crecimiento. Las factoriales crecen más deprisa que cualquier ordenador.</div>
+</div>
+
+<footer>42.zenidx.com — Rush 01 · <a href="018_rush02.html">continuar con Rush 02 →</a></footer>
+</div>
+</body>
+</html>

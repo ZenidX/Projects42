@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 00 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 00 <span class="tag">rank 02</span></h1>
+<p class="sub">«Growing Code»: el primer contacto con Python después de todo el C. Ocho
+ejercicios ambientados en un huerto comunitario que recorren lo básico — <code>print</code>,
+<code>input</code>, conversión con <code>int</code>, condicionales, bucles, recursión y, al
+final, anotaciones de tipo.</p>
+
+<ul class="toc">
+  <li><a href="#ex0">ex0 — ft_hello_garden</a></li>
+  <li><a href="#ex1">ex1 — ft_garden_name</a></li>
+  <li><a href="#ex2">ex2 — ft_plot_area</a></li>
+  <li><a href="#ex3">ex3 — ft_harvest_total</a></li>
+  <li><a href="#ex4">ex4 — ft_plant_age</a></li>
+  <li><a href="#ex5">ex5 — ft_water_reminder</a></li>
+  <li><a href="#ex6">ex6 — ft_count_harvest</a></li>
+  <li><a href="#ex7">ex7 — ft_seed_inventory</a></li>
+</ul>
+
+<div class="trasfondo"><b>De C a Python</b> — Después de la piscine, Libft, printf y
+push_swap, todo era memoria a mano: <code>malloc</code>, <code>free</code>, punteros,
+<code>write</code> byte a byte y una Norma que vigila cada línea. Python le da la vuelta a
+casi todo. No se compila: el intérprete <code>python3</code> lee y ejecuta. Las variables no
+tienen tipo, lo tienen los <em>valores</em> (tipado dinámico), y la memoria la gestiona el
+recolector de basura: no hay <code>malloc</code> ni <code>free</code>, ni segfaults. En lugar
+de la norminette, el enunciado exige <strong>flake8</strong> (el estilo PEP 8: sangría de 4
+espacios, dos líneas en blanco entre definiciones, sin espacios al final de línea…) y, en el
+último ejercicio, <strong>mypy</strong> para comprobar los tipos. Una regla curiosa del
+módulo: cada fichero debe contener <em>solo la función</em>, sin código suelto ni bloque
+<code>if __name__ == "__main__":</code>; para probarlas se usa el <code>main.py</code> que da
+el enunciado, que las importa y las llama. Todo el repo pasa <code>flake8</code> y
+<code>mypy</code> sin avisos.</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>ft_hello_garden</h2>
+<div class="meta"><span>Entrega: <b>ft_hello_garden.py</b></span><span>Autorizado: <b>print()</b></span></div>
+<pre><code>def ft_hello_garden():
+    print("Hello, Garden Community!")</code></pre>
+<p>Dos líneas. <code>def</code> define la función, los dos puntos abren el bloque y la
+sangría marca qué hay dentro: no hay llaves ni punto y coma. <code>print</code> añade el
+salto de línea por su cuenta.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en Python <em>la sangría es
+sintaxis</em>. En C la Norma te exigía tabular bien por estética; aquí, si la línea del
+<code>print</code> no está sangrada, el programa ni arranca (<code>IndentationError</code>).
+Y que <code>print</code> no es <code>write</code>: ni descriptor, ni longitud, ni
+<code>"\n"</code> a mano.</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>ft_garden_name</h2>
+<div class="meta"><span>Entrega: <b>ft_garden_name.py</b></span><span>Autorizado: <b>input(), print()</b></span></div>
+<pre><code>def ft_garden_name():
+    garden_name = input("Enter garden name: ")
+    print(f"Garden: {garden_name}")
+    print("Status: Growing well!")</code></pre>
+<p><code>input</code> muestra el texto que se le pasa, espera a que el usuario pulse Intro y
+devuelve lo escrito como cadena (sin el salto de línea). Luego una <em>f-string</em>: la
+<code>f</code> delante de las comillas permite meter variables entre llaves.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Leer de la entrada estándar sin
+<code>read</code>, sin buffer de tamaño fijo y sin preocuparte de cuánto escribirá el
+usuario: la cadena crece lo que haga falta. Y las f-strings, que hacen en una línea lo que en
+C pedía <code>printf("%s", ...)</code> — o tu propio ft_printf entero.</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>ft_plot_area</h2>
+<div class="meta"><span>Entrega: <b>ft_plot_area.py</b></span><span>Autorizado: <b>input(), int(), print()</b></span></div>
+<pre><code>def ft_plot_area():
+    length = int(input("Enter length: "))
+    width = int(input("Enter width: "))
+    area = length * width
+    print(f"Plot area: {area}")</code></pre>
+<p><code>input</code> siempre devuelve texto; para multiplicar hay que convertirlo con
+<code>int()</code>. Si el usuario escribe algo que no es un número, Python lanza una
+excepción y se para:</p>
+<pre><code>Enter length: a
+ValueError: invalid literal for int() with base 10: 'a'</code></pre>
+<p>El enunciado dice explícitamente que no hace falta validar la entrada, así que es el
+comportamiento esperado.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que tipado dinámico no significa
+«sin tipos». <code>"5" * "3"</code> es un error y <code>"5" * 3</code> da
+<code>"555"</code>: los valores tienen tipo y Python lo respeta con rigor. <code>int()</code>
+es tu <code>ft_atoi</code>, pero en vez de devolver basura ante una entrada rara, protesta. Y
+los enteros de Python no desbordan: crecen sin límite, adiós a <code>INT_MAX</code>.</div>
+</div>
+
+<div class="card" id="ex3">
+<h2><span class="ex">ex3</span>ft_harvest_total</h2>
+<div class="meta"><span>Entrega: <b>ft_harvest_total.py</b></span><span>Autorizado: <b>input(), int(), print()</b></span></div>
+<pre><code>def ft_harvest_total():
+    a = input("Day 1 harvest: ")
+    b = input("Day 2 harvest: ")
+    c = input("Day 3 harvest: ")
+    total_harvest = int(a) + int(b) + int(c)
+    print(f"Total harvest: {total_harvest}")</code></pre>
+<p>Aquí la conversión se hace al final, en la suma, en lugar de al leer como en ex2. Las dos
+formas valen; la diferencia es cuándo existe la variable como texto y cuándo como número.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una misma variable no tiene un
+tipo fijo declarado: <code>a</code> guarda una cadena, y es <code>int(a)</code> quien produce
+un valor nuevo de tipo entero. Fíjate también en que <code>+</code> entre cadenas
+<em>concatena</em>: <code>a + b + c</code> sin los <code>int</code> daría
+<code>"583"</code>, no 16.</div>
+</div>
+
+<div class="card" id="ex4">
+<h2><span class="ex">ex4</span>ft_plant_age</h2>
+<div class="meta"><span>Entrega: <b>ft_plant_age.py</b></span><span>Autorizado: <b>input(), int(), print()</b></span></div>
+<pre><code>def ft_plant_age():
+    age = int(input("Enter plant age in days: "))
+    if age &gt; 60:
+        print("Plant is ready to harvest!")
+    else:
+        print("Plant needs more time to grow.")</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El <code>if</code>/<code>else</code>
+de Python: sin paréntesis obligatorios, con dos puntos y sangría. Y leer el enunciado con
+lupa, como en C00 con el cero de <code>ft_is_negative</code>: «estrictamente más de 60 días»
+es <code>&gt;</code>, no <code>&gt;=</code>. Con 60 exactos la planta todavía no está
+lista.</div>
+</div>
+
+<div class="card" id="ex5">
+<h2><span class="ex">ex5</span>ft_water_reminder</h2>
+<div class="meta"><span>Entrega: <b>ft_water_reminder.py</b></span><span>Autorizado: <b>input(), int(), print()</b></span></div>
+<pre><code>def ft_water_reminder():
+    a = input("Days since last watering: ")
+    if int(a) &gt; 2:
+        print("Water the plants!")
+    else:
+        print("Plants are fine")</code></pre>
+<p>El mismo esquema que ex4, con la conversión hecha dentro de la condición.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que comparar sin convertir no
+funciona: <code>"4" &gt; 2</code> lanza un <code>TypeError</code> porque Python no compara
+texto con números. En C, comparar un <code>char *</code> con un <code>int</code> compilaba
+(con suerte con un aviso) y comparaba una dirección de memoria; Python prefiere fallar en voz
+alta.</div>
+</div>
+
+<div class="card" id="ex6">
+<h2><span class="ex">ex6</span>ft_count_harvest</h2>
+<div class="meta"><span>Entrega: <b>ft_count_harvest_iterative.py</b>, <b>ft_count_harvest_recursive.py</b></span><span>Autorizado: <b>input(), int(), print(), range()</b>, funciones auxiliares para la recursión</span></div>
+<p>Contar de 1 a n y terminar con «Harvest time!», dos veces: con un bucle y con
+recursión.</p>
+<h3>Versión iterativa</h3>
+<pre><code>def ft_count_harvest_iterative():
+    days = int(input("Days until harvest: "))
+    for day in range(1, days + 1):
+        print(f"Day {day}")
+    print("Harvest time!")</code></pre>
+<p>El <code>for</code> de Python no es el de C: no tiene inicialización, condición y
+avance, sino que recorre los valores que le da <code>range(1, days + 1)</code>, que va de 1
+a <code>days</code> (el final no se incluye, de ahí el <code>+ 1</code>).</p>
+<h3>Versión recursiva</h3>
+<pre><code>def ft_count_harvest_recursive(days=None):
+    is_first_call = False
+    if days is None:
+        day = int(input("Days until harvest: "))
+        is_first_call = True
+    else:
+        day = days
+    if day &gt; 0:
+        ft_count_harvest_recursive(day - 1)
+        print(f"Day {day}")
+    if is_first_call:
+        print("Harvest time!")</code></pre>
+<p>Usa una de las opciones que propone el enunciado: un parámetro con valor por defecto.
+La llamada desde <code>main.py</code> no pasa argumentos, así que <code>days</code> vale
+<code>None</code>: es la primera llamada, la única que pide el número y la única que imprime
+«Harvest time!» al final. Las llamadas recursivas reciben ya el número.</p>
+<p>El truco del orden es el mismo de <code>ft_putnbr</code> en C00: la función baja primero
+hasta 0 y <em>luego</em>, al volver, imprime. Así la pila de llamadas da la vuelta al orden
+y sale <code>Day 1</code>, <code>Day 2</code>… aunque se empiece por n.</p>
+<pre><code>Days until harvest: 5
+Day 1
+Day 2
+Day 3
+Day 4
+Day 5
+Harvest time!</code></pre>
+<p>Ojo: Python limita la profundidad de recursión (por defecto, unas 1000 llamadas). Con
+990 días funciona; con 1000 la versión recursiva se para con
+<code>RecursionError: maximum recursion depth exceeded</code>, mientras la iterativa sigue
+sin problema. Para el enunciado no importa, pero es una diferencia real entre las dos
+versiones.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La comparación directa entre
+iteración y recursión, ahora en un lenguaje que las trata distinto que C. En C la recursión
+solo está limitada por el tamaño de la pila y, si te pasas, segfault; Python pone un tope
+explícito y lanza una excepción legible. También introduce dos piezas propias de Python:
+los parámetros por defecto y <code>None</code>, el «no hay valor» que sustituye a
+<code>NULL</code> (y que se compara con <code>is</code>, no con <code>==</code>).</div>
+</div>
+
+<div class="card" id="ex7">
+<h2><span class="ex">ex7</span>ft_seed_inventory</h2>
+<div class="meta"><span>Entrega: <b>ft_seed_inventory.py</b></span><span>Autorizado: <b>print()</b>, métodos de cadena</span></div>
+<p>El único ejercicio que recibe parámetros en lugar de leerlos, y el único con anotaciones
+de tipo obligatorias (la firma la da el enunciado).</p>
+<pre><code>def ft_seed_inventory(seed_type: str, quantity: int, unit: str) -&gt; None:
+    if unit == "packets":
+        unit = "packets available"
+        covers = ""
+    elif unit == "grams":
+        unit = "grams total"
+        covers = ""
+    elif unit == "area":
+        unit = "square meters"
+        covers = "covers "
+    else:
+        print("Unknown unit type")
+        return
+    print(f"{seed_type.capitalize()} seeds: {covers}{quantity} {unit}")</code></pre>
+<p>La cadena <code>if</code>/<code>elif</code>/<code>else</code> prepara dos trozos de texto
+— el sufijo y un posible prefijo «covers » — y un único <code>print</code> final los
+compone. La unidad desconocida sale antes con <code>return</code>. Comparar cadenas con
+<code>==</code> funciona directamente: nada de <code>ft_strcmp</code>.
+<code>capitalize()</code> es un método del propio objeto cadena: pone la primera letra en
+mayúscula.</p>
+<pre><code>&gt;&gt;&gt; ft_seed_inventory("tomato", 15, "packets")
+Tomato seeds: 15 packets available
+&gt;&gt;&gt; ft_seed_inventory("carrot", 8, "grams")
+Carrot seeds: 8 grams total
+&gt;&gt;&gt; ft_seed_inventory("lettuce", 12, "area")
+Lettuce seeds: covers 12 square meters
+&gt;&gt;&gt; ft_seed_inventory("x", 1, "kg")
+Unknown unit type</code></pre>
+<p>Un detalle: el parámetro <code>unit</code> se reutiliza para guardar el texto de salida.
+Funciona porque es una variable local; mypy no protesta porque sigue siendo un
+<code>str</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Las anotaciones de tipo: la
+vuelta de los tipos de C, pero <em>opcionales y sin efecto en tiempo de ejecución</em>.
+Python ignora <code>: int</code> al ejecutar — puedes pasar una cadena y nadie se queja —; es
+<code>mypy</code> quien las lee y avisa antes de ejecutar, como haría un compilador. Y los
+métodos: en Python todo es un objeto, y una cadena trae sus propias funciones
+(<code>"lettuce".capitalize()</code>), un anticipo de la orientación a objetos del módulo
+siguiente.</div>
+</div>
+
+<footer>42.zenidx.com — Python Module 00 · <a href="203_Python_Module_01.html">continuar con Python Module 01 →</a></footer>
+</div>
+</body>
+</html>
