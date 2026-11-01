@@ -353,7 +353,7 @@ coma flotante.</div>
 
 <div class="card" id="utils">
 <h2><span class="ex">07</span>stack_utils</h2>
-<div class="meta"><span>Fichero: <b>stack_utils.c</b></span><span>Funciones: <b>stack_pos, rotate_to_top_a/b, lstindex, indexlst</b></span></div>
+<div class="meta"><span>Fichero: <b>stack_utils.c</b></span><span>Funciones: <b>stack_pos, rotate_to_top_a/b</b></span></div>
 <p>Dos herramientas que comparten casi todas las estrategias. <code>stack_pos</code> devuelve la
 posición de un valor (0 = cima, −1 si no está); como las pilas guardan rangos, buscar "el 3" es
 buscar el cuarto menor. Y la pieza más usada de todo el proyecto:</p>
@@ -373,28 +373,10 @@ buscar el cuarto menor. Y la pieza más usada de todo el proyecto:</p>
 <code>pos</code> veces si está en la mitad de arriba, <code>rra</code> <code>size - pos</code>
 veces si está en la de abajo. Nunca cuesta más de <code>size / 2</code>.
 <code>rotate_to_top_b</code> es lo mismo con <code>rb</code> y <code>rrb</code>.</p>
-<p><b>Una rareza</b>: el fichero también define <code>lstindex</code> (nodo → posición) e
-<code>indexlst</code> (posición → nodo), declaradas en el header, pero <em>no se usan en ningún
-sitio</em>. Y <code>lstindex</code> tiene un caso roto: si <code>list</code> es
-<code>NULL</code> y <code>p</code> no lo es, el primer <code>if (list == p)</code> no se cumple y
-el <code>while (list-&gt;next …)</code> desreferencia <code>NULL</code>, es decir, segfault:</p>
-<pre><code>int	lstindex(t_list *list, t_list *p)
-{
-	int		i;
-
-	if (list == p)
-		return (0);
-	i = 1;
-	while (list-&gt;next &amp;&amp; list-&gt;next != p)</code></pre>
-<p>Como nadie la llama, hoy no afecta al programa. En <code>indexlst</code>, además, la primera
-asignación <code>r = list;</code> no sirve de nada, porque se pisa antes del
-<code>return</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una pila con rotaciones es en
 realidad un <em>anillo</em>: el fondo está a un <code>rra</code> de la cima, así que la distancia
 real a una posición es el mínimo de ir por arriba o por abajo. Este medio anillo de ahorro es lo
-que separa una estrategia que pasa el corte de una que no. Y la rareza de <code>lstindex</code>
-es un recordatorio de que el código muerto también se evalúa: si alguien lo llama mañana con una
-pila vacía, revienta.</div>
+que separa una estrategia que pasa el corte de una que no.</div>
 </div>
 
 <div class="card" id="simple">
