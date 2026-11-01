@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mazegen"
+version = "1.0.0"
+description = "Reusable random maze generator (perfect mazes and Pac-Man boards) from the 42 A-Maze-ing project"
+readme = "mazegen/README.md"
+license = "MIT"
+license-files = ["LICENSE.md"]
+authors = [{ name = "xalara" }]
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["mazegen"]
+
+[tool.setuptools.package-data]
+mazegen = ["py.typed", "README.md"]
