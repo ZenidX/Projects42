@@ -26,6 +26,7 @@ estrategias, una por clase de complejidad: O(n²), O(n√n), O(n log n) y una ad
 según lo desordenada que llegue la lista.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#datos">01 — El modelo de datos</a></li>
   <li><a href="#ops">02 — Las 11 operaciones</a></li>
   <li><a href="#main">03 — main y el flujo</a></li>
@@ -59,6 +60,640 @@ son listas <code>t_list</code> de la libft).
 luego cómo entra la entrada, después las dos ideas que lo preparan todo (rangos y desorden) y al
 final las estrategias.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>La página usa palabras que vienen de la teoría de algoritmos, de las matemáticas y de cómo C
+guarda los números. Aquí está cada una explicada desde cero y con un ejemplo sacado del propio
+push_swap. En el resto de la página, la primera vez que sale uno de estos términos en cada tarjeta
+lleva un enlace a su entrada.</p>
+
+<h3>Complejidad y coste</h3>
+<details id="g-o-grande">
+<summary>Complejidad y notación O grande (Big-O)</summary>
+<p>La <em>complejidad</em> de un algoritmo es cómo crece su coste cuando crece la entrada. No dice
+cuántas operaciones exactas hace con 100 números, sino qué pasa si le das el doble o cinco veces
+más. La notación O grande lo escribe en corto: O(f(n)) significa «crece, como mucho, al ritmo de
+f(n)», donde n es el tamaño de la entrada (aquí, cuántos números hay que ordenar). Cada
+«ritmo» es una <em>clase de complejidad</em>: O(n), O(n log n), O(n²)…</p>
+<p>Se ignoran dos cosas a propósito: las constantes (n²/8 y 5·n² son los dos O(n²)) y los
+términos pequeños (n² + 2n es O(n²), porque con n grande el 2n no pinta nada). Por eso dos
+algoritmos de la misma clase pueden dar cifras muy distintas, y uno de clase «peor» puede ganar con
+n pequeño.</p>
+<p>En push_swap el coste que importa son las operaciones impresas. La tabla compara cuánto vale
+cada función con lo medido en la sección 12:</p>
+<table>
+<tr><th>Clase</th><th>n = 100</th><th>n = 500</th><th>crece</th><th>medido 100</th><th>medido 500</th><th>crece</th></tr>
+<tr><td>O(n²), <code>--simple</code></td><td>10 000</td><td>250 000</td><td>×25</td><td>~1443</td><td>~32476</td><td>×22.5</td></tr>
+<tr><td>O(n√n), <code>--medium</code></td><td>1 000</td><td>11 180</td><td>×11.2</td><td>~571</td><td>~5061</td><td>×8.9</td></tr>
+<tr><td>O(n log n), <code>--complex</code></td><td>664</td><td>4 483</td><td>×6.8</td><td>1084</td><td>6784</td><td>×6.3</td></tr>
+</table>
+<p>Las cifras absolutas no coinciden (las constantes no salen en la O), pero el
+<em>crecimiento</em> sí se parece: al multiplicar n por 5, <code>--simple</code> multiplica sus
+operaciones por más de 20 y el radix por poco más de 6. Con <code>--simple</code> se puede incluso
+afinar la cuenta: a va encogiendo y cada búsqueda cuesta de media un cuarto de lo que queda, así
+que salen unas n²/8 rotaciones más n <code>pb</code> y n <code>pa</code>: 1250 + 200 = 1450 para
+100 y 31 250 + 1000 = 32 250 para 500, muy cerca de lo medido.</p>
+<p><b>De dónde viene:</b> la O la usó el matemático alemán Paul Bachmann en 1894 y la difundió
+Edmund Landau, por eso también se llama notación de Bachmann–Landau; la O es de «orden». Donald
+Knuth la asentó en el análisis de algoritmos en los años setenta.</p>
+</details>
+<details id="g-o-n">
+<summary>O(n): coste lineal</summary>
+<p>El coste crece en proporción a n: el doble de números, el doble de trabajo. Es lo típico de
+recorrer una lista una vez, haciendo una cantidad fija de trabajo por elemento.</p>
+<p>En push_swap son O(n) <code>is_sorted</code> (mira cada pareja de vecinos una vez),
+<code>stack_pos</code> y <code>copy_values</code>. Y entre las estrategias, <code>sort_low</code>
+cuando hay pocos elementos fuera de sitio: con 500 números casi ordenados hizo 918 operaciones, menos
+de dos por número. Por debajo de O(n) no se puede ordenar: como mínimo hay que mirar cada número
+una vez.</p>
+</details>
+<details id="g-o-n2">
+<summary>O(n²): coste cuadrático</summary>
+<p>El coste crece con el cuadrado de n: el doble de números, cuatro veces el trabajo; cinco veces
+más números, veinticinco veces más. Suele salir de un bucle dentro de otro: para cada elemento, se
+recorren todos (o casi todos) los demás.</p>
+<p>En push_swap: <code>--simple</code> (para cada número, hasta n/2 rotaciones para subirlo),
+<code>rank_of</code> llamada n veces (250 000 comparaciones con 500 números),
+<code>compute_disorder</code> (todas las parejas) y <code>lis_lengths</code>. Las tres últimas son
+O(n²) de CPU, no de operaciones, y por eso no importan (ver «coste de cálculo» más abajo). El
+<code>--simple</code> sí lo es en operaciones: ~1443 con 100 números pasa el corte de 2000, pero
+~32476 con 500 queda lejísimos de 12 000.</p>
+</details>
+<details id="g-o-nlogn">
+<summary>O(n log n)</summary>
+<p>n multiplicado por log n. Como log n crece muy despacio (con 100 números, log₂ n ≈ 6.6; con 500,
+≈ 9), es «un poco más que lineal». Es la clase de los buenos algoritmos de ordenación de uso
+general (mergesort, heapsort, quicksort de media), y se demuestra que ningún algoritmo que ordene
+solo comparando parejas puede bajar de ahí en el peor caso.</p>
+<p>En push_swap es el radix de <code>--complex</code>, que no compara, y su log n tiene otro
+origen: hace ⌈log₂ n⌉ pasadas (una por bit del mayor rango) y cada una cuesta entre n y 2n
+operaciones. 7 pasadas para 100 números (1084 operaciones) y 9 para 500 (6784).</p>
+</details>
+<details id="g-o-nsqrtn">
+<summary>O(n√n)</summary>
+<p>n multiplicado por la raíz cuadrada de n; también se escribe O(n<sup>1.5</sup>) u
+O(n sqrt n), como en el comentario de <code>disorder_regime</code>. Queda entre las dos anteriores:
+√100 = 10 y √500 ≈ 22.4, así que n√n vale 1000 y unos 11 180.</p>
+<p>En push_swap es la clase de <code>--medium</code>, y sale de elegir bien el tamaño k de los
+tramos. En la versión clásica por bloques hay dos costes que tiran en sentidos contrarios: cada
+número espera hasta k rotaciones (n·k en total, crece con k) y por cada uno de los n/k tramos se
+recorre a (n·n/k, decrece con k). Se igualan en k = √n, y entonces los dos valen n√n. El código
+usa 1.5·√n: tramos de 15 con 100 números y de 33 con 500. Lo medido (~571 y ~5061) queda por
+debajo de n√n porque la constante real es menor que 1.</p>
+</details>
+<details id="g-log2">
+<summary>log₂ n y ⌈ ⌉ (redondeo hacia arriba)</summary>
+<p>log₂ n es cuántas veces hay que multiplicar 2 por sí mismo para llegar a n o, al revés,
+cuántas veces se puede partir n por la mitad hasta llegar a 1. log₂ 8 = 3 porque 2·2·2 = 8. Si n
+no es potencia de 2 sale con decimales: log₂ 100 ≈ 6.64.</p>
+<p>⌈x⌉ es el <em>techo</em> de x: redondearlo hacia arriba al entero. ⌈6.64⌉ = 7. Su pareja es el
+<em>suelo</em>, ⌊x⌋, que redondea hacia abajo, que es lo que hace la división entera con positivos
+y lo que devuelve <code>isqrt</code> con la raíz.</p>
+<p>Juntos, ⌈log₂ n⌉ es cuántos bits hacen falta para escribir los números de 0 a n − 1, y eso es
+justo el número de pasadas del radix:</p>
+<pre><code>n      n − 1 en binario    ⌈log₂ n⌉ = pasadas
+4      11                  2
+100    1100011             7
+500    111110011           9</code></pre>
+<p>Por eso log n crece tan despacio: con 512 números siguen bastando 9 pasadas, con 513 hacen falta
+10, y la siguiente pasada de más no llega hasta los 1025.</p>
+<p><b>De dónde viene:</b> los símbolos ⌈ ⌉ y ⌊ ⌋ los propuso Kenneth Iverson en 1962, en su libro
+<em>A Programming Language</em>.</p>
+</details>
+<details id="g-peor-caso">
+<summary>Peor caso, cota y garantía</summary>
+<p>El coste de un algoritmo suele depender de la entrada concreta, no solo de su tamaño. El
+<em>peor caso</em> es la entrada de ese tamaño que más le cuesta, y el <em>mejor caso</em>, la que
+menos. Una <em>cota</em> es un límite que se puede asegurar: «nunca más de tanto». Cuando se dice
+sin más que un algoritmo «es O(n log n)», normalmente se habla de su peor caso, y eso es una
+garantía: pase lo que pase, no se dispara.</p>
+<p>El radix de push_swap es el ejemplo extremo: su mejor y su peor caso son el mismo. Tras
+normalizar siempre ordena una permutación de 0..n-1, y en cada pasada hace un <code>ra</code> o
+un <code>pb</code> por número y un <code>pa</code> por cada uno con ese bit a 0, cantidades que no
+dependen del orden: 1084 operaciones con 100 números, siempre. Por eso el README dice que da «una
+cota garantizada». <code>sort_low</code>, en cambio, tiene un mejor caso buenísimo (3 operaciones
+con <code>10 0 1 … 9</code>) y uno malo si el desorden es alto; por eso la adaptativa solo lo usa
+por debajo de 0.2.</p>
+</details>
+<details id="g-coste">
+<summary>Coste de cálculo frente a coste puntuado</summary>
+<p>Un programa gasta tiempo de CPU (comparaciones, recorridos, <code>malloc</code>) y, en
+push_swap, además imprime operaciones. Solo lo segundo puntúa. Por eso la página dice a menudo
+«O(n²) de CPU, que da igual»: <code>rank_of</code> hace 250 000 comparaciones con 500 números y
+<code>lis_lengths</code> 124 750, en un instante y sin imprimir nada. Al revés, una sola operación
+impresa de más sí cuenta.</p>
+<p>Es la razón de decisiones que en otro programa serían raras: <code>ft_lstlast</code> en cada
+<code>ra</code>, <code>ft_lstsize</code> en cada <code>rotate_to_top</code>, o una LIS en O(n²)
+habiendo una en O(n log n).</p>
+</details>
+<details id="g-busqueda-lineal">
+<summary>Búsqueda lineal</summary>
+<p>Buscar un valor mirando los elementos uno a uno desde el principio hasta encontrarlo o llegar al
+final. Cuesta O(n) en el peor caso (cuando está al final o no está). Es lo único que se puede hacer
+en una lista enlazada o en datos sin ordenar; en un array ordenado existe la búsqueda binaria, que
+descarta la mitad en cada paso y cuesta O(log n).</p>
+<p>En push_swap, <code>stack_pos(a, 2)</code> con <code>a: 3 0 2 1</code> mira el 3, el 0 y el 2 y
+devuelve 2; con un valor que no está recorre los cuatro y devuelve −1. <code>insert_pos</code> es
+otra búsqueda lineal, la del mínimo de una clave.</p>
+</details>
+
+<h3>Algoritmos de ordenación</h3>
+<details id="g-adaptativo">
+<summary>Algoritmo adaptativo</summary>
+<p>Un algoritmo de ordenación es <em>adaptativo</em> si trabaja menos cuanto más ordenada llega la
+entrada: aprovecha el orden que ya hay en vez de tratar todas las entradas igual. La ordenación por
+inserción y Timsort lo son; el radix no, porque hace sus pasadas completas aunque la lista llegue
+casi ordenada.</p>
+<p>En push_swap la palabra tiene dos sentidos que conviene separar. <code>sort_low</code> es
+adaptativo en el sentido clásico: con 500 números y 25 intercambios entre vecinos hizo 918
+operaciones, frente a las 6784 fijas del radix. Y <code>--adaptive</code> se adapta de otra forma:
+mide el desorden antes de empezar y elige uno de tres métodos (sección <a href="#adaptive">12</a>).</p>
+</details>
+<details id="g-seleccion">
+<summary>Ordenación por selección</summary>
+<p>En cada paso se busca el menor de lo que queda sin ordenar y se pone en su sitio definitivo;
+luego el siguiente menor, y así hasta el final. El nombre viene de ahí: en cada vuelta
+<em>selecciona</em> el mínimo. Son n búsquedas de hasta n elementos: O(n²).</p>
+<p><code>--simple</code> es una selección adaptada a pilas: el menor que queda en a es siempre el
+rango <code>next</code> (0, 1, 2…), se sube por el camino corto y se pasa a b con
+<code>pb</code>. Con <code>5 4 3 2 1</code> son 12 operaciones (traza en la sección
+<a href="#simple">08</a>).</p>
+</details>
+<details id="g-insercion">
+<summary>Ordenación por inserción</summary>
+<p>Se mantiene una parte ya ordenada y los demás se van metiendo uno a uno en su hueco, como quien
+ordena las cartas que tiene en la mano. En el peor caso es O(n²), pero si casi todo está ya en
+orden apenas hay que insertar nada: es el ejemplo clásico de algoritmo adaptativo.</p>
+<p><code>sort_low</code> es eso: la parte ordenada es la LIS, que se queda en a, y los demás
+vuelven desde b uno a uno al hueco que calcula <code>insert_pos</code>. Con <code>0 1 3 2 4</code>
+solo hay que reinsertar el 2: 8 operaciones.</p>
+</details>
+<details id="g-burbuja">
+<summary>Ordenación de burbuja</summary>
+<p>Se recorre la lista comparando cada pareja de vecinos y se intercambian si están al revés; se
+repite hasta que una pasada no cambia nada. Es O(n²). El nombre viene de que los grandes van
+«subiendo» hacia el final como burbujas.</p>
+<p>No se usa en push_swap, pero sale en la sección 06 por una propiedad: el número de intercambios
+que hace la burbuja es exactamente el número de inversiones. <code>3 2 1</code> tiene 3 y la
+burbuja la ordena con 3 intercambios:</p>
+<pre><code>3 2 1  →  2 3 1  →  2 1 3  →  1 2 3</code></pre>
+</details>
+<details id="g-inversion">
+<summary>Inversión (el «mistake»)</summary>
+<p>En una secuencia, una <em>inversión</em> es una pareja de posiciones i &lt; j cuyos valores están
+al revés: <code>a[i] &gt; a[j]</code>. No hace falta que sean vecinos. Una lista ordenada tiene 0;
+una al revés del todo tiene invertidas todas sus parejas, n(n − 1)/2.</p>
+<p>Es lo que el enunciado llama <code>mistakes</code>, y <code>pairs</code> es el total de parejas.
+Con <code>1 3 2</code> las parejas son (1, 3), (1, 2) y (3, 2), y solo (3, 2) está al revés:
+<code>mistakes = 1</code>, <code>pairs = 3</code>, 33.33 %. Con 500 números hay 124 750 parejas, y
+en una lista al azar cada una tiene la misma probabilidad de estar bien que al revés: por eso el
+desorden de una entrada aleatoria ronda el 0.5.</p>
+<p>Mide lo lejos que está una lista de estar ordenada de forma muy concreta: es el número de
+intercambios entre vecinos que hacen falta para ordenarla (los de la burbuja).</p>
+</details>
+<details id="g-radix">
+<summary>Radix sort (ordenación por base)</summary>
+<p>Un algoritmo que no compara números entre sí: los reparte según sus cifras, una posición cada
+vez. En base 10 serían diez montones (los que acaban en 0, en 1…); en base 2, solo dos, según el
+bit sea 0 o 1. Tras pasar por todas las posiciones, la lista queda ordenada. <em>Radix</em> es
+«raíz» en latín, y en matemáticas es otro nombre de la base de numeración.</p>
+<p>En push_swap es <code>--complex</code>, en base 2: los de bit 0 van a b (<code>pb</code>), los
+de bit 1 al fondo de a (<code>ra</code>), y después todo vuelve con <code>pa</code>. Siempre 1084
+operaciones con 100 números y 6784 con 500. Necesita números no negativos y pequeños, que es lo que
+da la normalización.</p>
+<p><b>De dónde viene:</b> es anterior a los ordenadores. Las máquinas de tarjetas perforadas, que
+arrancan con las tabuladoras de Herman Hollerith para el censo de Estados Unidos de 1890, ordenaban
+así: una columna por pasada, repartiendo las tarjetas en casillas según el dígito perforado.</p>
+</details>
+<details id="g-lsd">
+<summary>LSD y MSD (cifra menos y más significativa)</summary>
+<p>LSD son las siglas de <em>least significant digit</em>, la cifra menos significativa: la de las
+unidades, la que menos pesa en el valor. Un radix LSD empieza por esa cifra y avanza hacia la
+izquierda; uno MSD (<em>most significant digit</em>) empieza por la que más pesa. En binario, la
+cifra de menos peso es el bit 0, el de más a la derecha.</p>
+<p>El de push_swap es LSD. Con <code>2 0 3 1</code> la primera pasada separa pares (2, 0) de
+impares (3, 1), y la segunda, los menores que 2 (0, 1) de los demás. Lo curioso del LSD es que la
+última pasada, la del bit que más pesa, es la que decide el orden final; las anteriores solo ordenan
+lo que queda empatado en los bits altos, y para que ese trabajo no se pierda hace falta que el
+reparto sea estable.</p>
+</details>
+<details id="g-estable">
+<summary>Estabilidad</summary>
+<p>Un algoritmo de ordenación es <em>estable</em> si dos elementos que considera iguales salen en el
+mismo orden en que entraron. Con números distintos parece no importar, pero en el radix sí: en cada
+pasada solo se mira un bit, y todos los que lo tienen igual son «iguales» para esa pasada.</p>
+<p>En el radix de push_swap, <code>pb</code> invierte el orden al apilar en b y los
+<code>pa</code> lo vuelven a invertir, así que cada grupo conserva su orden: en
+<code>2 0 3 1</code>, el 2 y el 0 (los dos con el bit 0 a 0) salen como <code>2 0</code>, igual
+que entraron. Si no fuera estable, la segunda pasada estropearía lo que ordenó la primera. Está
+explicado con la traza en la sección <a href="#complex">09</a>.</p>
+</details>
+<details id="g-chunks">
+<summary>Chunks, tramos y ventana deslizante</summary>
+<p><em>Chunk</em> es «trozo» en inglés. La idea es repartir los valores por intervalos (los más
+pequeños, los siguientes…) y tratar cada intervalo como un bloque, sin ordenar todavía dentro de
+él. Es pariente del <em>bucket sort</em>, que reparte los valores en cubos por intervalos y luego
+ordena cada cubo.</p>
+<p><code>--medium</code> no usa bloques fijos sino una <em>ventana deslizante</em>: un intervalo de
+rangos <code>[0, i + range]</code> cuyo borde sube uno con cada <code>pb</code>. Con 100 números
+<code>range</code> vale 15 y con 500, 33 (1.5·√n). Con <code>5 1 8 3 0 7 2 6 4</code> y
+<code>range = 4</code>, el 5 no entra al principio (5 &gt; 0 + 4) y espera con un <code>ra</code>;
+el 1 sí entra.</p>
+</details>
+<details id="g-timsort">
+<summary>Timsort</summary>
+<p>El algoritmo de ordenación de Python, que Java usa también para ordenar objetos. Lo diseñó Tim
+Peters para Python en 2002. Busca en la entrada los tramos que ya vienen ordenados (en inglés,
+<em>runs</em>) y los va fusionando, de modo que con datos casi ordenados trabaja muy poco: es
+adaptativo.</p>
+<p>En la página sale como ejemplo de la misma idea que <code>--adaptive</code>: mirar la forma de la
+entrada antes de decidir. push_swap no lo usa.</p>
+</details>
+<details id="g-clave">
+<summary>Clave de comparación</summary>
+<p>El valor por el que se compara al ordenar o al buscar un mínimo. No tiene por qué ser el dato
+tal cual: se puede transformar para que una sola comparación exprese varios criterios a la
+vez.</p>
+<p><code>insert_pos</code> busca «el menor de los mayores que v y, si no hay, el menor de todos».
+Con <code>a = 5 1 2 4</code> y <code>v = 3</code> las claves son 5, 1 + INT_MAX, 2 + INT_MAX y 4,
+y un único mínimo da el 4, en la posición 3 (lo detalla el desplegable de
+<a href="#fn-insert_pos"><code>insert_pos</code></a>).</p>
+</details>
+
+<h3>Secuencias y matemáticas</h3>
+<details id="g-rango">
+<summary>Rango, normalización y compresión de coordenadas</summary>
+<p>El <em>rango</em> de un número dentro de un conjunto es el puesto que ocuparía si se ordenaran:
+cuántos son menores que él. <em>Normalizar</em> es sustituir cada número por su rango. Con valores
+distintos, los rangos son exactamente 0, 1, …, n − 1.</p>
+<pre><code>entrada   42   -7   100   5
+rangos     2    0     3   1</code></pre>
+<p>Funciona porque el orden relativo no cambia: 42 &gt; 5 y también 2 &gt; 1, así que ordenar los
+rangos es ordenar los números. En programación competitiva la misma técnica se llama
+<em>compresión de coordenadas</em>: cambiar valores enormes o dispersos por posiciones pequeñas y
+seguidas cuando solo importa su orden. Todo en la sección <a href="#rangos">05</a>.</p>
+<p>Ojo: en la sección 04, «el rango» es otra cosa, el intervalo de valores que cabe en un
+<code>int</code> (de <code>INT_MIN</code> a <code>INT_MAX</code>).</p>
+</details>
+<details id="g-permutacion">
+<summary>Permutación</summary>
+<p>Una ordenación concreta de un conjunto de elementos, sin que se repita ni falte ninguno.
+<code>2 0 3 1</code> es una permutación de 0..3, y <code>0 1 2 3</code> es otra (la ordenada). Con
+n elementos hay n! permutaciones (n·(n − 1)·…·1): con 5, 120.</p>
+<p>Tras la normalización, toda entrada de push_swap es una permutación de 0..n-1, y ordenar es
+llevarla a <code>0 1 2 … n-1</code>. De ahí salen certezas que usan las estrategias: el mayor de b
+es su tamaño menos uno, y el radix hace siempre las mismas operaciones para un mismo n.</p>
+</details>
+<details id="g-transitividad">
+<summary>Transitividad</summary>
+<p>Una relación es <em>transitiva</em> si de «a con b» y «b con c» se deduce «a con c». El ≤ lo
+es: si a ≤ b y b ≤ c, entonces a ≤ c.</p>
+<p>Por eso <code>is_sorted</code> solo compara vecinos: en <code>0 1 3 4</code>, saber que 0 &lt; 1,
+1 &lt; 3 y 3 &lt; 4 basta para saber que 0 &lt; 4 sin compararlos, y la comprobación es O(n) en vez
+de O(n²). Más en el desplegable de <a href="#is_sorted"><code>is_sorted</code></a>.</p>
+</details>
+<details id="g-subsecuencia">
+<summary>Subsecuencia frente a subcadena</summary>
+<p>Una <em>subsecuencia</em> se obtiene quitando elementos de una secuencia sin cambiar el orden de
+los que quedan; no tienen por qué ser seguidos. Una <em>subcadena</em> (o subarray) sí exige que
+sean consecutivos.</p>
+<pre><code>secuencia      0 1 3 2 4
+subsecuencia   0 1 3 4      (se quita el 2)
+subcadena      1 3 2        (tres seguidos)
+ninguna        0 3 1        (cambia el orden)</code></pre>
+</details>
+<details id="g-lis">
+<summary>Subsecuencia creciente más larga (LIS)</summary>
+<p>De todas las subsecuencias en las que cada número es mayor que el anterior, la que tiene más
+elementos. LIS son las siglas en inglés: <em>longest increasing subsequence</em>. Puede haber
+varias del mismo largo.</p>
+<p>En <code>0 1 3 2 4</code> hay dos de largo 4, <code>0 1 3 4</code> y <code>0 1 2 4</code>, y
+<code>lis_lengths</code> se queda con la primera. <code>sort_low</code> deja quietos los de la LIS
+(ya están en orden entre sí) y solo mueve el resto, aquí el 2. Cuantos menos queden fuera, menos
+operaciones.</p>
+<p>Se calcula con programación dinámica en O(n²). Existe un método en O(n log n), pero aquí no
+aporta nada porque el tiempo de CPU no puntúa.</p>
+</details>
+<details id="g-pd">
+<summary>Programación dinámica</summary>
+<p>Una técnica para resolver un problema construyendo su respuesta a partir de las respuestas de
+versiones más pequeñas del mismo problema, que se calculan una sola vez y se guardan en una tabla
+para reutilizarlas. Sirve cuando el problema grande se descompone en subproblemas que se
+repiten.</p>
+<p>En <code>lis_lengths</code>, <code>len[i]</code> (el largo de la mejor subsecuencia creciente que
+acaba en i) se calcula con los <code>len[j]</code> anteriores, ya guardados: el mayor
+<code>len[j] + 1</code> entre los <code>j &lt; i</code> con <code>vals[j] &lt; vals[i]</code>. Con
+<code>1 0 2 4 3 5</code> la tabla sale <code>1 1 2 3 3 4</code>.</p>
+<p><b>De dónde viene:</b> el nombre lo puso Richard Bellman en los años cincuenta. «Programación» no
+tiene que ver con escribir código: significaba planificar, como cuando se programa un calendario.
+Según contó él mismo en su autobiografía, eligió «dinámica» porque sonaba bien y era imposible
+usarla en sentido peyorativo.</p>
+</details>
+<details id="g-producto-cruzado">
+<summary>Multiplicar en cruz</summary>
+<p>Para comparar dos fracciones con denominadores positivos no hace falta dividir:
+a/b &lt; c/d es lo mismo que a·d &lt; c·b. Se multiplican los dos lados por b·d, que al ser
+positivo no cambia el sentido de la desigualdad.</p>
+<p><code>disorder_regime</code> lo usa para no tocar un <code>float</code>:
+<code>mistakes / pairs &lt; 1/5</code> pasa a <code>mistakes * 5 &lt; pairs</code>. Con
+<code>1 2 3 5 4</code> (1 de 10): 5 &lt; 10, régimen bajo. Y es exacto: con
+<code>2 1 4 3 5</code> (2 de 10, justo 0.2) da 10 &lt; 10, falso, sin ninguna duda de
+redondeo.</p>
+</details>
+<details id="g-division-entera">
+<summary>División entera, truncar y redondear</summary>
+<p>En C, dividir dos enteros da un entero: la parte decimal se tira (se <em>trunca</em>).
+<code>7 / 2</code> da 3 y <code>2 / 3</code> da 0. Con positivos equivale a redondear hacia abajo;
+con negativos, C trunca hacia el cero (<code>-7 / 2</code> da −3).</p>
+<p>En push_swap marca detalles: <code>size / 2</code> con 5 da 2 en <code>rotate_to_top</code>, e
+<code>isqrt(n) * 3 / 2</code> tiene que multiplicar antes de dividir, porque <code>3 / 2</code>
+solo daría 1. Para redondear al más cercano en vez de truncar se suma medio divisor antes de
+dividir: <code>put_disorder</code> hace (20 000 + 1) / 3 = 6667 y no 6666, y por eso imprime
+66.67 %.</p>
+</details>
+
+<h3>Bits y representación de números</h3>
+<details id="g-binario">
+<summary>Binario, bit y peso de un bit</summary>
+<p>El ordenador guarda los enteros en base 2, solo con las cifras 0 y 1, que se llaman
+<em>bits</em>. Cada posición vale el doble que la de su derecha (1, 2, 4, 8…), igual que en decimal
+cada una vale diez veces más. El <em>peso</em> de un bit es lo que vale su posición: el bit 0, el
+de más a la derecha, es el de menos peso (vale 1); el de más a la izquierda, el de más peso.</p>
+<pre><code> 6 = 110       = 4 + 2
+99 = 1100011   = 64 + 32 + 2 + 1</code></pre>
+<p>El bit 0 dice si el número es par (0) o impar (1). Un <code>int</code> ocupa 32 bits en los
+ordenadores de 42 y en casi todos los actuales. El radix de push_swap lee los bits de los rangos:
+<code>2 0 3 1</code> en binario es <code>10 00 11 01</code>.</p>
+</details>
+<details id="g-operadores-bits">
+<summary>Operadores de bits</summary>
+<p>Operadores de C que trabajan sobre los bits de un entero en vez de sobre su valor:
+<code>&amp;</code> (AND: 1 donde los dos tienen 1), <code>|</code> (OR), <code>^</code> (XOR),
+<code>~</code> (NOT), y <code>&lt;&lt;</code> y <code>&gt;&gt;</code>, que desplazan los bits a la
+izquierda o a la derecha. No hay que confundir <code>&amp;</code> y <code>|</code> con
+<code>&amp;&amp;</code> y <code>||</code>, que son lógicos.</p>
+<p>El radix solo usa dos: <code>(n &gt;&gt; bit) &amp; 1</code> da el bit número <code>bit</code> de
+<code>n</code>. Está explicado a fondo, con tablas, en el desplegable
+<a href="#bits">Qué hacen <code>&gt;&gt;</code> y <code>&amp; 1</code></a>.</p>
+</details>
+<details id="g-mascara">
+<summary>Máscara de bits</summary>
+<p>Un número que se combina con otro mediante <code>&amp;</code> para quedarse solo con algunos de
+sus bits y apagar el resto, como una plantilla con agujeros: donde la máscara tiene 1, el bit pasa;
+donde tiene 0, sale 0.</p>
+<p>En el radix la máscara es <code>1</code> (<code>…0001</code>): <code>x &amp; 1</code> deja solo el
+bit 0. <code>6 &amp; 1</code> da 0 (par: <code>pb</code>) y <code>3 &amp; 1</code> da 1 (impar:
+<code>ra</code>).</p>
+</details>
+<details id="g-complemento-a-dos">
+<summary>Complemento a dos y bit de signo</summary>
+<p>La forma en que casi todos los ordenadores guardan los enteros negativos. Para obtener −x se
+invierten todos los bits de x y se suma 1. El bit de más peso hace de <em>bit de signo</em>: 0 en
+los positivos y 1 en los negativos. Con 8 bits, para que se lea mejor:</p>
+<pre><code> 7 = 00000111
+-7 = 11111001    (se invierten: 11111000, y + 1)
+-1 = 11111111</code></pre>
+<p>Lo bueno es que la suma funciona igual con positivos y negativos. Lo malo, para un radix, es que
+leído bit a bit un negativo parece enorme: −7 tiene el bit alto a 1 y el radix lo pondría detrás de
+todos los positivos. Es una de las razones para normalizar antes (desplegable
+<a href="#bits">de los bits</a>). También explica la asimetría del <code>int</code>, de
+−2147483648 a 2147483647: el 0 ocupa uno de los sitios con el bit de signo a 0.</p>
+</details>
+<details id="g-precedencia">
+<summary>Precedencia y asociatividad</summary>
+<p>La <em>precedencia</em> decide qué operador se aplica primero cuando no hay paréntesis, como en
+2 + 3 · 4 = 14. La <em>asociatividad</em> decide el orden entre operadores del mismo nivel:
+<code>%</code> y <code>/</code> van de izquierda a derecha, así que <code>p % 100 / 10</code> es
+<code>(p % 100) / 10</code>.</p>
+<p>Con los operadores de bits hay trampas: <code>&amp;</code> va después de <code>==</code>, así que
+<code>n &amp; 1 == 0</code> se lee <code>n &amp; (1 == 0)</code>. Lo cuenta el final del desplegable
+<a href="#bits">de los bits</a>.</p>
+</details>
+<details id="g-desbordamiento">
+<summary>Desbordamiento (overflow)</summary>
+<p>Pasa cuando el resultado de una operación no cabe en su tipo: un <code>int</code> va de
+−2147483648 (<code>INT_MIN</code>) a 2147483647 (<code>INT_MAX</code>), y
+<code>INT_MAX + 1</code> no tiene dónde guardarse. Con enteros con signo, en C eso es
+comportamiento indefinido.</p>
+<p>push_swap lo esquiva en tres sitios: <code>to_int</code> acumula en un <code>long</code> y
+comprueba el rango en cada dígito, así que 2147483648 se rechaza antes de desbordar;
+<code>insert_pos</code> suma <code>INT_MAX</code> en un <code>long</code>; y <code>mistakes</code>
+y <code>pairs</code> son <code>long</code> (124 750 parejas con 500 números, que
+<code>put_disorder</code> multiplica por 10 000).</p>
+</details>
+<details id="g-indefinido">
+<summary>Comportamiento indefinido</summary>
+<p>Situaciones en las que el estándar de C no dice qué debe pasar, y el compilador puede hacer
+cualquier cosa: dar el resultado «esperado», otro distinto, colgarse, o cambiar según se compile
+con o sin optimizaciones. No es un error que se detecte: el programa compila y a veces parece
+funcionar. Ejemplos: desbordar un <code>int</code> con signo, leer a través de un puntero
+<code>NULL</code> o usar memoria ya liberada.</p>
+<p>Por eso <code>to_int</code> comprueba el rango <em>antes</em> de que el número se salga del
+<code>int</code>, no después, y por eso <code>insert_pos</code> calcula
+<code>1 + INT_MAX</code> en un <code>long</code>.</p>
+</details>
+<details id="g-implementacion">
+<summary>Dependiente de la implementación</summary>
+<p>Más suave que lo indefinido: el estándar deja elegir a cada compilador, pero el compilador tiene
+que hacer algo concreto y documentarlo. El programa es válido, pero puede comportarse distinto en
+otra máquina u otro compilador.</p>
+<p>El caso de la página: desplazar a la derecha un negativo con <code>&gt;&gt;</code>. Lo habitual
+es que entren unos por la izquierda y se conserve el signo (<code>-8 &gt;&gt; 1</code> da −4), pero
+C no lo garantiza. Con los rangos de push_swap, que nunca son negativos, la duda no existe.</p>
+</details>
+<details id="g-coma-flotante">
+<summary>Coma flotante</summary>
+<p>La forma de guardar números con decimales (<code>float</code>, <code>double</code>): un número
+fijo de cifras binarias y un exponente, como la notación científica. Muchos decimales sencillos no
+tienen representación exacta en binario, igual que 1/3 no la tiene en decimal: por eso
+<code>0.1 + 0.2</code> no da exactamente <code>0.3</code>.</p>
+<p>push_swap no usa ni un <code>float</code>. El desorden se compara multiplicando en cruz y el
+porcentaje se imprime con punto fijo, así que un desorden de 2 de 10 es exactamente el umbral 0.2
+y no 0.19999…</p>
+</details>
+<details id="g-punto-fijo">
+<summary>Aritmética de punto fijo</summary>
+<p>Trabajar con decimales usando solo enteros: se elige una unidad pequeña y se cuenta en esa
+unidad. En vez de 12.34 euros, 1234 céntimos. Sumar y comparar es exacto; para mostrarlo se separa
+con <code>/</code> y <code>%</code>.</p>
+<p><code>put_disorder</code> cuenta el desorden en centésimas de porcentaje: <code>p = 3333</code>
+significa 33.33 %. <code>p / 100</code> = 33 es la parte entera y <code>p % 100</code> = 33 los
+decimales, que se escriben cifra a cifra para no perder ceros (<code>p = 2</code> sale
+<code>0.02%</code> y no <code>0.2%</code>).</p>
+</details>
+<details id="g-utf8">
+<summary>ASCII y UTF-8</summary>
+<p>ASCII es la tabla clásica que asigna a cada carácter un número de 0 a 127: letras sin tilde,
+cifras, signos y caracteres de control, cada uno en un byte. UTF-8 es la codificación que se usa
+hoy para todo lo demás (ñ, tildes, símbolos): cada carácter ocupa de 1 a 4 bytes, y los de ASCII
+ocupan uno y valen lo mismo, así que un texto ASCII ya es UTF-8 válido.</p>
+<p>En <code>--bench</code>, <code>²</code> ocupa 2 bytes y <code>√</code> ocupa 3.
+<code>ft_putendl_fd</code> los escribe byte a byte sin saber nada de caracteres, y es la terminal
+la que los junta y los dibuja.</p>
+<p><b>De dónde viene:</b> UTF-8 lo diseñaron Ken Thompson y Rob Pike en 1992.</p>
+</details>
+
+<h3>Estructuras de datos, C y sistema</h3>
+<details id="g-pila">
+<summary>Pila (LIFO)</summary>
+<p>Una estructura de datos en la que solo se toca el elemento de arriba, la <em>cima</em>: se mete
+encima (<em>push</em>) y se saca de encima (<em>pop</em>), como en una pila de platos. Se dice que
+es LIFO, <em>last in, first out</em>: el último en entrar es el primero en salir.</p>
+<p>Las pilas de push_swap son algo más: <code>pa</code> y <code>pb</code> son push y pop puros,
+pero <code>ra</code> y <code>rra</code> permiten llevar el fondo a la cima, cosa que una pila de
+verdad no deja. En la práctica, a y b se comportan como un anillo. Están hechas con listas de la
+libft y el primer nodo es la cima.</p>
+</details>
+<details id="g-lista-enlazada">
+<summary>Lista enlazada</summary>
+<p>Una secuencia hecha de nodos sueltos en memoria, cada uno con su dato y un puntero al siguiente;
+el último apunta a <code>NULL</code>. Es <em>simple</em> si cada nodo solo conoce al siguiente
+(como la <code>t_list</code> de la libft) y <em>doble</em> si también conoce al anterior.</p>
+<p>Frente a un array, meter o sacar al principio es inmediato (por eso <code>pb</code> no hace
+<code>malloc</code>, solo mueve punteros), pero llegar a la posición i exige recorrer i nodos. Por
+eso <code>reverse_rotate</code> tiene que buscar el penúltimo y <code>sort_low</code> copia la pila
+a un array con <code>copy_values</code> antes de calcular la LIS, que necesita acceder por
+índice.</p>
+</details>
+<details id="g-anillo">
+<summary>Anillo (lista circular)</summary>
+<p>Una secuencia en la que después del último vuelve el primero, como las horas de un reloj: no hay
+principio ni final fijos, solo desde dónde se mira. Una variante muy usada es el <em>buffer
+circular</em>, un array que se recorre dando la vuelta.</p>
+<p>Con <code>ra</code> y <code>rra</code>, cada pila de push_swap se comporta como un anillo: el
+fondo está a un <code>rra</code> de la cima, y la distancia a cualquier posición es el mínimo de ir
+por arriba o por abajo (<code>rotate_to_top</code>). Por eso tras <code>push_non_lis</code> la pila
+<code>5 1 2 4</code> cuenta como ordenada: leída como anillo es <code>1 2 4 5</code>. Y durante un
+instante, dentro de <code>rotate</code>, la lista es un anillo de verdad: el último apunta al
+primero hasta que se corta.</p>
+</details>
+<details id="g-aritmetica-punteros">
+<summary>Aritmética de punteros</summary>
+<p>Sumar un entero a un puntero lo avanza ese número de <em>elementos</em>, no de bytes: si
+<code>p</code> apunta a un <code>int</code>, <code>p + 1</code> apunta al <code>int</code> siguiente
+(4 bytes más allá). Solo tiene sentido dentro de un mismo bloque de memoria, como un array.</p>
+<p><code>lis_keep</code> reserva 2n enteros de una vez y hace <code>prev = len + n</code>, la mitad
+del bloque. Está dibujado en el desplegable de <a href="#fn-lis_keep"><code>lis_keep</code></a>.</p>
+</details>
+<details id="g-recursion">
+<summary>Recursión</summary>
+<p>Una función es <em>recursiva</em> si se llama a sí misma con un problema más pequeño, hasta
+llegar a un caso que se resuelve sin volver a llamarse (el <em>caso base</em>). Cada llamada
+pendiente ocupa un trozo de la pila de llamadas, una zona de memoria del programa que no tiene nada
+que ver con las pilas a y b, y con demasiadas llamadas se agota: es el famoso <em>stack
+overflow</em>, el desbordamiento de pila.</p>
+<p>La <code>ft_lstclear</code> de esta libft es recursiva: antes de liberar un nodo se llama a sí
+misma con el siguiente, así que con <code>a: 3 → 2 → 1</code> se anidan tres llamadas y los nodos
+se liberan del último al primero. El caso base es el último nodo, que no tiene siguiente. Con 500
+nodos son 500 llamadas anidadas, sin problema; con millones podría agotar la pila de llamadas.</p>
+</details>
+<details id="g-cortocircuito">
+<summary>Evaluación en cortocircuito</summary>
+<p><code>&amp;&amp;</code> y <code>||</code> evalúan de izquierda a derecha y se paran en cuanto
+saben el resultado: en <code>A &amp;&amp; B</code>, si A es falso, B ni se evalúa (el resultado
+será falso igualmente); en <code>A || B</code>, si A es verdadero, tampoco. Así se pueden escribir
+condiciones en las que la segunda parte solo es segura si la primera se cumple.</p>
+<p><code>is_sorted</code> hace <code>while (s &amp;&amp; s-&gt;next)</code>: <code>s-&gt;next</code>
+solo se lee si <code>s</code> no es <code>NULL</code>. <code>swap</code> hace
+<code>if (!s || !s-&gt;next)</code> por la misma razón, con <code>||</code>.</p>
+</details>
+<details id="g-terminador">
+<summary>Terminador nulo</summary>
+<p>En C una cadena es una fila de <code>char</code> que acaba en el byte <code>'\0'</code> (valor
+0). No se guarda la longitud: el final se sabe porque ahí está el cero. <code>"--simple"</code>
+ocupa 9 bytes, no 8.</p>
+<p><code>parse_flag</code> compara con <code>ft_strncmp(s, "--simple", 9)</code>: el noveno byte es
+ese <code>'\0'</code>, y así <code>--simplex</code> no cuela. En cambio, el
+<code>write(2, "Error\n", 6)</code> de <code>error_exit</code> escribe 6 bytes: el
+<code>'\0'</code> no se manda.</p>
+</details>
+<details id="g-fuga">
+<summary>Fuga de memoria y valgrind</summary>
+<p>Una <em>fuga</em> (<em>leak</em>) es memoria reservada con <code>malloc</code> que el programa ya
+no puede liberar porque no queda ningún puntero hacia ella. El sistema la recupera al acabar el
+proceso, pero mientras tanto se pierde, y en 42 cuenta como error. Valgrind es una herramienta que
+ejecuta el programa vigilando cada <code>malloc</code> y cada <code>free</code>, y al final avisa
+de lo que no se liberó.</p>
+<p>push_swap reserva dos bloques por número (el <code>int</code> y el nodo) y los libera todos en
+<code>free_ps</code>, también al salir por error. Un ejemplo de cómo se perdería memoria: en
+<code>push</code>, si <code>tmp-&gt;next = *dest</code> se hiciera antes de avanzar
+<code>*src</code>, el resto de a se quedaría sin nadie que lo apuntase.</p>
+</details>
+<details id="g-fd">
+<summary>Descriptores de fichero, stdout, stderr y tuberías</summary>
+<p>Un <em>descriptor de fichero</em> (fd) es el número con el que un programa se refiere a algo en
+lo que puede leer o escribir. Todo proceso empieza con tres abiertos: el 0 es la entrada estándar
+(stdin), el 1 la salida estándar (stdout) y el 2 la salida de errores (stderr). Por defecto los tres
+van a la terminal, pero se pueden redirigir cada uno por su lado.</p>
+<p>Una <em>tubería</em> (<code>|</code>) conecta el stdout de un programa con el stdin del
+siguiente: en <code>./push_swap 3 2 1 | ./checker_linux 3 2 1</code>, el checker lee las
+operaciones. Como push_swap escribe el <code>Error</code> y todo el <code>--bench</code> por el fd
+2, nada de eso le llega al checker; y con <code>&gt; /dev/null</code> se tira el stdout y en
+pantalla queda solo el bench.</p>
+</details>
+<details id="g-estado-salida">
+<summary>Estado de salida</summary>
+<p>El número que un programa devuelve al sistema al terminar, con el <code>return</code> de
+<code>main</code> o con <code>exit(n)</code>. Por convenio, 0 significa «todo bien» y cualquier otro
+valor, error. En la shell se consulta con <code>echo $?</code>.</p>
+<p><code>error_exit</code> acaba con <code>exit(1)</code>: <code>./push_swap 3 2 abc; echo $?</code>
+imprime <code>Error</code> y luego <code>1</code>.</p>
+</details>
+<details id="g-excepciones">
+<summary>Excepciones</summary>
+<p>En lenguajes como C++, Java o Python, un error se puede «lanzar» desde dentro de una función y
+«capturar» varias llamadas más arriba, saltándose todo lo de en medio. C no tiene ese mecanismo:
+cada función tiene que devolver algo que diga si fue bien, y quien la llama tiene que mirarlo y
+pasarlo hacia arriba.</p>
+<p>Es lo que hace el parseo: <code>to_int</code>, <code>add_number</code>, <code>add_words</code> y
+<code>parse_args</code> devuelven 1 o 0, y ese 0 sube hasta <code>main</code>, que llama a
+<code>error_exit</code>.</p>
+</details>
+<details id="g-dispatch">
+<summary>Despachador y tabla de dispatch</summary>
+<p>Un <em>despachador</em> es un trozo de código que, según un valor, decide a qué función llamar.
+Una <em>tabla de dispatch</em> hace lo mismo con un array de punteros a función indexado por ese
+valor: <code>tabla[valor](args)</code>.</p>
+<p><code>run_strategy</code> es un despachador hecho con <code>if</code>/<code>else</code> (la Norma
+no permite <code>switch</code>): según <code>ps-&gt;strategy</code> llama a
+<code>sort_simple</code>, <code>sort_medium</code>, <code>sort_complex</code> o
+<code>sort_adaptive</code>. El enum <code>t_op</code>, que vale de 0 a 10, usa la misma idea como
+índice de los contadores.</p>
+</details>
+<details id="g-maquina-estados">
+<summary>Máquina de estados</summary>
+<p>Un modelo en el que un sistema está siempre en uno de un número finito de estados y pasa de uno
+a otro según lo que recibe: un semáforo (verde, ámbar, rojo) o un lector que va carácter a carácter
+(esperando el signo, leyendo dígitos, error). Es habitual numerar los estados con un enum.</p>
+<p>push_swap no tiene una explícita, pero <code>to_int</code> se le parece: primero un signo
+opcional, luego solo dígitos, y cualquier otra cosa lleva al error. Sale en la sección 01 como uno
+de los usos típicos de los enum.</p>
+</details>
+
+<h3>Otros</h3>
+<details id="g-pseudocodigo">
+<summary>Pseudocódigo</summary>
+<p>Una descripción de un algoritmo a medio camino entre el lenguaje natural y un lenguaje de
+programación: deja ver la idea sin atarse a los detalles de ninguno en concreto.</p>
+<p>El enunciado da el cálculo del desorden en pseudocódigo («para cada par i &lt; j…»), y
+<code>compute_disorder</code> es su traducción a C con dos punteros que recorren la lista.</p>
+</details>
+<details id="g-empirico">
+<summary>Empírico</summary>
+<p>Que sale de probar y medir, no de una demostración. Viene del griego <em>empeiría</em>,
+«experiencia».</p>
+<p>El factor 1.5 de <code>isqrt(ps-&gt;size) * 3 / 2</code> es empírico: la teoría dice que el tramo
+debe ser del orden de √n, pero no qué constante va delante, y esa se ajusta probando. Las cifras de
+la página (~571, ~5061…) también son empíricas: medias de 10 entradas aleatorias.</p>
+</details>
+<details id="g-programacion-competitiva">
+<summary>Programación competitiva</summary>
+<p>Concursos en los que se resuelven problemas de algoritmia contra el reloj y con límites de
+tiempo de ejecución y de memoria: olimpiadas de informática, el ICPC universitario o webs como
+Codeforces. De ahí vienen los nombres de muchos trucos, como la compresión de coordenadas.</p>
+</details>
+</div>
+
 <div class="card" id="datos">
 <h2><span class="ex">01</span>El modelo de datos</h2>
 <div class="meta"><span>Fichero: <b>push_swap.h</b></span><span>Tipos: <b>t_ps, t_op, t_strategy</b></span></div>
@@ -76,10 +711,10 @@ final las estrategias.</div>
 	int			bench;
 	int			count[11];
 }	t_ps;</code></pre>
-<p>Las pilas son listas de la libft: el primer nodo es la cima y cada <code>content</code> es un
+<p>Las <a href="#g-pila">pilas</a> son <a href="#g-lista-enlazada">listas</a> de la libft: el primer nodo es la cima y cada <code>content</code> es un
 <code>int *</code> reservado con <code>malloc</code>. Un detalle que cambia cómo se lee todo lo
 demás: tras <code>normalize()</code> esos enteros ya no son los números de la entrada sino sus
-<em>rangos</em> <code>0..size-1</code> (sección 05).</p>
+<em><a href="#g-rango">rangos</a></em> <code>0..size-1</code> (sección 05).</p>
 <p>Los dos enums están pensados para ahorrarse código:</p>
 <pre><code>typedef enum e_strategy
 {
@@ -100,7 +735,7 @@ tiene que recorrer el array.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A diseñar el estado antes que el
 algoritmo. Meterlo todo en una struct es la forma de vivir sin globales: cada función recibe el
 contexto entero y no hay estado escondido. Y el enum como índice de array es un patrón que
-reaparece en mil sitios (tablas de dispatch, contadores, estados de una máquina): un nombre legible
+reaparece en mil sitios (<a href="#g-dispatch">tablas de dispatch</a>, contadores, <a href="#g-maquina-estados">estados de una máquina</a>): un nombre legible
 que por debajo es un entero de 0 a N-1. El <code>void *content</code> de la libft obliga además a
 recordar en cada lectura qué hay detrás: <code>*(int *)n-&gt;content</code> sale en casi todos los
 ficheros.</div>
@@ -141,7 +776,7 @@ void	pb(t_ps *ps)
 <code>ft_lstlast</code>, y <code>reverse_rotate</code> tiene que buscar el penúltimo. Cada una tiene
 su desplegable con los punteros dibujados antes y después.</p>
 <p>Dos reglas que comentan los propios ficheros: las dobles (<code>ss</code>, <code>rr</code>,
-<code>rrr</code>) mueven las dos pilas pero cuentan y escriben <em>una</em> operación; y con 0 o 1
+<code>rrr</code>) mueven las dos <a href="#g-pila">pilas</a> pero cuentan y escriben <em>una</em> operación; y con 0 o 1
 nodos la operación no hace nada, pero se escribe y se cuenta igual. El header lo deja dicho: los
 algoritmos solo mueven las pilas a través de estas once funciones.</p>
 <details id="fn-swap">
@@ -193,7 +828,7 @@ primer nodo sigue siendo el primero y solo cambia lo que guarda dentro. Con una 
 <ul>
 <li>Pila vacía (<code>s == NULL</code>) o de un solo nodo (<code>s-&gt;next == NULL</code>): no hay
 dos que intercambiar y vuelve sin tocar nada. <code>sa</code> se escribe y se cuenta igual.</li>
-<li>El orden de la condición importa: <code>||</code> se para en el primer verdadero, así que
+<li>El orden de la condición importa: <code>||</code> <a href="#g-cortocircuito">se para en el primer verdadero</a>, así que
 <code>s-&gt;next</code> solo se lee cuando ya se sabe que <code>s</code> no es
 <code>NULL</code>.</li>
 </ul>
@@ -334,7 +969,7 @@ static void	reverse_rotate(t_list **s)
 }</code></pre>
 
 <h3>Por qué hace falta el penúltimo</h3>
-<p>La lista es simple: cada nodo sabe quién va detrás, pero no quién va delante. El último pasa a
+<p>La <a href="#g-lista-enlazada">lista</a> es simple: cada nodo sabe quién va detrás, pero no quién va delante. El último pasa a
 la cima, y el que se queda como nuevo fondo, con <code>next = NULL</code>, es el penúltimo. Con
 <code>ft_lstlast</code> no basta: da el último, pero no quién lo apunta. Por eso se busca a mano el
 nodo cuyo siguiente es el último, que es el que cumple <code>pen-&gt;next-&gt;next == NULL</code>.</p>
@@ -365,14 +1000,14 @@ más existe siempre.</li>
 <code>[2]→[1]</code>. Con dos nodos <code>ra</code>, <code>rra</code> y <code>sa</code> dan lo
 mismo.</li>
 </ul>
-<p>Recorrer hasta el penúltimo cuesta O(n) de CPU en cada <code>rra</code>, igual que el
+<p>Recorrer hasta el penúltimo cuesta <a href="#g-o-n">O(n)</a> de <a href="#g-coste">CPU</a> en cada <code>rra</code>, igual que el
 <code>ft_lstlast</code> de <code>rotate</code>. Da igual, porque solo cuenta que sea <em>una</em>
 operación impresa.</p>
 </details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A separar el <em>mecanismo</em> (mover
 punteros) de la <em>contabilidad</em> (contar e imprimir). Como cada operación pública imprime y
 cuenta, es imposible que un algoritmo haga un movimiento "gratis" que el checker no vea, y el
-contador de <code>--bench</code> siempre coincide con lo que sale por stdout. De paso repasa todo
+contador de <code>--bench</code> siempre coincide con lo que sale por <a href="#g-fd">stdout</a>. De paso repasa todo
 C12: <code>t_list **</code> para cambiar la cabeza, el caso del penúltimo y los casos límite de
 lista vacía o de un solo nodo.</div>
 </div>
@@ -401,14 +1036,14 @@ lista vacía o de un solo nodo.</div>
 	return (0);
 }</code></pre>
 <p>Se lee como el guion del enunciado: sin argumentos no se hace nada (no es un error); se parsea
-(y ahí dentro se normaliza); si solo había flags, no hay nada que ordenar; el desorden se mide
+(y ahí dentro se <a href="#g-rango">normaliza</a>); si solo había flags, no hay nada que ordenar; el desorden se mide
 <em>antes</em> de mover nada; si ya está ordenada (<code>mistakes == 0</code>) no se imprime ninguna
 operación; y <code>--bench</code> informa al final. <code>run_strategy</code> es un
 <code>if</code>/<code>else</code> sobre <code>ps-&gt;strategy</code> que cae en
 <code>sort_adaptive</code> si no se forzó otra.</p>
-<p>Cualquier entrada inválida acaba en <code>error_exit</code>, que libera las dos pilas, escribe
-<code>Error\n</code> por el fd 2 y sale con <code>exit(1)</code>. Pasado por valgrind, el
-binario no deja fugas ni con las cuatro estrategias ni en la salida por error.</p>
+<p>Cualquier entrada inválida acaba en <code>error_exit</code>, que libera las dos <a href="#g-pila">pilas</a>, escribe
+<code>Error\n</code> por el <a href="#g-fd">fd 2</a> y sale con <code>exit(1)</code>. Pasado por valgrind, el
+binario no deja <a href="#g-fuga">fugas</a> ni con las cuatro estrategias ni en la salida por error.</p>
 <details id="fn-run_strategy">
 <summary>Cómo funciona <code>run_strategy</code></summary>
 <pre><code>/*
@@ -428,10 +1063,10 @@ void	run_strategy(t_ps *ps)
 }</code></pre>
 
 <h3>Una cadena de <code>if</code> en vez de un <code>switch</code></h3>
-<p>Es un despachador: mira el valor del enum y llama a una función. En otro sitio sería un
+<p>Es un <a href="#g-dispatch">despachador</a>: mira el valor del enum y llama a una función. En otro sitio sería un
 <code>switch</code>, pero la Norma de 42 no lo permite, así que es un <code>if</code>/<code>else
 if</code>. El último <code>else</code> no pregunta por <code>ADAPTIVE</code>: recoge todo lo que no
-sea una de las tres forzadas, y eso es la adaptativa.</p>
+sea una de las tres forzadas, y eso es la <a href="#g-adaptativo">adaptativa</a>.</p>
 
 <h3>De dónde sale <code>ps-&gt;strategy</code></h3>
 <table>
@@ -472,7 +1107,7 @@ sistema recupera la memoria de todos modos, pero valgrind la señalaría y en 42
 fuga.</li>
 <li><code>write(2, "Error\n", 6)</code>: el mensaje exacto que pide el enunciado, por stderr. El 6
 son los bytes <code>E r r o r \n</code>, sin el <code>'\0'</code>.</li>
-<li><code>exit(1)</code>: termina el programa con un estado distinto de 0. <code>exit</code> no
+<li><code>exit(1)</code>: termina el programa con un <a href="#g-estado-salida">estado distinto de 0</a>. <code>exit</code> no
 vuelve, así que quien la llama no necesita nada detrás.</li>
 </ol>
 <pre><code>$ ./push_swap 3 2 abc; echo $?
@@ -521,7 +1156,7 @@ después: ps-&gt;a == NULL</code></pre>
 estado quedó cada una.</li>
 <li><code>ft_lstclear</code> deja la cabeza a <code>NULL</code>, de modo que llamar dos veces a
 <code>free_ps</code> no daría un doble <code>free</code>.</li>
-<li>La <code>ft_lstclear</code> de esta libft es recursiva: una llamada por nodo. Con los tamaños
+<li>La <code>ft_lstclear</code> de esta libft es <a href="#g-recursion">recursiva</a>: una llamada por nodo. Con los tamaños
 de push_swap (500) no es problema.</li>
 </ul>
 </details>
@@ -599,7 +1234,7 @@ cualquier programa con recursos (ficheros, sockets, hilos).</div>
 }</code></pre>
 <p>Signo opcional y luego solo dígitos, al menos uno (<code>-</code> o <code>+</code> solos son
 Error). <code>n</code> es <code>long</code> y el rango se comprueba <em>en cada dígito</em>, así que
-<code>2147483648</code> falla en el último y nunca llega a desbordar. A diferencia del
+<code>2147483648</code> falla en el último y nunca llega a <a href="#g-desbordamiento">desbordar</a>. A diferencia del
 <code>atoi</code> de la libc, aquí no se salta nada: <code>"12abc"</code> es Error, no 12.</p>
 <details id="fn-to_int">
 <summary>Cómo funciona <code>to_int</code></summary>
@@ -843,11 +1478,11 @@ imprime <code>Error</code>.</p>
 <h3>Al final, no al principio</h3>
 <p><code>ft_lstadd_back</code> deja los números en el orden de la línea de comandos: con
 <code>5 1 8</code>, a queda <code>5 → 1 → 8</code>, con el 5 en la cima, que es lo que pide el
-enunciado. Con <code>ft_lstadd_front</code> la pila saldría al revés. El precio es que
-<code>ft_lstadd_back</code> recorre la lista entera cada vez (O(n²) para leer n números), que con
+enunciado. Con <code>ft_lstadd_front</code> la <a href="#g-pila">pila</a> saldría al revés. El precio es que
+<code>ft_lstadd_back</code> recorre la lista entera cada vez (<a href="#g-o-n2">O(n²)</a> para leer n números), que con
 500 no se nota.</p>
 <p><code>ps-&gt;size</code> cuenta los números leídos y es el tamaño que usan luego
-<code>copy_values</code>, <code>normalize</code>, el radix y <code>push_non_lis</code>.</p>
+<code>copy_values</code>, <code>normalize</code>, el <a href="#g-radix">radix</a> y <code>push_non_lis</code>.</p>
 </details>
 <p>Lo comprobado al ejecutarlo:</p>
 <pre><code>./push_swap --simplex 3 2 1          Error
@@ -865,17 +1500,17 @@ tabulador dentro y da Error.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que validar es más difícil que
 calcular. Hay que decidir qué es exactamente "un entero" (¿<code>+5</code>? sí; ¿<code>-</code>?
 no; ¿<code>01</code>? sí, pero es el 1) y detectar el desbordamiento <em>antes</em> de que ocurra,
-porque después ya es comportamiento indefinido. El truco de <code>len + 1</code> en
-<code>strncmp</code> es una lección pequeña sobre por qué el terminador nulo forma parte de la
+porque después ya es <a href="#g-indefinido">comportamiento indefinido</a>. El truco de <code>len + 1</code> en
+<code>strncmp</code> es una lección pequeña sobre por qué el <a href="#g-terminador">terminador nulo</a> forma parte de la
 cadena. Y la cadena de funciones que devuelven 0/1 es el manejo de errores de C sin
-excepciones.</div>
+<a href="#g-excepciones">excepciones</a>.</div>
 </div>
 
 <div class="card" id="rangos">
 <h2><span class="ex">05</span>Normalización a rangos</h2>
 <div class="meta"><span>Fichero: <b>index.c</b></span><span>Funciones: <b>normalize, rank_of, copy_values</b></span></div>
 <p>La idea clave del proyecto. Justo después de leer, cada número se sustituye por su
-<em>rango</em>: cuántos números de la entrada son menores que él.</p>
+<em><a href="#g-rango">rango</a></em>: cuántos números de la entrada son menores que él.</p>
 <pre><code>entrada   42   -7   100   5
 rangos     2    0     3   1</code></pre>
 <pre><code>static int	rank_of(int *vals, int size, int i)
@@ -895,11 +1530,11 @@ rangos     2    0     3   1</code></pre>
 	}
 	return (rank);
 }</code></pre>
-<p><code>normalize</code> copia primero la pila a un array con <code>copy_values</code>, porque va
+<p><code>normalize</code> copia primero la <a href="#g-pila">pila</a> a un array con <code>copy_values</code>, porque va
 pisando los <code>content</code> con los rangos y cada rango tiene que calcularse con los valores
 originales. Si <code>rank_of</code> encuentra un igual en otra posición devuelve
 <code>-1</code>: es un duplicado, y así la detección de duplicados sale gratis del mismo bucle. Es
-O(n²) en tiempo de cálculo, que da igual: aquí solo puntúan las operaciones.</p>
+<a href="#g-o-n2">O(n²)</a> en <a href="#g-coste">tiempo de cálculo</a>, que da igual: aquí solo puntúan las operaciones.</p>
 <details id="fn-copy_values">
 <summary>Cómo funciona <code>copy_values</code></summary>
 <pre><code>/*
@@ -938,7 +1573,7 @@ de verdad.</p>
 
 <h3>Por qué es pública</h3>
 <p>Es la única de <code>index.c</code> que se usa fuera: <code>sort_low</code> la llama para tener
-los rangos en un array y calcular la LIS con acceso por índice, que en una lista sería un
+los rangos en un array y calcular la <a href="#g-lis">LIS</a> con acceso por índice, que en una <a href="#g-lista-enlazada">lista</a> sería un
 recorrido cada vez. Quien la llama tiene que hacer el <code>free</code>.</p>
 
 <h3>Casos límite</h3>
@@ -975,7 +1610,7 @@ return (2)</code></pre>
 <h3>Por qué salen exactamente <code>0..n-1</code></h3>
 <p>Si no hay repetidos, el k-ésimo menor tiene exactamente k números por debajo: el menor tiene 0,
 el siguiente 1… y el mayor, n − 1. Cada rango sale una sola vez y no queda ningún hueco, así que
-el resultado es una permutación de <code>0..n-1</code>.</p>
+el resultado es una <a href="#g-permutacion">permutación</a> de <code>0..n-1</code>.</p>
 
 <h3>Los duplicados, en el mismo bucle</h3>
 <p>Si dos valores fueran iguales, los dos tendrían el mismo rango y la permutación se rompería.
@@ -997,7 +1632,7 @@ de eso viven todas las estrategias:</p>
 <ul>
 <li><b>simple</b>: "el menor que queda en a" es siempre el siguiente rango (0, 1, 2…), no hay que
 buscarlo.</li>
-<li><b>complex</b>: radix puede leer los bits directamente (todos ≥ 0 y pequeños, nada de
+<li><b>complex</b>: <a href="#g-radix">radix</a> puede leer los <a href="#g-binario">bits</a> directamente (todos ≥ 0 y pequeños, nada de
 negativos ni de <code>INT_MAX</code>).</li>
 <li><b>medium</b>: "los k menores" son los valores <code>0..k-1</code>, y el mayor de b es su
 tamaño − 1.</li>
@@ -1006,15 +1641,15 @@ tamaño − 1.</li>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A transformar el problema antes de
 resolverlo. Los valores concretos no importan, solo su orden; quitarlos de en medio convierte
 "ordenar enteros cualesquiera" en "ordenar una permutación de 0..n-1", que es un problema mucho
-más amable. Es la misma idea que la <em>compresión de coordenadas</em> de la programación
-competitiva, y la que hace posible usar radix sin preocuparse de signos ni de rangos
+más amable. Es la misma idea que la <em>compresión de coordenadas</em> de la <a href="#g-programacion-competitiva">programación
+competitiva</a>, y la que hace posible usar radix sin preocuparse de signos ni de rangos
 enormes.</div>
 </div>
 
 <div class="card" id="desorden">
 <h2><span class="ex">06</span>El índice de desorden</h2>
 <div class="meta"><span>Fichero: <b>index.c</b></span><span>Funciones: <b>compute_disorder, disorder_regime</b></span></div>
-<p>El enunciado da el pseudocódigo: para cada par <code>(i, j)</code> con <code>i</code> antes que
+<p>El enunciado da el <a href="#g-pseudocodigo">pseudocódigo</a>: para cada par <code>(i, j)</code> con <code>i</code> antes que
 <code>j</code>, se suma uno a <code>pairs</code>, y si <code>a[i] &gt; a[j]</code> (están al revés)
 uno a <code>mistakes</code>. Desorden = <code>mistakes / pairs</code>, entre 0 (ordenada) y 1
 (al revés del todo).</p>
@@ -1034,7 +1669,7 @@ así no aparece ni un <code>float</code> en todo el programa:</p>
 }</code></pre>
 <p><code>mistakes * 5 &lt; pairs</code> es lo mismo que <code>mistakes / pairs &lt; 0.2</code>
 (sin redondeos), y <code>* 2</code> es el umbral de 0.5. <code>mistakes</code> y
-<code>pairs</code> son <code>long</code>, así que estas multiplicaciones no desbordan (con 500 números hay
+<code>pairs</code> son <code>long</code>, así que estas multiplicaciones no <a href="#g-desbordamiento">desbordan</a> (con 500 números hay
 124750 pares).</p>
 <details id="fn-disorder_regime">
 <summary>Cómo funciona <code>disorder_regime</code></summary>
@@ -1054,7 +1689,7 @@ que es positivo y no cambia el sentido de la desigualdad:</p>
 <pre><code>mistakes / pairs &lt; 1/5
 mistakes · 5     &lt; pairs</code></pre>
 <p>Con 0.5 = 1/2 sale <code>mistakes · 2 &lt; pairs</code>. Las dos versiones son exactas con
-enteros: no hay ni redondeo ni división entera que trunque.</p>
+enteros: no hay ni redondeo ni <a href="#g-division-entera">división entera</a> que trunque.</p>
 
 <h3>El orden de los <code>if</code></h3>
 <p>Primero se prueba el umbral más bajo. Si no se cumple, ya se sabe que <code>d ≥ 0.2</code> y
@@ -1083,18 +1718,18 @@ nada), pero <code>./push_swap --bench 5</code> imprime <code>Adaptive / O(n log 
 lista ya ordenada de dos o más números imprime <code>Adaptive / O(n)</code>, aunque en ninguno de
 los dos casos se haya ejecutado ningún método.</p>
 </details>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que "contar inversiones" es una medida
-de lo lejos que está una permutación de estar ordenada (es justo el número de intercambios entre
-vecinos que haría el burbuja). Y el truco de comparar fracciones multiplicando en cruz: con
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que "contar <a href="#g-inversion">inversiones</a>" es una medida
+de lo lejos que está una <a href="#g-permutacion">permutación</a> de estar ordenada (es justo el número de intercambios entre
+vecinos que haría el <a href="#g-burbuja">burbuja</a>). Y el truco de comparar fracciones <a href="#g-producto-cruzado">multiplicando en cruz</a>: con
 enteros, <code>a/b &lt; c/d</code> es <code>a·d &lt; c·b</code>, exacto y sin la imprecisión de la
-coma flotante.</div>
+<a href="#g-coma-flotante">coma flotante</a>.</div>
 </div>
 
 <div class="card" id="utils">
 <h2><span class="ex">07</span>stack_utils</h2>
 <div class="meta"><span>Fichero: <b>stack_utils.c</b></span><span>Funciones: <b>stack_pos, rotate_to_top_a/b</b></span></div>
 <p>Dos herramientas que comparten casi todas las estrategias. <code>stack_pos</code> devuelve la
-posición de un valor (0 = cima, −1 si no está); como las pilas guardan rangos, buscar "el 3" es
+posición de un valor (0 = cima, −1 si no está); como las <a href="#g-pila">pilas</a> guardan <a href="#g-rango">rangos</a>, buscar "el 3" es
 buscar el cuarto menor. Y la pieza más usada de todo el proyecto:</p>
 <pre><code>void	rotate_to_top_a(t_ps *ps, int pos)
 {
@@ -1133,7 +1768,7 @@ int	stack_pos(t_list *s, int v)
 	return (-1);
 }</code></pre>
 
-<h3>Una búsqueda lineal</h3>
+<h3>Una <a href="#g-busqueda-lineal">búsqueda lineal</a></h3>
 <p>Recorre la pila desde la cima con <code>i</code> contando posiciones y devuelve la primera en la
 que encuentra <code>v</code>. Si llega al final sin encontrarlo, <code>-1</code>, que no puede ser
 una posición.</p>
@@ -1156,7 +1791,7 @@ ni máximos:</p>
 <p>En los tres casos el valor está seguro en la pila, así que el <code>-1</code> no llega a
 <code>rotate_to_top_*</code>. Si llegara, no haría nada: <code>-1 &lt;= size / 2</code> y
 <code>while (pos-- &gt; 0)</code> no daría ninguna vuelta.</p>
-<p>Cuesta O(n) de CPU y ninguna operación: solo mira.</p>
+<p>Cuesta <a href="#g-o-n">O(n)</a> de <a href="#g-coste">CPU</a> y ninguna operación: solo mira.</p>
 </details>
 <details id="fn-rotate_to_top">
 <summary>Cómo funcionan <code>rotate_to_top_a</code> y <code>rotate_to_top_b</code></summary>
@@ -1195,7 +1830,7 @@ pos = 3, size 5:   3 &lt; 5 (pos→4)   4 &lt; 5 (pos→5)   5 &lt; 5 no
 <tr><td>3</td><td><code>rra rra</code></td><td><code>rra</code></td></tr>
 <tr><td>4</td><td><code>rra</code></td><td>—</td></tr>
 </table>
-<p>Con <code>size</code> impar, la posición del medio (<code>size / 2</code>, división entera) está
+<p>Con <code>size</code> impar, la posición del medio (<code>size / 2</code>, <a href="#g-division-entera">división entera</a>) está
 más cerca por arriba: con 5, la 2 cuesta 2 <code>ra</code> frente a 3 <code>rra</code>. Con
 <code>size</code> par es un empate y el <code>&lt;=</code> lo resuelve hacia <code>ra</code>. En los
 dos casos el coste es el mínimo de <code>pos</code> y <code>size - pos</code>, y nunca pasa de
@@ -1215,7 +1850,7 @@ hace nada.</li>
 </ul>
 </details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una pila con rotaciones es en
-realidad un <em>anillo</em>: el fondo está a un <code>rra</code> de la cima, así que la distancia
+realidad un <em><a href="#g-anillo">anillo</a></em>: el fondo está a un <code>rra</code> de la cima, así que la distancia
 real a una posición es el mínimo de ir por arriba o por abajo. Este medio anillo de ahorro es lo
 que separa una estrategia que pasa el corte de una que no.</div>
 </div>
@@ -1252,16 +1887,16 @@ static int	is_sorted(t_list *s)
 }</code></pre>
 
 <h3>Mirar solo a los vecinos</h3>
-<p>Recorre la pila de la cima al fondo comparando cada nodo con el siguiente. Si encuentra una
+<p>Recorre la <a href="#g-pila">pila</a> de la cima al fondo comparando cada nodo con el siguiente. Si encuentra una
 pareja al revés (el de arriba mayor que el de abajo), ya sabe que la pila no está ordenada y
 devuelve 0 en ese momento, sin mirar el resto. Si llega al final sin encontrar ninguna, devuelve 1.</p>
 <pre><code>a: 0 1 3 2 4
    0 &lt; 1   bien
    1 &lt; 3   bien
    3 &gt; 2   al revés → return (0), el 4 ni se mira</code></pre>
-<p>Basta con comparar vecinos por la <em>transitividad</em>: si <code>a ≤ b</code> y
+<p>Basta con comparar vecinos por la <em><a href="#g-transitividad">transitividad</a></em>: si <code>a ≤ b</code> y
 <code>b ≤ c</code>, entonces <code>a ≤ c</code>. Si cada número es menor que el siguiente, toda la
-pila está en orden, y no hace falta comparar todos con todos. Por eso cuesta O(n) y no O(n²) como
+pila está en orden, y no hace falta comparar todos con todos. Por eso cuesta <a href="#g-o-n">O(n)</a> y no <a href="#g-o-n2">O(n²)</a> como
 <code>compute_disorder</code>, que sí cuenta <em>todas</em> las parejas porque necesita saber
 <em>cuánto</em> desorden hay, no solo si lo hay.</p>
 
@@ -1275,7 +1910,7 @@ entra, y un único número siempre está ordenado. Además evita leer
 <code>s-&gt;next-&gt;content</code> sobre un <code>NULL</code>.</li>
 </ul>
 <p>El orden importa: <code>&amp;&amp;</code> evalúa de izquierda a derecha y se para en el primer
-falso (<em>evaluación en cortocircuito</em>), así que <code>s-&gt;next</code> solo se lee cuando ya
+falso (<em><a href="#g-cortocircuito">evaluación en cortocircuito</a></em>), así que <code>s-&gt;next</code> solo se lee cuando ya
 se sabe que <code>s</code> no es <code>NULL</code>.</p>
 
 <h3>El <code>*(int *)s-&gt;content</code></h3>
@@ -1293,7 +1928,7 @@ mueve nada ni escribe operaciones, así que no suma al recuento que se puntúa.<
 <code>ps.mistakes &gt; 0</code>, que ya se ha calculado para el desorden. Las dos respuestas
 coinciden, porque una pila sin ninguna pareja al revés es exactamente una pila ordenada.</p>
 </details>
-<p>Ordenación por selección adaptada a pilas. Gracias a los rangos, el menor que queda en a es
+<p><a href="#g-seleccion">Ordenación por selección</a> adaptada a pilas. Gracias a los <a href="#g-rango">rangos</a>, el menor que queda en a es
 siempre <code>next</code>: se localiza, se sube por el camino corto y se pasa a b. En cuanto lo que
 queda en a ya está ordenado, se para. Al final b tiene los menores con el mayor arriba, así que
 basta con <code>pa</code> hasta vaciarla. Traza real con <code>--simple 5 4 3 2 1</code> (rangos
@@ -1315,11 +1950,13 @@ pa   a: 0 1 2 3 4     b:</code></pre>
 así que el <code>3</code> se sube (<code>ra</code>) y se empuja aunque tras el <code>ra</code> la
 pila <code>3 4</code> ya estuviera ordenada; en la vuelta siguiente <code>a = 4</code> sí lo está y
 se sale.</p>
-<p>Cada búsqueda + rotación cuesta hasta n/2 y se hace hasta n veces: O(n²), unas n²/4
-operaciones. Medido sobre 10 entradas aleatorias: <b>~1440</b> para 100 números y <b>~32500</b>
+<p>Cada búsqueda + rotación cuesta hasta n/2 y se hace hasta n veces: O(n²). Afinando: de media
+la rotación cuesta un cuarto de lo que queda en a, y a va encogiendo de n a 1, así que salen unas
+n²/8 rotaciones más los n <code>pb</code> y n <code>pa</code>: n²/8 + 2n, que da 1450 para 100 y
+32 250 para 500. Medido sobre 10 entradas aleatorias: <b>~1440</b> para 100 números y <b>~32500</b>
 para 500 (muy lejos de los 12000 del corte, como cabe esperar de un O(n²)).</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La estrategia de referencia, y por eso
-la más instructiva al medirla: con 100 números pasa el corte, con 500 se dispara. Es Big-O hecho
+la más instructiva al medirla: con 100 números pasa el corte, con 500 se dispara. Es <a href="#g-o-grande">Big-O</a> hecho
 visible: la misma idea que parece razonable con poca entrada deja de servir al crecer. También
 enseña a buscar salidas tempranas (<code>is_sorted</code>) que no cambian la complejidad pero sí
 ahorran trabajo real.</div>
@@ -1346,14 +1983,14 @@ ahorran trabajo real.</div>
 	}</code></pre>
 <details id="bits">
 <summary>Qué hacen <code>&gt;&gt;</code> y <code>&amp; 1</code></summary>
-<p>Todo el radix descansa en una sola expresión: <code>(n &gt;&gt; bit) &amp; 1</code>, que significa
-«dame el bit número <code>bit</code> de <code>n</code>», y vale 0 o 1. Son dos operadores de bits
+<p>Todo el <a href="#g-radix">radix</a> descansa en una sola expresión: <code>(n &gt;&gt; bit) &amp; 1</code>, que significa
+«dame el <a href="#g-binario">bit</a> número <code>bit</code> de <code>n</code>», y vale 0 o 1. Son dos <a href="#g-operadores-bits">operadores de bits</a>
 trabajando juntos.</p>
 
 <h3><code>&gt;&gt;</code>: desplazar a la derecha</h3>
 <p><code>n &gt;&gt; k</code> corre los bits de <code>n</code> k posiciones hacia la derecha: los k
 bits de menos peso se caen por el borde y por la izquierda entran ceros. Para un número no negativo
-equivale a dividir entre 2<sup>k</sup> (división entera), igual que en decimal quitar la última
+equivale a dividir entre 2<sup>k</sup> (<a href="#g-division-entera">división entera</a>), igual que en decimal quitar la última
 cifra es dividir entre 10:</p>
 <pre><code>n = 6          110
 6 &gt;&gt; 1  =  3    011     (6 / 2)
@@ -1364,7 +2001,7 @@ cifra es dividir entre 10:</p>
 <h3><code>&amp; 1</code>: quedarse con el último bit</h3>
 <p><code>&amp;</code> es el AND bit a bit: compara los dos números columna a columna y deja un 1 solo
 donde los dos tienen un 1. Como <code>1</code> en binario es <code>…0001</code>, hacer
-<code>x &amp; 1</code> borra todos los bits menos el último. Es una <em>máscara</em>:</p>
+<code>x &amp; 1</code> borra todos los bits menos el último. Es una <em><a href="#g-mascara">máscara</a></em>:</p>
 <pre><code>    110   (6)            011   (3)
   &amp; 001   (1)          &amp; 001   (1)
   -----                -----
@@ -1386,26 +2023,26 @@ del bit 0 manda a b el 2 y el 0, cuyo último bit es 0, y deja en a el 3 y el 1.
 a b los que tienen el bit de las «dos unidades» a 0: el 0 y el 1.</p>
 
 <h3>La condición del bucle: <code>(size - 1) &gt;&gt; bit</code></h3>
-<p>El mayor rango es <code>size - 1</code>. Mientras al desplazarlo quede algo distinto de 0, aún
-le quedan bits por mirar; cuando da 0, ya se han recorrido todos y la pila está ordenada. Así el
+<p>El mayor <a href="#g-rango">rango</a> es <code>size - 1</code>. Mientras al desplazarlo quede algo distinto de 0, aún
+le quedan bits por mirar; cuando da 0, ya se han recorrido todos y la <a href="#g-pila">pila</a> está ordenada. Así el
 número de pasadas es justo el número de bits del mayor rango:</p>
 <pre><code>size 4     mayor 3   = 11        →  2 pasadas
 size 100   mayor 99  = 1100011   →  7 pasadas
 size 500   mayor 499 = 111110011 →  9 pasadas</code></pre>
 
 <h3>Por qué hace falta normalizar antes</h3>
-<p>Con los números originales esto no funcionaría bien. Un negativo se guarda en complemento a dos,
+<p>Con los números originales esto no funcionaría bien. Un negativo se guarda en <a href="#g-complemento-a-dos">complemento a dos</a>,
 con el bit más alto a 1, así que el radix lo trataría como el mayor de todos. Además, desplazar un
-negativo a la derecha depende de la implementación en C (normalmente entran unos, no ceros). Y con
+negativo a la derecha <a href="#g-implementacion">depende de la implementación</a> en C (normalmente entran unos, no ceros). Y con
 valores como <code>2147483647</code> harían falta 31 pasadas aunque solo hubiera dos números. Los
 rangos <code>0..n-1</code> son no negativos y tan pequeños como se puede: pocas pasadas y ningún
 caso raro.</p>
-<p><b>Ojo con la precedencia:</b> <code>&gt;&gt;</code> se evalúa antes que <code>&amp;</code>, así que
+<p><b>Ojo con la <a href="#g-precedencia">precedencia</a>:</b> <code>&gt;&gt;</code> se evalúa antes que <code>&amp;</code>, así que
 <code>n &gt;&gt; bit &amp; 1</code> ya funcionaría. Pero <code>&amp;</code> va <em>después</em> de
 <code>==</code>: <code>n &amp; 1 == 0</code> se lee como <code>n &amp; (1 == 0)</code>, que siempre da 0.
 Con operadores de bits, paréntesis siempre, como hace el código.</p>
 </details>
-<p>Radix LSD en base 2 sobre los rangos. En cada bit, empezando por el de menos peso, se recorre
+<p>Radix <a href="#g-lsd">LSD</a> en base 2 sobre los rangos. En cada bit, empezando por el de menos peso, se recorre
 a entera: los que tienen ese bit a 0 van a b (<code>pb</code>) y los que lo tienen a 1 se quedan
 (<code>ra</code>). Después se devuelve todo con <code>pa</code>. La condición del bucle,
 <code>(size - 1) &gt;&gt; bit</code>, da tantas pasadas como bits tiene el mayor rango. Traza
@@ -1426,16 +2063,16 @@ pa       a: 0 1 2 3    b:</code></pre>
 <p>La primera pasada deja la pila igual que al principio, y no es un error: en <code>2 0 3 1</code>
 los pares ya iban delante de los impares. Y aunque b invierte el orden al apilar, los
 <code>pa</code> lo vuelven a invertir, de modo que dentro de cada grupo se conserva el orden de
-llegada: el algoritmo es <em>estable</em>, que es justo lo que necesita un radix LSD para que,
+llegada: el algoritmo es <em><a href="#g-estable">estable</a></em>, que es justo lo que necesita un radix LSD para que,
 tras el último bit, a quede ordenada.</p>
-<p>Hay ⌈log₂ n⌉ pasadas y cada una cuesta como mucho 2n operaciones. Además el número de
+<p>Hay <a href="#g-log2">⌈log₂ n⌉</a> pasadas y cada una cuesta como mucho 2n operaciones. Además el número de
 operaciones no depende de la entrada, solo de su tamaño: <b>1084</b> para 100 números y
 <b>6784</b> para 500, siempre (es exactamente la cifra del ejemplo del enunciado).</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Operaciones de bits
 (<code>&gt;&gt;</code> y <code>&amp; 1</code>) usadas para algo real, y el concepto de
-<em>estabilidad</em>: sin él, el radix no funciona. También que O(n log n) es una garantía, no
+<em>estabilidad</em>: sin él, el radix no funciona. También que <a href="#g-o-nlogn">O(n log n)</a> es una <a href="#g-peor-caso">garantía</a>, no
 siempre lo mejor: radix hace sus pasadas completas aunque la lista llegue casi ordenada, y con 100
-números queda por encima de los chunks. Por eso la adaptativa no lo usa para todo.</div>
+números queda por encima de los <a href="#g-chunks">chunks</a>. Por eso la <a href="#g-adaptativo">adaptativa</a> no lo usa para todo.</div>
 </div>
 
 <div class="card" id="medium">
@@ -1444,7 +2081,7 @@ números queda por encima de los chunks. Por eso la adaptativa no lo usa para to
 <p><b>La idea en una frase:</b> meter todo en b <em>medio ordenado</em> y luego sacar siempre el
 mayor, que estará cerca de la cima o del fondo. Son dos fases:</p>
 <ol>
-<li><b>Ida, de a a b</b> (<code>push_chunks</code>). Se recorre a con una ventana de rangos
+<li><b>Ida, de a a b</b> (<code>push_chunks</code>). Se recorre a con una <a href="#g-chunks">ventana</a> de <a href="#g-rango">rangos</a>
 <code>[0, i + range]</code>, donde <code>i</code> es cuántos van ya en b y <code>range</code> ≈
 1.5·√n. Por cada cima <code>v</code> de a:
 <table>
@@ -1534,7 +2171,7 @@ grande se acumula hacia los dos extremos de b y lo pequeño, en el centro.</p>
 <h3>Por qué el bucle siempre acaba</h3>
 <p>Hace falta que, por muchos <code>ra</code> que se hagan, alguna cima llegue a entrar. Tras
 <code>i</code> empujes, b tiene <code>i</code> números, así que como mucho hay <code>i</code> valores
-menores que el mínimo de a: ese mínimo es <code>&lt;= i</code> y entra seguro. En el peor caso se
+menores que el mínimo de a: ese mínimo es <code>&lt;= i</code> y entra seguro. En el <a href="#g-peor-caso">peor caso</a> se
 da casi una vuelta entera de a antes de llegar a él, pero nunca se queda girando.</p>
 
 <h3>Casos límite</h3>
@@ -1614,19 +2251,19 @@ n = 500:  … 22·22 = 484 &lt;= 500   r = 22
 <tr><td>100</td><td>10</td><td>15</td></tr>
 <tr><td>500</td><td>22</td><td>33</td></tr>
 </table>
-<p>El orden de <code>isqrt(ps-&gt;size) * 3 / 2</code> importa, porque todo es división entera: se
+<p>El orden de <code>isqrt(ps-&gt;size) * 3 / 2</code> importa, porque todo es <a href="#g-division-entera">división entera</a>: se
 multiplica primero (22 · 3 = 66) y se divide después (66 / 2 = 33). Escrito <code>3 / 2 *
 isqrt(…)</code>, el <code>3 / 2</code> daría 1 y el factor 1.5 desaparecería.</p>
 
 <h3>Casos límite</h3>
 <p>Ojo: como <code>r</code> empieza en 1, <code>isqrt(0)</code> devuelve 1 y no 0. Aquí no importa,
 porque <code>sort_medium</code> solo se ejecuta con al menos dos números. Y
-<code>(r + 1) * (r + 1)</code> solo desbordaría un <code>int</code> con <code>n</code> cerca de
+<code>(r + 1) * (r + 1)</code> solo <a href="#g-desbordamiento">desbordaría</a> un <code>int</code> con <code>n</code> cerca de
 <code>INT_MAX</code>, muy lejos de los tamaños de push_swap.</p>
 </details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — De dónde sale un √n: si los tramos son
 de tamaño k, cada elemento espera hasta k rotaciones (n·k en total) y hay n/k tramos; el
-equilibrio está en k ≈ √n. El factor 1.5 es un ajuste empírico de esa constante. Y enseña a pensar
+equilibrio está en k ≈ √n. El factor 1.5 es un ajuste <a href="#g-empirico">empírico</a> de esa constante. Y enseña a pensar
 en la <em>forma</em> que deja una fase para la siguiente: la mariposa no es un accidente, es lo que
 hace barata la vuelta.</div>
 </div>
@@ -1634,8 +2271,8 @@ hace barata la vuelta.</div>
 <div class="card" id="low">
 <h2><span class="ex">11</span>sort_low: LIS + inserción, O(n) con poco desorden</h2>
 <div class="meta"><span>Fichero: <b>sort_low.c</b></span><span>Funciones: <b>sort_low, lis_lengths, lis_keep, push_non_lis, insert_pos</b></span></div>
-<p>El método de la adaptativa para desorden &lt; 0.2. Si la lista está casi ordenada, casi todo
-está ya en su sitio; lo que se puede dejar quieto es la <em>subsecuencia creciente más larga</em>
+<p>El método de la <a href="#g-adaptativo">adaptativa</a> para desorden &lt; 0.2. Si la lista está casi ordenada, casi todo
+está ya en su sitio; lo que se puede dejar quieto es la <em><a href="#g-lis">subsecuencia creciente más larga</a></em>
 (LIS): esos elementos ya están en orden entre sí.</p>
 <pre><code>static void	lis_lengths(int *vals, int n, int *len, int *prev)
 {
@@ -1654,12 +2291,12 @@ está ya en su sitio; lo que se puede dejar quieto es la <em>subsecuencia crecie
 		}
 	...
 }</code></pre>
-<p>La LIS clásica en O(n²): <code>len[i]</code> es el largo de la mejor subsecuencia creciente
+<p>La LIS clásica en <a href="#g-o-n2">O(n²)</a>: <code>len[i]</code> es el largo de la mejor <a href="#g-subsecuencia">subsecuencia</a> creciente
 que acaba en <code>i</code> y <code>prev[i]</code> de dónde viene. <code>lis_keep</code> parte del
 final más largo y retrocede por <code>prev</code> marcando un array <code>keep</code>; un detalle de
 ahorro: <code>len</code> y <code>prev</code> van en un solo <code>malloc</code> de
 <code>2n</code> y la primera mitad se reutiliza como <code>keep</code>. Todo esto se calcula sobre
-una copia y no mueve las pilas.</p>
+una copia y no mueve las <a href="#g-pila">pilas</a>.</p>
 <details id="fn-lis_lengths">
 <summary>Cómo funciona <code>lis_lengths</code></summary>
 <pre><code>/*
@@ -1697,12 +2334,12 @@ static void	lis_lengths(int *vals, int n, int *len, int *prev)
 (largo 1), o bien una que acaba en algún <code>j</code> anterior con <code>vals[j] &lt;
 vals[i]</code>, alargada con <code>vals[i]</code>. Como <code>len[j]</code> ya está calculado para
 todos los <code>j &lt; i</code>, basta con probar cada uno y quedarse con el que dé más:
-<code>len[i] = max(len[j] + 1)</code>. Eso es programación dinámica: cada respuesta se construye con
+<code>len[i] = max(len[j] + 1)</code>. Eso es <a href="#g-pd">programación dinámica</a>: cada respuesta se construye con
 respuestas más pequeñas ya guardadas. <code>prev[i]</code> apunta qué <code>j</code> dio ese
 máximo, para poder reconstruir la subsecuencia después.</p>
 
 <h3>Tabla con un ejemplo</h3>
-<p>La entrada <code>2 1 3 6 5 8</code> de la sección <a href="#bench">13</a> se normaliza a
+<p>La entrada <code>2 1 3 6 5 8</code> de la sección <a href="#bench">13</a> se <a href="#g-rango">normaliza</a> a
 <code>1 0 2 4 3 5</code>:</p>
 <table>
 <tr><th><code>i</code></th><th><code>vals[i]</code></th><th><code>len</code></th><th><code>prev</code></th><th>por qué</th></tr>
@@ -1725,8 +2362,8 @@ se queda el primer <code>j</code> que alcanzó el máximo. Por eso en la fila 5 
 
 <h3>Coste</h3>
 <p>El bucle interno da <code>i</code> vueltas para cada <code>i</code>: 0 + 1 + … + (n − 1) =
-n(n − 1)/2, 124 750 comparaciones para 500 números. Es O(n²) de CPU y cero operaciones. Existe una
-LIS en O(n log n), pero aquí no aporta nada porque el tiempo no puntúa.</p>
+n(n − 1)/2, 124 750 comparaciones para 500 números. Es O(n²) de <a href="#g-coste">CPU</a> y cero operaciones. Existe una
+LIS en <a href="#g-o-nlogn">O(n log n)</a>, pero aquí no aporta nada porque el tiempo no puntúa.</p>
 </details>
 <details id="fn-lis_keep">
 <summary>Cómo funciona <code>lis_keep</code></summary>
@@ -1764,7 +2401,7 @@ static int	*lis_keep(int *vals, int n)
 
 <h3>1. Un <code>malloc</code> para dos arrays</h3>
 <p>Se reservan <code>2n</code> enteros y <code>prev = len + n</code> apunta a la mitad: con
-aritmética de punteros, <code>len + n</code> es la dirección <code>n</code> enteros más
+<a href="#g-aritmetica-punteros">aritmética de punteros</a>, <code>len + n</code> es la dirección <code>n</code> enteros más
 allá.</p>
 <pre><code>len                       prev = len + n
  │                          │
@@ -1862,7 +2499,7 @@ i = 4    keep 0  pb   a: 5 1 2 4        b: 3 0    left = 0 → fin
 
 <h3>3. Lo que queda en a</h3>
 <p>Solo los de la LIS, en su orden original, aunque rotados: <code>5 1 2 4</code> leído como un
-anillo es <code>1 2 4 5</code>. Por eso <code>insert_pos</code> puede tratar a como «ordenada,
+<a href="#g-anillo">anillo</a> es <code>1 2 4 5</code>. Por eso <code>insert_pos</code> puede tratar a como «ordenada,
 quizá rotada».</p>
 
 <h3>Coste</h3>
@@ -1895,7 +2532,7 @@ el 51 intercambiados salen 102 operaciones (50 <code>ra</code>, 50 <code>rra</co
 <p>El hueco de <code>v</code> está encima del menor de a que sea mayor que <code>v</code>; si no
 hay ninguno mayor (v es el nuevo máximo), encima del menor de todos. El truco hace las dos
 búsquedas en una: a los menores que <code>v</code> se les suma <code>INT_MAX</code> (en un
-<code>long</code>, para no desbordar), así que solo pueden ganar el mínimo si no hay ningún mayor,
+<code>long</code>, para no <a href="#g-desbordamiento">desbordar</a>), así que solo pueden ganar el mínimo si no hay ningún mayor,
 y entre ellos gana el más pequeño. Funciona aunque a esté rotada.</p>
 <details id="fn-insert_pos">
 <summary>Cómo funciona <code>insert_pos</code></summary>
@@ -1964,8 +2601,8 @@ operaciones en total.</p>
 <p>Basta con que cualquier clave penalizada sea mayor que cualquier clave sin penalizar. Los
 valores son rangos menores que n, así que sumar n ya serviría, pero <code>INT_MAX</code> vale para
 cualquier <code>int</code> no negativo sin pensar en el tamaño. El precio es que
-<code>1 + INT_MAX</code> no cabe en un <code>int</code> (desbordaría, y eso es comportamiento
-indefinido); por eso <code>key</code> y <code>best</code> son <code>long</code>.
+<code>1 + INT_MAX</code> no cabe en un <code>int</code> (desbordaría, y eso es <a href="#g-indefinido">comportamiento
+indefinido</a>); por eso <code>key</code> y <code>best</code> son <code>long</code>.
 <code>best</code> empieza en <code>LONG_MAX</code> para que la primera clave siempre gane y
 <code>pos</code> siempre salga de algún nodo.</p>
 
@@ -1994,14 +2631,14 @@ porque la comparación <code>len[j] + 1 &gt; len[i]</code> es estricta y se qued
 <code>j</code> que alcanza el máximo. Si falla <code>malloc</code>, <code>sort_low</code> cae en
 <code>sort_medium</code>, que no necesita memoria extra.</p>
 <p>Con k elementos fuera de la LIS, el paso de empujar cuesta como mucho n y la reinserción hasta
-k·n/2: O(n + k·n), que es O(n) cuando k es pequeño. Con 500 números y 25 intercambios entre
-vecinos (desorden 0.02 %), una prueba dio <b>918</b> operaciones; el radix habría hecho sus 6784
+k·n/2: O(n + k·n), que es <a href="#g-o-n">O(n)</a> cuando k es pequeño. Con 500 números y 25 intercambios entre
+vecinos (desorden 0.02 %), una prueba dio <b>918</b> operaciones; el <a href="#g-radix">radix</a> habría hecho sus 6784
 de siempre.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Programación dinámica (la LIS es el
 ejemplo de libro) aplicada a una pregunta concreta: ¿qué es lo máximo que puedo <em>no tocar</em>?
 Y la diferencia entre coste de cálculo y coste puntuado: aquí se gasta O(n²) de CPU en pensar para
 ahorrar operaciones, que es lo único que cuenta. El truco de <code>INT_MAX</code> es una lección
-de diseño de claves de comparación: codificar dos criterios en un solo número para resolverlo con
+de diseño de <a href="#g-clave">claves de comparación</a>: codificar dos criterios en un solo número para resolverlo con
 un único mínimo.</div>
 </div>
 
@@ -2022,17 +2659,17 @@ un único mínimo.</div>
 }</code></pre>
 <table>
 <tr><th>Desorden</th><th>Método</th><th>Clase pedida</th></tr>
-<tr><td><code>d &lt; 0.2</code></td><td>LIS + inserción (<code>sort_low</code>)</td><td>O(n)</td></tr>
-<tr><td><code>0.2 ≤ d &lt; 0.5</code></td><td>chunks (<code>sort_medium</code>)</td><td>O(n√n)</td></tr>
-<tr><td><code>d ≥ 0.5</code></td><td>radix (<code>sort_complex</code>)</td><td>O(n log n)</td></tr>
+<tr><td><code>d &lt; 0.2</code></td><td><a href="#g-lis">LIS</a> + <a href="#g-insercion">inserción</a> (<code>sort_low</code>)</td><td><a href="#g-o-n">O(n)</a></td></tr>
+<tr><td><code>0.2 ≤ d &lt; 0.5</code></td><td><a href="#g-chunks">chunks</a> (<code>sort_medium</code>)</td><td><a href="#g-o-nsqrtn">O(n√n)</a></td></tr>
+<tr><td><code>d ≥ 0.5</code></td><td><a href="#g-radix">radix</a> (<code>sort_complex</code>)</td><td><a href="#g-o-nlogn">O(n log n)</a></td></tr>
 </table>
-<p>Los umbrales vienen del enunciado, que fija qué clase de complejidad toca en cada régimen, y
+<p>Los umbrales vienen del enunciado, que fija qué <a href="#g-o-grande">clase de complejidad</a> toca en cada régimen, y
 el código los respeta a rajatabla. El README justifica por qué encajan: por debajo de 0.2 casi
 todo está en su sitio y conviene un método que no mueva lo que ya está bien; una lista aleatoria
 tiene un desorden de alrededor de 0.5, y por encima la entrada parece aleatoria o invertida y radix
-da una cota garantizada; en medio, los chunks se adaptan mejor.</p>
+da una <a href="#g-peor-caso">cota garantizada</a>; en medio, los chunks se adaptan mejor.</p>
 <p>La consecuencia, visible en las cifras: con entradas aleatorias el desorden ronda 0.5 y cae a
-veces en medium y a veces en complex, así que la media de la adaptativa queda entre las dos.
+veces en medium y a veces en complex, así que la media de la <a href="#g-adaptativo">adaptativa</a> queda entre las dos.
 Medido sobre 10 entradas aleatorias de 0 a 9999 (todas <code>OK</code> en el checker):</p>
 <table>
 <tr><th>Estrategia</th><th>100 números</th><th>500 números</th></tr>
@@ -2049,7 +2686,7 @@ sale <code>ra pb pa</code> (3 operaciones, donde un <code>sa</code> bastaría), 
 se resuelve en 10. No hay casos especiales para n pequeño: el código aplica siempre el régimen.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que no hay un algoritmo mejor para todo:
 el rendimiento depende de la forma de la entrada, y medir esa forma antes de elegir es lo que
-hacen los ordenadores de verdad (Timsort, el sort de Python y Java, se basa justo en aprovechar los
+hacen los ordenadores de verdad (<a href="#g-timsort">Timsort</a>, el sort de Python y Java, se basa justo en aprovechar los
 tramos ya ordenados). También a documentar decisiones: el enunciado exige justificar los umbrales
 y el análisis de complejidad en el README.</div>
 </div>
@@ -2057,7 +2694,7 @@ y el análisis de complejidad en el README.</div>
 <div class="card" id="bench">
 <h2><span class="ex">13</span>--bench</h2>
 <div class="meta"><span>Fichero: <b>bench.c</b></span><span>Funciones: <b>print_bench, put_disorder, put_strategy, put_count</b></span></div>
-<p>Todo sale por el fd 2: stdout queda solo con las operaciones, que es lo que lee el checker, y
+<p>Todo sale por el <a href="#g-fd">fd 2</a>: stdout queda solo con las operaciones, que es lo que lee el checker, y
 así <code>--bench</code> no lo estropea. El porcentaje con dos decimales se imprime sin
 <code>float</code>:</p>
 <pre><code>static void	put_disorder(t_ps *ps)
@@ -2075,7 +2712,7 @@ así <code>--bench</code> no lo estropea. El porcentaje con dos decimales se imp
 	ft_putendl_fd("%", 2);
 }</code></pre>
 <p><code>p</code> es el desorden en centésimas de porcentaje (1 = 0.01 %). El <code>+ pairs /
-2</code> hace que la división entera <em>redondee</em> en vez de truncar: con 1 de 3,
+2</code> hace que la <a href="#g-division-entera">división entera</a> <em>redondee</em> en vez de truncar: con 1 de 3,
 <code>(10000 + 1) / 3 = 3333</code>, que se imprime como <code>33.33%</code>. Luego
 <code>p / 100</code> es la parte entera y los dos dígitos de <code>p % 100</code> se escriben uno a
 uno, para no perder el cero de <code>10.05</code>.</p>
@@ -2110,7 +2747,7 @@ p % 10         = 2    →  "2"
                          "0.02%"</code></pre>
 <p>Si se imprimiera <code>p % 100</code> con <code>ft_putnbr_fd</code>, saldría <code>0.2%</code>:
 el cero de las décimas se perdería. Escribir cada cifra como <code>'0' + dígito</code> garantiza
-siempre dos. (<code>%</code> y <code>/</code> tienen la misma precedencia y van de izquierda a
+siempre dos. (<code>%</code> y <code>/</code> tienen la misma <a href="#g-precedencia">precedencia</a> y van de izquierda a
 derecha, así que <code>p % 100 / 10</code> es <code>(p % 100) / 10</code>.)</p>
 
 <h3>Casos límite</h3>
@@ -2123,7 +2760,7 @@ son unos 1 250 millones, que cabe en un <code>long</code> sobradamente.</li>
 <code>int</code>: la conversión de <code>long</code> no pierde nada.</li>
 </ul>
 </details>
-<p><code>put_strategy</code> imprime nombre y clase; con la adaptativa recalcula
+<p><code>put_strategy</code> imprime nombre y clase; con la <a href="#g-adaptativo">adaptativa</a> recalcula
 <code>disorder_regime</code> para decir qué método usó de verdad. El total es la suma de los once
 contadores. Salida real con el ejemplo del enunciado:</p>
 <pre><code>$ ./push_swap --bench 4 67 3 87 23 &gt; /dev/null
@@ -2191,7 +2828,7 @@ dio allí.</p>
 <ul>
 <li>El régimen se calcula siempre, aunque la estrategia sea forzada y no se use. Es una
 comparación de enteros y no tiene efecto.</li>
-<li><code>²</code> y <code>√</code> no son ASCII: en UTF-8 ocupan 2 y 3 bytes. <code>ft_putendl_fd</code>
+<li><code>²</code> y <code>√</code> no son <a href="#g-utf8">ASCII</a>: en UTF-8 ocupan 2 y 3 bytes. <code>ft_putendl_fd</code>
 los escribe byte a byte tal cual, y es la terminal la que los muestra como un solo carácter.</li>
 <li>Ojo: dice el método que <em>correspondería</em>, no si se ejecutó. Con una lista ya ordenada
 no se ejecuta ninguno, pero sale <code>Adaptive / O(n)</code>, y con un solo número
@@ -2235,9 +2872,9 @@ cierra la suya y abre la siguiente.</p>
 </details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Para qué existen stdout y stderr por
 separado: datos por un canal, diagnóstico por otro, y una tubería (<code>| ./checker_linux</code>)
-que solo ve los datos. Y aritmética de punto fijo: escalar por 10000, redondear sumando la mitad
+que solo ve los datos. Y <a href="#g-punto-fijo">aritmética de punto fijo</a>: escalar por 10000, redondear sumando la mitad
 del divisor y partir el resultado con <code>/</code> y <code>%</code>, la misma técnica con la que
-se manejan céntimos en software financiero para no fiarse de la coma flotante.</div>
+se manejan céntimos en software financiero para no fiarse de la <a href="#g-coma-flotante">coma flotante</a>.</div>
 </div>
 
 <footer>42.zenidx.com — push_swap · <a href="../../index.html#cursus">volver al cursus →</a></footer>
