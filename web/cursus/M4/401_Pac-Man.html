@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pac-Man — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Pac-Man <span class="tag pend">pendiente</span></h1>
+<p class="sub">«Ghosts! More ghosts!»: un Pac-Man completo y jugable en Python, con laberintos
+generados por el paquete A-Maze-ing de <em>otro</em> grupo, récords persistentes, modo trampa para
+el evaluador y publicado en una plataforma de juegos. Proyecto del <strong>rank 04</strong>.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#config">Uso y fichero de configuración</a></li>
+  <li><a href="#laberinto">El laberinto ajeno</a></li>
+  <li><a href="#juego">Reglas del juego</a></li>
+  <li><a href="#fantasmas">Fantasmas</a></li>
+  <li><a href="#interfaz">Interfaz, bucle y estados</a></li>
+  <li><a href="#records">Récords y modo trampa</a></li>
+  <li><a href="#entrega">Empaquetado y gestión</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde sale</b> — Pac-Man lo publicó Namco en 1980, diseñado por
+Toru Iwatani con la idea de atraer a un público que no jugaba a los matamarcianos de la época.
+Popularizó el <em>power-up</em> (la píldora que te deja comerte a los fantasmas) y es famoso por
+su inteligencia artificial: cada fantasma persigue a su manera (Blinky va directo a por ti, Pinky
+intenta cortarte el paso, Inky es imprevisible y Clyde… raro). La máquina original tenía 256
+niveles, pero un desbordamiento de entero hacía imposible terminar el 256: la famosa <em>kill
+screen</em>, un recordatorio de lo que pasa cuando un contador de 8 bits llega a 255.<br><br>
+En 42next este proyecto cierra un círculo: en el rank 02 hiciste <a href="../M2/201_A-Maze-ing.html">A-Maze-ing</a>, un generador de
+laberintos empaquetado como librería de Python; aquí tienes que <em>consumir</em> la librería de
+otro grupo tal cual, sin tocarla. El proyecto mide tanto el juego como la ingeniería que lo rodea:
+configuración robusta, empaquetado, documentación y gestión del proyecto.</div>
+
+<div class="card" id="pide">
+<h2><span class="ex">00</span>Qué pide</h2>
+<div class="meta"><span>Rank: <b>04</b></span><span>Lenguaje: <b>Python ≥ 3.10</b></span><span>Equipo: <b>en grupo</b> (los repos públicos son de 2 personas; tamaño no confirmado)</span></div>
+<p>Un Pac-Man completo y jugable, en Python, con programación orientada a objetos, una librería
+gráfica sencilla (<strong>MLX o similar</strong>) y una arquitectura modular y reutilizable. El
+juego debe tener:</p>
+<ul>
+  <li>configuración por fichero (JSON con comentarios);</li>
+  <li>gestión de errores robusta: <em>no crash</em>;</li>
+  <li>niveles generados con un paquete A-Maze-ing externo (no el tuyo);</li>
+  <li>un sistema de récords persistente;</li>
+  <li>interfaz gráfica cuidada: menú principal, vista de juego y fin de partida;</li>
+  <li>un modo trampa para la evaluación;</li>
+  <li>publicación en una plataforma pública de juegos (Steam, Itch.io o similar).</li>
+</ul>
+<p>El ciclo de juego que marca el enunciado: menú principal → empezar partida → ganar o perder →
+escribir el nombre para el récord → vuelta al menú.</p>
+<p>Encima van las reglas comunes de los proyectos Python de 42next, las mismas de los Python
+Module: <strong>flake8</strong>, anotaciones de tipo que pasen <strong>mypy</strong>, docstrings
+PEP 257, excepciones controladas (un traceback en la evaluación es un proyecto no funcional),
+recursos con <em>context managers</em>, <code>.gitignore</code> y un Makefile con las reglas
+<code>install</code>, <code>run</code>, <code>debug</code> (con <code>pdb</code>),
+<code>clean</code> y <code>lint</code> (y <code>lint-strict</code> opcional).</p>
+<div class="trasfondo"><b>Sobre «MLX o similar»</b> — El enunciado define «similar» de forma
+estricta: cada función de la librería que uses debe tener un equivalente en la MLX (la
+MiniLibX de 42: abrir ventana, dibujar imágenes, recibir teclas y un bucle de eventos). Si te
+apoyas en algo que la MLX no tiene, no está permitido. Los repos públicos usan la MLX, Pygame o
+Arcade; si cada uno de ellos cumple esa regla en la práctica depende de qué funciones se usen.</div>
+</div>
+
+<div class="card" id="config">
+<h2><span class="ex">01</span>Uso y fichero de configuración</h2>
+<pre><code>$&gt; python3 pac-man.py config.json</code></pre>
+<p>Exactamente un argumento: un fichero JSON (el nombre da igual). Cualquier error — fichero que no
+existe, valor no válido, clave que falta — debe acabar en un mensaje claro, nunca en un
+traceback.</p>
+<p>El JSON tiene una extensión: las líneas que empiezan por <code>#</code> son comentarios y se
+ignoran (se pueden admitir otros estilos, como los de C). La estructura la decides tú, pero hay que
+documentarla en el README y dar valores por defecto. Las claves sugeridas son orientativas:
+<code>highscore_filename</code>, un array <code>level</code> con <code>width</code> y
+<code>height</code> por nivel, <code>lives</code>, <code>pacgum</code>,
+<code>points_per_pacgum</code>, <code>points_per_super_pacgum</code>,
+<code>points_per_ghost</code>, <code>seed</code> y <code>level_max_time</code>.</p>
+<p>Ante valores ausentes o inválidos: recortar a un valor seguro por defecto, avisar con un mensaje
+claro y seguir. Las claves desconocidas se ignoran. Y un aviso del enunciado: <strong>la
+configuración se cambiará durante la defensa</strong>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Validación de entrada como parte del
+diseño, no como parche. JSON (Douglas Crockford, años 2000) no admite comentarios a propósito, así
+que aquí hay que preprocesar el texto antes de dárselo al parser, y luego decidir para cada clave
+qué es un valor razonable. Es la diferencia entre un programa que funciona con <em>tu</em> config y
+uno que aguanta la del evaluador.</div>
+</div>
+
+<div class="card" id="laberinto">
+<h2><span class="ex">02</span>El laberinto ajeno</h2>
+<p>Está prohibido escribir tu propio generador. Al empezar el proyecto se te asigna el paquete
+A-Maze-ing de otro grupo, y:</p>
+<ul>
+  <li>hay que usarlo tal cual, sin modificarlo; se reinstalará durante la evaluación;</li>
+  <li>tu cargador se adapta a su interfaz, no al revés;</li>
+  <li>el parámetro <code>PERFECT</code> se pone a <code>False</code> para obtener pasillos aptos
+  para Pac-Man;</li>
+  <li>si el generador falla, hay que gestionarlo limpiamente.</li>
+</ul>
+<p>El primer nivel usa una semilla fija (por ejemplo 42) y los siguientes, laberintos aleatorios.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Integrar código que no controlas, que es
+lo normal en el trabajo real. También por qué un laberinto <em>perfecto</em> no sirve: en teoría
+de grafos es un árbol (hay un único camino entre cada par de casillas, sin ciclos), lleno de
+callejones sin salida donde un fantasma te atrapa sin remedio. Con <code>PERFECT=False</code> el
+generador abre bucles y Pac-Man siempre tiene por dónde escapar. La semilla fija es la misma idea
+de reproducibilidad que en cualquier generador pseudoaleatorio: misma semilla, mismo
+laberinto.</div>
+</div>
+
+<div class="card" id="juego">
+<h2><span class="ex">03</span>Reglas del juego</h2>
+<ul>
+  <li><b>Nivel</b>: laberinto con muros y pasillos, pacgums (puntos) en la mayoría de pasillos,
+  super-pacgums en las 4 esquinas, 4 fantasmas (uno en cada esquina) y el jugador empieza en el
+  centro.</li>
+  <li><b>Jugador</b>: se mueve solo por pasillos en 4 direcciones (flechas o WASD); empieza con 3
+  vidas, pierde una al tocarle un fantasma y reaparece en el centro; sin vidas, fin de partida.</li>
+  <li><b>Puntos</b>: pacgum +X, super-pacgum +Y (y fantasmas comestibles un rato), fantasma
+  comido +Z. La puntuación nunca baja.</li>
+  <li><b>Progresión</b>: se gana el nivel al comerse todos los pacgums; al menos <strong>10
+  niveles</strong>, cada uno con límite de tiempo (por ejemplo 90 s; qué pasa al agotarse lo
+  decides tú). Puntos y vidas se conservan entre niveles. Se puede pausar y reanudar.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Modelar un mundo discreto: una rejilla,
+entidades que ocupan casillas, colisiones y reglas que se aplican en cada paso. Separar bien el
+<em>modelo</em> (estado del juego) de la <em>vista</em> (cómo se dibuja) es lo que permite probarlo
+y lo que piden de forma implícita «arquitectura modular y reutilizable» y la sección de
+arquitectura del README.</div>
+</div>
+
+<div class="card" id="fantasmas">
+<h2><span class="ex">04</span>Fantasmas</h2>
+<p>Se mueven solos por los pasillos, persiguen al jugador cuando no son comestibles (el
+comportamiento lo eliges tú: por distancia, aleatorio…), huyen cuando lo son y, si te los comes,
+vuelven a su esquina al cabo de un rato (por ejemplo 5 o 10 segundos).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Búsqueda en grafos aplicada. Un laberinto
+es un grafo cuyos nodos son casillas; «ir hacia el jugador» puede ser tan simple como elegir en
+cada cruce la casilla que reduce la distancia en línea recta (lo que hacía el arcade original,
+calculando un objetivo distinto para cada fantasma) o tan correcto como un recorrido en anchura
+(BFS) que da el camino más corto real. En el Pac-Man de 1980 los fantasmas además alternaban
+entre modo persecución y modo dispersión (cada uno a su esquina) para dar respiros al jugador.
+El enunciado no exige nada de eso: solo que persigan y huyan.</div>
+</div>
+
+<div class="card" id="interfaz">
+<h2><span class="ex">05</span>Interfaz, bucle y estados</h2>
+<ul>
+  <li><b>Menú principal</b>: Start Game, View Highscores (top 10), Instructions y Exit.</li>
+  <li><b>HUD</b> siempre visible: puntuación, vidas, nivel y tiempo restante.</li>
+  <li><b>Pausa</b>: reanudar o volver al menú.</li>
+  <li><b>Game Over</b> y <b>Victoria</b>: puntuación final (y felicitación) y petición del nombre
+  para el récord.</li>
+</ul>
+<p>Detrás de cualquier juego hay el mismo esqueleto, que aquí solo se esboza como idea:</p>
+<pre><code>mientras el juego esté abierto:
+    leer entrada      (teclas)
+    actualizar estado (mover, colisiones, temporizadores)
+    dibujar           (según la pantalla actual)</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El bucle de juego y la máquina de estados.
+Menú, partida, pausa, fin de partida y victoria son <em>estados</em> con sus transiciones; cada
+uno decide qué teclas escucha y qué se dibuja. Con la MLX el bucle no es tuyo: registras funciones
+(<em>hooks</em>) para teclas y para cada fotograma y la librería las llama — programación
+dirigida por eventos. Y aparece el tiempo: si el movimiento depende de cuántas veces por segundo
+se ejecuta el bucle, el juego irá a distinta velocidad en cada máquina.</div>
+</div>
+
+<div class="card" id="records">
+<h2><span class="ex">06</span>Récords y modo trampa</h2>
+<p><b>Récords</b>: persistentes y donde quieras (un JSON en el proyecto, en disco…), documentados
+en el README. Robustos ante errores de fichero (no existe, formato inválido…); nombres de como
+mucho 10 caracteres, alfanuméricos y espacios; puntuaciones enteras no negativas; se guardan los 10
+mejores; se cargan al empezar y se guardan al terminar.</p>
+<p><b>Modo trampa</b>: activable para facilitar la evaluación. Sugerencias del enunciado:
+invencibilidad, saltar de nivel, congelar fantasmas, vidas extra, más velocidad… El criterio es que
+de verdad ayude al evaluador a probar todas las funciones del juego.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Persistencia sin confiar en el disco: el
+fichero de récords puede no existir o estar corrupto, y eso no puede tumbar el juego. Y pensar en
+quién va a probar tu programa: nadie va a jugarse diez niveles en una defensa, así que el modo
+trampa es una herramienta de <em>testabilidad</em>, no un extra.</div>
+</div>
+
+<div class="card" id="entrega">
+<h2><span class="ex">07</span>Empaquetado y gestión del proyecto</h2>
+<ul>
+  <li><b>Empaquetado</b>: el juego completo, instalable y ejecutable desde una plataforma pública
+  (Steam, Itch.io…) como versión gratuita pero oculta o privada, totalmente funcional y con
+  instrucciones mínimas. El repo debe contener todo el código y el script o <em>spec</em> de
+  empaquetado en la raíz; pueden pedir regenerar el paquete en la evaluación.</li>
+  <li><b>Gestión</b>: un subdirectorio con documentos que demuestren cómo se llevó el proyecto.
+  Ejemplos del enunciado: calendario, Gantt o Kanban; seguimiento real frente a lo planificado;
+  análisis y decisiones; análisis de riesgos; organización del equipo; plan de pruebas de
+  aceptación; bloqueos y conflictos.</li>
+  <li><b>README</b> en inglés con las secciones comunes y, además: Configuration, Highscore, Maze
+  Generation, Implementation, General Software Architecture y Project Management.</li>
+  <li><b>Recode</b>: en la evaluación pueden pedir una pequeña modificación en directo.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un programa no está terminado cuando
+funciona en tu máquina: hay que congelar dependencias, generar un ejecutable que funcione en otra y
+publicarlo. Y gestión de proyecto en equipo, con papeles que lo demuestren: es de los primeros
+proyectos del cursus donde la documentación del proceso cuenta tanto como el código.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2><span class="ex">!</span>Puntos delicados</h2>
+<ul>
+  <li>Acoplarte a tu propio A-Maze-ing: el paquete asignado tendrá otra interfaz y se reinstala
+  en la evaluación.</li>
+  <li>Que una config cambiada en la defensa (claves que faltan, valores absurdos, comentarios)
+  provoque un traceback.</li>
+  <li>Velocidad del juego dependiente del número de fotogramas por segundo.</li>
+  <li>Colisiones jugador-fantasma que se «saltan» cuando se cruzan entre dos casillas.</li>
+  <li>Laberintos donde alguna esquina o el centro caen en un muro: hay que decidir qué hacer.</li>
+  <li>La regla de «MLX o similar» si se usa una librería gráfica distinta.</li>
+  <li>Dejar el empaquetado y la documentación de gestión para el final.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2><span class="ex">src</span>Fuente</h2>
+<p>El enunciado no está descargado en el pack. Se han contrastado dos copias públicas del
+<code>en.subject</code> subidas por estudiantes, en versiones 1.4 y 1.5, que coinciden en todo lo
+que aparece en esta página. El tamaño del grupo no aparece en ninguna (sí se habla de «otro grupo»
+y de organización del equipo); los READMEs de los repos consultados están firmados por dos
+logins.</p>
+<ul>
+  <li><a href="https://github.com/Lhokken/Pacman/blob/main/assets/subject.md">github.com/Lhokken/Pacman — assets/subject.md (v1.5)</a></li>
+  <li><a href="https://github.com/NoamCurely/Pacman/blob/main/en.subject.txt">github.com/NoamCurely/Pacman — en.subject.txt (v1.4)</a></li>
+  <li>Repos de ejemplo (solo para ver equipos y librerías, no el código):
+  <a href="https://github.com/Sabofxx/pac-man-42">Sabofxx/pac-man-42</a>,
+  <a href="https://github.com/Ajni3/42-Pacman">Ajni3/42-Pacman</a></li>
+</ul>
+<p>El enunciado oficial está en la página del proyecto en la intra (slug <code>pac-man</code>).</p>
+</div>
+
+<footer>42.zenidx.com — Pac-Man · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tree_nity — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — tree_nity <span class="tag pend">pendiente</span></h1>
+<p class="sub">«treenity — Message Queue System»: un sistema de colas de mensajes con
+<em>topics</em>, productores y consumidores, comunicados por IPC entre procesos, con un
+hashmap hecho a mano y filtrado por prefijo. Proyecto de 42next, rank 05.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#modelo">Topics, mensajes y offsets</a></li>
+  <li><a href="#ipc">IPC: la elección del transporte</a></li>
+  <li><a href="#concurrencia">Concurrencia y apagado limpio</a></li>
+  <li><a href="#estructuras">Hashmap y búsqueda por prefijo</a></li>
+  <li><a href="#cli">La interfaz exacta</a></li>
+  <li><a href="#git">Git, tests y README</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde viene</b> — En cuanto un sistema tiene varias piezas, no
+todas van al mismo ritmo: el registro de un usuario genera un evento, la analítica lo procesa
+más tarde y la facturación cuando puede. Una <strong>cola de mensajes</strong> es el pasillo
+donde esos mensajes esperan, de modo que quien los produce no tiene que esperar a quien los
+consume. El modelo de este proyecto, con <em>topics</em>, mensajes clave-valor numerados con
+un <em>offset</em> y consumidores que recuerdan por dónde iban, es el de <strong>Apache
+Kafka</strong>, creado en LinkedIn en 2011. El preámbulo del enunciado juega con el nombre:
+cita a Franz Kafka y sus protagonistas perdidos entre intermediarios y mensajes que llegan
+tarde o nunca. La diferencia con Kafka es que aquí todo ocurre en una sola máquina, entre
+procesos, usando los mecanismos de comunicación entre procesos (IPC) clásicos de Unix. El
+nombre del proyecto apunta a la otra mitad: los árboles con los que se filtra por prefijo.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>05</b></span><span>Lenguaje: <b>C++ (C++17 o posterior) o Go</b></span><span>Modalidad: <b>grupo</b> (no lo dice el enunciado; los repos vistos son de 2–3 personas)</span><span>Versión: <b>2.0</b></span></div>
+<ul>
+  <li>Dos programas, <code>server</code> y <code>client</code>, con un Makefile con
+  <code>all</code>, <code>clean</code>, <code>re</code> y <code>test</code>. En lenguajes
+  interpretados o de JVM se generarían scripts con shebang, aunque los lenguajes admitidos son
+  solo C++ y Go.</li>
+  <li>El servidor crea un punto de entrada IPC, acepta varios clientes, guarda en memoria los
+  mensajes de cada topic y los envía a los consumidores.</li>
+  <li>El cliente tiene tres papeles: <b>gestión</b> (crear y listar topics, consultar los
+  datos de un cliente), <b>productor</b> (enviar mensajes a un topic, en texto o binario) y
+  <b>consumidor</b> (suscribirse a un topic, filtrar por prefijo de clave, empezar en un
+  offset concreto y conservar su posición entre reconexiones).</li>
+  <li>Varios servidores pueden correr a la vez sin interferir; el PID del servidor sirve de
+  identificador único.</li>
+  <li>Se entregan dos binarios de prueba, <code>ft_aquarium</code> (un consumidor que dibuja
+  los mensajes como peces) y <code>ft_fish</code> (un productor de peces aleatorios), que
+  también se usan en la evaluación junto a otros tests automáticos.</li>
+</ul>
+</div>
+
+<div class="card" id="modelo">
+<h2><span class="ex">01</span>Topics, mensajes y offsets</h2>
+<p>Un <b>topic</b> es un canal con nombre que guarda mensajes. Cada <b>mensaje</b> tiene una
+clave, un valor (datos arbitrarios del cliente; clave más valor como mucho 1024 bytes) y un
+<b>offset</b>, un entero de 32 bits que asigna el servidor de forma creciente. Un consumidor
+nuevo empieza en el offset 0; al recibir un mensaje lo <em>confirma</em> devolviendo el
+offset al servidor, y si vuelve más tarde continúa donde lo dejó, salvo que pida otro offset
+para releer o saltar mensajes.</p>
+<p>La convención importa: el offset guardado es siempre <b>el siguiente</b> que el cliente
+quiere leer, no el último recibido. Tras procesar el mensaje N se confirma N + 1.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La idea de <em>log</em> de solo
+añadir: los mensajes no se borran al leerse, como en una cola clásica, sino que se quedan
+numerados y cada consumidor lleva su propio cursor. Eso permite que varios consumidores lean
+el mismo topic a ritmos distintos, que uno se caiga y retome, o que alguien vuelva a procesar
+el pasado. También introduce el concepto de <em>acknowledgement</em>: un mensaje enviado no
+cuenta como entregado hasta que el receptor lo confirma.</div>
+</div>
+
+<div class="card" id="ipc">
+<h2><span class="ex">02</span>IPC: la elección del transporte</h2>
+<p>Hay que elegir uno de tres mecanismos, y defender la elección en la evaluación:</p>
+<ul>
+  <li><b>Colas de mensajes System V</b> (<code>msgget</code>, <code>msgsnd</code>…).</li>
+  <li><b>Colas de mensajes POSIX</b> (<code>mq_open</code>, <code>mq_send</code>…).</li>
+  <li><b>Tuberías con nombre</b> (FIFO, <code>mkfifo</code>).</li>
+</ul>
+<p>El punto de entrada principal sirve para la gestión y el registro de clientes; cada
+consumidor suscrito tiene <b>su propio canal</b> para recibir mensajes. Como estos mecanismos
+suelen ser de un solo sentido, el enunciado pide diseñar cómo devolver las respuestas. No se
+permiten librerías externas de IPC.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Los mecanismos de IPC de Unix y sus
+diferencias. Las FIFO (que ya asoman en pipex o minitalk en el camino antiguo) son un fichero
+especial por el que fluyen bytes sin fronteras de mensaje. Las colas System V vienen del Unix
+de AT&amp;T de los 80 y se identifican con claves numéricas que sobreviven al proceso si nadie
+las borra; las POSIX son su versión más moderna, con nombres tipo ruta y notificaciones.
+Elegir uno condiciona cómo delimitas los mensajes, cómo se crea un canal de vuelta y qué hay
+que limpiar al terminar.</div>
+</div>
+
+<div class="card" id="concurrencia">
+<h2><span class="ex">03</span>Concurrencia y apagado limpio</h2>
+<ul>
+  <li>Al menos <b>un hilo o goroutine por topic</b> para procesar sus mensajes; el
+  procesamiento dentro de un topic puede ser síncrono o asíncrono.</li>
+  <li>Acceso seguro a estructuras compartidas: en C++, <code>std::thread</code>,
+  <code>std::mutex</code>, <code>std::condition_variable</code> y, si interesa,
+  <code>std::shared_mutex</code>; en Go, goroutines, canales y <code>sync.RWMutex</code>.</li>
+  <li>Orden garantizado solo dentro de un mismo productor; entre productores distintos, no.
+  Los consumidores reciben en orden de offset.</li>
+  <li>Con <code>SIGINT</code> o <code>SIGTERM</code>, ambos programas terminan limpiamente:
+  liberan recursos, esperan a que los clientes confirmen y, pasados <b>5 segundos</b>, salen
+  igualmente. El servidor debe borrar todos sus recursos IPC y conseguir que cada consumidor
+  suscrito salga con código 0 en vez de quedarse colgado; el método es libre y se explica en
+  la evaluación.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Patrones de concurrencia de verdad:
+productor-consumidor, lectores-escritores, variables de condición. Y una lección de sistemas
+que suele pillar desprevenido: cerrar tu extremo de un canal de un solo sentido no despierta
+necesariamente al proceso que está bloqueado leyendo el otro, así que «apagar» requiere
+avisar activamente. Los recursos IPC, además, no siempre desaparecen al morir el proceso: si
+no los limpias, quedan en el sistema (<code>ipcs</code> los muestra).</div>
+</div>
+
+<div class="card" id="estructuras">
+<h2><span class="ex">04</span>Hashmap y búsqueda por prefijo</h2>
+<p>Los datos de cada cliente (ID, topic, offset, prefijo opcional y ruta de su canal) se
+indexan en un <b>hashmap implementado a mano</b>, con resolución de colisiones explícita
+(encadenamiento o direccionamiento abierto). Los mapas de la librería estándar no valen para
+esta parte.</p>
+<p>Para el filtrado, cada topic mantiene una estructura eficiente de consumidores indexados
+por prefijo; la elección es libre (AVL, rojo-negro, trie, tabla hash con lógica de
+prefijos…) y se discute en la evaluación. Las reglas: <code>user</code> casa con
+<code>user</code> y con <code>user.login</code> pero no con <code>admin</code>; el prefijo
+vacío casa con todo, y esos consumidores se añaden directamente a la lista de entrega sin
+recorrer la estructura. Varios consumidores pueden compartir prefijo.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Cómo funciona por dentro una tabla
+hash (función de hash, cubetas, colisiones, factor de carga, redimensionado), justo la
+estructura que en Python o Go das por hecha. Y por qué existe el <strong>trie</strong> o
+árbol de prefijos (Fredkin, 1960): dada la clave de un mensaje, recorrer sus caracteres en un
+trie da en un solo paso todos los prefijos que la cubren, en lugar de comparar con cada
+consumidor uno a uno.</div>
+</div>
+
+<div class="card" id="cli">
+<h2><span class="ex">05</span>La interfaz exacta</h2>
+<p>Los tests automáticos dependen de que los argumentos, la salida estándar y los códigos de
+salida sean exactamente los del enunciado. Las formas de uso son:</p>
+<pre><code>./server
+./client &lt;ipc&gt; create &lt;topic&gt;
+./client &lt;ipc&gt; list
+./client &lt;ipc&gt; produce &lt;topic&gt; [--raw]
+./client &lt;ipc&gt; subscribe &lt;topic&gt; &lt;nombre&gt; [--prefix &lt;p&gt;] [--offset &lt;n&gt;] [--raw]
+./client &lt;ipc&gt; info &lt;nombre&gt;</code></pre>
+<ul>
+  <li>El servidor imprime su identificador IPC (en el ejemplo,
+  <code>/tmp/operator.server.1337</code>).</li>
+  <li>En texto, el productor lee líneas <code>clave:valor</code> por stdin y el consumidor
+  las escribe igual. Con <code>--raw</code> los registros son binarios: tamaños de 32 bits en
+  <b>little-endian</b> seguidos de los bytes, sin separadores; el consumidor antepone el
+  offset.</li>
+  <li><code>info</code> devuelve un JSON con cliente, topic, offset, prefijo y canal.</li>
+  <li>Códigos de salida: 0 éxito, 1 error general, 2 error de topic o cliente, 3 error de
+  comunicación IPC, con precedencia 1 &gt; 3 &gt; 2 si se dan varios. Lo evaluable va por
+  stdout; logs y errores, por stderr.</li>
+  <li>IDs de cliente y nombres de topic: <code>^[a-zA-Z0-9_.-]{1,32}$</code>. Dos
+  suscriptores con el mismo nombre no pueden estar activos a la vez.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A diseñar un formato binario y a
+leerlo de un flujo: con <code>--raw</code> no hay saltos de línea que marquen el final, así
+que es el campo de tamaño el que dice cuántos bytes leer, y un registro cortado al final es un
+error. El <em>endianness</em> (el orden de los bytes de un entero en memoria) deja de ser una
+curiosidad en cuanto dos programas tienen que entenderse.</div>
+</div>
+
+<div class="card" id="git">
+<h2><span class="ex">06</span>Git, tests y README</h2>
+<ul>
+  <li>Se aplica entero un documento aparte, <b>Git Workflow Guidelines</b>: commits con
+  <a href="https://www.conventionalcommits.org/">Conventional Commits</a>
+  (<code>feat(broker): …</code>, <code>fix(consumer): …</code>), un cambio lógico por commit,
+  una rama por funcionalidad con nombres del tipo <code>feat/…</code>, nada de
+  <em>squash</em>, y en <code>main</code> solo arreglos menores. Se comprueba con la
+  herramienta <code>gitinette</code>; no respetarlo es un <b>0</b>.</li>
+  <li><b>Tests unitarios</b> completos del filtrado por prefijo, con Google Test en C++ o el
+  paquete <code>testing</code> en Go, lanzados con <code>make test</code>.</li>
+  <li>README en inglés con las secciones Architecture, IPC Choice, Data Structures y
+  Testing, además de las comunes.</li>
+</ul>
+</div>
+
+<div class="card" id="delicados">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>La convención del offset</b> (se guarda N + 1) es fácil de implementar al revés y los
+  tests lo notarán en la salida de <code>info</code>.</li>
+  <li><b>El apagado</b>: consumidores bloqueados que no se enteran de que el servidor se ha
+  ido, y recursos IPC que se quedan huérfanos en el sistema.</li>
+  <li><b>El canal de vuelta</b>: con mecanismos de un solo sentido hay que diseñar cómo
+  responde el servidor a cada cliente sin mezclar respuestas.</li>
+  <li><b>Detectar un topic inexistente al producir</b>: el productor debe salir con código 2
+  en vez de aceptar mensajes en silencio.</li>
+  <li><b>El historial de Git</b> cuenta desde el primer commit: conviene leer las guías antes
+  de empezar.</li>
+  <li><b>Las librerías externas</b> se toleran para estructuras de datos o para leer
+  argumentos si se justifican, pero nunca para el hashmap de clientes ni para el IPC.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<ul>
+  <li>Enunciado <b>treenity v2.0</b> (en.subject.pdf) y <b>Git Workflow Guidelines v2.0</b>
+  (en.git_guidelines.pdf), copia pública en
+  <a href="https://github.com/0xS3RA/tree_nity">github.com/0xS3RA/tree_nity</a>.</li>
+  <li>Contraste con los README de otros grupos, que siguen las mismas secciones obligatorias:
+  <a href="https://github.com/mpouillo/42-tree-nity">github.com/mpouillo/42-tree-nity</a>,
+  <a href="https://github.com/khaled7172/Tree_nity">github.com/khaled7172/Tree_nity</a>,
+  <a href="https://github.com/mpadronrz/tree_nity">github.com/mpadronrz/tree_nity</a>.</li>
+</ul>
+</div>
+
+<footer>42.zenidx.com — tree_nity · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

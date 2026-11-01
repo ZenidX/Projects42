@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam Rank 04 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Exam Rank 04 <span class="tag pend">pendiente</span></h1>
+<p class="sub">El examen que cierra el <strong>rank 04</strong> en el camino 42next. Ficha
+provisional: el formato oficial no está confirmado y la página se completará cuando haya
+información de primera mano.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué se sabe</a></li>
+  <li><a href="#formato">Cómo son los exámenes de 42</a></li>
+  <li><a href="#temas">Qué tipo de ejercicios</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Ojo con el nombre</b> — En la intra conviven dos «Exam Rank 04». El del
+camino antiguo del common core es en C y muy conocido (el famoso <em>microshell</em>: un mini
+intérprete con pipes, <code>;</code> y <code>cd</code>); casi todo lo que sale al buscar «exam rank
+04» en GitHub es de ese. El de esta cuenta es el del slug <code>42next-exam-rank-04</code>, que es
+otro examen. Igual que con push_swap y Born2beroot, el que vale es el del slug
+<code>42next-</code>.</div>
+
+<div class="card" id="pide">
+<h2><span class="ex">00</span>Qué se sabe</h2>
+<div class="meta"><span>Rank: <b>04</b></span><span>Slug: <b>42next-exam-rank-04</b></span><span>Lenguaje: <b>Python</b> (no confirmado)</span><span>Individual</span></div>
+<p>Lo único confirmado es que el examen existe, pertenece al rank 04 junto a NetPractice, Pac-Man y
+RAG against the machine, y que hay que aprobarlo para validar el milestone.</p>
+<p>Lo que sigue <strong>no está confirmado oficialmente</strong>: sale de dos repositorios públicos
+de estudiantes, independientes, que coinciden en el mismo conjunto de ejercicios. Según ellos, el
+examen es <strong>en Python</strong> (coherente con el resto de 42next desde el rank 02), con
+ejercicios repartidos en <strong>niveles</strong> de dificultad creciente, cada uno una función con
+firma tipada que recibe datos y devuelve un resultado, con ejemplos de entrada y salida en el
+enunciado. No se ha encontrado información fiable sobre la duración, el número de niveles que se
+sacan en cada intento ni las funciones o módulos permitidos.</p>
+</div>
+
+<div class="card" id="formato">
+<h2><span class="ex">01</span>Cómo son los exámenes de 42</h2>
+<p>Lo general, que se aplica a los exámenes del cursus que ya se conocen (piscine y ranks
+anteriores):</p>
+<ul>
+  <li>Se hacen en el campus, en una sesión con hora fija y en un puesto en modo examen: sin
+  internet, sin tus ficheros y sin ayuda.</li>
+  <li>Una herramienta (el <em>examshell</em>) te da un ejercicio al azar del nivel en el que
+  estás; lo entregas mediante git y lo corrige automáticamente una moulinette con sus propias
+  pruebas.</li>
+  <li>Si pasa, subes de nivel y recibes otro ejercicio; si falla, no hay puntos por intentarlo.
+  La nota depende del nivel al que llegues.</li>
+  <li>El enunciado es corto y estricto: nombre del fichero, nombre y firma de la función, lo
+  permitido y unos ejemplos. Lo que no está en los ejemplos también se prueba.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Los proyectos se hacen con tiempo, con
+compañeros, con documentación y (en 42next) con IA; el examen comprueba lo que queda cuando no
+hay nada de eso. Por eso los enunciados de los proyectos insisten en usar la IA solo para lo que
+entiendes: el examen es donde se nota.</div>
+</div>
+
+<div class="card" id="temas">
+<h2><span class="ex">02</span>Qué tipo de ejercicios <span class="tag">no confirmado</span></h2>
+<p>Según los dos repositorios citados abajo, los ejercicios son problemas clásicos de algoritmia
+sobre listas, cadenas y grafos. Por los nombres y enunciados que muestran, los temas van de:</p>
+<ul>
+  <li>recorrer y comparar listas (detectar si una es rotación de otra, intersección de varias
+  listas ordenadas, fusionar listas ordenadas);</li>
+  <li>pasar coordenadas a una rejilla 2D;</li>
+  <li>dependencias entre elementos (un orden válido de instalación de paquetes: ordenación
+  topológica de un grafo);</li>
+  <li>problemas de cadenas que piden pensar en subproblemas (particionar en palíndromos);</li>
+  <li>ventanas deslizantes sobre una lista.</li>
+</ul>
+<p>Aquí no se dan soluciones. Lo útil para preparar es lo de siempre: complejidad de cada
+operación sobre listas, diccionarios y conjuntos de Python, casos límite (listas vacías,
+repetidos, negativos) y saber escribir una función correcta sin probarla en un intérprete con
+internet.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Algoritmia básica y su coste: muchos de
+estos problemas tienen una solución obvia cuadrática y otra lineal o casi lineal, y los enunciados
+piden «eficiencia» para volúmenes grandes. Es el mismo músculo de push_swap (contar operaciones)
+llevado a Python.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2><span class="ex">!</span>Puntos delicados</h2>
+<ul>
+  <li>Prepararse con material del Exam Rank 04 antiguo (microshell, en C): es otro examen.</li>
+  <li>Dar por buenos los ejercicios de repos de estudiantes: pueden ser recreaciones de memoria o
+  estar incompletos.</li>
+  <li>Las reglas comunes de Python de 42next (flake8, tipos) podrían aplicarse también aquí; no
+  está confirmado.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2><span class="ex">src</span>Fuente</h2>
+<p>No se ha encontrado el enunciado oficial ni una descripción pública de 42 sobre este examen.
+Fuentes usadas:</p>
+<ul>
+  <li><code>ref/42cursus.md</code> de este repo (milestones y slugs leídos de la intra).</li>
+  <li>Repos de estudiantes con el conjunto de ejercicios (incluyen soluciones; si se usan para
+  practicar, mejor leer solo el enunciado de cada ejercicio):
+  <a href="https://github.com/Spartak8/Exam_Rank_04_Python_42_School">Spartak8/Exam_Rank_04_Python_42_School</a> ·
+  <a href="https://github.com/cedrichenrotel/Exam_rank04_Python">cedrichenrotel/Exam_rank04_Python</a></li>
+</ul>
+<p>Se completará más adelante, con lo que diga la intra o la experiencia del propio examen.</p>
+</div>
+
+<footer>42.zenidx.com — Exam Rank 04 · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

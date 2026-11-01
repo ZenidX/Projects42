@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Smith — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Agent Smith <span class="tag pend">pendiente</span></h1>
+<p class="sub">«Autonomous reasoning, code generation, and execution»: construir desde cero un
+agente que usa un modelo de lenguaje para resolver problemas de programación escribiendo y
+ejecutando Python en un entorno aislado. Proyecto nuevo de 42next, rank 05.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#bucle">El bucle Thought → Code → Observation</a></li>
+  <li><a href="#sandbox">El sandbox</a></li>
+  <li><a href="#mcp">Herramientas por MCP</a></li>
+  <li><a href="#benchmarks">MBPP y SWE-bench</a></li>
+  <li><a href="#metricas">Métricas y comparativa de modelos</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Aviso sobre las fuentes</b> — No se ha encontrado el enunciado
+publicado. Esta ficha se basa en los README de cinco repositorios independientes de
+estudiantes de 42 que dicen ser este proyecto (enlaces al final). Lo que todos coinciden en
+describir se da como requisito probable; lo que solo aparece en uno o dos se marca como
+<em>no confirmado</em>. Cuando el enunciado esté en el pack se revisará.</div>
+
+<div class="trasfondo"><b>De dónde viene</b> — Un modelo de lenguaje, por sí solo, solo
+produce texto. Un <em>agente</em> es el programa que lo rodea: le pasa una tarea, interpreta
+lo que responde, ejecuta acciones en el mundo real (leer un fichero, lanzar tests) y le
+devuelve el resultado para que decida el siguiente paso. La idea se formalizó en el artículo
+<strong>ReAct</strong> (Yao et al., 2022), que alterna razonamiento («Thought») y acciones con
+su observación. Una variante posterior, la de los agentes que actúan escribiendo
+<em>código</em> en vez de llamadas JSON a herramientas (popularizada por el artículo CodeAct
+de 2024 y por librerías como <code>smolagents</code> de Hugging Face), es la que sigue este
+proyecto: el modelo escribe Python que llama a las herramientas como funciones, lo que le
+permite usar variables, bucles y condiciones entre pasos. El nombre viene del agente Smith de
+<em>Matrix</em>, el programa que se replica y actúa por su cuenta.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>05</b></span><span>Lenguaje: <b>Python 3.10</b> (con <b>uv</b>)</span><span>Modalidad: <b>1–2 personas</b> en los repos vistos (no confirmado)</span><span>Requiere: <b>Docker</b> (para SWE-bench)</span></div>
+<p>Según los repositorios consultados, todos coinciden en estas piezas:</p>
+<ul>
+  <li>Un <b>bucle de agente</b> propio: el modelo razona, escribe código Python, el código
+  se ejecuta y su salida se le devuelve, hasta que llama a <code>final_answer(...)</code> o se
+  alcanza un límite.</li>
+  <li>Un <b>sandbox</b> configurable donde se ejecuta el código generado por el modelo.</li>
+  <li>Las herramientas se ofrecen a través de servidores <b>MCP</b> (Model Context Protocol),
+  uno por benchmark (<code>mcp_tools_mbpp.py</code> y <code>mcp_tools_swebench.py</code>).</li>
+  <li>Dos programas de línea de comandos, <code>agent_mbpp</code> y
+  <code>agent_swebench</code>, que reciben un fichero de tarea, el modelo y la URL del
+  proveedor (cualquier API compatible con la de OpenAI) y escriben un JSON con la solución
+  y las métricas de cada paso.</li>
+  <li>Una <b>moulinette</b> que se entrega con el proyecto y que solo genera tareas
+  (<code>dump</code>) y valida soluciones (<code>validate</code>); no ejecuta el código del
+  estudiante.</li>
+</ul>
+<p>Un repo indica que están <b>prohibidos los frameworks de agentes</b> (smolagents,
+LangGraph, CrewAI, AutoGen…) y que el bucle debe hacerse a mano; el lema «construido desde
+cero» aparece en varios, pero la lista exacta de prohibiciones no está confirmada.</p>
+</div>
+
+<div class="card" id="bucle">
+<h2><span class="ex">01</span>El bucle Thought → Code → Observation</h2>
+<p>Cada iteración: se envía al modelo el prompt de sistema, la tarea y lo observado hasta
+ahora; se extrae el bloque de código de su respuesta; se ejecuta en el sandbox; y la salida
+(stdout, errores, si hubo timeout) se añade a la conversación como observación. El
+espacio de nombres del intérprete se conserva entre pasos, así que una variable definida en
+un paso sigue disponible en el siguiente.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la parte difícil de un agente no
+es «la IA», sino todo lo que la rodea: sacar código fiable de un texto libre (el modelo no
+siempre respeta el formato), decidir cuándo parar, controlar cuánto contexto se reenvía en
+cada vuelta (cada iteración vuelve a mandar todo el historial y los tokens se acumulan) y
+tratar los fallos del proveedor (límites de peticiones, errores 429, timeouts). Es un
+problema de ingeniería de sistemas con un componente no determinista en medio.</div>
+</div>
+
+<div class="card" id="sandbox">
+<h2><span class="ex">02</span>El sandbox</h2>
+<p>El código lo escribe un modelo, así que se trata como código <b>no fiable</b>. Los repos
+describen sandboxes con: proceso hijo separado (o un contenedor Docker), lista blanca de
+módulos importables, <code>open</code> limitado a ciertas rutas, builtins recortados, límite
+de tiempo y límite de memoria con <code>resource.setrlimit</code>, y una configuración
+cargable desde JSON (validada con Pydantic en varios de los repos vistos). La moulinette incluye,
+según un README, un script específico que pone a prueba el sandbox.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Aislamiento de procesos y defensa en
+profundidad. En C ya viste que un proceso hijo tiene su propia memoria; aquí se usa para que
+un bucle infinito o un <code>import os; os.system(...)</code> del modelo no toque la máquina.
+Y descubres por qué «quitar funciones peligrosas» dentro de Python no basta por sí solo: el
+lenguaje tiene demasiadas puertas traseras, de ahí que se combine con límites del sistema
+operativo y con separación de procesos.</div>
+</div>
+
+<div class="card" id="mcp">
+<h2><span class="ex">03</span>Herramientas por MCP</h2>
+<p>Las herramientas no se programan dentro del agente, sino en servidores MCP aparte, y el
+sandbox las expone como funciones Python que el modelo puede llamar. Para MBPP, los repos
+muestran herramientas como <code>describe_task</code>, <code>public_tests</code> y
+<code>run_tests</code>. Para SWE-bench hay un conjunto de <b>nueve herramientas
+obligatorias</b> que coincide en los repos: leer, editar y listar ficheros, buscar código,
+buscar definiciones y referencias, ejecutar tests, obtener el parche y ejecutar un
+comando.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es MCP: un protocolo abierto que
+Anthropic publicó en noviembre de 2024 para que cualquier aplicación con un modelo pueda
+descubrir y llamar herramientas externas de forma estándar, por stdio o por HTTP, con
+mensajes JSON-RPC. Separar «quién decide» (el agente) de «quién actúa» (el servidor de
+herramientas) es la misma idea de cliente y servidor de los proyectos de red, aplicada a la
+IA.</div>
+</div>
+
+<div class="card" id="benchmarks">
+<h2><span class="ex">04</span>MBPP y SWE-bench</h2>
+<ul>
+  <li><b>MBPP</b> («Mostly Basic Python Problems», Google, 2021): unos mil problemas cortos
+  en los que hay que escribir una función que pase unos tests. La respuesta final es el código
+  de la función.</li>
+  <li><b>SWE-bench</b> (Princeton, 2023; se usa la variante <em>Verified</em>): fallos reales
+  de proyectos reales (sympy, django, scikit-learn…) sacados de issues de GitHub. El agente
+  trabaja dentro de un contenedor Docker con el repositorio, explora, edita y entrega un
+  <code>git diff</code> que luego se valida con los tests del proyecto.</li>
+</ul>
+<p>Límites que citan dos repos distintos (no confirmados en el enunciado): MBPP, 10
+iteraciones y 120 s; SWE-bench, 30 iteraciones y 900 s, con topes de tokens de entrada y de
+salida acumulados.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A medir. Un benchmark convierte
+«parece que funciona» en un porcentaje reproducible, y obliga a pensar en lo que se mide de
+verdad: MBPP comprueba que una función aislada pasa tests; SWE-bench, que el agente sabe
+orientarse en un código ajeno de miles de ficheros, que es lo que hace un programador en su
+día a día.</div>
+</div>
+
+<div class="card" id="metricas">
+<h2><span class="ex">05</span>Métricas y comparativa de modelos</h2>
+<p>Todos los repos guardan, por cada paso, la salida cruda del modelo, el código enviado al
+sandbox, su salida, los tokens de entrada y salida, la latencia, los reintentos, el modelo y
+la URL del proveedor. Varios incluyen un <code>BENCHMARK_REPORT.md</code>; uno lo describe
+como obligatorio: comparar <b>al menos cinco modelos</b> sobre <b>las mismas tres o más
+tareas</b> de SWE-bench, con métricas intermedias de exploración y un estudio de ablación
+(no confirmado). Los repos usan proveedores con capa gratuita y rotan varias claves de API
+cuando una se queda sin cuota.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que con modelos de lenguaje no basta
+con que algo salga bien una vez: el mismo agente con otro modelo, otro proveedor u otro
+prompt da resultados distintos. Una <em>ablación</em> consiste en quitar una pieza (por
+ejemplo, una parte del prompt) y medir cuánto cambia el resultado, para saber qué aporta
+cada decisión.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>Las claves de API</b> van en un <code>.env</code> ignorado por Git; nunca en el
+  repo, en los logs ni en los JSON de resultados.</li>
+  <li><b>Los límites gratuitos de los proveedores</b>: varios repos cuentan que muchos
+  modelos gratuitos fallan en SWE-bench por límites de peticiones (HTTP 429) o por pasarse
+  del presupuesto de tokens.</li>
+  <li><b>El contexto crece en cada iteración</b>: sin recortar observaciones largas, el
+  presupuesto de tokens se agota antes de terminar.</li>
+  <li><b>Docker</b> es necesario para SWE-bench; un README avisa de problemas con Docker en
+  modo rootless (sin root), que es como suele estar en los puestos de 42.</li>
+  <li><b>Extraer el código de la respuesta</b>: los modelos mezclan formatos (bloques de
+  código, XML, JSON), y hay que tolerarlo sin ejecutar texto que no es código.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Enunciado oficial: <b>no encontrado</b>. Repositorios de estudiantes consultados (README):</p>
+<ul>
+  <li><a href="https://github.com/JulesMattioni/agent_smith">github.com/JulesMattioni/agent_smith</a></li>
+  <li><a href="https://github.com/mdourdoi/agent_smith">github.com/mdourdoi/agent_smith</a></li>
+  <li><a href="https://github.com/Sabofxx/agent-smith-42">github.com/Sabofxx/agent-smith-42</a></li>
+  <li><a href="https://github.com/kylianmthr/AgentSmith">github.com/kylianmthr/AgentSmith</a></li>
+  <li><a href="https://github.com/adiaz-uf/agentSmith">github.com/adiaz-uf/agentSmith</a></li>
+  <li>README de la moulinette del proyecto, en
+  <a href="https://github.com/AstarophTY/agent_smith">github.com/AstarophTY/agent_smith</a>
+  (<code>moulinette/README.md</code>).</li>
+  <li>Contexto: <a href="https://arxiv.org/abs/2210.03629">ReAct (arXiv 2210.03629)</a>,
+  <a href="https://modelcontextprotocol.io/">modelcontextprotocol.io</a>,
+  <a href="https://www.swebench.com/">swebench.com</a>,
+  <a href="https://github.com/google-research/google-research/tree/master/mbpp">MBPP</a>.</li>
+</ul>
+</div>
+
+<footer>42.zenidx.com — Agent Smith · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

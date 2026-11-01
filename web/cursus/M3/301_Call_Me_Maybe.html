@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Call Me Maybe — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Call Me Maybe <span class="tag pend">pendiente</span></h1>
+<p class="sub">Introducción al <em>function calling</em> de los LLM: convertir una petición en
+lenguaje natural en una llamada a función en JSON válido, guiando a un modelo pequeño token a
+token. Proyecto de Python del rank 03 de 42next.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#fc">Qué es el function calling</a></li>
+  <li><a href="#entrada">Entrada, salida y uso</a></li>
+  <li><a href="#pipeline">Tokens, logits y el SDK</a></li>
+  <li><a href="#constrained">Constrained decoding</a></li>
+  <li><a href="#rendimiento">Rendimiento, README y bonus</a></li>
+  <li><a href="#delicado">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde viene</b> — Un modelo de lenguaje solo sabe hacer una cosa:
+dado un texto, dar una puntuación a cada posible trozo siguiente. Eso sirve para conversar, pero
+un programa no entiende «La suma de 40 y 2 es 42»; entiende
+<code>{"name": "fn_add_numbers", "parameters": {"a": 40.0, "b": 2.0}}</code>. Desde 2023 las
+API de los grandes modelos ofrecen <em>function calling</em> (o <em>tool use</em>): el modelo
+no responde, sino que dice qué función de tu programa hay que llamar y con qué argumentos. Es
+la pieza sobre la que se montan los asistentes que consultan bases de datos, los agentes y las
+herramientas de extracción de datos. El problema es que los modelos pequeños son poco fiables
+generando estructura: el enunciado dice que, pidiéndole JSON a un modelo de 0,6B parámetros,
+quizá acierte un 30 % de las veces. La solución industrial no es pedírselo mejor, sino
+<strong>no dejarle equivocarse</strong>: el <em>constrained decoding</em> (decodificación
+restringida), que filtra a cada paso los tokens que romperían la estructura. Es lo que hacen
+por dentro librerías como Outlines o las gramáticas de llama.cpp — y precisamente esas
+librerías están prohibidas aquí: hay que construirlo a mano. El enunciado está hecho en
+colaboración con estudiantes (ldevelle, pcamaren y crfernan).</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta">
+  <span>Rank: <b>03</b></span>
+  <span>Lenguaje: <b>Python ≥ 3.10</b></span>
+  <span>Modelo: <b>Qwen/Qwen3-0.6B</b></span>
+  <span>Gestor: <b>uv</b></span>
+  <span>Individual/grupo: <b>no confirmado</b></span>
+</div>
+<p>Una herramienta que lee una lista de peticiones en lenguaje natural y un catálogo de
+funciones, y para cada petición escribe qué función llamar y con qué argumentos, usando el LLM
+para decidirlo y <em>constrained decoding</em> para garantizar un JSON 100 % válido y conforme
+al esquema.</p>
+<p>Reglas comunes de los proyectos de Python de 42next (las mismas de los Python Module):
+flake8, anotaciones de tipo en todo con mypy sin errores, docstrings PEP 257, excepciones
+controladas (si el programa revienta en la evaluación, se considera no funcional), recursos con
+<em>context managers</em>, y un <code>Makefile</code> con <code>install</code>,
+<code>run</code>, <code>debug</code>, <code>clean</code>, <code>lint</code> (y
+<code>lint-strict</code> opcional).</p>
+<p>Requisitos propios del proyecto:</p>
+<ul>
+  <li>todas las clases usan <strong>pydantic</strong> para validar;</li>
+  <li>se pueden usar <code>numpy</code> y <code>json</code>;</li>
+  <li><strong>prohibido</strong> dspy o similares, incluidos pytorch, los paquetes de
+  huggingface, transformers, outlines, etc.;</li>
+  <li>modelo por defecto <code>Qwen/Qwen3-0.6B</code>; se pueden usar otros siempre que
+  funcione con ese;</li>
+  <li>la función a llamar la elige <strong>el LLM</strong>, «no heurísticas ni ningún otro tipo
+  de magia medieval»;</li>
+  <li>prohibido usar métodos o atributos privados del paquete <code>llm_sdk</code> que viene
+  con el enunciado;</li>
+  <li>entorno virtual con <code>uv</code>; quien evalúe (y la moulinette) solo ejecutará
+  <code>uv sync</code>;</li>
+  <li>el programa no puede romper nunca: errores siempre con mensajes claros.</li>
+</ul>
+</div>
+
+<div class="card" id="fc">
+<h2><span class="ex">01</span>Qué es el function calling</h2>
+<p>El ejemplo del propio enunciado:</p>
+<pre><code>Usuario:          "What is the sum of 40 and 2?"
+LLM tradicional:  "The sum of 40 and 2 is 42."
+Function calling: {"function": "add_numbers", "arguments": {"a": 40.0, "b": 2.0}}</code></pre>
+<p>El sistema no responde la pregunta: devuelve las herramientas para resolverla, el nombre de
+la función correcta y sus argumentos con el tipo correcto. Ejecutarla ya es cosa de otro
+programa (y en este proyecto, de nadie: solo se pide la llamada).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre <em>generar
+texto</em> y <em>generar datos</em>. El primer caso tolera erratas; el segundo no tolera ni
+una coma de más, porque lo va a leer <code>json.loads</code>, no una persona. Es la misma idea
+que el parseo estricto de A-Maze-ing o Fly-in, pero al revés: ahí te tocaba rechazar entrada
+mal formada; aquí te toca garantizar que la salida nunca lo esté.</div>
+</div>
+
+<div class="card" id="entrada">
+<h2><span class="ex">02</span>Entrada, salida y uso</h2>
+<p>Se ejecuta así (<code>src</code> es la carpeta con tu código):</p>
+<pre><code>uv run python -m src [--functions_definition &lt;fichero&gt;] [--input &lt;fichero&gt;] [--output &lt;fichero&gt;]</code></pre>
+<p>Por defecto lee de <code>data/input/</code> y escribe en <code>data/output/</code>. Dos
+ficheros de entrada:</p>
+<ul>
+  <li><code>function_calling_tests.json</code>: un array de objetos
+  <code>{"prompt": "..."}</code> (en el ejemplo: sumar dos números, saludar a alguien, invertir
+  una cadena…);</li>
+  <li><code>functions_definition.json</code>: el catálogo de funciones, cada una con
+  <code>name</code>, <code>description</code>, <code>parameters</code> (nombre y tipo de cada
+  argumento) y <code>returns</code>.</li>
+</ul>
+<p>La salida es un único fichero, <code>data/output/function_calls.json</code>, con un objeto
+por petición que tiene <strong>exactamente</strong> tres claves:</p>
+<pre><code>[
+  {
+    "prompt": "What is the sum of 2 and 3?",
+    "name": "fn_add_numbers",
+    "parameters": {"a": 2.0, "b": 3.0}
+  }
+]</code></pre>
+<p>Reglas de validación: JSON válido (sin comas finales ni comentarios), claves y tipos
+idénticos al esquema del catálogo, ningún texto ni clave extra, todos los argumentos
+obligatorios presentes y con su tipo (number, string, boolean…). Los ficheros de entrada
+<strong>pueden cambiar en la evaluación</strong>, y pueden llegar con JSON inválido o no
+existir: hay que manejarlo.</p>
+<p>En el repositorio van <code>src/</code>, <code>pyproject.toml</code> y
+<code>uv.lock</code>, una copia de <code>llm_sdk/</code>, <code>data/input/</code> con ficheros
+de prueba y el README. El directorio de salida <strong>no</strong> se sube.</p>
+</div>
+
+<div class="card" id="pipeline">
+<h2><span class="ex">03</span>Tokens, logits y el SDK</h2>
+<p>El enunciado explica la tubería de generación de un LLM:</p>
+<pre><code>Prompt → Tokenización → IDs de entrada → LLM → Logits → Elección del siguiente token</code></pre>
+<p>El texto se trocea en <em>tokens</em>, que no son palabras sino subpalabras (con
+algoritmos como BPE o SentencePiece) y que a menudo llevan el espacio delante pegado. Cada
+token tiene un número. El modelo recibe la lista de números y devuelve un <em>logit</em>
+(una puntuación) por cada token del vocabulario; se elige uno, se añade a la entrada y se
+repite. La respuesta se construye así, token a token.</p>
+<p>Con el proyecto viene una clase <code>Small_LLM_Model</code> en el paquete
+<code>llm_sdk</code> con estos métodos públicos:</p>
+<table>
+  <tr><th>Método</th><th>Qué hace</th></tr>
+  <tr><td><code>get_logits_from_input_ids(input_ids)</code></td><td>lista de IDs → logits del
+  siguiente token</td></tr>
+  <tr><td><code>get_path_to_vocab_file()</code></td><td>ruta del fichero de vocabulario
+  (correspondencia ID ↔ token)</td></tr>
+  <tr><td><code>encode(text)</code></td><td>texto → IDs con el tokenizador del modelo</td></tr>
+  <tr><td><code>decode(token_ids)</code></td><td>IDs → texto (opcional)</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A ver el modelo como lo que es: una
+función que va de una lista de enteros a una lista de números reales. Todo lo demás (elegir el
+máximo, parar, dar formato) lo decide el código que la rodea, y ese código es el tuyo. El
+fichero de vocabulario es la pieza clave, y el enunciado lo subraya: para saber qué tokens son
+válidos en cada paso necesitas saber qué texto representa cada uno.</div>
+</div>
+
+<div class="card" id="constrained">
+<h2><span class="ex">04</span>Constrained decoding</h2>
+<p>En cada paso, antes de elegir el token, el enunciado describe cuatro pasos:</p>
+<ol>
+  <li>el modelo produce logits para todos los tokens;</li>
+  <li>identificas qué tokens mantienen a la vez un JSON válido <em>y</em> conforme al
+  esquema esperado;</li>
+  <li>pones a menos infinito el logit de todos los demás;</li>
+  <li>eliges solo entre los que quedan.</li>
+</ol>
+<p>El paso 3, por sí solo, es una línea de numpy; lo que no se puede escribir en una línea es
+el paso 2, que es todo el proyecto:</p>
+<pre><code>logits[~permitidos] = -np.inf    # permitidos: array de bool, uno por token
+siguiente = int(np.argmax(logits))</code></pre>
+<p>No basta con que el JSON sea sintácticamente correcto: si un argumento es de tipo
+<code>number</code> en el catálogo, en esa posición solo pueden entrar tokens que formen un
+número. Así el resultado se puede parsear siempre.</p>
+<p>El enunciado avisa expresamente: la solución <strong>no puede depender</strong> de que el
+modelo produzca por sí solo JSON correcto a partir de un prompt con las definiciones. Eso no
+es fiable y no es lo que se evalúa.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la estructura vence al tamaño:
+con la guía adecuada, un modelo de unos 500 millones de parámetros se acerca en fiabilidad a
+modelos mucho mayores. Por debajo, es teoría de autómatas: en cada punto de la salida hay un
+conjunto de continuaciones legales (como en un autómata o una gramática), y la dificultad está
+en que los tokens no son caracteres sueltos, sino trozos de longitud variable que pueden cruzar
+fronteras (un token puede cerrar una comilla y abrir otra cosa). Y aparece una distinción que
+conviene tener clara: el modelo decide <em>el contenido</em> (qué función, qué valores) y tu
+decodificador decide <em>la forma</em>.</div>
+</div>
+
+<div class="card" id="rendimiento">
+<h2><span class="ex">05</span>Rendimiento, README y bonus</h2>
+<p>Objetivos que fija el enunciado:</p>
+<ul>
+  <li>más del 90 % de aciertos en elección de función y extracción de argumentos;</li>
+  <li>100 % de JSON válido y conforme al esquema;</li>
+  <li>procesar todas las peticiones de prueba en menos de 5 minutos en hardware normal;</li>
+  <li>manejo robusto de entradas mal formadas, ficheros que faltan y casos límite.</li>
+</ul>
+<p>El README (en inglés) lleva, además de las secciones habituales: explicación del algoritmo
+de constrained decoding, decisiones de diseño, análisis de rendimiento, dificultades
+encontradas, estrategia de pruebas y ejemplos de uso.</p>
+<p>Bonus (solo si la obligatoria es perfecta): soportar más modelos, <strong>reescribir el
+tokenizador</strong> usando solo <code>get_logits_from_input_ids</code> y
+<code>get_path_to_vocab_file</code> en lugar de <code>encode</code>/<code>decode</code>,
+recuperación de errores avanzada, optimizaciones (caché, lotes), una batería de tests,
+visualizar el proceso de generación y soportar argumentos anidados complejos.</p>
+</div>
+
+<div class="card" id="delicado">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>Elegir la función con el modelo</b>, no con palabras clave: si buscas «sum» en el
+  prompt para decidir, estás haciendo justo lo prohibido.</li>
+  <li><b>Los tokens no son caracteres.</b> Un token puede ser <code>{"</code>, otro
+  <code>name</code>, otro <code>":</code>; y muchos llevan un espacio delante. Comprobar si un
+  token «encaja» exige mirar todo su texto, no solo el primer carácter.</li>
+  <li><b>Números</b>: el ejemplo de salida usa <code>2.0</code> para un argumento
+  <code>number</code>. Hay que decidir cómo se representan y cuándo se termina un número (el
+  modelo podría querer seguir poniendo dígitos para siempre).</li>
+  <li><b>Cadenas</b>: comillas y caracteres especiales dentro de un argumento de texto
+  (el enunciado sugiere probar cadenas vacías, caracteres especiales y números grandes).</li>
+  <li><b>Velocidad</b>: recorrer el vocabulario entero (decenas de miles de tokens) en cada
+  paso, por cada petición, puede comerse los 5 minutos. Precalcular cosas a partir del
+  vocabulario es casi obligatorio.</li>
+  <li><b>Nada privado del SDK</b> y nada de transformers ni torch directamente, aunque el SDK
+  los use por dentro.</li>
+  <li><b>Entradas rotas</b>: fichero inexistente, JSON inválido, catálogo con tipos raros. El
+  programa explica el error y sale limpio; nunca una traza de excepción.</li>
+  <li><b>No hardcodear</b>: en la evaluación cambian las peticiones y el catálogo.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>El enunciado no está aún en el pack. Esta ficha sale de dos transcripciones públicas del
+enunciado en inglés (una indica versión 1.7), que coinciden en requisitos, formato y
+objetivos:</p>
+<ul>
+  <li><a href="https://github.com/Irohs6/Call_Me_Maybe/blob/HEAD/docs/subject_en.md">github.com/Irohs6/Call_Me_Maybe — docs/subject_en.md</a> (v1.7)</li>
+  <li><a href="https://github.com/zer0rg/call_me_maybe/blob/HEAD/SUBJECT.md">github.com/zer0rg/call_me_maybe — SUBJECT.md</a></li>
+  <li><a href="https://github.com/MUGIWARA37/Call_Me_Maybe/blob/HEAD/Subject.md">github.com/MUGIWARA37/Call_Me_Maybe — Subject.md</a></li>
+</ul>
+<p>Para el trasfondo: el modelo es <a href="https://huggingface.co/Qwen/Qwen3-0.6B">Qwen3-0.6B</a>
+en Hugging Face. No confirmado: si se hace individual o en grupo, y las horas estimadas.</p>
+</div>
+
+<footer>42.zenidx.com — Call Me Maybe · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

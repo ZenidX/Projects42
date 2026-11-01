@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fly-in — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Fly-in <span class="tag pend">pendiente</span></h1>
+<p class="sub">Llevar una flota de drones de una base a un destino a través de un grafo de
+zonas con capacidad limitada, en el menor número de turnos posible. Proyecto de grafos en
+Python del rank 03 de 42next.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#mapa">El formato del mapa</a></li>
+  <li><a href="#parser">El parser</a></li>
+  <li><a href="#reglas">Turnos, capacidades y zonas</a></li>
+  <li><a href="#ruta">El algoritmo de rutas</a></li>
+  <li><a href="#salida">Salida, visualización y puntuación</a></li>
+  <li><a href="#delicado">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde viene</b> — Encontrar el camino más corto en un grafo es un
+problema resuelto desde 1959 (Dijkstra). Lo difícil empieza cuando no hay un viajero sino
+muchos, y no caben todos a la vez por el mismo sitio: eso se llama <em>multi-agent path
+finding</em>, y es el problema de los robots de un almacén, del tráfico aéreo o de los trenes de
+una red ferroviaria. Ya no basta con el camino más corto; hay que repartir a los agentes por
+varios caminos, decidir quién espera y cuándo, y evitar que se bloqueen entre sí. Quien conozca
+el camino antiguo de 42 reconocerá la idea de <em>lem-in</em> (hormigas que cruzan un
+hormiguero en el mínimo de turnos); Fly-in la lleva a Python con drones y le añade tipos de zona
+con coste distinto y capacidades en nodos y aristas. El prólogo del enunciado habla de <em>no
+reinventar la rueda</em>… y a continuación prohíbe toda librería de grafos: aquí la rueda se
+reinventa a propósito, para entender cómo gira.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta">
+  <span>Rank: <b>03</b></span>
+  <span>Lenguaje: <b>Python ≥ 3.10</b></span>
+  <span>Estilo: <b>orientado a objetos, flake8 + mypy</b></span>
+  <span>Individual/grupo: <b>no confirmado</b></span>
+</div>
+<p>Una simulación completa que lee un mapa de zonas, calcula cómo mover <em>todos</em> los
+drones desde la zona de inicio hasta la de destino respetando las reglas de capacidad y de
+movimiento, imprime los movimientos turno a turno en un formato fijo y muestra visualmente lo
+que pasa. Se puntúa por el <strong>número total de turnos</strong>: cuantos menos, mejor.</p>
+<p>Restricciones del proyecto:</p>
+<ul>
+  <li>prohibida cualquier librería que ayude con la lógica de grafos (<code>networkx</code>,
+  <code>graphlib</code>, etc.);</li>
+  <li>totalmente tipado: flake8 y mypy obligatorios;</li>
+  <li><strong>completamente orientado a objetos</strong>, y hay que demostrarlo en la
+  evaluación.</li>
+</ul>
+<p>Más las reglas comunes de los proyectos de Python de 42next: docstrings PEP 257,
+excepciones controladas (si revienta en la evaluación, no es funcional), recursos con
+<em>context managers</em>, <code>.gitignore</code> y un <code>Makefile</code> con
+<code>install</code>, <code>run</code>, <code>debug</code>, <code>clean</code> y
+<code>lint</code> (y <code>lint-strict</code> opcional). Todos los ficheros van en la raíz del
+repositorio.</p>
+<p>Lo que hay que entregar, según el enunciado: un parser del formato de entrada, un motor de
+simulación que respete las reglas, uno o varios algoritmos de rutas que minimicen los turnos,
+un sistema de visualización (colores en terminal o interfaz gráfica) y una salida en el
+formato especificado.</p>
+</div>
+
+<div class="card" id="mapa">
+<h2><span class="ex">01</span>El formato del mapa</h2>
+<p>El ejemplo del enunciado:</p>
+<pre><code>nb_drones: 5
+
+start_hub: hub 0 0 [color=green]
+end_hub: goal 10 10 [color=yellow]
+hub: roof1 3 4 [zone=restricted color=red]
+hub: roof2 6 2 [zone=normal color=blue]
+hub: corridorA 4 3 [zone=priority color=green max_drones=2]
+hub: tunnelB 7 4 [zone=normal color=red]
+hub: obstacleX 5 5 [zone=blocked color=gray]
+connection: hub-roof1
+connection: hub-corridorA
+connection: roof1-roof2
+connection: roof2-goal
+connection: corridorA-tunnelB [max_link_capacity=2]
+connection: tunnelB-goal</code></pre>
+<ul>
+  <li>Primera línea: <code>nb_drones: &lt;número&gt;</code>.</li>
+  <li>Zonas: <code>start_hub:</code>, <code>end_hub:</code> o <code>hub:</code>, seguido de
+  nombre, coordenadas enteras <code>x y</code> y metadatos opcionales entre corchetes.</li>
+  <li>Metadatos de zona (en cualquier orden): <code>zone=</code> (por defecto
+  <code>normal</code>), <code>color=</code> (por defecto ninguno; cualquier palabra vale) y
+  <code>max_drones=</code> (por defecto 1).</li>
+  <li>Conexiones: <code>connection: a-b</code>, bidireccionales, con
+  <code>max_link_capacity=</code> opcional (por defecto 1). Por eso los nombres de zona no
+  pueden llevar guiones.</li>
+  <li>Las líneas que empiezan por <code>#</code> son comentarios.</li>
+</ul>
+<p>Las coordenadas sirven para dibujar; la distancia del problema la dan las conexiones y los
+tipos de zona, no la geometría.</p>
+</div>
+
+<div class="card" id="parser">
+<h2><span class="ex">02</span>El parser</h2>
+<p>El enunciado enumera lo que hay que validar:</p>
+<ul>
+  <li><code>nb_drones</code> en la primera línea y entero positivo (y el programa tiene que
+  aguantar cualquier número de drones);</li>
+  <li>exactamente un <code>start_hub</code> y un <code>end_hub</code>;</li>
+  <li>nombres únicos, sin guiones ni espacios; coordenadas enteras;</li>
+  <li>las conexiones solo enlazan zonas ya definidas, y no se repiten (<code>a-b</code> y
+  <code>b-a</code> son la misma);</li>
+  <li>bloques de metadatos sintácticamente correctos; tipo de zona dentro de los cuatro
+  válidos; capacidades enteras positivas;</li>
+  <li><code>max_drones</code> en inicio y fin se ignora (no tienen límite) y no es error.</li>
+</ul>
+<p>Cualquier otro error detiene el programa con un mensaje claro que diga <strong>la línea y
+la causa</strong>. El enunciado recomienda escribir mapas propios para probar casos límite.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El parseo defensivo que ya
+apareció en A-Maze-ing: no fiarse de la entrada, distinguir «mal formado» de «bien formado pero
+inválido» (una conexión a una zona que no existe) y dar errores útiles. Con pydantic o
+dataclasses, más los tipos de mypy, el modelo de datos queda validado antes de que el
+algoritmo lo toque.</div>
+</div>
+
+<div class="card" id="reglas">
+<h2><span class="ex">03</span>Turnos, capacidades y tipos de zona</h2>
+<p>La simulación avanza en turnos discretos. En cada turno, cada dron puede moverse a una
+zona adyacente (si hay capacidad), empezar un movimiento hacia una zona restringida (que tarda
+dos turnos) o quedarse quieto.</p>
+<table>
+  <tr><th>Tipo</th><th>Coste de entrar</th><th>Notas</th></tr>
+  <tr><td><code>normal</code></td><td>1 turno</td><td>por defecto</td></tr>
+  <tr><td><code>restricted</code></td><td>2 turnos</td><td>el dron queda «en la conexión» un
+  turno y <em>tiene</em> que llegar en el siguiente: no puede esperar en ella</td></tr>
+  <tr><td><code>priority</code></td><td>1 turno</td><td>debe preferirse al buscar rutas</td></tr>
+  <tr><td><code>blocked</code></td><td>—</td><td>inaccesible; una ruta que la use no es válida</td></tr>
+</table>
+<p>Reglas de ocupación:</p>
+<ul>
+  <li>por defecto, como mucho un dron por zona y turno; <code>max_drones=N</code> lo sube a N;
+  inicio y fin no tienen límite;</li>
+  <li>dos drones no pueden entrar en la misma zona en el mismo turno si la capacidad no lo
+  permite;</li>
+  <li><code>max_link_capacity</code> limita cuántos drones cruzan a la vez la misma
+  conexión;</li>
+  <li>los drones que salen de una zona liberan su plaza <strong>en ese mismo turno</strong>, y
+  la capacidad se comprueba después de esas salidas.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A modelar un sistema por estados:
+la foto del turno <em>t</em> más las reglas dan la foto del turno <em>t+1</em>. La regla de
+«salir libera plaza en el mismo turno» permite que una fila de drones avance a la vez por un
+pasillo de capacidad 1; y la de las zonas restringidas obliga a reservar la llegada antes de
+salir, porque una vez en la conexión no hay marcha atrás. Las dos juntas hacen que el orden en
+que procesas los drones dentro de un turno importe.</div>
+</div>
+
+<div class="card" id="ruta">
+<h2><span class="ex">04</span>El algoritmo de rutas</h2>
+<p>Lo que el enunciado exige que el algoritmo tenga en cuenta:</p>
+<ul>
+  <li>repartir drones entre varios caminos;</li>
+  <li>esperar estratégicamente cuando no se puede avanzar;</li>
+  <li>evitar conflictos y bloqueos mutuos (<em>deadlocks</em>);</li>
+  <li>la longitud de los caminos <em>con</em> el coste de cada tipo de zona;</li>
+  <li>la planificación por turnos, para que no choquen ni se tapen;</li>
+  <li>la estructura del grafo: qué caminos son disjuntos y cuáles se solapan;</li>
+  <li>las capacidades de zonas y conexiones.</li>
+</ul>
+<p>Y que sea adaptable: mapas distintos pueden pedir estrategias distintas. El enunciado deja
+preguntas para la defensa: qué complejidad tiene, si funciona con muchos drones, si recalculas
+o guardas caminos y cómo afecta a la memoria.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La caja de herramientas clásica de
+grafos, escrita a mano: representar un grafo (listas de adyacencia), recorrerlo (BFS),
+caminos mínimos con pesos (Dijkstra, con su cola de prioridad) y, cuando hay capacidades, la
+familia de los <em>flujos</em> (cuántas unidades caben a la vez por una red, el problema del
+flujo máximo de Ford y Fulkerson, 1956). Un truco conocido de la literatura para meter el
+tiempo en el grafo es la <em>red expandida en el tiempo</em>: copiar cada zona una vez por
+turno, de forma que «esperar» sea una arista más. La lección de fondo es que un camino mínimo
+por dron no es lo mismo que un plan mínimo para la flota: con 25 drones y pasillos de capacidad
+1, el camino más corto puede ser el peor si todos lo eligen.</div>
+</div>
+
+<div class="card" id="salida">
+<h2><span class="ex">05</span>Salida, visualización y puntuación</h2>
+<p>Una línea por turno con los movimientos de ese turno separados por espacios, cada uno como
+<code>D&lt;ID&gt;-&lt;zona&gt;</code>, o <code>D&lt;ID&gt;-&lt;conexión&gt;</code> para un
+dron que está en vuelo hacia una zona restringida. Los drones que no se mueven no aparecen;
+los que llegan al destino dejan de seguirse. Ejemplo del enunciado:</p>
+<pre><code>D1-roof1 D2-corridorA
+D1-roof2 D2-tunnelB
+D1-goal D2-goal</code></pre>
+<p>Además, la simulación tiene que verse: colores en la terminal con los movimientos y el
+estado de las zonas, una interfaz gráfica, o las dos cosas. Los colores del mapa están para
+eso.</p>
+<p>Objetivos de rendimiento con los mapas del enunciado (se revisan en la evaluación):</p>
+<table>
+  <tr><th>Nivel</th><th>Mapa</th><th>Drones</th><th>Objetivo</th></tr>
+  <tr><td rowspan="3">Fácil (&lt; 10)</td><td>Linear path</td><td>2</td><td>≤ 6 turnos</td></tr>
+  <tr><td>Simple fork</td><td>4</td><td>≤ 8</td></tr>
+  <tr><td>Basic capacity</td><td>4</td><td>≤ 6</td></tr>
+  <tr><td rowspan="3">Medio (10–30)</td><td>Dead end trap</td><td>5</td><td>≤ 12</td></tr>
+  <tr><td>Circular loop</td><td>6</td><td>≤ 15</td></tr>
+  <tr><td>Priority puzzle</td><td>5</td><td>≤ 12</td></tr>
+  <tr><td rowspan="3">Difícil (&lt; 60)</td><td>Maze nightmare</td><td>8</td><td>≤ 30</td></tr>
+  <tr><td>Capacity hell</td><td>12</td><td>≤ 35</td></tr>
+  <tr><td>Ultimate challenge</td><td>15</td><td>≤ 45</td></tr>
+  <tr><td>Challenger (opcional)</td><td>The Impossible Dream</td><td>25</td><td>récord: 45</td></tr>
+</table>
+<p>Métricas secundarias opcionales: drones movidos por turno, turnos medios por dron, coste
+total de los caminos y calidad de la visualización. El bonus es cumplir <em>todos</em> los
+objetivos de la tabla y batir el récord de 45 turnos del mapa Challenger. Los mapas de la
+evaluación pueden ser distintos.</p>
+<p>El README (en inglés) añade a las secciones habituales una descripción detallada del
+algoritmo y la estrategia, la documentación de la visualización y un ejemplo de entrada y
+salida.</p>
+</div>
+
+<div class="card" id="delicado">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>Coste por destino, no por arista</b>: lo que cuesta 2 turnos es <em>entrar</em> en
+  una zona restringida.</li>
+  <li><b>El vuelo de dos turnos no admite esperas</b>: si al llegar no hubiera sitio, el plan
+  ya era inválido al salir.</li>
+  <li><b>Liberar antes de ocupar</b>: dentro de un turno, primero cuentan las salidas y luego
+  las entradas. Un orden de procesado ingenuo bloquea filas que deberían avanzar.</li>
+  <li><b>Capacidad de las conexiones</b>, no solo de las zonas: <code>max_link_capacity</code> limita cuántos drones la cruzan a la
+  vez, y las conexiones son bidireccionales.</li>
+  <li><b><code>priority</code> no es más barata</b>: cuesta lo mismo que
+  <code>normal</code>, solo hay que preferirla a igualdad.</li>
+  <li><b>Interbloqueos</b>: drones que se esperan en círculo o se cierran el paso en un
+  callejón sin salida («Dead end trap»).</li>
+  <li><b>Errores con línea y causa</b>, sin trazas de excepción; duplicados
+  <code>a-b</code>/<code>b-a</code>; metadatos desconocidos o sin cerrar.</li>
+  <li><b>Orientación a objetos de verdad</b>: lo piden demostrar, así que zonas, conexiones,
+  drones, mapa y simulación como clases con responsabilidades claras.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>El enunciado no está aún en el pack. Esta ficha sale de una transcripción pública del
+enunciado en inglés (versión 1.6), contrastada con el README y los mapas de otras dos entregas
+(los nombres de los mapas y las reglas coinciden):</p>
+<ul>
+  <li>Enunciado transcrito (en, v1.6):
+  <a href="https://github.com/SophiaLM/Fly-in42/blob/HEAD/guide/subject.md">github.com/SophiaLM/Fly-in42 — guide/subject.md</a></li>
+  <li><a href="https://github.com/69Nesta/42-Fly-in">github.com/69Nesta/42-Fly-in</a> (README y mapas de una entrega)</li>
+  <li><a href="https://github.com/npedrovilas-del/42-fly-in">github.com/npedrovilas-del/42-fly-in</a> (mapas de una entrega)</li>
+</ul>
+<p>Los mapas oficiales vienen adjuntos al enunciado en la intra. No confirmado: si se hace
+individual o en grupo, y las horas estimadas.</p>
+</div>
+
+<footer>42.zenidx.com — Fly-in · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

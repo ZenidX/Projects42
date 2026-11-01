@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 05 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 05 <span class="tag pend">pendiente</span></h1>
+<p class="sub">Dos proyectos alternativos del rank 02 para el mismo hueco: «Code Nexus»
+(Module 05: clases abstractas y polimorfismo) y «The Codex» (Module 05 bis: entornos
+virtuales, dependencias, configuración e imports). Se hace uno de los dos. <strong>Aún no está
+hecho</strong>: esta ficha explica ambos enunciados; el código llegará con el que se elija.</p>
+
+<ul class="toc">
+  <li><a href="#eleccion">Uno de los dos</a></li>
+  <li><a href="#nexus">Module 05 — Code Nexus</a></li>
+  <li><a href="#n-ex0">ex0 — data_processor</a></li>
+  <li><a href="#n-ex1">ex1 — data_stream</a></li>
+  <li><a href="#n-ex2">ex2 — data_pipeline</a></li>
+  <li><a href="#n-delicados">Puntos delicados (05)</a></li>
+  <li><a href="#codex">Module 05 bis — The Codex</a></li>
+  <li><a href="#c-ex0">ex0 — The Sealed Laboratory</a></li>
+  <li><a href="#c-ex1">ex1 — The Oracle</a></li>
+  <li><a href="#c-ex2">ex2 — The Alembic</a></li>
+  <li><a href="#c-ex3">ex3 — Distillation and Transmutation</a></li>
+  <li><a href="#c-ex4">ex4 — Avoid the Explosion</a></li>
+  <li><a href="#c-delicados">Puntos delicados (05 bis)</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo" id="eleccion"><b>Uno de los dos</b> — En la intra son dos proyectos
+distintos, <code>python-module-05</code> y <code>python-module-05-bis</code>, y el bis es una
+alternativa al 05: basta con hacer uno para seguir con la rama de Python. Tiran en direcciones
+diferentes. <strong>Code Nexus</strong> continúa la línea de orientación a objetos del Module
+01: clases abstractas, sobrescritura de métodos y polimorfismo, en tres ejercicios que hacen
+crecer un único programa. <strong>The Codex</strong> mira hacia fuera del código, a lo que
+rodea a un proyecto de Python real: el entorno virtual, las dependencias con pip y Poetry, los
+secretos en variables de entorno y, sobre todo, cómo funcionan los paquetes y los imports, en
+cinco ejercicios que construyen un árbol de ficheros en la raíz del repositorio.</div>
+
+<h2 id="nexus">Module 05 — Code Nexus</h2>
+
+<div class="trasfondo"><b>Muchos tipos, un solo flujo</b> — Polimorfismo significa «muchas
+formas»: que un mismo código trate objetos de clases distintas a través de una interfaz común,
+sin preguntar de qué clase es cada uno. En C lo imitaste en la piscine con punteros a función
+y <code>void *</code> (C 11): una tabla de funciones por tipo, a mano. En Python lo da la
+herencia: una clase madre declara los métodos y cada hija los <em>sobrescribe</em> con su
+propio comportamiento. Una <strong>clase abstracta</strong> (módulo <code>abc</code>, desde
+Python 2.6 y 3.0) va un paso más allá: declara métodos sin implementarlos, no se puede instanciar y obliga
+a las hijas a completarlos. Y en el último ejercicio aparece la otra cara del polimorfismo en
+Python, el <em>duck typing</em> — «si camina como un pato y grazna como un pato, es un
+pato» —, formalizado para mypy con <code>typing.Protocol</code> (Python 3.8): un objeto vale si
+tiene los métodos adecuados, herede de quien herede.</div>
+
+<div class="card" id="n-pide">
+<h2>Qué pide (Module 05)</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o superior</b></span><span>Obligatorio: <b>flake8</b>, <b>mypy</b></span><span>Ejercicios: <b>3</b> (ex0–ex2)</span></div>
+<ul>
+  <li>Código que pase <strong>flake8</strong> y anotaciones de tipo completas, comprobadas
+  con <strong>mypy</strong>.</li>
+  <li>El manejo de excepciones debe proteger los flujos de datos de corromperse.</li>
+  <li>Imports autorizados: solo <code>abc</code> y <code>typing</code>.</li>
+  <li>Todas las clases y colecciones estándar con sus métodos, y todas las funciones
+  predefinidas, están autorizadas.</li>
+  <li>Cada ejercicio parte del código del anterior y lo amplía.</li>
+</ul>
+</div>
+
+<div class="card" id="n-ex0">
+<h2><span class="ex">ex0</span>data_processor</h2>
+<div class="meta"><span>Entrega: <b>ex0/data_processor.py</b></span><span>Autorizado: <b>builtins, tipos estándar, import typing, import abc</b></span></div>
+<p>La arquitectura base:</p>
+<ul>
+  <li>Una clase abstracta <code>DataProcessor</code> que hereda de <code>ABC</code>, con dos
+  métodos abstractos — <code>validate(self, data: Any) -&gt; bool</code>, que dice si el dato
+  sirve a ese procesador, e <code>ingest(self, data: Any) -&gt; None</code>, que lo procesa — y
+  un método normal, <code>output(self) -&gt; tuple[int, str]</code>.</li>
+  <li>Tres hijas, <code>NumericProcessor</code>, <code>TextProcessor</code> y
+  <code>LogProcessor</code>, que sobrescriben <code>validate</code> e <code>ingest</code>.
+  <code>validate</code> mantiene la misma firma (no puede saber qué le llegará); en cambio cada
+  <code>ingest</code> tiene una firma propia que refleja los tipos que acepta.</li>
+  <li><code>NumericProcessor</code> acepta <code>int</code>, <code>float</code> y listas de
+  ambos (también mezclados); <code>TextProcessor</code>, <code>str</code> y listas de cadenas;
+  <code>LogProcessor</code>, diccionarios de cadenas a cadenas y listas de ellos. Los tres guardan
+  internamente cada elemento por separado, como cadena.</li>
+  <li>Si alguien llama a <code>ingest</code> con datos inválidos sin validar antes, debe
+  saltar una excepción.</li>
+  <li><code>output</code> no se sobrescribe: extrae el elemento <strong>más antiguo</strong>
+  guardado, junto con su número de orden dentro del procesador, y lo elimina.</li>
+</ul>
+<p>Las pruebas: una instancia de cada hija, datos válidos e inválidos con
+<code>validate</code>, al menos un <code>ingest</code> inválido sin validar que lance la
+excepción (lo que deja un aviso de mypy <em>a propósito</em>) y varios datos ingeridos y luego
+extraídos con <code>output</code>.</p>
+<p>La sintaxis de un método abstracto, con un ejemplo ajeno al ejercicio:</p>
+<pre><code>from abc import ABC, abstractmethod
+
+class Figura(ABC):
+    @abstractmethod
+    def area(self) -&gt; float:
+        ...</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Separar la <em>interfaz</em> (qué
+sabe hacer cualquier procesador) de la <em>implementación</em> (cómo lo hace cada uno), y que
+una clase abstracta es un contrato: <code>Figura()</code> lanza un <code>TypeError</code>, y una
+hija que olvide un método abstracto tampoco se puede instanciar. También una estructura de
+datos clásica: guardar y sacar «el más antiguo primero» es una <em>cola</em> (FIFO). Y un matiz
+de tipos: <code>Any</code> es compatible con todo en ambas direcciones, y eso es lo que permite
+que las hijas estrechen la firma de <code>ingest</code> sin que mypy proteste.</div>
+</div>
+
+<div class="card" id="n-ex1">
+<h2><span class="ex">ex1</span>data_stream</h2>
+<div class="meta"><span>Entrega: <b>ex1/data_stream.py</b></span><span>Autorizado: <b>builtins, tipos estándar, import typing, import abc</b></span></div>
+<p>Una clase <code>DataStream</code> que recibe un flujo con datos de tipos mezclados y envía
+cada elemento al procesador adecuado mediante polimorfismo. Implementa:</p>
+<ul>
+  <li><code>register_processor(self, proc: DataProcessor) -&gt; None</code>, para registrar un
+  procesador nuevo;</li>
+  <li><code>process_stream(self, stream: list[typing.Any]) -&gt; None</code>, que analiza cada
+  elemento y lo manda a un procesador registrado capaz de tratarlo, con un mensaje de error si
+  ninguno puede;</li>
+  <li><code>print_processors_stats(self) -&gt; None</code>, que muestra estadísticas: por
+  procesador, cuántos elementos ha procesado en total y cuántos le quedan.</li>
+</ul>
+<p>El escenario de prueba muestra las estadísticas, registra procesadores, procesa un flujo,
+consume elementos con <code>output</code> y vuelve a mostrarlas. En el ejemplo, con solo el
+procesador numérico registrado, el texto y los logs dan error; tras registrar los otros dos, el
+mismo lote ya se reparte entero.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El polimorfismo en acción:
+<code>DataStream</code> no sabe qué procesadores existen ni cómo trabaja cada uno; solo les
+pregunta a todos lo mismo (<code>validate</code>) y entrega el dato al que dice que sí. Añadir
+un procesador nuevo no obliga a tocar <code>DataStream</code>. Son justo las preguntas del
+enunciado: cómo permite el polimorfismo manejar tipos distintos sin conocer su implementación y
+qué ventajas tiene ese diseño.</div>
+</div>
+
+<div class="card" id="n-ex2">
+<h2><span class="ex">ex2</span>data_pipeline</h2>
+<div class="meta"><span>Entrega: <b>ex2/data_pipeline.py</b></span><span>Autorizado: <b>builtins, tipos estándar, import typing, import abc</b></span></div>
+<p>La parte de salida de la tubería, con un sistema de <em>plugins</em> de exportación
+compatibles por duck typing:</p>
+<ul>
+  <li>Una clase <code>ExportPlugin</code> que hereda de <code>Protocol</code> y define el método
+  que todo plugin debe tener:
+  <code>process_output(self, data: list[tuple[int, str]]) -&gt; None</code>, cuyo parámetro
+  coincide con lo que devuelve <code>output</code>.</li>
+  <li>Un método nuevo en <code>DataStream</code>,
+  <code>output_pipeline(self, nb: int, plugin: ExportPlugin) -&gt; None</code>, que, tras
+  <code>process_stream</code>, consume <code>nb</code> elementos de cada procesador registrado y
+  los exporta con el plugin recibido.</li>
+  <li>Al menos un plugin CSV y otro JSON, construyendo las cadenas a mano, sin importar nada
+  específico para esos formatos.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre tipado
+<em>nominal</em> (eres un <code>DataProcessor</code> porque heredas de él) y
+<em>estructural</em> (eres un <code>ExportPlugin</code> porque tienes
+<code>process_output</code> con esa firma). Un plugin no necesita heredar de
+<code>ExportPlugin</code>: mypy comprueba la forma. Y dos formatos de intercambio que vas a ver
+en todas partes: CSV, valores separados por comas, y JSON, la notación de objetos de
+JavaScript, con sus reglas estrictas (comillas dobles siempre).</div>
+</div>
+
+<div class="trasfondo" id="n-delicados"><b>Puntos delicados (Module 05)</b>
+<ul>
+  <li><b>Las firmas son las del enunciado.</b> <code>validate</code>, <code>ingest</code>,
+  <code>output</code>, <code>register_processor</code>, <code>process_stream</code>,
+  <code>print_processors_stats</code>, <code>process_output</code> y
+  <code>output_pipeline</code> vienen dadas con sus tipos.</li>
+  <li><b>Las listas también cuentan.</b> Una lista de números ingerida en el procesador numérico
+  son varios elementos, no uno: en el ejemplo, <code>[3.14, -1, 2.71]</code> y
+  <code>42</code> suman 4.</li>
+  <li><b>Listas mezcladas.</b> El procesador numérico acepta listas con <code>int</code> y
+  <code>float</code> mezclados, pero una lista de cadenas no es suya, y una de diccionarios
+  tampoco.</li>
+  <li><b><code>bool</code> es un <code>int</code>.</b> En Python <code>True</code> pasa por
+  <code>isinstance(x, int)</code>; conviene decidir qué hacer con él.</li>
+  <li><b>El número de orden no se reinicia.</b> En el ejemplo del ex2, tras consumir tres
+  elementos, el JSON del procesador numérico empieza en <code>item_3</code>: el rango es la
+  posición de llegada dentro del procesador.</li>
+  <li><b>El aviso de mypy del ex0 es intencionado</b>: es la llamada a <code>ingest</code> con un
+  dato inválido para comprobar que lanza la excepción.</li>
+  <li><b>CSV y JSON a mano.</b> Hay que generar cadenas válidas: en JSON las claves y las cadenas
+  van entre comillas dobles; en CSV un valor con comas rompería las columnas.</li>
+  <li><b>Lo que pregunta la evaluación.</b> Según el enunciado, que expliques el polimorfismo,
+  demuestres la sobrescritura de métodos, amplíes el sistema con tipos de datos nuevos o cambies
+  el comportamiento de un procesador.</li>
+</ul>
+</div>
+
+<h2 id="codex">Module 05 bis — The Codex</h2>
+
+<div class="trasfondo"><b>El laboratorio antes que la fórmula</b> — Un programa de Python
+real casi nunca es un fichero suelto: depende de librerías de terceros, necesita
+configuración y se reparte en paquetes. Instalar las librerías en el Python del sistema acaba
+mal en cuanto dos proyectos piden versiones distintas; para eso existen los <strong>entornos
+virtuales</strong> (<code>venv</code>, en la biblioteca estándar desde Python 3.3): una carpeta
+con su propio intérprete enlazado y su propio <code>site-packages</code>. Las dependencias se
+declaran para que cualquiera reproduzca el entorno: con <code>requirements.txt</code> y
+<code>pip</code>, el método clásico, o con <code>pyproject.toml</code> y
+<strong>Poetry</strong>, que además fija las versiones exactas resueltas en
+<code>poetry.lock</code>. Los secretos se sacan del código a variables de entorno, una de las
+reglas de la metodología <em>Twelve-Factor App</em>. Y luego está el corazón del proyecto: el
+sistema de imports, que decide cómo encuentra Python un módulo, qué ejecuta al importarlo y por
+qué dos módulos que se importan entre sí pueden hacer saltar el laboratorio por los
+aires.</div>
+
+<div class="card" id="c-pide">
+<h2>Qué pide (Module 05 bis)</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o superior</b></span><span>Obligatorio: <b>flake8</b>, <b>mypy</b></span><span>Herramientas: <b>venv, pip, Poetry, python-dotenv</b></span><span>Ejercicios: <b>5</b> (ex0–ex4)</span></div>
+<ul>
+  <li>Código que pase <strong>flake8</strong> y anotaciones de tipo completas, comprobadas
+  con <strong>mypy</strong>.</li>
+  <li>Todas las clases, colecciones y funciones predefinidas están autorizadas,
+  <strong>salvo <code>eval()</code> y <code>exec()</code></strong>.</li>
+  <li>Cada ejercicio declara sus imports autorizados. ex0 y ex1 instalan y usan librerías
+  externas; en ex2–ex4, en cambio, solo se pueden importar los módulos que crees tú.</li>
+  <li><strong>Prohibido modificar <code>sys.path</code></strong> en todo el proyecto.</li>
+  <li>En ex2–ex4 las funciones son simples y devuelven cadenas: lo importante son los imports,
+  no la lógica.</li>
+  <li>ex0 y ex1 van en sus carpetas; ex2, ex3 y ex4 hacen crecer un único paquete,
+  <code>alchemy/</code>, y varios scripts en la <strong>raíz del repositorio</strong>.</li>
+  <li>No se entrega el entorno virtual ni el fichero <code>.env</code>.</li>
+</ul>
+<p>El árbol final que pide el enunciado (resumido en una línea por carpeta):</p>
+<pre><code>.
+|-- ex0/  construct.py  loading.py  pyproject.toml  requirements.txt
+|-- ex1/  .env.example  .gitignore  oracle.py  requirements.txt
+|-- alchemy/
+|   |-- __init__.py  elements.py  potions.py
+|   |-- transmutation/  __init__.py  recipes.py
+|   `-- grimoire/  __init__.py  dark_spellbook.py  dark_validator.py
+|                  light_spellbook.py  light_validator.py
+|-- elements.py
+|-- ft_alembic_0.py  ft_alembic_1.py
+|-- ft_distillation_0.py  ft_transmutation_0.py
+`-- ft_kaboom_0.py  ft_kaboom_1.py</code></pre>
+</div>
+
+<div class="card" id="c-ex0">
+<h2><span class="ex">ex0</span>The Sealed Laboratory</h2>
+<div class="meta"><span>Entrega: <b>ex0/construct.py, loading.py, requirements.txt, pyproject.toml</b></span><span>Autorizado: <b>os, sys, site, importlib, pandas, numpy</b></span></div>
+<p><strong>Parte 1.</strong> <code>construct.py</code> detecta si se ejecuta dentro de un entorno
+virtual, muestra información del Python actual, da instrucciones para crear y activar uno si no
+lo hay, y enseña la diferencia entre la ubicación global de los paquetes y la del entorno.
+Tiene que funcionar dentro y fuera de un entorno con una salida claramente distinta en cada
+caso.</p>
+<pre><code>python3 -m venv lab_env
+source lab_env/bin/activate</code></pre>
+<p><strong>Parte 2.</strong> <code>loading.py</code> declara un par de librerías externas (como
+pandas y numpy) tanto en <code>requirements.txt</code> (para pip) como en
+<code>pyproject.toml</code> (para Poetry), importa cada una y muestra su versión instalada, y
+explica en su salida la diferencia entre pip y Poetry. Si falta alguna, no se rompe: muestra un
+mensaje con el comando de instalación para pip y para Poetry. Se prueba sin las librerías, tras
+<code>pip install -r ex0/requirements.txt</code> y con <code>poetry install</code> y
+<code>poetry run</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es de verdad un entorno virtual:
+una carpeta con un fichero <code>pyvenv.cfg</code>, un intérprete y un
+<code>site-packages</code> propio; «activarlo» solo cambia variables como <code>PATH</code> en
+tu shell. Python distingue entre el prefijo en que se está ejecutando y el de la instalación base,
+y la diferencia entre ambos es la huella del entorno. También importar algo que quizá no está
+instalado sin romperse (el <code>ModuleNotFoundError</code> es una excepción más) y las dos
+filosofías de dependencias. Las preguntas del enunciado: qué aísla un entorno virtual y qué
+no, y por qué elegir Poetry frente a un <code>requirements.txt</code>.</div>
+</div>
+
+<div class="card" id="c-ex1">
+<h2><span class="ex">ex1</span>The Oracle</h2>
+<div class="meta"><span>Entrega: <b>ex1/oracle.py, requirements.txt, .env.example, .gitignore</b></span><span>Autorizado: <b>os, sys, python-dotenv, operaciones con ficheros</b></span></div>
+<p>Un sistema de configuración basado en variables de entorno y un fichero <code>.env</code>,
+cargado con la librería <strong>python-dotenv</strong> (el objetivo es aprender a usar
+<code>.env</code>, no escribir un parser). <code>oracle.py</code> carga su configuración del
+entorno, usa el <code>.env</code> para desarrollo, se comporta de forma visiblemente distinta en
+desarrollo y en producción, y maneja la configuración que falte sin romperse. Las variables:
+<code>MATRIX_MODE</code> («development» o «production»), <code>DATABASE_URL</code>,
+<code>API_KEY</code>, <code>LOG_LEVEL</code> y <code>ZION_ENDPOINT</code>.</p>
+<p>Tres pruebas: sin configuración (valores por defecto y aviso), con un <code>.env</code>
+copiado de <code>.env.example</code>, y con variables pasadas en la propia línea de comandos,
+que deben tener <strong>prioridad sobre el <code>.env</code></strong>:</p>
+<pre><code>MATRIX_MODE=production API_KEY=secret123 python3 ex1/oracle.py</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la configuración y los secretos
+no van en el código: un <code>API_KEY</code> escrito en un fichero está a un
+<code>git push</code> de ser público, y los bots que rastrean GitHub buscando claves son muy
+rápidos. Por eso <code>.env</code> va en <code>.gitignore</code> y lo que se versiona es
+<code>.env.example</code>, una plantilla sin valores reales. También el entorno de un proceso
+(el <code>envp</code> que en C llega como tercer argumento de <code>main</code>) y su orden de
+prioridad. La pregunta del enunciado: por qué una variable de entorno es mejor sitio para un
+secreto que una constante, y qué sigue sin ser seguro.</div>
+</div>
+
+<div class="card" id="c-ex2">
+<h2><span class="ex">ex2</span>The Alembic</h2>
+<div class="meta"><span>Entrega: <b>elements.py, alchemy/__init__.py, alchemy/elements.py, ft_alembic_0.py, ft_alembic_1.py</b></span><span>Autorizado: <b>builtins, tipos estándar y solo módulos propios</b></span></div>
+<p>Los primeros componentes: <code>elements.py</code> en la raíz, con
+<code>create_fire()</code> y <code>create_water()</code>; <code>alchemy/elements.py</code>, con
+<code>create_earth()</code> y <code>create_air()</code> (cada una devuelve una frase fija como
+«Fire element created»); y <code>alchemy/__init__.py</code>, con lo necesario para exponer
+<code>create_air</code> a través del paquete, y nada que exponga <code>create_earth</code>.</p>
+<p>Dos scripts: <code>ft_alembic_0.py</code> usa <code>import ...</code> para llegar al
+<code>elements.py</code> de la raíz y crear fuego; <code>ft_alembic_1.py</code> usa
+<code>import alchemy</code>, crea aire y luego intenta <code>alchemy.create_earth()</code>, que
+<strong>tiene que fallar</strong> (con un <code>AttributeError</code> en el ejemplo) aunque la
+función exista en <code>alchemy/elements.py</code>. Ahí se espera un error de mypy a
+propósito.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es un paquete: una carpeta con
+<code>__init__.py</code>, que se ejecuta al importarla y cuyo espacio de nombres es lo que ve
+quien escribe <code>import alchemy</code>. Los submódulos no aparecen solos: si
+<code>__init__.py</code> no los menciona, <code>alchemy.create_earth</code> no existe. La
+pregunta del enunciado lo plantea así: nada se ha ocultado ni se ha hecho privado, ¿qué ha
+cambiado entonces <code>__init__.py</code>?</div>
+</div>
+
+<div class="card" id="c-ex3">
+<h2><span class="ex">ex3</span>Distillation and Transmutation</h2>
+<div class="meta"><span>Entrega: <b>alchemy/potions.py, alchemy/transmutation/ (paquete), ft_distillation_0.py, ft_transmutation_0.py</b></span><span>Autorizado: <b>builtins, tipos estándar y solo módulos propios</b></span></div>
+<p><strong>Destilación.</strong> <code>alchemy/potions.py</code> define
+<code>healing_potion()</code>, que combina los elementos tierra y aire, y
+<code>strength_potion()</code>, que combina fuego y agua, con el texto exacto del enunciado. Para
+eso tiene que llegar a los cuatro elementos, y dos de ellos viven <em>fuera</em> del paquete.
+<code>ft_distillation_0.py</code> accede a <code>alchemy/potions.py</code> con
+<code>from ... import ...</code> y prepara las dos pociones.</p>
+<p><strong>Transmutación.</strong> <code>alchemy/transmutation/recipes.py</code>, un nivel más
+abajo, define <code>lead_to_gold()</code>, que combina aire, la poción de fuerza y fuego, y debe
+contener <strong>al menos un import absoluto y uno relativo</strong>.
+<code>ft_transmutation_0.py</code> llega a esa receta con <code>import ...</code> y transmuta el
+plomo en oro.</p>
+<p>Las dos formas, con nombres de ejemplo:</p>
+<pre><code>from paquete.modulo import funcion   # absoluto: desde la raíz de búsqueda
+from .modulo import funcion           # relativo: desde el paquete actual
+from ..otro import funcion            # relativo: un nivel más arriba</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dónde busca Python los módulos:
+<code>sys.path</code>, cuya primera entrada es la carpeta del script que ejecutas. Por eso los
+scripts van en la raíz y por eso un módulo de dentro del paquete puede alcanzar el
+<code>elements.py</code> de fuera sin tocar <code>sys.path</code> (que está prohibido). Y el
+viejo debate entre imports absolutos, explícitos y estables aunque muevas el fichero que
+importa, y relativos, cortos y estables aunque renombres el paquete, que solo funcionan dentro
+de un paquete. La pregunta del enunciado: cuándo usar cada uno.</div>
+</div>
+
+<div class="card" id="c-ex4">
+<h2><span class="ex">ex4</span>Avoid the Explosion</h2>
+<div class="meta"><span>Entrega: <b>alchemy/grimoire/ (paquete), ft_kaboom_0.py, ft_kaboom_1.py</b></span><span>Autorizado: <b>builtins, tipos estándar y solo módulos propios</b></span></div>
+<p>La misma funcionalidad escrita dos veces: una que funciona y otra que explota.</p>
+<ul>
+  <li><b>El grimorio de luz.</b> <code>light_spellbook.py</code> define
+  <code>light_spell_allowed_ingredients()</code> (devuelve «earth», «air», «fire», «water») y
+  <code>light_spell_record(spell_name: str, ingredients: str)</code>, que dice si el hechizo se
+  registra o se rechaza según el validador. <code>light_validator.py</code> define
+  <code>validate_ingredients(ingredients: str)</code>, que devuelve los ingredientes con «VALID»
+  o «INVALID»: son válidos si incluyen al menos uno de los permitidos por el libro, sin
+  distinguir mayúsculas. Cada fichero necesita al otro, y hay que hacer que eso <em>no</em>
+  explote.</li>
+  <li><b>El grimorio oscuro.</b> <code>dark_spellbook.py</code> y
+  <code>dark_validator.py</code>, con funciones con prefijo <code>dark_</code> e ingredientes
+  oscuros («bats», «frogs», «arsenic», «eyeball»), con la dependencia mutua escrita de la forma
+  ingenua, arriba de los dos ficheros, y <strong>rota de verdad</strong>. El enunciado insiste en
+  no copiar los ficheros de luz y renombrar: el ciclo de imports tiene que ser lo único que
+  cambie a propósito.</li>
+  <li><code>ft_kaboom_0.py</code> registra un hechizo de luz sin problema;
+  <code>ft_kaboom_1.py</code> va directo a <code>dark_spellbook.py</code> y debe fallar con una
+  excepción (en el ejemplo, <code>ImportError</code>: «cannot import name … from partially
+  initialized module … (most likely due to a circular import)»).</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué pasa exactamente al importar: la
+primera vez, Python crea el módulo vacío, lo apunta en <code>sys.modules</code> y ejecuta su
+código de arriba abajo. Si a mitad de camino otro módulo lo importa, recibe ese módulo
+<em>a medio construir</em>, y pedirle un nombre que todavía no se ha definido falla. En C el
+equivalente eran dos cabeceras que se incluyen mutuamente, y lo resolvían los include guards y
+las declaraciones adelantadas. El enunciado pide elegir una forma de evitar la explosión y
+saber explicar las alternativas, porque la diferencia entre los dos grimorios es una decisión de
+diseño, no una línea de sintaxis. Su pregunta final: si los dos grimorios describen dos ficheros
+que se necesitan, ¿por qué solo explota uno?</div>
+</div>
+
+<div class="trasfondo" id="c-delicados"><b>Puntos delicados (Module 05 bis)</b>
+<ul>
+  <li><b>No subir el entorno ni el <code>.env</code>.</b> En la evaluación pueden pedirte crear
+  un entorno nuevo desde cero, así que hay que saber hacerlo sin chuleta.</li>
+  <li><b>Salida distinta dentro y fuera del entorno</b> en <code>construct.py</code>, y ningún
+  fallo en <code>loading.py</code> si falta una librería.</li>
+  <li><b>pip y Poetry, los dos.</b> Las mismas dependencias declaradas en
+  <code>requirements.txt</code> y en <code>pyproject.toml</code>, y la salida tiene que explicar
+  la diferencia.</li>
+  <li><b>El entorno manda sobre el <code>.env</code>.</b> Las variables pasadas al lanzar el
+  programa deben ganar a las del fichero; la diferencia entre desarrollo y producción tiene que
+  verse en la salida.</li>
+  <li><b><code>.env</code> en <code>ex1/.gitignore</code></b>, y saber explicar por qué.</li>
+  <li><b>Los avisos de flake8 y mypy en <code>__init__.py</code>.</b> Un import que solo sirve
+  para reexportar parece «sin usar»; el enunciado dice que se sigan las convenciones habituales
+  para ese caso.</li>
+  <li><b>Fallos que deben ocurrir.</b> <code>create_earth</code> a través de
+  <code>alchemy</code> y el grimorio oscuro tienen que fallar de verdad; el error de mypy de
+  <code>ft_alembic_1.py</code> es intencionado.</li>
+  <li><b>Textos exactos.</b> Las pociones y la receta encadenan las frases de los elementos
+  con comillas simples, tal como en los ejemplos.</li>
+  <li><b>Nada de <code>sys.path</code>, <code>eval</code> ni <code>exec</code>.</b></li>
+  <li><b>Lo que pregunta la evaluación.</b> Según el enunciado, crear un laboratorio nuevo desde
+  cero, explicar cualquier mecanismo de import, cambiar lo que expone tu paquete o romper y
+  reparar una dependencia circular.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Dos enunciados oficiales en inglés, en <code>packs/cursus/M2/207_Python_Module_05/</code>:</p>
+<ul>
+  <li><em>Code Nexus — Polymorphic Data Streams in the Digital Matrix</em> (Module 05),
+  versión 3.1: <code>en.subject.pdf</code>, con el texto extraído en
+  <code>subject.txt</code>.</li>
+  <li><em>The Codex — Packages, Environments and the Alchemist’s Toolchain</em> (Module 05 bis),
+  versión 1.0: <code>bis.en.subject.pdf</code>, con el texto extraído en
+  <code>subject_bis.txt</code>.</li>
+</ul>
+</div>
+
+<footer>42.zenidx.com — Python Module 05 · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam Rank 03 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Exam Rank 03 <span class="tag pend">pendiente</span></h1>
+<p class="sub">El examen que cierra el rank 03 de 42next. <strong>Ficha provisional</strong>:
+no hay información oficial sobre su formato en 42next, así que aquí solo está lo general de
+los exámenes de 42 y lo poco que dicen fuentes no oficiales. Se completará más adelante.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué se sabe</a></li>
+  <li><a href="#examen">Cómo es un examen de 42</a></li>
+  <li><a href="#formato">El formato en 42next: no confirmado</a></li>
+  <li><a href="#delicado">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Por qué hay exámenes</b> — En 42 casi todo se valida entre pares:
+otra persona revisa tu proyecto y tú le explicas tu código. El examen es la excepción: sin
+compañeros, sin internet, sin tus apuntes y sin IA, frente a una corrección automática. Sirve
+para comprobar que lo aprendido en los proyectos del rank está en tu cabeza y no solo en tu
+repositorio. En 42next cada rank termina con uno (el slug de la intra es
+<code>42next-exam-rank-03</code>) y hay que aprobarlo para completar el milestone.</div>
+
+<div class="card" id="pide">
+<h2>Qué se sabe</h2>
+<div class="meta">
+  <span>Rank: <b>03</b></span>
+  <span>Slug: <b>42next-exam-rank-03</b></span>
+  <span>Lenguaje: <b>no confirmado</b></span>
+  <span>Individual</span>
+</div>
+<p>Pertenece al rank 03, junto con Codexion, Call Me Maybe y Fly-in (según el JSON de
+proyectos de la intra leído para <code>ref/42cursus.md</code>). Su enunciado no está en el
+pack y la intra solo lo muestra al inscribirse en una sesión.</p>
+</div>
+
+<div class="card" id="examen">
+<h2><span class="ex">01</span>Cómo es un examen de 42</h2>
+<p>Lo que es común a los exámenes de 42 y ya se vio en los de la piscine:</p>
+<ul>
+  <li>sesión presencial en el campus, con inscripción previa y duración fija;</li>
+  <li>se trabaja dentro del <em>examshell</em>: te da un ejercicio, lo resuelves en la carpeta
+  indicada, lo entregas con git y lo corrige un programa automático;</li>
+  <li>los ejercicios van por niveles y salen al azar de una lista; si apruebas uno, pasas al
+  nivel siguiente;</li>
+  <li>la corrección automática no perdona: un nombre de fichero mal escrito o una salida con
+  un espacio de más es un fallo;</li>
+  <li>si no apruebas, se vuelve a intentar en otra sesión.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A escribir código que funciona a la
+primera sin poder buscar nada: leer el enunciado con calma, probar tus propios casos antes de
+entregar y conocer de memoria lo básico del lenguaje. Para practicar en local existe Maestro42
+(ver <code>ref/maestro42.md</code>), aunque de momento solo cubre los exámenes de la
+piscine.</div>
+</div>
+
+<div class="card" id="formato">
+<h2><span class="ex">02</span>El formato en 42next: no confirmado</h2>
+<p>Lo que dicen las fuentes encontradas, ninguna oficial:</p>
+<ul>
+  <li><b>42exam.net</b>, una web hecha por estudiantes y sin relación con 42, presenta el
+  Rank 03 como un examen <strong>en Python</strong> y su sección del Rank 03 habla de 6
+  niveles y 14 enunciados de práctica. No da ni duración ni detalles de la corrección.</li>
+  <li>En el <b>camino antiguo</b> el Exam Rank 03 era en C (ft_printf y get_next_line, y desde
+  la reforma de 2025 ejercicios como ft_scanf, filter o backtracking). Ese es el examen del
+  otro camino, y se cita solo para no confundirlo con el de 42next.</li>
+</ul>
+<p>Lo de 42exam.net encaja con que el rank 03 de 42next mezcle C (Codexion) y Python (Call Me
+Maybe, Fly-in), pero no está contrastado con el enunciado ni con alguien que haya hecho el
+examen. <strong>No hay que tomarlo como dato.</strong></p>
+</div>
+
+<div class="card" id="delicado">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>No te prepares con material del camino antiguo</b> sin comprobar antes que el examen
+  de 42next es el mismo: igual que con push_swap y Born2beroot, existen dos versiones.</li>
+  <li><b>Los repositorios de «soluciones de examen» no sirven para aprender</b>: en el examen no
+  vas a tenerlos, y memorizar código ajeno no aguanta un ejercicio que cambia un detalle.</li>
+  <li><b>Pregunta en el campus</b>: quien ya lo haya aprobado en 42 Barcelona es la fuente más
+  fiable sobre lenguaje, niveles y tiempo.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<ul>
+  <li><code>ref/42cursus.md</code> (milestones y slugs de 42next, leído de la intra).</li>
+  <li><a href="https://42exam.net/">42exam.net</a> y
+  <a href="https://rank03.42exam.net/">rank03.42exam.net</a> — no oficial, hecho por
+  estudiantes.</li>
+  <li><a href="https://github.com/tdanielsousa/42_school_new_exams_2026">github.com/tdanielsousa/42_school_new_exams_2026</a>
+  — enunciados del Exam Rank 03 del camino antiguo tras la reforma de 2025 (no es el de
+  42next).</li>
+</ul>
+<p>Enunciado oficial: no encontrado.</p>
+</div>
+
+<footer>42.zenidx.com — Exam Rank 03 · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

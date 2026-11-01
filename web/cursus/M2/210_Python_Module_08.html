@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 08 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 08 <span class="tag pend">pendiente</span></h1>
+<p class="sub">«The Matrix»: el módulo que sale del lenguaje y entra en el ecosistema.
+Entornos virtuales, gestión de dependencias con pip y Poetry, y configuración por
+variables de entorno con ficheros <code>.env</code>. Rank 02.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#ex0">ex0 — construct</a></li>
+  <li><a href="#ex1">ex1 — loading</a></li>
+  <li><a href="#ex2">ex2 — oracle</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>La pastilla roja</b> — Todo lo hecho hasta ahora en Python usaba
+la instalación del sistema y la librería estándar. En el mundo real un proyecto depende de
+decenas de paquetes de terceros con versiones concretas, y dos proyectos en la misma máquina
+pueden necesitar versiones incompatibles del mismo paquete. La respuesta de Python son los
+<em>entornos virtuales</em>: carpetas con su propio intérprete y su propio
+<code>site-packages</code>, aislados del sistema. El módulo <code>venv</code> forma parte de
+la librería estándar desde Python 3.3 (PEP 405); <code>pip</code> instala paquetes desde
+PyPI, y <strong>Poetry</strong> va un paso más allá: declara el proyecto en
+<code>pyproject.toml</code> (el formato estándar de PEP 518 y PEP 621), resuelve las
+versiones y las congela en un fichero de bloqueo. La tercera pata es la configuración: las
+contraseñas y claves no se escriben en el código, se leen del entorno, una práctica que
+popularizó la metodología <em>Twelve-Factor App</em>. Todo ambientado en Matrix, con
+Morpheus, Neo y el Oráculo, y con la «ingeniería de datos» como horizonte.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o posterior</b></span><span>Obligatorio: <b>flake8</b>, <b>mypy</b> (anotaciones de tipo completas)</span><span>Herramientas: <b>venv</b>, <b>pip</b>, <b>Poetry</b>, <b>python-dotenv</b></span></div>
+<p>Tres ejercicios en <code>ex0/</code>, <code>ex1/</code> y <code>ex2/</code>. Las
+reglas generales de siempre (flake8, anotaciones comprobadas con mypy, colecciones y
+funciones integradas permitidas), con dos añadidos: la gestión de excepciones debe proteger
+los flujos de datos, y hay que probar los programas en entornos distintos, con y sin
+entorno virtual y con y sin dependencias instaladas. A diferencia de otros módulos, aquí
+<em>todas</em> las funciones integradas están permitidas.</p>
+<p>Lo que se evalúa en la corrección, según el enunciado: entender qué son los entornos
+virtuales y por qué importan, las diferencias entre pip y Poetry, cómo las variables de
+entorno hacen una aplicación segura y configurable, y saber explicarlo a otros.</p>
+</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>construct</h2>
+<div class="meta"><span>Entrega: <b>ex0/construct.py</b></span><span>Autorizado: <b>sys</b>, <b>os</b>, <b>site</b>, <b>print()</b></span></div>
+<p>«The Construct», el espacio de entrenamiento aislado. Un programa que:</p>
+<ul>
+<li>detecta si se está ejecutando dentro de un entorno virtual;</li>
+<li>muestra información del entorno de Python actual (qué intérprete se usa);</li>
+<li>si no hay entorno virtual, explica cómo crearlo y activarlo;</li>
+<li>enseña la diferencia entre dónde se instalan los paquetes en el entorno global y en el
+virtual.</li>
+</ul>
+<p>Debe funcionar dentro y fuera de un entorno, con salidas distintas: fuera, un aviso de
+que «las máquinas ven todo lo que instalas» y las instrucciones; dentro, el nombre y la ruta
+del entorno y la ruta de instalación de paquetes. El entorno virtual <em>no</em> se sube al
+repositorio: en la corrección hay que poder crear uno nuevo. Los comandos que propone el
+enunciado:</p>
+<pre><code>python3 -m venv matrix_env
+source matrix_env/bin/activate      # en Unix
+python3 construct.py</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es realmente un entorno
+virtual: no es una máquina virtual ni un contenedor, solo una carpeta con un enlace al
+intérprete, su propio <code>site-packages</code> y un <code>pyvenv.cfg</code>. «Activarlo»
+apenas cambia el <code>PATH</code> de tu shell para que <code>python</code> y
+<code>pip</code> apunten a esa carpeta. Desde dentro, Python lo delata en el módulo
+<code>sys</code>: en un entorno virtual <code>sys.prefix</code> (dónde está el entorno) y
+<code>sys.base_prefix</code> (dónde está la instalación original) dejan de coincidir. El
+módulo <code>site</code> es el que añade los directorios de paquetes a
+<code>sys.path</code> al arrancar.</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>loading</h2>
+<div class="meta"><span>Entrega: <b>ex1/loading.py</b>, <b>requirements.txt</b>, <b>pyproject.toml</b></span><span>Autorizado: <b>pandas</b>, <b>requests</b>, <b>matplotlib</b>, <b>numpy</b>, <b>sys</b>, <b>importlib</b></span></div>
+<p>«Cargar programas», como Neo pidiendo armas. Una pequeña herramienta de análisis de
+datos que:</p>
+<ul>
+<li>usa <strong>pandas</strong> para manipular los datos;</li>
+<li>usa <strong>numpy</strong> para los cálculos y para <em>generar</em> los «datos de
+Matrix» simulados: tiene que ser la fuente del conjunto de datos, no listas escritas a mano
+ni <code>range()</code>;</li>
+<li>usa <strong>matplotlib</strong> para producir una visualización sencilla (el ejemplo la
+guarda en <code>matrix_analysis.png</code>);</li>
+<li>opcionalmente usa <strong>requests</strong> si prefieres traer datos reales de una API,
+y solo entonces aparece en la salida;</li>
+<li>gestiona con elegancia que falten dependencias: detecta qué paquetes hay y da mensajes
+de ayuda con instrucciones para pip y para Poetry;</li>
+<li>incluye una función de comparación que muestra las versiones instaladas, y su salida
+debe dejar ver las diferencias entre pip y Poetry.</li>
+</ul>
+<p>Hay que entregar los dos ficheros de dependencias, uno por herramienta. Los flujos que
+deben funcionar:</p>
+<pre><code>pip install -r requirements.txt    # pip
+python3 loading.py
+
+poetry install                     # Poetry
+poetry run python loading.py</code></pre>
+<p>Excepcionalmente, en este ejercicio se admiten avisos de flake8 y mypy, pero solo los
+relacionados con imports; el enunciado añade que hay mecanismos para evitarlos si te
+pica la curiosidad.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre declarar
+dependencias y bloquearlas. Un <code>requirements.txt</code> es una lista plana de
+paquetes (con versiones fijas o no) que pip instala tal cual en el entorno activo. Poetry
+parte de <code>pyproject.toml</code>, donde declaras rangos de versiones, resuelve un
+conjunto compatible, lo apunta en <code>poetry.lock</code> para que todos instalen
+exactamente lo mismo y crea y gestiona su propio entorno virtual (de ahí
+<code>poetry run</code>). También introduce las importaciones que pueden fallar: un
+<code>import</code> de un paquete no instalado lanza <code>ModuleNotFoundError</code>, que
+se puede capturar, e <code>importlib</code> permite importar o consultar módulos por
+nombre en tiempo de ejecución. Y de paso, un primer contacto con el trío básico de la
+ciencia de datos en Python: numpy, pandas y matplotlib.</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>oracle</h2>
+<div class="meta"><span>Entrega: <b>ex2/oracle.py</b>, <b>requirements.txt</b>, <b>.env.example</b>, <b>.gitignore</b></span><span>Autorizado: <b>os</b>, <b>sys</b>, <b>python-dotenv</b>, operaciones con ficheros</span></div>
+<p>El Oráculo lo sabe todo porque tiene acceso a la configuración. Un programa que:</p>
+<ul>
+<li>carga la configuración desde variables de entorno;</li>
+<li>usa un fichero <code>.env</code> para los ajustes de desarrollo, leído con
+<strong>python-dotenv</strong> (el enunciado deja claro que no se trata de escribir un
+parser propio);</li>
+<li>demuestra configuraciones distintas para desarrollo y producción, de forma visible en
+la salida (cómo, lo eliges tú);</li>
+<li>maneja con cuidado que falte configuración.</li>
+</ul>
+<p>Las variables que debe manejar: <code>MATRIX_MODE</code> («development» o
+«production»), <code>DATABASE_URL</code>, <code>API_KEY</code>, <code>LOG_LEVEL</code> y
+<code>ZION_ENDPOINT</code>. Tres escenarios de prueba: sin configuración (avisos o valores
+por defecto), con <code>.env</code> copiado de <code>.env.example</code>, y con variables
+en la línea de comandos, que deben <em>prevalecer</em> sobre el <code>.env</code>:</p>
+<pre><code>cp .env.example .env
+MATRIX_MODE=production API_KEY=secret123 python3 oracle.py</code></pre>
+<p>El <code>.env</code> real va en <code>.gitignore</code>, nunca al repositorio, y hay que
+saber explicar por qué.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el código y la configuración
+son cosas distintas. El mismo programa debe poder ejecutarse en tu portátil y en producción
+cambiando solo el entorno, y una clave escrita en el código acaba en el historial de git
+para siempre (borrarla en un commit posterior no la saca del historial). Las variables de
+entorno son un mecanismo del sistema operativo: cada proceso hereda las de su padre, y en
+Python se leen con <code>os.environ</code> u <code>os.getenv</code>. Un
+<code>.env</code> es solo una comodidad para el desarrollo; python-dotenv lo vuelca en el
+entorno y, por defecto, <em>no pisa</em> las variables que ya existan, que es justo la
+precedencia que pide el enunciado. El <code>.env.example</code> documenta qué variables
+hacen falta sin revelar ningún valor real.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2>Puntos delicados</h2>
+<ul>
+<li><strong>Nada de entornos en el repo.</strong> Ni <code>matrix_env/</code> ni ningún
+otro: en la corrección se crea uno nuevo desde cero.</li>
+<li><strong>Probar en los dos mundos.</strong> El enunciado pide probar con y sin entorno
+virtual y con y sin dependencias; un programa que solo funciona en tu entorno no
+cumple.</li>
+<li><strong>Dependencias ausentes.</strong> <code>loading.py</code> sin pandas ni numpy no
+debe estrellarse con una traza: tiene que decir qué falta y cómo instalarlo con pip y con
+Poetry.</li>
+<li><strong>numpy es la fuente de datos.</strong> Nada de listas a mano ni
+<code>range()</code> para el conjunto de datos.</li>
+<li><strong>Los dos ficheros de dependencias.</strong> <code>requirements.txt</code> y
+<code>pyproject.toml</code>: cada uno tiene que bastar para instalar lo necesario con su
+herramienta.</li>
+<li><strong>La excepción de flake8/mypy</strong> del ex1 cubre solo los errores de import;
+el resto del código tiene que pasar limpio.</li>
+<li><strong>Precedencia de la configuración.</strong> Las variables pasadas en la línea de
+comandos ganan al <code>.env</code>, tal como muestra el escenario de prueba del
+enunciado.</li>
+<li><strong><code>.env</code> en <code>.gitignore</code>.</strong> Y ningún secreto real en
+<code>.env.example</code> ni en el código.</li>
+<li><strong>En la corrección</strong> se pide explicar los conceptos; el enunciado insiste
+en entender el porqué de cada herramienta, no solo hacer que funcione.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>«The Matrix — Welcome to the Real World of Data Engineering», versión 3.1:
+<code>packs/cursus/M2/210_Python_Module_08/en.subject.pdf</code> (texto en
+<code>subject.txt</code>). Solo existe en inglés. Slug de la intra:
+<code>python-module-08</code>. Python Module 09 pide haber completado este módulo o el
+<a href="../M2/208_Python_Module_06.html#nexus">Module 06 bis</a>.</p>
+</div>
+
+<footer>42.zenidx.com — Python Module 08 · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

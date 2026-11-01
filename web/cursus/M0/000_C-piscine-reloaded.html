@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>C-piscine-reloaded — 42.zenidx.com</title>
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../../style.css">
 </head>
 <body>
 <header class="site">
   <div class="wrap">
-    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
     <nav>
-      <a href="../index.html">Inicio</a>
-      <a href="../index.html#piscine">Piscine</a>
-      <a href="../index.html#cursus" class="active">Cursus</a>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
     </nav>
   </div>
 </header>
@@ -59,7 +59,7 @@ ver con los ejercicios.)</div>
 <div class="meta"><span>Entrega: <b>exo.tar</b></span><span>Autorizado: <b>ninguna</b></span></div>
 <p>Reproducir un <code>ls -l</code> exacto de siete entradas (permisos, tamaños, fechas y un
 enlace simbólico) y empaquetarlo con <code>tar -cf exo.tar *</code>. Es el
-<a href="../piscine/000_shell00.html#ex01">testShell00</a> de la piscine, pero con siete ficheros en
+<a href="../../piscine/000_shell00.html#ex01">testShell00</a> de la piscine, pero con siete ficheros en
 vez de uno. Lo que hay de verdad dentro del tar entregado:</p>
 <pre><code>$ tar -tvf exo.tar
 drwx--xr-x xavilara/xavilara 0 2026-06-01 20:47 test0/
@@ -90,16 +90,16 @@ propio nombre más la entrada <code>.</code> que llevan dentro.</div>
 <div class="meta"><span>Entrega: <b>z</b>, <b>clean</b>, <b>find_sh.sh</b>, <b>MAC.sh</b>, <b>"\?$*'MaRViN'*$?\"</b></span><span>Autorizado: <b>ninguna</b></span></div>
 <p>Los cinco son ejercicios de Shell 00 y Shell 01 repetidos casi palabra por palabra, así que
 basta con el código y el enlace a su explicación completa:</p>
-<pre><code># ex01/z  — <a href="../piscine/000_shell00.html#ex00">Shell 00 · Z</a>
+<pre><code># ex01/z  — <a href="../../piscine/000_shell00.html#ex00">Shell 00 · Z</a>
 Z
 
-# ex02/clean  — <a href="../piscine/000_shell00.html#ex08">Shell 00 · clean</a>
+# ex02/clean  — <a href="../../piscine/000_shell00.html#ex08">Shell 00 · clean</a>
 find . -type f \( -name "*~" -o -name "#*#" \) -print -delete
 
-# ex03/find_sh.sh  — <a href="../piscine/001_shell01.html#ex02">Shell 01 · find_sh</a>
+# ex03/find_sh.sh  — <a href="../../piscine/001_shell01.html#ex02">Shell 01 · find_sh</a>
 find . -type f -name '*.sh' | sed 's|.*/||; s|\.sh$||'
 
-# ex04/MAC.sh  — <a href="../piscine/001_shell01.html#ex04">Shell 01 · MAC</a>
+# ex04/MAC.sh  — <a href="../../piscine/001_shell01.html#ex04">Shell 01 · MAC</a>
 ifconfig | awk '/ether/ {print $2}'</code></pre>
 <ul>
 <li><strong>z</strong>: dos bytes, <code>Z</code> y el salto de línea; <code>cat</code> no añade
@@ -112,7 +112,7 @@ en el mismo comando, que es justo lo que pide la regla de "nada de <code>;</code
 <code>/</code> (la ruta) y el segundo quita el <code>.sh</code> final.</li>
 <li><strong>MAC.sh</strong>: en el <code>ifconfig</code> de Linux la MAC va en la línea
 <code>ether xx:xx:...</code>; awk filtra esas líneas e imprime el segundo campo.</li>
-<li><strong>"\?$*'MaRViN'*$?\"</strong> (ex05, <a href="../piscine/001_shell01.html#ex05">Shell 01 ·
+<li><strong>"\?$*'MaRViN'*$?\"</strong> (ex05, <a href="../../piscine/001_shell01.html#ex05">Shell 01 ·
 ¿Puedes crearlo?</a>): el fichero contiene <code>42</code> sin salto de línea (2 bytes). La
 dificultad era solo crear un nombre lleno de caracteres especiales de la shell.</li>
 </ul>
@@ -129,8 +129,8 @@ se limpian proyectos o se automatizan pruebas, y el cursus da por hecho que las 
 <div class="card" id="ex06">
 <h2><span class="ex">ex06–ex08</span>ft_print_alphabet, ft_print_numbers, ft_is_negative</h2>
 <div class="meta"><span>Entrega: <b>ft_print_alphabet.c</b>, <b>ft_print_numbers.c</b>, <b>ft_is_negative.c</b></span><span>Autorizado: <b>ft_putchar</b></span></div>
-<p>Los mismos que en <a href="../piscine/002_c00.html#ex01">C 00 · ex01</a>,
-<a href="../piscine/002_c00.html#ex03">ex03</a> y <a href="../piscine/002_c00.html#ex04">ex04</a>,
+<p>Los mismos que en <a href="../../piscine/002_c00.html#ex01">C 00 · ex01</a>,
+<a href="../../piscine/002_c00.html#ex03">ex03</a> y <a href="../../piscine/002_c00.html#ex04">ex04</a>,
 con un cambio: ya no se usa <code>write</code> directamente sino <code>ft_putchar</code>, que solo
 se declara.</p>
 <pre><code>void	ft_putchar(char a);
@@ -160,9 +160,9 @@ días, tus programas usarán las funciones de <code>libft.a</code> a través de
 <h2><span class="ex">ex09–ex11</span>ft_ft, ft_swap, ft_div_mod</h2>
 <div class="meta"><span>Entrega: <b>ft_ft.c</b>, <b>ft_swap.c</b>, <b>ft_div_mod.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
 <p>Punteros como parámetros de salida, exactamente como en
-<a href="../piscine/003_c01.html#ex00">C 01 · ft_ft</a>,
-<a href="../piscine/003_c01.html#ex02">ft_swap</a> y
-<a href="../piscine/003_c01.html#ex03">ft_div_mod</a>:</p>
+<a href="../../piscine/003_c01.html#ex00">C 01 · ft_ft</a>,
+<a href="../../piscine/003_c01.html#ex02">ft_swap</a> y
+<a href="../../piscine/003_c01.html#ex03">ft_div_mod</a>:</p>
 <pre><code>*nbr = 42;                 /* ft_ft */
 
 t = *a;                    /* ft_swap */
@@ -182,9 +182,9 @@ la manera de "devolver dos valores" (cociente y resto) cuando <code>return</code
 <div class="card" id="ex12">
 <h2><span class="ex">ex12–ex14</span>ft_iterative_factorial, ft_recursive_factorial, ft_sqrt</h2>
 <div class="meta"><span>Entrega: <b>ft_iterative_factorial.c</b>, <b>ft_recursive_factorial.c</b>, <b>ft_sqrt.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
-<p>Los ejercicios de <a href="../piscine/007_c05.html#ex00">C 05</a> (factorial
-<a href="../piscine/007_c05.html#ex00">iterativo</a>, <a href="../piscine/007_c05.html#ex01">recursivo</a>
-y <a href="../piscine/007_c05.html#ex05">sqrt</a>). Las dos versiones del factorial:</p>
+<p>Los ejercicios de <a href="../../piscine/007_c05.html#ex00">C 05</a> (factorial
+<a href="../../piscine/007_c05.html#ex00">iterativo</a>, <a href="../../piscine/007_c05.html#ex01">recursivo</a>
+y <a href="../../piscine/007_c05.html#ex05">sqrt</a>). Las dos versiones del factorial:</p>
 <pre><code>/* ex12: iterativo */
 if (nb &lt; 0)
 	return (0);
@@ -242,9 +242,9 @@ el rango útil de un <code>int</code> acaba en 12; la raíz deja de poder calcul
 <h2><span class="ex">ex15–ex17</span>ft_putstr, ft_strlen, ft_strcmp</h2>
 <div class="meta"><span>Entrega: <b>ft_putstr.c</b>, <b>ft_strlen.c</b>, <b>ft_strcmp.c</b></span><span>Autorizado: <b>ft_putchar</b> (solo ex15)</span></div>
 <p>Las tres funciones de cadenas básicas, vistas en
-<a href="../piscine/003_c01.html#ex05">C 01 · ft_putstr</a>,
-<a href="../piscine/003_c01.html#ex06">C 01 · ft_strlen</a> y
-<a href="../piscine/005_c03.html#ex00">C 03 · ft_strcmp</a>. <code>ft_putstr</code> y
+<a href="../../piscine/003_c01.html#ex05">C 01 · ft_putstr</a>,
+<a href="../../piscine/003_c01.html#ex06">C 01 · ft_strlen</a> y
+<a href="../../piscine/005_c03.html#ex00">C 03 · ft_strcmp</a>. <code>ft_putstr</code> y
 <code>ft_strlen</code> son el mismo recorrido <code>while (str[i])</code>: una imprime cada
 carácter, la otra solo cuenta. La que tiene miga es strcmp:</p>
 <pre><code>int	ft_strcmp(char *s1, char *s2)
@@ -269,8 +269,8 @@ hasta ese cero. Son además tres de las cinco que compilará el Makefile del ex2
 <h2><span class="ex">ex18–ex19</span>ft_print_params y ft_sort_params</h2>
 <div class="meta"><span>Entrega: <b>ft_print_params.c</b>, <b>ft_sort_params.c</b></span><span>Autorizado: <b>ft_putchar</b></span></div>
 <p>Los dos primeros <em>programas</em> (con <code>main</code>) del proyecto, como en
-<a href="../piscine/008_c06.html#ex01">C 06 · ft_print_params</a> y
-<a href="../piscine/008_c06.html#ex03">C 06 · ft_sort_params</a>. El código llama
+<a href="../../piscine/008_c06.html#ex01">C 06 · ft_print_params</a> y
+<a href="../../piscine/008_c06.html#ex03">C 06 · ft_sort_params</a>. El código llama
 <code>argn</code> a lo que suele llamarse <code>argc</code>; el nombre da igual, lo que cuenta es la
 posición del parámetro. La ordenación de ex19:</p>
 <pre><code>i = 1;
@@ -304,8 +304,8 @@ grande se hace siempre así.</div>
 <div class="card" id="ex20">
 <h2><span class="ex">ex20–ex21</span>ft_strdup y ft_range</h2>
 <div class="meta"><span>Entrega: <b>ft_strdup.c</b>, <b>ft_range.c</b></span><span>Autorizado: <b>malloc</b></span></div>
-<p>Memoria dinámica, como en <a href="../piscine/009_c07.html#ex00">C 07 · ft_strdup</a> y
-<a href="../piscine/009_c07.html#ex01">C 07 · ft_range</a>.</p>
+<p>Memoria dinámica, como en <a href="../../piscine/009_c07.html#ex00">C 07 · ft_strdup</a> y
+<a href="../../piscine/009_c07.html#ex01">C 07 · ft_range</a>.</p>
 <pre><code>char	*ft_strdup(char *src)
 {
 	char	*dest;
@@ -347,8 +347,8 @@ tenerlo interiorizado.</div>
 <div class="card" id="ex22">
 <h2><span class="ex">ex22–ex23</span>ft_abs.h y ft_point.h</h2>
 <div class="meta"><span>Entrega: <b>ft_abs.h</b>, <b>ft_point.h</b></span><span>Autorizado: <b>ninguna</b></span></div>
-<p>Dos cabeceras, como en <a href="../piscine/010_c08.html#ex02">C 08 · ft_abs.h</a> y
-<a href="../piscine/010_c08.html#ex03">C 08 · ft_point.h</a>. Ninguna contiene código que se
+<p>Dos cabeceras, como en <a href="../../piscine/010_c08.html#ex02">C 08 · ft_abs.h</a> y
+<a href="../../piscine/010_c08.html#ex03">C 08 · ft_point.h</a>. Ninguna contiene código que se
 ejecute: una define una macro y la otra un tipo.</p>
 <pre><code>#ifndef FT_ABS_H
 # define FT_ABS_H
@@ -394,7 +394,7 @@ el esqueleto que tendrá <code>libft.h</code> con su <code>t_list</code>.</div>
 anteriores (<code>ft_putchar</code>, <code>ft_putstr</code>, <code>ft_strcmp</code>,
 <code>ft_strlen</code>, <code>ft_swap</code>), con las fuentes en <code>srcs/</code>, las cabeceras
 en <code>includes/</code> y la librería en la raíz. Solo se entrega el Makefile; la Moulinette pone
-sus propios ficheros. Es el mismo ejercicio que <a href="../piscine/011_c09.html#ex01">C 09 ·
+sus propios ficheros. Es el mismo ejercicio que <a href="../../piscine/011_c09.html#ex01">C 09 ·
 Makefile</a>, y en el cursus se vuelve central porque es la base de la entrega de Libft:</p>
 <pre><code>NAME = libft.a
 SRCS = srcs/ft_putchar.c \
@@ -466,8 +466,8 @@ mismas reglas, y la evaluación comprueba que no recompile de más.</div>
 <div class="card" id="ex25">
 <h2><span class="ex">ex25–ex26</span>ft_foreach y ft_count_if</h2>
 <div class="meta"><span>Entrega: <b>ft_foreach.c</b>, <b>ft_count_if.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
-<p>Punteros a función, como en <a href="../piscine/013_c11.html#ex00">C 11 · ft_foreach</a> y
-<a href="../piscine/013_c11.html#ex03">C 11 · ft_count_if</a>:</p>
+<p>Punteros a función, como en <a href="../../piscine/013_c11.html#ex00">C 11 · ft_foreach</a> y
+<a href="../../piscine/013_c11.html#ex03">C 11 · ft_count_if</a>:</p>
 <pre><code>void	ft_foreach(int *tab, int length, void (*f)(int))
 {
 	int	i;
@@ -508,7 +508,7 @@ Libft, en <code>qsort</code> de la libc o en los callbacks de cualquier bibliote
 <div class="meta"><span>Entrega: <b>Makefile</b>, <b>ft_display_file.c</b></span><span>Autorizado: <b>open, read, write, close</b></span></div>
 <p>Un programa <code>ft_display_file</code> que muestra el contenido del fichero que recibe como
 argumento, sin <code>malloc</code> (solo un array de tamaño fijo) y con tres mensajes de error
-concretos por la salida de error. Es el <a href="../piscine/012_c10.html#ex00">display_file de
+concretos por la salida de error. Es el <a href="../../piscine/012_c10.html#ex00">display_file de
 C 10</a>, el último ejercicio del proyecto y el único que lee de disco.</p>
 <pre><code>void	ft_cat_fd(int fd)
 {
@@ -587,7 +587,7 @@ llamada y llamada. Separar la salida normal (fd 1) de los errores (fd 2) es lo q
 copia.</div>
 </div>
 
-<footer>42.zenidx.com — C-piscine-reloaded · <a href="001_Libft.html">continuar con Libft →</a></footer>
+<footer>42.zenidx.com — C-piscine-reloaded · <a href="../M0/001_Libft.html">continuar con Libft →</a></footer>
 </div>
 </body>
 </html>

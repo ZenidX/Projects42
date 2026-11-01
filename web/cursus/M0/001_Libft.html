@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Libft — 42.zenidx.com</title>
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../../style.css">
 </head>
 <body>
 <header class="site">
   <div class="wrap">
-    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
     <nav>
-      <a href="../index.html">Inicio</a>
-      <a href="../index.html#piscine">Piscine</a>
-      <a href="../index.html#cursus" class="active">Cursus</a>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
     </nav>
   </div>
 </header>
@@ -100,7 +100,7 @@ reutiliza las otras dos en lugar de repetir los rangos. Ojo, una rareza de estil
 <code>ft_isalnum.c</code> declara a mano los prototipos de <code>ft_isalpha</code> y
 <code>ft_isdigit</code>; compila igual, pero el resto del repo tira del header común.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Lo mismo que en
-<a href="../piscine/004_c02.html">C 02</a>, pero ahora con el contrato de la libc: leer el
+<a href="../../piscine/004_c02.html">C 02</a>, pero ahora con el contrato de la libc: leer el
 <code>man</code> y respetar el tipo exacto (<code>int</code>, no <code>char</code>) y el valor de
 retorno exacto. El truco de <code>c + 'A' - 'a'</code> evita escribir el número 32 a pelo: expresa
 la distancia entre mayúsculas y minúsculas en términos de la propia tabla ASCII.</div>
@@ -186,7 +186,7 @@ pasarse de <code>len</code>. Ojo: el bucle exterior solo para en el <code>'\0'</
 interior no avanza y nunca hay coincidencia), pero sigue leyendo <code>big</code> hasta su final;
 con un buffer que no tenga <code>'\0'</code> dentro de los <code>len</code> bytes, leería fuera.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Es la segunda vuelta de
-<a href="../piscine/005_c03.html">C 03</a> (strncmp, strstr), con dos matices nuevos: la
+<a href="../../piscine/005_c03.html">C 03</a> (strncmp, strstr), con dos matices nuevos: la
 comparación con <code>unsigned char</code> y el límite <code>len</code>. Las funciones "con n" de
 la libc existen para trabajar con memoria cuyo tamaño conoces, y el reto es que ese límite se
 respete en <em>todas</em> las lecturas, no solo en el resultado.</div>
@@ -248,7 +248,7 @@ queda <code>"abcde"</code> y devuelve 12.</p>
 bugs: con <code>size_t</code> no existen los negativos, y cada resta hay que justificarla antes de
 escribirla. También el diseño del valor de retorno: devolver "lo que habría ocupado" permite
 detectar el truncado y reservar lo justo en un segundo intento. strlcpy ya apareció en
-<a href="../piscine/004_c02.html">C 02</a>; aquí se le suma strlcat y el caso degenerado del
+<a href="../../piscine/004_c02.html">C 02</a>; aquí se le suma strlcat y el caso degenerado del
 destino lleno. El enunciado recuerda que glibc no las trae: para compararlas hace falta
 <code>&lt;bsd/string.h&gt;</code> y <code>-lbsd</code>.</div>
 </div>
@@ -366,7 +366,7 @@ negativos y llega a <code>INT_MIN</code> sin pasar nunca por <code>+2147483648</
 en un <code>int</code>. La condición <code>&amp;&amp; nptr[i]</code> sobra: un dígito ya no es
 <code>'\0'</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Es el atoi de
-<a href="../piscine/006_c04.html">C 04</a>, pero ajustado al de la libc: un solo signo (la piscine
+<a href="../../piscine/006_c04.html">C 04</a>, pero ajustado al de la libc: un solo signo (la piscine
 aceptaba varios), y el borde de <code>INT_MIN</code> resuelto acumulando con signo. La lección de
 fondo es la de siempre: el rango del complemento a dos es asimétrico.</div>
 </div>
@@ -400,7 +400,7 @@ devuelva <code>NULL</code>). Ojo, una rareza: <code>s</code> es <code>long</code
 <code>size_t</code>; la comprobación funciona igual porque en <code>s / nmemb</code> el
 <code>long</code> se convierte a <code>size_t</code>, pero el tipo natural sería
 <code>size_t</code>. El <code>nmemb != 0</code> es redundante tras el primer <code>if</code>.</p>
-<p><code>ft_strdup</code> es el de <a href="../piscine/009_c07.html">C 07</a>:
+<p><code>ft_strdup</code> es el de <a href="../../piscine/009_c07.html">C 07</a>:
 <code>ft_strlen</code>, <code>malloc(l + 1)</code>, comprobar <code>NULL</code>, copiar y cerrar con
 <code>'\0'</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la multiplicación de enteros sin signo
@@ -438,7 +438,7 @@ detrás de otra escribiendo en <code>p[l1 + i]</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El patrón de toda la Parte 2: <em>medir,
 reservar lo justo, comprobar <code>NULL</code>, rellenar, terminar en <code>'\0'</code></em>. Y que
 el llamante es quien libera: cada una de estas funciones devuelve memoria nueva cuya propiedad pasa
-a quien la llamó, como ya se vio con join en <a href="../piscine/009_c07.html">C 07</a>.</div>
+a quien la llamó, como ya se vio con join en <a href="../../piscine/009_c07.html">C 07</a>.</div>
 </div>
 
 <div class="card" id="strtrim">
@@ -558,7 +558,7 @@ en los extremos no generan palabras vacías.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Memoria en dos niveles: un array de
 punteros, cada uno a su propia reserva, que hay que liberar de dentro afuera. Y el principio de que
 si fallas a mitad, deshaces lo hecho: la función no puede devolver <code>NULL</code> dejando medio
-resultado colgado en el heap. Es el split de <a href="../piscine/009_c07.html">C 07</a> simplificado
+resultado colgado en el heap. Es el split de <a href="../../piscine/009_c07.html">C 07</a> simplificado
 a un único separador, pero ahora con la liberación en caso de error como requisito explícito.</div>
 </div>
 
@@ -614,7 +614,7 @@ es <code>-(-8) = 8</code> y no hace falta calcular <code>+2147483648</code>. Los
 correcta. Un fallo de <code>malloc</code> en el caso base se propaga hacia arriba con los
 <code>if (!r) return (NULL)</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El mismo borde que el putnbr de
-<a href="../piscine/002_c00.html">C 00</a>, pero ahora con memoria: hay que saber cuántas cifras
+<a href="../../piscine/002_c00.html">C 00</a>, pero ahora con memoria: hay que saber cuántas cifras
 tendrá el número <em>antes</em> de reservar. La mayoría lo resuelve con un bucle previo que cuenta
 dígitos; aquí la propia recursión hace de contador. Y la semántica de <code>/</code> y
 <code>%</code> con negativos (truncamiento hacia cero) deja de ser un detalle del estándar para
@@ -656,7 +656,7 @@ el sitio, y no reserva nada. Las dos sintaxis de llamada, <code>(*f)(…)</code>
 son equivalentes en C. <code>ft_striteri</code> protege <code>s</code> y <code>f</code> nulos;
 <code>ft_strmapi</code> no.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Punteros a función, ya vistos en
-<a href="../piscine/013_c11.html">C 11</a>: la función recibe el <em>comportamiento</em> como
+<a href="../../piscine/013_c11.html">C 11</a>: la función recibe el <em>comportamiento</em> como
 parámetro. Y la diferencia entre transformar devolviendo algo nuevo y mutar lo existente, que es la
 misma que separa <code>lstmap</code> de <code>lstiter</code> en la Parte 3.</div>
 </div>
@@ -689,7 +689,7 @@ void	ft_putnbr_fd(int n, int fd)
 2 para stderr o el <code>fd</code> de un fichero abierto. <code>ft_putstr_fd</code> hace un solo
 <code>write</code> con la longitud entera en vez de uno por carácter, y
 <code>ft_putendl_fd</code> reutiliza <code>ft_putstr_fd</code> y añade el <code>'\n'</code>.
-<code>ft_putnbr_fd</code> es el putnbr de <a href="../piscine/002_c00.html">C 00</a>: copia a
+<code>ft_putnbr_fd</code> es el putnbr de <a href="../../piscine/002_c00.html">C 00</a>: copia a
 <code>long</code> antes de negar para que <code>INT_MIN</code> quepa, y recursión para imprimir los
 dígitos en orden (al volver a llamarse con <code>nl / 10</code>, el <code>long</code> se convierte
 en <code>int</code> sin pérdida, porque ya es positivo y menor).</p>
@@ -707,7 +707,7 @@ más adelante, mandar los errores a stderr o escribir en un fichero con las mism
 	void			*content;
 	struct s_list	*next;
 }					t_list;</code></pre>
-Es la misma idea que el <code>t_list</code> de <a href="../piscine/014_c12.html">C 12</a> con otros
+Es la misma idea que el <code>t_list</code> de <a href="../../piscine/014_c12.html">C 12</a> con otros
 nombres (<code>content</code> en lugar de <code>data</code>): un nodo que se apunta a sí mismo y un
 <code>void *</code> que permite guardar cualquier cosa. En la versión 42next estas nueve funciones
 forman parte de la parte obligatoria, como las demás; no hay ficheros <code>_bonus</code> ni regla
@@ -756,7 +756,7 @@ cambiar la cabeza del llamante. <code>ft_lstlast</code> admite una lista vacía 
 <code>NULL</code>) gracias al <code>n &amp;&amp;</code>, y <code>ft_lstsize</code> es el recorrido
 canónico <code>while (n) { n = n-&gt;next; i++; }</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Repaso de
-<a href="../piscine/014_c12.html">C 12</a>: nodos en el heap, el doble puntero para modificar la
+<a href="../../piscine/014_c12.html">C 12</a>: nodos en el heap, el doble puntero para modificar la
 cabeza y el recorrido hasta <code>NULL</code>. La novedad es que ahora la lista es tuya para todo el
 cursus: estas funciones van a sostener las pilas de push_swap.</div>
 </div>
@@ -934,11 +934,11 @@ regla <code>bonus</code>. <code>libft.h</code> lleva include guard
 paquete de ficheros objeto con un índice, del que el enlazador copia en tu ejecutable solo los
 objetos que necesitas. Por eso la regla de "una función por fichero" tiene sentido: si usas
 <code>ft_strlen</code>, solo entra <code>ft_strlen.o</code>. Las dependencias del Makefile son lo
-que <a href="../piscine/011_c09.html">C 09</a> empezó y aquí se vuelve obligatorio: compilar solo lo
+que <a href="../../piscine/011_c09.html">C 09</a> empezó y aquí se vuelve obligatorio: compilar solo lo
 que cambió.</div>
 </div>
 
-<footer>42.zenidx.com — Libft · <a href="100_ft_printf.html">continuar con ft_printf →</a></footer>
+<footer>42.zenidx.com — Libft · <a href="../M1/100_ft_printf.html">continuar con ft_printf →</a></footer>
 </div>
 </body>
 </html>

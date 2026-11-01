@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ft_transcendence — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — ft_transcendence <span class="tag pend">pendiente</span></h1>
+<p class="sub">El último proyecto del common core (rank 06): una aplicación web completa
+—frontend, backend y base de datos— hecha en equipo de 4 o 5 personas, con una idea
+elegida por el propio equipo y un sistema de módulos que hay que sumar hasta 14 puntos.
+Esta ficha describe la <strong>versión 21.2</strong> del enunciado, la más reciente que se ha
+podido localizar.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#equipo">El equipo y sus roles</a></li>
+  <li><a href="#obligatorio">La parte obligatoria</a></li>
+  <li><a href="#modulos">Cómo funcionan los módulos</a></li>
+  <li><a href="#web">Web</a></li>
+  <li><a href="#a11y">Accesibilidad e i18n</a></li>
+  <li><a href="#usuarios">Gestión de usuarios</a></li>
+  <li><a href="#ia">Inteligencia artificial</a></li>
+  <li><a href="#ciber">Ciberseguridad</a></li>
+  <li><a href="#juego">Juego y experiencia de usuario</a></li>
+  <li><a href="#devops">DevOps</a></li>
+  <li><a href="#datos">Datos y analítica</a></li>
+  <li><a href="#blockchain">Blockchain</a></li>
+  <li><a href="#libre">Módulos a elección</a></li>
+  <li><a href="#readme">El README</a></li>
+  <li><a href="#evaluacion">Bonus y evaluación</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De un Pong a «lo que queráis»</b> — ft_transcendence existe desde
+los primeros años del 42cursus y ha cambiado de enunciado muchas veces. Durante mucho tiempo
+el proyecto era siempre el mismo: un Pong multijugador en el navegador —el juego de Atari de
+1972, el primer gran éxito comercial del videojuego— con usuarios, chat y torneos, y lo que
+cambiaba de una versión a otra era la pila tecnológica impuesta y la lista de módulos. La
+versión 21 rompe con eso: el subtítulo del enunciado es literalmente <em>«Surprise.»</em> y
+el contenido lo decide el equipo. El Pong queda como un ejemplo más («si eliges hacer un
+Pong, como en el proyecto original…»). Lo que se mantiene es la intención: juntar en un solo
+proyecto todo lo aprendido —redes, contenedores, seguridad, bases de datos— y hacerlo como
+se hace en una empresa, con roles, reparto de trabajo y documentación. Es, con diferencia,
+el proyecto más largo del common core, y el enunciado avisa de que las malas decisiones al
+principio y la falta de coordinación cuestan mucho tiempo.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>06</b></span><span>Stack: <b>libre</b> (web: frontend + backend + BD)</span><span>Grupo: <b>4–5 personas</b></span><span>Enunciado: <b>v21.2</b></span></div>
+<ul>
+  <li>Una <b>aplicación web</b> con frontend, backend y base de datos. La idea es vuestra:
+  el enunciado propone ejemplos como un Pong con torneos, una plataforma colaborativa en
+  tiempo real, una red social, un juego online con emparejamiento o un gestor de
+  proyectos.</li>
+  <li>Una <b>parte obligatoria</b> fija, en la que tiene que participar todo el equipo.</li>
+  <li><b>Módulos</b> elegidos de una lista hasta sumar <b>14 puntos</b> (módulo
+  <em>major</em> = 2, <em>minor</em> = 1).</li>
+  <li>Un <b>README.md</b> muy completo, en inglés, con secciones obligatorias.</li>
+  <li>Roles de equipo definidos y documentados.</li>
+</ul>
+<p>El enunciado dedica además un capítulo entero a ideas de proyecto con la combinación de
+módulos que daría los 14 puntos, agrupadas en juegos, proyectos sociales, creativos, de
+productividad y especializados.</p>
+</div>
+
+<div class="card" id="equipo">
+<h2>El equipo y sus roles</h2>
+<p>Hay que asignar estos roles (con 4 personas, alguien acumula varios):</p>
+<ul>
+  <li><b>Product Owner (PO)</b>: visión del producto, prioridades, mantiene el
+  <em>backlog</em>, valida el trabajo terminado y habla con los evaluadores.</li>
+  <li><b>Project Manager / Scrum Master</b>: organiza reuniones y planificación, sigue
+  plazos y avances, gestiona riesgos y bloqueos.</li>
+  <li><b>Technical Lead / Arquitecto</b>: arquitectura, elección de tecnologías, calidad del
+  código, revisa los cambios críticos.</li>
+  <li><b>Developers</b> (todos): implementan, revisan código, prueban y documentan.</li>
+</ul>
+<p>Como recomendación (no obligatoria): reuniones regulares, un tablero de tareas (GitHub
+Issues, Trello…), dividir en tareas pequeñas, revisiones de código, notas de decisiones y un
+canal de comunicación (Discord, Slack…). En la evaluación preguntarán cómo se repartieron
+los roles, cómo se organizó y dividió el trabajo, cómo os comunicasteis y qué aportó cada
+uno, y todos deben poder explicar el proyecto.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Los nombres vienen de
+<em>Scrum</em>, el marco ágil que Ken Schwaber y Jeff Sutherland presentaron en 1995 y que
+hoy usa buena parte de la industria. El PO decide <em>qué</em> se construye, el equipo
+<em>cómo</em>, y el Scrum Master cuida de que el proceso no se atasque. Hasta ahora los
+proyectos en grupo de 42 eran de dos personas que se repartían ficheros; con cinco, sin
+alguien que decida prioridades y alguien que vigile la arquitectura, cada uno acaba
+construyendo su propia aplicación.</div>
+</div>
+
+<div class="card" id="obligatorio">
+<h2>La parte obligatoria</h2>
+<p><b>Requisitos generales</b> (si no se cumplen, el proyecto se rechaza):</p>
+<ul>
+  <li>Aplicación web con frontend, backend y base de datos.</li>
+  <li>Git con mensajes claros y significativos; el historial debe mostrar commits de todos
+  los miembros y un reparto real del trabajo.</li>
+  <li>Despliegue con contenedores (Docker, Podman o equivalente) y con <b>un solo
+  comando</b>.</li>
+  <li>Compatible con la última versión estable de Google Chrome, y sin avisos ni errores de
+  JavaScript en la consola del navegador.</li>
+  <li>Páginas de <b>Política de privacidad</b> y <b>Términos de servicio</b> accesibles
+  (por ejemplo, desde el pie) y con contenido real, no de relleno. Si faltan o son
+  inadecuadas, el proyecto se rechaza.</li>
+  <li><b>Multiusuario</b>: varios usuarios conectados a la vez, acciones concurrentes bien
+  gestionadas, actualizaciones en tiempo real cuando proceda y sin corrupción de datos ni
+  condiciones de carrera.</li>
+</ul>
+<p><b>Requisitos técnicos</b>:</p>
+<ul>
+  <li>Frontend claro, <em>responsive</em> y accesible en cualquier dispositivo, con el
+  framework o solución de estilos que queráis (Tailwind, Bootstrap, Material-UI…).</li>
+  <li>Credenciales en un <code>.env</code> local ignorado por Git, y un
+  <code>.env.example</code>.</li>
+  <li>Base de datos con esquema claro y relaciones bien definidas.</li>
+  <li>Gestión de usuarios básica: registro e inicio de sesión seguros, como mínimo con email
+  y contraseña <b>hasheada y con sal</b>. OAuth, 2FA, etc. van como módulos.</li>
+  <li>Validación de todos los formularios y entradas en el frontend <b>y</b> en el
+  backend.</li>
+  <li><b>HTTPS</b> en toda conexión con el backend (navegador, scripts, APIs externas).
+  Dentro del backend (servidor web ↔ base de datos, entre contenedores) puede ir sin
+  cifrar.</li>
+</ul>
+<p>El enunciado define también qué cuenta como <em>framework</em>: algo con arquitectura y
+convenciones propias, funciones integradas (rutas, estado…) y un ecosistema. React, Vue,
+Angular, Svelte o Next.js sí; Express, Fastify, NestJS, Django, Flask o Rails también; jQuery,
+Lodash o Axios no. React se considera framework a estos efectos aunque técnicamente sea una
+librería.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Casi cada línea es una lección de
+seguridad o de operación. <em>Hash con sal</em>: la contraseña nunca se guarda, se guarda el
+resultado de una función de derivación lenta (bcrypt, scrypt, Argon2) aplicada a la
+contraseña más un valor aleatorio distinto por usuario, para que dos contraseñas iguales no
+den el mismo hash y no sirvan las tablas precalculadas. A modo de ilustración del concepto,
+en Python:
+<pre><code>import hashlib, os
+salt = os.urandom(16)
+h = hashlib.scrypt(b"contraseña", salt=salt, n=2**14, r=8, p=1)
+# se guardan salt y h; nunca la contraseña</code></pre>
+<em>Validar también en el backend</em>: el frontend lo controla el usuario, así que
+cualquier comprobación hecha solo en el navegador se salta con un <code>curl</code>.
+<em>HTTPS</em>: el TLS que en Inception se configuraba en NGINX, ahora delante de una
+aplicación real. <em>Un solo comando</em>: lo que Inception enseñó con Docker Compose.
+<em>Condiciones de carrera</em>: el mismo problema de hilos y mutex de los proyectos de
+concurrencia, ahora entre peticiones HTTP que tocan la misma fila de la base de datos.</div>
+</div>
+
+<div class="card" id="modulos">
+<h2>Cómo funcionan los módulos</h2>
+<ul>
+  <li>Hacen falta <b>14 puntos</b>: cada <em>major</em> vale 2 y cada <em>minor</em> 1. Se
+  pueden combinar módulos de cualquier categoría.</li>
+  <li>El enunciado recomienda elegirlos cuando la idea ya esté clara, y apuntar a más de 14
+  por si alguno no se valida.</li>
+  <li>Hay <b>dependencias</b>: los módulos de juego (IA rival, torneo, personalización,
+  espectador, multijugador de 3+, segundo juego) y el de estadísticas exigen tener antes un
+  juego; el chat avanzado exige el chat básico del módulo de interacción entre usuarios; el
+  SSR es incompatible con el backend en la blockchain ICP.</li>
+  <li>En la evaluación hay que demostrar cada módulo. Solo cuentan los que funcionen
+  completos: un módulo incompleto vale 0.</li>
+</ul>
+<p>El enunciado da un ejemplo con el Pong clásico: juego web (2) + jugadores remotos (2) +
+torneo (1) + personalización (1) + gestión de usuarios estándar (2) + OAuth (1) +
+frameworks de front y back (2) + ORM (1) + IA rival (2) = 14.</p>
+</div>
+
+<div class="card" id="web">
+<h2><span class="ex">IV.1</span>Web</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>Framework en frontend y backend (un full-stack como Next.js, Nuxt o SvelteKit cuenta como ambos si se usan sus dos partes)</td></tr>
+<tr><td>Minor</td><td>Framework solo en el frontend</td></tr>
+<tr><td>Minor</td><td>Framework solo en el backend</td></tr>
+<tr><td>Major</td><td>Tiempo real con WebSockets o similar: actualizaciones entre clientes, conexiones y desconexiones bien gestionadas, difusión eficiente</td></tr>
+<tr><td>Major</td><td>Interacción entre usuarios: chat básico, perfiles y sistema de amigos</td></tr>
+<tr><td>Major</td><td>API pública con clave segura, límite de peticiones, documentación y al menos 5 endpoints (GET, POST, PUT, DELETE…)</td></tr>
+<tr><td>Minor</td><td>ORM para la base de datos</td></tr>
+<tr><td>Minor</td><td>Notificaciones para toda creación, modificación y borrado</td></tr>
+<tr><td>Minor</td><td>Funciones colaborativas en tiempo real (espacios compartidos, edición en vivo, dibujo…)</td></tr>
+<tr><td>Minor</td><td>Server-Side Rendering (SSR)</td></tr>
+<tr><td>Minor</td><td>Progressive Web App (PWA) con modo sin conexión e instalable</td></tr>
+<tr><td>Minor</td><td>Sistema de diseño propio: paleta, tipografía, iconos y al menos 10 componentes reutilizables</td></tr>
+<tr><td>Minor</td><td>Búsqueda avanzada con filtros, ordenación y paginación</td></tr>
+<tr><td>Minor</td><td>Subida y gestión de ficheros: varios tipos, validación en cliente y servidor, almacenamiento con control de acceso, vista previa, progreso y borrado</td></tr>
+</table>
+<p>El enunciado no aclara si el major de «framework en front y back» se puede sumar con los
+dos minor de framework por separado; lo lógico es que no, pero no está confirmado.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El modelo petición-respuesta de HTTP
+no sirve para un chat o un juego: el servidor no puede avisar al cliente si este no pregunta.
+<em>WebSocket</em> (RFC 6455, 2011) resuelve eso abriendo un canal bidireccional permanente
+sobre la misma conexión TCP, tras un <em>handshake</em> HTTP. Es el servidor
+multicliente con sockets de toda la vida, llevado al navegador. El ORM traduce tablas a objetos; la API
+pública con <em>rate limiting</em> obliga a pensar en quién llama y cuántas veces.</div>
+</div>
+
+<div class="card" id="a11y">
+<h2><span class="ex">IV.2</span>Accesibilidad e internacionalización</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>Accesibilidad completa según WCAG 2.1 AA: lector de pantalla, navegación por teclado y tecnologías de asistencia</td></tr>
+<tr><td>Minor</td><td>Varios idiomas (mínimo 3): sistema i18n, traducciones completas, selector de idioma y todo el texto traducible</td></tr>
+<tr><td>Minor</td><td>Idiomas de derecha a izquierda (árabe, hebreo…), con el diseño entero en espejo, no solo la dirección del texto</td></tr>
+<tr><td>Minor</td><td>Al menos 2 navegadores más (Firefox, Safari, Edge…), probados y con las limitaciones documentadas</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Las <em>WCAG</em> (Web Content
+Accessibility Guidelines) son la norma del W3C para la accesibilidad web; la 2.1 es de 2018
+y el nivel AA es el que suelen exigir las leyes, como la directiva europea de accesibilidad.
+Cumplirlas significa HTML semántico, contraste suficiente, foco visible y que todo funcione
+sin ratón. La internacionalización enseña a no escribir nunca un texto visible directamente
+en el código, sino una clave que se traduce.</div>
+</div>
+
+<div class="card" id="usuarios">
+<h2><span class="ex">IV.3</span>Gestión de usuarios</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>Gestión estándar: editar perfil, avatar (con uno por defecto), amigos con estado en línea y página de perfil</td></tr>
+<tr><td>Minor</td><td>Estadísticas e historial de partidas: victorias, derrotas, nivel, logros, clasificación (requiere un juego)</td></tr>
+<tr><td>Minor</td><td>Autenticación remota con OAuth 2.0 (Google, GitHub, 42…)</td></tr>
+<tr><td>Major</td><td>Permisos avanzados: CRUD de usuarios, roles (admin, usuario, invitado, moderador…) y vistas distintas según el rol</td></tr>
+<tr><td>Major</td><td>Organizaciones: crear, editar y borrar, añadir y quitar usuarios, y acciones dentro de una organización</td></tr>
+<tr><td>Minor</td><td>Autenticación en dos pasos (2FA) completa</td></tr>
+<tr><td>Minor</td><td>Panel de analítica de la actividad de los usuarios</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <em>OAuth 2.0</em> (RFC 6749,
+2012) es el protocolo detrás de «Iniciar sesión con Google»: tu aplicación nunca ve la
+contraseña del usuario, sino un código que canjea por un token. La propia intra de 42 ofrece
+OAuth, y era la forma de entrar en las versiones antiguas del proyecto. La 2FA típica es
+<em>TOTP</em> (RFC 6238): un secreto compartido y la hora actual generan un código de seis
+dígitos que cambia cada 30 segundos. Los permisos por rol son el control de acceso que en
+Born2beroot se hacía con grupos y <code>sudo</code>, ahora dentro de la aplicación.</div>
+</div>
+
+<div class="card" id="ia">
+<h2><span class="ex">IV.4</span>Inteligencia artificial</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>Rival controlado por IA: que pueda ganar a veces, que imite a un humano (no juego perfecto) y que use las opciones de personalización si las hay (requiere un juego)</td></tr>
+<tr><td>Major</td><td>Sistema RAG completo sobre un conjunto de datos grande</td></tr>
+<tr><td>Major</td><td>Interfaz con un LLM: generar texto o imágenes, respuestas en streaming, gestión de errores y límite de peticiones</td></tr>
+<tr><td>Major</td><td>Recomendaciones con aprendizaje automático (filtrado colaborativo o por contenido) que mejoren con el tiempo</td></tr>
+<tr><td>Minor</td><td>Moderación automática de contenido</td></tr>
+<tr><td>Minor</td><td>Voz (reconocimiento o síntesis) para accesibilidad o interacción</td></tr>
+<tr><td>Minor</td><td>Análisis de sentimiento del contenido de los usuarios</td></tr>
+<tr><td>Minor</td><td>Reconocimiento y etiquetado de imágenes</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El RAG (<em>Retrieval-Augmented
+Generation</em>, propuesto por Lewis y otros en 2020) es lo mismo que se trabaja en el
+proyecto «RAG against the machine» del rank 04: buscar primero los fragmentos relevantes y
+dárselos al modelo como contexto. El rival de IA tiene una exigencia curiosa: no debe jugar
+perfecto. En un Pong, calcular dónde llegará la pelota es fácil; lo difícil es que el rival
+se equivoque de forma creíble (tiempo de reacción, error en la predicción), que es lo que
+hacen los juegos comerciales.</div>
+</div>
+
+<div class="card" id="ciber">
+<h2><span class="ex">IV.5</span>Ciberseguridad</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>WAF/ModSecurity endurecido + HashiCorp Vault para los secretos (claves de API, credenciales, variables de entorno), cifrados y aislados</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Un WAF (<em>Web Application
+Firewall</em>) inspecciona las peticiones HTTP antes de que lleguen a la aplicación y bloquea
+patrones de ataque conocidos (inyección SQL, XSS…); ModSecurity es el clásico de código
+abierto y suele ir como módulo de NGINX o Apache. Vault da un paso más que el
+<code>.env</code> obligatorio: los secretos no viven en ficheros, sino en un servicio que los
+entrega cifrados y bajo control de acceso.</div>
+</div>
+
+<div class="card" id="juego">
+<h2><span class="ex">IV.6</span>Juego y experiencia de usuario</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>Juego web completo entre usuarios (Pong, ajedrez, tres en raya, cartas…), con partidas en vivo, reglas claras y condiciones de victoria; 2D o 3D</td></tr>
+<tr><td>Major</td><td>Jugadores remotos: dos ordenadores en la misma partida en tiempo real, con latencia, desconexiones y reconexión bien gestionadas</td></tr>
+<tr><td>Major</td><td>Multijugador de tres o más jugadores, sincronizado y justo (requiere un juego)</td></tr>
+<tr><td>Major</td><td>Un segundo juego, con historial y emparejamiento (requiere el primero)</td></tr>
+<tr><td>Major</td><td>Gráficos 3D avanzados con Three.js, Babylon.js o similar</td></tr>
+<tr><td>Minor</td><td>Chat avanzado: bloquear usuarios, invitar a partidas desde el chat, avisos de torneo, perfiles desde el chat, historial, «escribiendo…» y leído (requiere el chat básico; invitaciones y avisos requieren además un juego)</td></tr>
+<tr><td>Minor</td><td>Torneos: cuadro de enfrentamientos, emparejamiento e inscripción (requiere un juego)</td></tr>
+<tr><td>Minor</td><td>Personalización del juego: poderes, mapas o temas, ajustes, con opciones por defecto (requiere un juego)</td></tr>
+<tr><td>Minor</td><td>Gamificación persistente: al menos 3 de logros, insignias, clasificaciones, XP/niveles, retos diarios o recompensas</td></tr>
+<tr><td>Minor</td><td>Modo espectador en tiempo real (requiere un juego)</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El problema central del juego en red:
+dos jugadores ven la misma partida con decenas de milisegundos de retraso entre ellos.
+La solución habitual es un <em>servidor autoritativo</em> —el servidor calcula el estado y
+los clientes solo envían sus entradas y dibujan lo que reciben— para que nadie pueda hacer
+trampas modificando su navegador; encima se añaden técnicas de predicción e interpolación
+para que el retraso no se note. Es la herencia directa del Pong de las versiones
+anteriores, que exigían justamente esto.</div>
+</div>
+
+<div class="card" id="devops">
+<h2><span class="ex">IV.7</span>DevOps</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>Gestión de logs con ELK: Elasticsearch para guardar e indexar, Logstash para recoger y transformar, Kibana para visualizar; retención, archivado y acceso seguro</td></tr>
+<tr><td>Major</td><td>Monitorización con Prometheus y Grafana: métricas, exporters, paneles propios, alertas y acceso seguro</td></tr>
+<tr><td>Major</td><td>Backend en microservicios poco acoplados, cada uno con una responsabilidad, comunicados por REST o colas de mensajes</td></tr>
+<tr><td>Minor</td><td>Página de estado y health checks, con copias de seguridad automáticas y procedimiento de recuperación ante desastres</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una aplicación en producción
+hay que poder observarla: logs para saber qué pasó, métricas para saber cómo va. Prometheus
+nació en SoundCloud en 2012 y funciona al revés de lo intuitivo: no le envías métricas, él
+las <em>recoge</em> periódicamente de cada servicio. Los microservicios llevan al extremo la
+idea de Inception de un contenedor por servicio, con su coste: cada llamada entre servicios
+puede fallar.</div>
+</div>
+
+<div class="card" id="datos">
+<h2><span class="ex">IV.8</span>Datos y analítica</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>Panel de analítica con gráficos interactivos, datos en tiempo real, exportación (PDF, CSV…) y filtros por fechas</td></tr>
+<tr><td>Minor</td><td>Exportación e importación de datos (JSON, CSV, XML…) con validación y operaciones en bloque</td></tr>
+<tr><td>Minor</td><td>Cumplimiento del RGPD: pedir los propios datos, borrarlos con confirmación, exportarlos legibles y correos de confirmación</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El RGPD (Reglamento General de
+Protección de Datos, aplicable en la UE desde 2018) reconoce derechos como el de acceso, el
+de supresión y el de portabilidad. Implementarlos obliga a saber dónde está cada dato de un
+usuario en tu base de datos, cosa que en un esquema mal diseñado no es obvia.</div>
+</div>
+
+<div class="card" id="blockchain">
+<h2><span class="ex">IV.9</span>Blockchain</h2>
+<table>
+<tr><th>Tipo</th><th>Módulo</th></tr>
+<tr><td>Major</td><td>Guardar las puntuaciones de los torneos en una blockchain de pruebas con Avalanche y contratos en Solidity</td></tr>
+<tr><td>Minor</td><td>Backend que se ejecuta en blockchain con ICP (Internet Computer Protocol); incompatible con SSR</td></tr>
+</table>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Un <em>smart contract</em> es un
+programa desplegado en una cadena de bloques cuyo estado no puede alterarse a posteriori.
+Guardar ahí los resultados de un torneo es la demostración clásica de integridad: ni
+siquiera el administrador de la aplicación puede cambiar quién ganó.</div>
+</div>
+
+<div class="card" id="libre">
+<h2><span class="ex">IV.10</span>Módulos a elección</h2>
+<ul>
+  <li><b>Major</b>: un módulo propio que no esté en la lista, sustancial y técnicamente
+  complejo. En el README hay que justificar por qué se eligió, qué retos técnicos resuelve,
+  qué aporta y por qué merece 2 puntos. Los atajos o funciones triviales se rechazan.</li>
+  <li><b>Minor</b>: lo mismo con menos alcance, también justificado.</li>
+</ul>
+</div>
+
+<div class="card" id="readme">
+<h2>El README</h2>
+<p>Además de la parte común a todos los proyectos nuevos (primera línea en cursiva
+<em>«This project has been created as part of the 42 curriculum by &lt;login1&gt;,
+&lt;login2&gt;…»</em>, y secciones <em>Description</em>, <em>Instructions</em> y
+<em>Resources</em> con cómo se ha usado la IA), aquí se exige:</p>
+<ul>
+  <li><b>Team Information</b>: rol o roles de cada miembro y sus responsabilidades.</li>
+  <li><b>Project Management</b>: cómo os organizasteis, herramientas y canales.</li>
+  <li><b>Technical Stack</b>: tecnologías de front, back y base de datos, y por qué.</li>
+  <li><b>Database Schema</b>: tablas, relaciones, campos y tipos.</li>
+  <li><b>Features List</b>: qué hace la aplicación y quién hizo cada cosa.</li>
+  <li><b>Modules</b>: lista, cálculo de puntos, justificación, implementación y
+  autores.</li>
+  <li><b>Individual Contributions</b>: qué aportó cada persona y qué dificultades
+  encontró.</li>
+</ul>
+<p>Tiene que estar en inglés, y el enunciado avisa de que un README pobre puede perjudicar
+la evaluación.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A documentar para alguien que no
+estuvo allí: un evaluador, un compañero que se incorpora o un reclutador que mira el
+repositorio. Las secciones de contribuciones individuales, junto con el historial de Git, son
+también la forma de comprobar que el trabajo se repartió de verdad.</div>
+</div>
+
+<div class="card" id="evaluacion">
+<h2>Bonus y evaluación</h2>
+<ul>
+  <li>El bonus solo cuenta si los 14 puntos obligatorios están completos. Cada módulo extra
+  validado suma (major 2, minor 1) hasta un <b>máximo de 5 puntos</b>; debe funcionar del
+  todo, cumplir su descripción, aportar algo real y estar justificado en el README.</li>
+  <li>En la evaluación se puede pedir una pequeña modificación en directo (cambiar un
+  comportamiento, unas líneas de código, una función fácil de añadir) para comprobar que se
+  entiende el proyecto.</li>
+  <li>Como en todos los enunciados nuevos, hay un capítulo sobre IA: se puede usar, pero
+  solo lo que entiendas y puedas defender.</li>
+</ul>
+</div>
+
+<div class="card" id="delicados">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>Elegir la idea antes que los módulos.</b> El enunciado insiste: módulos sueltos que
+  no encajan entre sí no forman un proyecto, y las dependencias (todo lo de juego cuelga de
+  tener un juego) condicionan el plan.</li>
+  <li><b>Módulo incompleto = 0.</b> Mejor pocos módulos terminados que muchos a medias;
+  apuntar algo por encima de 14 da margen.</li>
+  <li><b>Las páginas legales.</b> Política de privacidad y términos de servicio parecen un
+  detalle, pero su ausencia o un texto de relleno rechazan el proyecto.</li>
+  <li><b>La consola de Chrome limpia.</b> Un solo error o aviso de JavaScript basta para
+  incumplir un requisito general.</li>
+  <li><b>HTTPS de verdad.</b> Toda conexión externa con el backend, incluidas las
+  WebSockets (<code>wss://</code>) y las llamadas desde scripts.</li>
+  <li><b>Secretos fuera de Git.</b> El <code>.env</code> en el <code>.gitignore</code> desde
+  el primer commit; un secreto subido una vez queda en el historial.</li>
+  <li><b>Commits de todos.</b> El historial tiene que reflejar el reparto; un repositorio
+  donde una persona lo sube todo incumple un requisito.</li>
+  <li><b>Concurrencia.</b> Dos usuarios que modifican lo mismo a la vez es el caso que hay
+  que probar, no el raro.</li>
+  <li><b>Versiones del enunciado.</b> Si un compañero o un tutorial habla de NestJS
+  obligatorio, de «7 módulos major» o de que el Pong es obligatorio, se refiere a versiones
+  anteriores. Comprueba siempre la versión de tu intra.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Enunciado oficial en inglés, <b>versión 21.2</b> (subtítulo <em>«Surprise.»</em>),
+obtenido de repositorios de estudiantes que lo incluyen. Se han localizado también copias
+de las versiones 21.0 y 21.1, con la misma estructura. Hay dos copias de la 21.2 con
+diferencias mínimas (una de ellas detalla más las dependencias del chat avanzado); esta
+ficha sigue la más completa. No se ha encontrado ninguna versión posterior a la 21.2, pero
+el enunciado puede haber cambiado en la intra.</p>
+<ul>
+  <li><a href="https://github.com/Stacy314/ft_transcendence">github.com/Stacy314/ft_transcendence</a>
+  — <code>en.subject.pdf</code>, v21.2</li>
+  <li><a href="https://github.com/Azaria-git/ft_transcendence">github.com/Azaria-git/ft_transcendence</a>
+  — <code>docs/en.subject.pdf</code>, v21.2</li>
+  <li><a href="https://github.com/Aztaban/ft_transcendence">github.com/Aztaban/ft_transcendence</a>
+  — <code>Info/en.subject.pdf</code>, v21.1</li>
+  <li><a href="https://github.com/eg-delacruz/42_ft_transcendence">github.com/eg-delacruz/42_ft_transcendence</a>
+  — <code>en.subject.pdf</code>, v21.0</li>
+  <li><a href="https://github.com/viceda-s/42-cursus-level-6">github.com/viceda-s/42-cursus-level-6</a>
+  — resumen del milestone 6 que coincide con la v21</li>
+  <li>Página del proyecto en la intra (requiere sesión):
+  <a href="https://projects.intra.42.fr/projects/ft_transcendence">projects.intra.42.fr/projects/ft_transcendence</a></li>
+</ul>
+</div>
+
+<footer>42.zenidx.com — ft_transcendence · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

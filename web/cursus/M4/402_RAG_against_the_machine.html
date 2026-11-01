@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG against the machine — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — RAG against the machine <span class="tag pend">pendiente</span></h1>
+<p class="sub">«Will you answer my questions?»: un sistema de <em>Retrieval-Augmented
+Generation</em> que indexa el código de vLLM, encuentra los fragmentos que responden a una pregunta
+y hace que un modelo pequeño y local conteste a partir de ellos. Proyecto del <strong>rank
+04</strong>.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#indexar">Indexar el código</a></li>
+  <li><a href="#recuperar">Recuperar</a></li>
+  <li><a href="#generar">Generar la respuesta</a></li>
+  <li><a href="#modelos">Modelos de datos y salida</a></li>
+  <li><a href="#cli">La CLI y el flujo completo</a></li>
+  <li><a href="#evaluacion">Evaluación: recall@k</a></li>
+  <li><a href="#bonus">Bonus</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde sale</b> — Un modelo de lenguaje está congelado en el día en que
+terminó su entrenamiento: no sabe nada de la librería del mes pasado ni de tu código privado, y si
+le preguntas, o se calla o se lo inventa con total seguridad (las famosas <em>alucinaciones</em>).
+Reentrenarlo cada vez es carísimo, así que se hace trampa: en lugar de meterle más conocimiento, se
+le da acceso a una fuente externa en el momento de responder, igual que tú no te sabes el manual
+entero pero sabes qué página abrir. El término RAG viene de un artículo de Facebook AI de 2020
+(Lewis et al., <em>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</em>), pero
+la parte de buscar es mucho más antigua: es la recuperación de información clásica de los
+buscadores. El nombre es un juego con el grupo Rage Against the Machine.<br><br>
+En 42next este proyecto continúa a <a href="../M3/301_Call_Me_Maybe.html">Call Me Maybe</a> (rank 03), donde se vio la llamada a
+funciones con un modelo de lenguaje. El enunciado divide RAG en cuatro etapas, cada una alimenta a
+la siguiente: <b>indexar</b> (organizar los datos para buscar en ellos), <b>recuperar</b> (cruzar
+la pregunta con el índice y sacar los fragmentos más relevantes), <b>aumentar</b> (filtrarlos y
+meterlos en la ventana de contexto del modelo) y <b>generar</b> (leer ese contexto y producir la
+respuesta).</div>
+
+<div class="card" id="pide">
+<h2><span class="ex">00</span>Qué pide</h2>
+<div class="meta"><span>Rank: <b>04</b></span><span>Lenguaje: <b>Python ≥ 3.10</b></span><span>Equipo: <b>no lo indica el enunciado</b> (los repos públicos son individuales)</span><span>Versión del enunciado: <b>2.0</b></span></div>
+<p>Un sistema RAG que responde preguntas sobre un código fuente: ingerir el repositorio de
+<strong>vLLM</strong> (versión 0.10.1, adjunto al enunciado) en un índice, recuperar los fragmentos
+más relevantes para una pregunta, generar una respuesta con <strong>Qwen/Qwen3-0.6B</strong> y
+medir la calidad de la recuperación con <strong>recall@k</strong>. Se juzga si encuentra las
+ubicaciones correctas y si las respuestas se apoyan en ellas.</p>
+<p>Reglas comunes de los proyectos Python de 42next (flake8, mypy, docstrings, excepciones
+controladas, Makefile con <code>install</code>, <code>run</code>, <code>debug</code>,
+<code>clean</code>, <code>lint</code>) y, además, propias de este proyecto:</p>
+<ul>
+  <li>los modelos de datos que pasan de una etapa a otra, con <strong>pydantic</strong> (las clases
+  de servicio — indexador, recuperador… — no hace falta);</li>
+  <li><strong>uv</strong> como gestor de proyecto: el evaluador y la moulinette solo ejecutan
+  <code>uv sync</code>;</li>
+  <li>CLI hecha con <strong>Python Fire</strong> y barras de progreso con <strong>tqdm</strong>;</li>
+  <li>el modelo Qwen/Qwen3-0.6B por defecto; se pueden usar otros si todo sigue funcionando con
+  él. Por lo demás, cualquier librería.</li>
+</ul>
+</div>
+
+<div class="card" id="indexar">
+<h2><span class="ex">01</span>Indexar el código</h2>
+<p>Leer los ficheros de vLLM que consideres útiles, partirlos en trozos (<em>chunks</em>) y guardar
+en <code>data/processed/</code> un índice que se pueda consultar en milisegundos. Indexar todo el
+corpus: <strong>como mucho 5 minutos</strong>.</p>
+<ul>
+  <li>Dos estrategias de troceado distintas: una para código Python y otra para Markdown/texto.</li>
+  <li>Al menos uno de los dos métodos léxicos clásicos: <strong>TF-IDF</strong> o
+  <strong>BM25</strong> (encima se puede añadir lo que quieras).</li>
+  <li>Tamaño de chunk configurable con <code>--max_chunk_size</code>, por defecto y como máximo
+  <strong>2000 caracteres</strong>: la moulinette rechaza cualquier fuente más larga, y una sola
+  invalida toda la salida.</li>
+</ul>
+<p>Una idea de lo que mide TF-IDF, en su forma más básica (BM25 la refina con saturación de la
+frecuencia y normalización por longitud del documento):</p>
+<pre><code>tf(t, d)  = cuántas veces aparece el término t en el fragmento d
+idf(t)    = log(N / nº de fragmentos que contienen t)
+peso      = tf · idf     → alto si t abunda en d y escasea en el resto</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Recuperación de información clásica. La
+idea del IDF es de Karen Spärck Jones (1972): una palabra que sale en todos los documentos no
+distingue ninguno. BM25 salió del sistema Okapi de la City University de Londres (Robertson,
+Spärck Jones y otros, años noventa) y sigue siendo la base de muchos buscadores. El troceado es la
+otra mitad: un fichero Python y una página Markdown no se rompen por los mismos sitios, y un
+fragmento cortado a mitad de una función o de una sección pierde el sentido. El enunciado avisa de
+algo más: las preguntas y el código rara vez usan las mismas palabras (una pregunta parafrasea o
+cita un identificador literal), y lo que guardes al indexar decide qué podrás encontrar
+luego.</div>
+</div>
+
+<div class="card" id="recuperar">
+<h2><span class="ex">02</span>Recuperar</h2>
+<p>Dada una pregunta, devolver los <em>top-k</em> fragmentos más relevantes. Cada resultado es una
+ubicación: un <code>file_path</code> y el rango de caracteres que cubre
+(<code>first_character_index</code>, <code>last_character_index</code>), de como mucho 2000
+caracteres. La ruta debe coincidir exactamente con la del corpus (por ejemplo
+<code>data/raw/vllm-0.10.1/docs/features/lora.md</code>): se compara literalmente.</p>
+<p>Tiene que funcionar para una sola pregunta y en lote sobre un dataset de preguntas en JSON.
+Mínimos: <strong>80 % de recall@5</strong> en las preguntas de documentación y
+<strong>50 %</strong> en las de código; y <strong>como mucho 90 segundos para 200
+preguntas</strong>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la búsqueda es un problema de
+ranking, no de coincidencia exacta, y que hay que medirlo: los umbrales están fijados y los comprueba
+un programa, no una impresión. Guardar los desplazamientos de cada chunk en el fichero original
+(no solo su texto) es lo que permite citar la fuente.</div>
+</div>
+
+<div class="card" id="generar">
+<h2><span class="ex">03</span>Generar la respuesta</h2>
+<p>Con los fragmentos recuperados, generar una respuesta en lenguaje natural con Qwen3-0.6B,
+pasándole el contexto dentro de su presupuesto de tokens y produciendo JSON estructurado según los
+modelos pydantic. Una respuesta satisfactoria es coherente, se apoya en las fuentes recuperadas sin
+alucinaciones graves y responde a lo que se ha preguntado.</p>
+<p>El enunciado reconoce que un modelo de 0,6 mil millones de parámetros tiene límites de
+razonamiento: esos criterios son el objetivo, no un aprobado/suspenso estricto. La nota prioriza la
+calidad de la recuperación, que la respuesta se base en el contexto y la estrategia de
+<em>prompt</em>, por delante de una redacción perfecta.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Cómo se usa un modelo de lenguaje desde
+código: tokens, ventana de contexto, plantilla de prompt, y por qué el contexto que le das importa
+más que el modelo. Si recuperas poco, falta la respuesta; si recuperas demasiado, la ahogas en
+ruido y te sales del presupuesto. Y todo en CPU, en local, sin API externa.</div>
+</div>
+
+<div class="card" id="modelos">
+<h2><span class="ex">04</span>Modelos de datos y salida</h2>
+<p>El enunciado da los modelos pydantic que validan lo que pasa entre etapas (se pueden ampliar con
+campos o modelos nuevos): <code>MinimalSource</code> (una ubicación), <code>UnansweredQuestion</code>
+y <code>AnsweredQuestion</code>, <code>RagDataset</code>, <code>MinimalSearchResults</code> y
+<code>MinimalAnswer</code>, y los contenedores <code>StudentSearchResults</code> y
+<code>StudentSearchResultsAndAnswer</code> (lista de resultados más el <code>k</code> usado). Cada
+comando escribe un JSON que cumple uno de ellos.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Contratos de datos entre componentes.
+pydantic convierte las anotaciones de tipo de Python, que normalmente solo mira mypy, en
+validación real en tiempo de ejecución: si un JSON no cuadra con el modelo, lo sabes al cargarlo y
+no tres etapas después. Es la misma idea que el formato estricto de la moulinette: si la salida no
+valida, no se puntúa.</div>
+</div>
+
+<div class="card" id="cli">
+<h2><span class="ex">05</span>La CLI y el flujo completo</h2>
+<p>Todo se invoca como <code>uv run python -m src &lt;comando&gt;</code>. Comandos obligatorios:</p>
+<table>
+  <tr><th>comando</th><th>qué hace</th></tr>
+  <tr><td><code>index</code></td><td>ingiere <code>data/raw/</code> y crea el índice en <code>data/processed/</code></td></tr>
+  <tr><td><code>search</code></td><td>top-k fuentes para una pregunta</td></tr>
+  <tr><td><code>search_dataset</code></td><td>búsqueda sobre un dataset completo → JSON <code>StudentSearchResults</code></td></tr>
+  <tr><td><code>answer</code></td><td>responde una pregunta con el contexto recuperado</td></tr>
+  <tr><td><code>answer_dataset</code></td><td>respuestas para un dataset → JSON <code>StudentSearchResultsAndAnswer</code></td></tr>
+  <tr><td><code>evaluate</code></td><td>tu propio recall@k contra un dataset con respuestas, para iterar</td></tr>
+</table>
+<p>Ninguna ruta puede ir escrita en el código: todas son argumentos. La CLI se prueba con entradas
+degeneradas (pregunta vacía o sin sentido, <code>k=0</code>, ficheros que no existen, JSON mal
+formado) y nunca debe acabar en traceback. En la defensa se ejecuta automáticamente la cadena
+<em>index → search_dataset → moulinette</em> con unos scripts de referencia, así que hay que
+respetar la estructura del repo que fija el enunciado (<code>src/</code>,
+<code>pyproject.toml</code> y <code>uv.lock</code> en la raíz, <code>data/raw/</code>,
+<code>data/processed/</code>, <code>data/datasets/…</code>, <code>data/output/…</code>). La
+nota oficial la calcula el ejecutable de la moulinette que se da con el proyecto; tu código no
+puede importarlo ni llamarlo.</p>
+<p>En el repo no van datos grandes, pesos del modelo ni salidas generadas: los genera el evaluador.
+El enunciado avisa de que la pila de deep learning y los pesos pueden ocupar varios gigas.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A construir algo que otro programa va a
+ejecutar sin ti delante: interfaz fija, rutas configurables, entorno reproducible con
+<code>uv.lock</code>. Fire genera la CLI a partir de las funciones y sus argumentos, así que la
+forma de tu código <em>es</em> la interfaz.</div>
+</div>
+
+<div class="card" id="evaluacion">
+<h2><span class="ex">06</span>Evaluación: recall@k</h2>
+<p>Para cada pregunta, recall@k es la fracción de sus fuentes correctas que aparecen entre tus
+<em>k</em> primeros resultados. Una fuente cuenta como encontrada si uno de tus resultados está en
+el mismo fichero y solapa su rango de caracteres con una IoU (intersección sobre unión) de al menos
+0,05 — el listón es bajo: basta con un chunk que cubra la zona correcta. Un resultado en otro
+fichero nunca cuenta, de ahí que la ruta deba ser exacta. Rendimiento mínimo: indexar en 5 minutos
+o menos, 200 preguntas en 90 segundos o menos, recall@5 de 80 % (docs) y 50 % (código).</p>
+<p>El README en inglés debe incluir, además de lo común: arquitectura del sistema, estrategia de
+troceado, método de recuperación, análisis de rendimiento (recall@k), decisiones de diseño,
+dificultades y ejemplos de uso.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Métricas de recuperación de información
+(recall, precisión, IoU) y a iterar con ellas: cambiar el tamaño de chunk o el troceado y medir el
+efecto, que es justo lo que el enunciado pide documentar. Mejorar «a ojo» no vale cuando hay un
+número.</div>
+</div>
+
+<div class="card" id="bonus">
+<h2><span class="ex">+</span>Bonus</h2>
+<p>Cinco, un punto cada uno, todos en CPU, y solo se miran si la parte obligatoria valida entera:</p>
+<ol>
+  <li><b>Embeddings semánticos</b>: un índice vectorial con un modelo ligero (como
+  all-MiniLM-L6-v2) junto al léxico.</li>
+  <li><b>Recuperación híbrida</b>: combinar los rankings léxico y semántico en una sola lista.</li>
+  <li><b>Indexado incremental</b>: reindexar solo el fichero que cambia.</li>
+  <li><b>Caché</b> del índice y de las consultas.</li>
+  <li><b>API HTTP local</b> para consultar y responder sin la CLI.</li>
+</ol>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Los embeddings resuelven lo que el
+léxico no puede: encontrar fragmentos que dicen lo mismo con otras palabras, porque comparan
+significados como vectores y no palabras. La búsqueda híbrida es lo que usan hoy la mayoría de
+sistemas RAG reales.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2><span class="ex">!</span>Puntos delicados</h2>
+<ul>
+  <li>Una sola fuente de más de 2000 caracteres invalida <em>toda</em> la salida.</li>
+  <li>Rutas con otro prefijo (absolutas, relativas a otra carpeta): nunca cuentan.</li>
+  <li>Índices de caracteres desplazados al trocear (saltos de línea, codificación, recortes de
+  espacios).</li>
+  <li>Escribir todos los resultados en la misma carpeta: los datasets públicos comparten nombre de
+  fichero y se sobrescriben; hay que separar por dataset.</li>
+  <li>Rutas escritas en el código en lugar de argumentos de la CLI.</li>
+  <li>Entradas raras (<code>k=0</code>, pregunta vacía, JSON roto) que acaban en traceback.</li>
+  <li>Espacio en disco y tiempo de instalación del modelo y sus dependencias en el puesto de
+  42.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2><span class="ex">src</span>Fuente</h2>
+<p>El enunciado no está descargado en el pack. Se ha leído el PDF del enunciado (v2.0) subido al
+repositorio público de un estudiante, junto con el README de la moulinette del proyecto, y se ha
+contrastado con otros repos públicos del mismo proyecto (milestone 4 del nuevo common core), que
+describen lo mismo: vLLM, Qwen3-0.6B, BM25/TF-IDF, recall@k.</p>
+<ul>
+  <li><a href="https://github.com/SaraFreitas-dev/RAG-against-the-machine/blob/main/assets/subjects/RAG.pdf">github.com/SaraFreitas-dev/RAG-against-the-machine — assets/subjects/RAG.pdf (v2.0)</a></li>
+  <li><a href="https://github.com/JulesMattioni/rag_against_the_machine">github.com/JulesMattioni/rag_against_the_machine</a> ·
+  <a href="https://github.com/69Nesta/42-RAG-Against-The-Machine">github.com/69Nesta/42-RAG-Against-The-Machine</a></li>
+  <li><a href="https://arxiv.org/abs/2005.11401">Lewis et al. (2020), Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</a></li>
+</ul>
+<p>El enunciado oficial está en la página del proyecto en la intra (slug
+<code>rag-against-the-machine</code>).</p>
+</div>
+
+<footer>42.zenidx.com — RAG against the machine · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

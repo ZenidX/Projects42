@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Answer Protocol — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — The Answer Protocol <span class="tag pend">pendiente</span></h1>
+<p class="sub">«TAP — A shared-world retro text adventure»: un juego de aventuras de texto
+multijugador con un servidor TCP y dos clientes (uno de terminal y otro gráfico) que hablan
+un protocolo descrito en un RFC propio. Proyecto en grupo de 42next, rank 05.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#rfc">El protocolo: RFC 42TAP</a></li>
+  <li><a href="#servidor">El servidor</a></li>
+  <li><a href="#mundo">El mundo, el combate y las misiones</a></li>
+  <li><a href="#logs">Logs del servidor</a></li>
+  <li><a href="#clientes">Los dos clientes</a></li>
+  <li><a href="#readme">README y trabajo en grupo</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde viene</b> — Antes de los juegos en línea con gráficos
+existían los <strong>MUD</strong> (<em>Multi-User Dungeon</em>): mundos hechos solo de texto
+donde varios jugadores conectados por red exploraban salas, hablaban y luchaban. El primero,
+MUD1, lo escribieron Roy Trubshaw y Richard Bartle en la Universidad de Essex en 1978, y
+durante los 80 y 90 corrieron en servidores universitarios (el enunciado cuenta que en 1990
+uno era tan adictivo que los administradores programaron «apagones» para salvar la red del
+campus). Técnicamente, un MUD es un caso de manual de servidor concurrente: muchas conexiones
+abiertas a la vez, un estado compartido y mensajes que hay que repartir a quien corresponda.
+El otro pilar del proyecto es el formato <strong>RFC</strong>: los protocolos de Internet
+(TCP, HTTP, SMTP…) se definen en documentos «Request for Comments» con una gramática formal y
+palabras clave como MUST y SHOULD. Aquí te dan uno inventado, el RFC 42TAP, y hay que
+cumplirlo como si fuera un estándar real, hasta el punto de que los clientes de un grupo
+deben funcionar con el servidor de otro.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>05</b></span><span>Lenguaje: <b>C, C++, Rust, Go o Zig</b> (Python prohibido)</span><span>Modalidad: <b>grupo de 2–3</b></span><span>Versión: <b>1.4</b></span></div>
+<ul>
+  <li>Un <b>servidor</b> que implementa todos los comandos y eventos del protocolo.</li>
+  <li>Un <b>cliente de línea de comandos</b>.</li>
+  <li>Un <b>cliente gráfico</b> con el toolkit que quieras (Qt, GTK, web…; curses no cuenta
+  como interfaz gráfica).</li>
+  <li><b>Datos estáticos del mundo</b> en YAML o JSON: salas, objetos y personajes.</li>
+  <li>Una herramienta de construcción propia del lenguaje (Makefile, Cargo, módulos de Go…)
+  con objetivos para instalar dependencias, <code>run-server</code>, <code>run-client</code>,
+  <code>run-client-gui</code>, <code>lint</code> y <code>clean</code>.</li>
+  <li>Reglas globales: sockets TCP, UTF-8, un mensaje por línea terminado en
+  <code>\n</code>; seguir las normas de estilo del lenguaje con anotaciones de tipo donde se
+  pueda; no hace falta persistencia (el estado puede perderse al reiniciar). Usar Python es
+  suspenso automático.</li>
+</ul>
+</div>
+
+<div class="card" id="rfc">
+<h2><span class="ex">01</span>El protocolo: RFC 42TAP</h2>
+<p>El RFC adjunto al enunciado define un protocolo de texto con tres tipos de línea: las
+<b>órdenes</b> del cliente (<code>CONNECT</code>, <code>LOOK</code>, <code>MOVE</code>,
+<code>CHAT</code>, <code>TAKE</code>, <code>DROP</code>, <code>INVENTORY</code>,
+<code>TALK</code>, <code>ATTACK</code>, <code>STATUS</code>, <code>QUEST</code>,
+<code>QUESTS</code>, <code>WHO</code>, <code>GROUP</code>, <code>QUIT</code>), las
+<b>respuestas</b> del servidor, que empiezan por <code>OK</code> o por <code>ERR</code> con un
+código de tres cifras, y los <b>eventos</b> asíncronos, que empiezan por <code>EVT</code>.
+Al conectar, el servidor saluda indicando la versión del protocolo y el cliente se identifica
+con un nombre que debe ser único. Un ejemplo del propio enunciado:</p>
+<pre><code>S: OK hello proto=1
+C: CONNECT alice
+S: OK connected
+C: CHAT GLOBAL Hello everyone
+S: OK
+S: EVT GLOBAL CHAT alice Hello everyone</code></pre>
+<p>La sintaxis está escrita en <b>ABNF</b> y los códigos de error están agrupados por
+familias (2xx de nombre, 3xx de movimiento, 4xx de grupos, objetos y personajes, 9xx de
+conexión). El RFC deja a propósito sin especificar el combate y las misiones: eso lo decide
+cada grupo y lo justifica en el README.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A leer una especificación formal y a
+implementarla sin interpretarla a tu manera. ABNF (RFC 5234) es la notación con la que se
+describen la mayoría de protocolos de Internet; las palabras MUST, SHOULD y MAY tienen un
+significado preciso definido en el RFC 2119. Y aparece una idea clave de cualquier protocolo
+de red: un mensaje de respuesta (contesta a lo que tú pediste) no es lo mismo que un evento
+(llega cuando otro jugador hace algo), y ambos viajan mezclados por la misma conexión.</div>
+</div>
+
+<div class="card" id="servidor">
+<h2><span class="ex">02</span>El servidor</h2>
+<ul>
+  <li>Carga el mundo desde YAML o JSON y <b>valida</b> que todas las salidas y referencias
+  existan.</li>
+  <li>Responde a las órdenes mal formadas con errores conformes al protocolo.</li>
+  <li>Sigue repartiendo mensajes aunque un cliente se desconecte en mitad de un envío, y al
+  desconectarse un jugador borra su estado <b>antes</b> de anunciar su salida.</li>
+  <li><b>Objetos únicos</b>: cada objeto existe una sola vez en el mundo; cogerlo lo quita
+  de la sala y soltarlo lo deja disponible para los demás. Se pueden nombrar por ID
+  (<code>item.herbs</code>) o por nombre visible, incluidos nombres de varias palabras.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Concurrencia con estado compartido.
+Varios clientes pueden intentar coger el mismo objeto a la vez y solo uno puede ganar, así que
+hay que elegir un modelo: un hilo por cliente con exclusión mutua, un único hilo con
+<code>poll</code>/<code>epoll</code> o un runtime asíncrono. El README pide justificar esa
+elección. También obliga a tratar TCP como lo que es, un <em>flujo</em> de bytes y no de
+mensajes: el RFC exige guardar las líneas incompletas hasta que llegue el <code>\n</code> y
+procesar por separado varias líneas que lleguen juntas. Es el mismo problema que resolvía
+get_next_line, ahora con sockets.</div>
+</div>
+
+<div class="card" id="mundo">
+<h2><span class="ex">03</span>El mundo, el combate y las misiones</h2>
+<p>Mínimos del mundo: al menos <b>8 salas</b> conectadas formando uno o más ciclos más una
+rama opcional (nada de mapas en línea recta), <b>3 roles</b> distintos de personajes (por
+ejemplo, conversación, quien da misiones y enemigo), <b>4 objetos</b> (2 obtenibles dentro del
+juego) y <b>2 misiones</b> sencillas. El enunciado incluye un YAML mínimo solo para ilustrar
+la estructura; el formato es libre.</p>
+<p>Combate: los jugadores empiezan con <b>100 puntos de vida</b>, los enemigos tienen vida
+según su tipo, <code>ATTACK</code> hace daño y puede provocar contraataque,
+<code>STATUS</code> muestra la vida, quien llega a 0 reaparece en un lugar seguro con menos
+vida, y los resultados se registran y se comunican a los jugadores afectados. El sistema por
+turnos, las fórmulas de daño, la iniciativa y órdenes extra como <code>DEFEND</code> o
+<code>FLEE</code> los diseña el grupo.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A modelar un mundo como un grafo
+(salas como nodos, salidas como aristas) y a validar datos externos antes de confiar en ellos.
+Y a tomar decisiones de diseño y defenderlas: el enunciado deja huecos a propósito y la
+evaluación mira tanto el código como la justificación.</div>
+</div>
+
+<div class="card" id="logs">
+<h2><span class="ex">04</span>Logs del servidor</h2>
+<p>Hay que registrar conexiones y desconexiones (con hora e IP), cada orden recibida con
+jugador y parámetros, cada respuesta y código de error, los cambios del mundo, el progreso de
+las misiones y los posibles abusos (inundación de órdenes, conexiones muy seguidas). Formato
+estructurado (se recomienda JSON), niveles INFO, WARN y ERROR, y sin penalizar el rendimiento
+del servidor.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Observabilidad: un servidor que
+atiende a muchos clientes no se depura con <code>printf</code> sueltos. Un log estructurado
+se puede filtrar y analizar con herramientas, y escribirlo sin bloquear el servidor es otro
+pequeño problema de concurrencia.</div>
+</div>
+
+<div class="card" id="clientes">
+<h2><span class="ex">05</span>Los dos clientes</h2>
+<ul>
+  <li><b>CLI</b>: muestra los mensajes en tiempo real y sigue recibiendo eventos mientras
+  espera lo que escribes. Puede mandar las órdenes tal cual las define el RFC o traducir
+  órdenes más cómodas a paquetes del protocolo; la elección se documenta.</li>
+  <li><b>GUI</b>: muestra la sala, objetos, personajes y salidas con actualización en tiempo
+  real; el inventario con botones para coger y soltar; botones para todas las acciones;
+  contadores de jugadores en la sala y en el servidor; diálogos con personajes; y el chat
+  (global, sala, grupo) separado del registro de eventos.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un cliente de red no puede
+quedarse bloqueado leyendo el teclado mientras le llegan mensajes por el socket, ni bloquear
+la interfaz gráfica esperando al servidor. Hay que atender dos fuentes de entrada a la vez
+(hilos, multiplexación o el bucle de eventos del toolkit). Y como los clientes deben ser
+intercambiables entre grupos, cualquier «atajo» fuera del protocolo rompe la
+compatibilidad.</div>
+</div>
+
+<div class="card" id="readme">
+<h2><span class="ex">06</span>README y trabajo en grupo</h2>
+<p>Además de las secciones comunes, el README (en inglés) debe tener: Architecture, Protocol
+Implementation (con cualquier desviación del RFC justificada), Combat System, Quest System,
+World Design, Server Logging, Group Contributions, Building and Running y Testing. Todos los
+miembros deben tener commits en el repositorio. El enunciado sugiere un reparto: una persona
+con el servidor y el CLI, otra con la GUI y el diseño del mundo.</p>
+</div>
+
+<div class="card" id="delicados">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>Fragmentación y agrupación de TCP</b>: un <code>recv</code> puede traer media
+  orden o tres órdenes juntas.</li>
+  <li><b>Desconexiones bruscas</b>: escribir en un socket cerrado puede generar
+  <code>SIGPIPE</code> y tumbar todo el servidor si no se trata.</li>
+  <li><b>El RFC y el enunciado no siempre coinciden</b>: por ejemplo, el RFC dice que
+  <code>WHO</code> responde <code>OK players=&lt;n&gt;</code>, mientras que el ejemplo del
+  enunciado devuelve un JSON con los jugadores de la sala y el total; la sintaxis ABNF habla
+  de <code>CRLF</code> en un sitio y de <code>LF</code> en el resto; y el código 404 se repite
+  con tres significados. Hay que decidir y documentar la interpretación, como pide el
+  enunciado.</li>
+  <li><b>Caracteres de control y límites</b>: el RFC recomienda rechazar caracteres de
+  control (para evitar manipular la terminal de otros jugadores) y limitar las líneas a 1024
+  bytes.</li>
+  <li><b>Objetos duplicados</b> por condiciones de carrera entre dos jugadores que cogen lo
+  mismo a la vez.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<ul>
+  <li>Enunciado <b>TAP v1.4</b> (en.subject.pdf) y el RFC adjunto
+  (<code>protocol-rfc.html</code>), copia pública en
+  <a href="https://github.com/0xS3RA/TheAnswerProtocol">github.com/0xS3RA/TheAnswerProtocol</a>.</li>
+  <li>El mismo RFC, en otro repo que identifica el proyecto como «Milestone 5 — 42 CC»:
+  <a href="https://github.com/0xS4cha/the-answer-protocol">github.com/0xS4cha/the-answer-protocol</a>.</li>
+  <li>Contexto: <a href="https://www.rfc-editor.org/rfc/rfc5234">RFC 5234 (ABNF)</a>,
+  <a href="https://www.rfc-editor.org/rfc/rfc2119">RFC 2119 (MUST/SHOULD)</a>.</li>
+</ul>
+</div>
+
+<footer>42.zenidx.com — The Answer Protocol · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

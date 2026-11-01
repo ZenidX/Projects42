@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ft_resume — 42.zenidx.com</title>
+<link rel="stylesheet" href="../../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../../index.html">Inicio</a>
+      <a href="../../index.html#piscine">Piscine</a>
+      <a href="../../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — ft_resume <span class="tag pend">pendiente</span></h1>
+<p class="sub">Un proyecto sin código: en pareja, cada uno entrevista al otro y le escribe el
+currículum. Es uno de los dos proyectos del rank 06, junto a ft_transcendence. En la intra
+se llama <code>42_collaborative_resume</code> y el enunciado lleva por título
+<em>collaborative_resume — Conducting Mutual Interviews and Creating Resumes</em>.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#contexto">El encargo: Technov</a></li>
+  <li><a href="#entrevista">La entrevista</a></li>
+  <li><a href="#redaccion">Redactar el CV del otro</a></li>
+  <li><a href="#revision">Revisión y defensa</a></li>
+  <li><a href="#entrega">Entrega y privacidad</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Por qué hay un proyecto así al final del common core</b> — Después
+de cinco ranks escribiendo código, el último escalón antes de las prácticas
+(<em>Apprenticeship</em>) es venderse. El enunciado lo plantea como un ejercicio de
+<em>power skills</em>: comunicación, autoevaluación, redacción profesional y trabajo en
+equipo. El truco del formato es que no escribes <em>tu</em> currículum, sino el de tu
+compañero, a partir de una entrevista. Así practicas los dos lados de un proceso de
+selección: el de quien pregunta para sacar información útil y el de quien tiene que contar
+lo que ha hecho con claridad. Escribir sobre otro, además, quita la timidez de presumir de
+uno mismo y obliga a preguntar «¿y eso qué significa exactamente?», que es justo lo que hará
+un reclutador.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>06</b></span><span>Formato: <b>PDF</b> (desde Markdown, LaTeX, DOCX…)</span><span>Grupo: <b>pareja</b></span><span>Enunciado: <b>versión 4.0</b></span></div>
+<ul>
+  <li>Se hace <b>en pareja</b>. Cada miembro entrevista al otro y le escribe el currículum.</li>
+  <li>El CV se redacta en un formato estándar (Markdown, LaTeX, DOCX, etc.) y se entrega
+  <b>exportado a PDF</b>.</li>
+  <li>Una carpeta <code>collaborative_resume/</code> con los dos CV:
+  <code>resume_[login1].pdf</code> y <code>resume_[login2].pdf</code>.</li>
+  <li>Una carpeta <code>media/</code> con <code>media_[login1].txt</code> y
+  <code>media_[login2].txt</code>, cada uno con la URL de un <b>perfil profesional
+  público</b> (se aconseja LinkedIn).</li>
+  <li>Los datos privados que alguien no quiera incluir se quedan fuera.</li>
+  <li>Tras validar el proyecto hay que borrar los documentos intermedios y finales que estén
+  fuera del repositorio.</li>
+</ul>
+<pre><code>.
+├── collaborative_resume/
+│   ├── resume_login1.pdf
+│   └── resume_login2.pdf
+└── media/
+    ├── media_login1.txt
+    └── media_login2.txt</code></pre>
+</div>
+
+<div class="card" id="contexto">
+<h2>El encargo: Technov</h2>
+<p>El enunciado monta un pequeño juego de rol. Acabas de entrar en <b>Technov</b>, un
+<em>marketplace</em> de talento técnico, y tu jefa (Jana Doe, jefa de selección) te manda un
+correo: el cliente <b>StartUpDigital</b> busca dos <em>freelancers</em>; tú preparas el CV de
+uno de los dos candidatos y un compañero se encarga del otro.</p>
+<p>El adjunto es una oferta para un <b>desarrollador junior freelance</b>: pequeñas
+funcionalidades en webs existentes (formularios, módulos de <em>front</em>, algo de
+<em>back</em> ligero), arreglos de CSS y de HTML/JavaScript, pruebas y soporte puntual. Pide
+nociones de HTML, CSS y JavaScript (en vanilla o con Vue o React), algo de PHP o Python y
+Git a nivel básico; valora proyectos personales o académicos (portfolio o GitHub) y, sin
+exigirla, experiencia previa. Misión de 1 a 3 meses, unas 10–15 horas semanales, en
+remoto.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un CV no es una lista de todo lo
+que has hecho, sino una respuesta a una oferta concreta. La oferta de StartUpDigital es casi
+un retrato de alguien que sale del common core: proyectos académicos, Git, algo de web. El
+ejercicio consiste en leer la oferta como lo haría quien la escribió y decidir qué de la
+vida del candidato encaja con ella y qué sobra.</div>
+</div>
+
+<div class="card" id="entrevista">
+<h2>La entrevista</h2>
+<p>Cada uno hace los dos papeles:</p>
+<ul>
+  <li><b>Entrevistador (reclutador)</b>: prepara una lista de preguntas que cubra las
+  secciones del CV —datos personales, formación, experiencia profesional, habilidades,
+  proyectos…—, dirige la entrevista, toma notas precisas y aclara lo que no quede claro.</li>
+  <li><b>Entrevistado (candidato)</b>: responde con sinceridad y detalle y aporta toda la
+  información relevante.</li>
+</ul>
+<p>El enunciado pide hacer las entrevistas en un ambiente tranquilo y estructurado.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A hacer preguntas que den
+información aprovechable. «¿Qué hiciste en ese trabajo?» suele dar una respuesta vaga; «¿qué
+problema resolviste, con qué herramientas y qué cambió después?» da una línea de CV. Es la
+misma idea de las entrevistas por competencias que usan muchos departamentos de selección
+(el método STAR: situación, tarea, acción, resultado), aunque el enunciado no lo nombra. Y
+desde el otro lado, a contar tu trayectoria —incluidos los años antes de 42— de forma que
+otra persona la entienda sin estar dentro de tu cabeza.</div>
+</div>
+
+<div class="card" id="redaccion">
+<h2>Redactar el CV del otro</h2>
+<ul>
+  <li>Con lo recogido, escribes el CV de tu pareja: claro, bien estructurado y
+  profesional.</li>
+  <li>El enunciado aconseja seguir las costumbres del <b>mercado laboral local</b> (con o sin
+  foto, anónimo o no, si se incluye el bachillerato o no) y escribirlo en el idioma que tenga
+  sentido para ese mercado y para el campus.</li>
+  <li>El formato de origen es libre, pero la entrega es PDF.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que no hay un CV universal. El
+enunciado no fija el idioma ni el formato porque depende de dónde vayas a buscar trabajo:
+en Barcelona tiene sentido plantearse castellano, catalán o inglés según la empresa a la que
+apunte. También a elegir herramienta: un Markdown convertido con Pandoc o una plantilla de
+LaTeX son texto plano y se versionan con Git como cualquier código, algo que varios
+estudiantes han aprovechado; un DOCX es más cómodo de retocar a mano. Y a priorizar: en
+una o dos páginas no cabe todo, así que cada línea tiene que justificar su sitio.</div>
+</div>
+
+<div class="card" id="revision">
+<h2>Revisión y defensa</h2>
+<ul>
+  <li>Os intercambiáis los CV para una primera revisión y os dais <b>feedback
+  constructivo</b>.</li>
+  <li>Aplicáis los cambios que salgan de esa revisión.</li>
+  <li>Según el enunciado, os reuniréis con el reclutador del cliente al que se han enviado
+  los CV, así que hay que preparar una <b>entrevista oral</b> y preguntas sobre el
+  documento. Cómo se concreta eso en la evaluación entre pares no lo detalla el enunciado
+  (no confirmado).</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A dar y recibir críticas sobre
+algo personal. Tu compañero leerá cómo has contado su vida, y tú cómo ha contado la tuya:
+es fácil que algo esté exagerado, se quede corto o directamente esté mal entendido. Y la
+parte oral recuerda lo que pasa en una entrevista de verdad: todo lo que pone el CV puede
+salir en la conversación, así que no debe haber nada que no se sepa defender.</div>
+</div>
+
+<div class="card" id="entrega">
+<h2>Entrega y privacidad</h2>
+<ul>
+  <li>Las dos carpetas van en la raíz del repositorio de entrega; solo se evalúa lo que hay
+  en el repositorio.</li>
+  <li>El perfil profesional enlazado en <code>media/</code> tiene que estar <b>público</b>
+  durante la evaluación; después se puede volver a poner privado, aunque el enunciado
+  recomienda mantenerlo público y al día.</li>
+  <li>Aviso repetido dos veces en el enunciado: <b>no publiques ningún CV que no sea
+  tuyo</b>, y borra los CV cuando el proyecto esté validado.</li>
+  <li>Sobre el enlace de LinkedIn, el enunciado avisa de que cualquier uso automatizado
+  futuro de esa URL se describirá en la política de privacidad de la plataforma de
+  aprendizaje.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un CV es un documento con datos
+personales de otra persona, y tratarlo como tal: pedir permiso para cada dato, no incluir lo
+que no quiera compartir y no dejar copias por ahí. Es la misma lógica de minimización de
+datos que inspira el RGPD europeo: recoger solo lo necesario y borrarlo cuando ya no hace
+falta.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>No subirlo a GitHub público.</b> Muchos estudiantes publican sus proyectos para
+  enseñarlos, pero aquí el repositorio contiene el CV de otra persona. La entrega va al
+  repositorio de la intra (vogsphere), no a un repositorio público de proyectos.</li>
+  <li><b>Los nombres de fichero</b>: <code>resume_[login].pdf</code> y
+  <code>media_[login].txt</code> con el login de 42, exactamente. El enunciado pide
+  revisarlos dos veces.</li>
+  <li><b>Un solo enlace por fichero de media</b>, y que funcione sin sesión iniciada: si el
+  perfil no es público, el evaluador no podrá verlo.</li>
+  <li><b>Cada CV lo escribe el otro.</b> Escribirte el tuyo y firmarlo como de tu pareja va
+  contra el objetivo del proyecto, y en la defensa se nota.</li>
+  <li><b>Inventar o inflar.</b> Un CV redactado por otro tiende a embellecer; el candidato
+  debe poder defender cada línea.</li>
+  <li><b>La IA.</b> El enunciado incluye el capítulo general sobre IA: se puede usar para
+  tareas repetitivas, pero solo lo que entiendas y puedas defender. Un CV escrito por un
+  modelo a partir de cuatro datos suena genérico y no cumple la parte de entrevistar.</li>
+  <li><b>Borrar después.</b> Los documentos fuera del repositorio y los CV, una vez
+  validado.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Enunciado oficial en inglés (<code>en.subject.pdf</code>, versión 4.0), subido por un
+estudiante a su repositorio de entrega. Se ha contrastado con otros repositorios de entrega
+de varios campus, que coinciden en la estructura de carpetas y el método.</p>
+<ul>
+  <li><a href="https://github.com/luismiguelcasadodiaz/colaborative_resume">github.com/luismiguelcasadodiaz/colaborative_resume</a>
+  — contiene <code>docs/en.subject.pdf</code> (v4.0)</li>
+  <li><a href="https://github.com/cassiusbessa/collaborative_resume">github.com/cassiusbessa/collaborative_resume</a>
+  — README que cita la versión 4.0</li>
+  <li><a href="https://github.com/viceda-s/42-cursus-level-6">github.com/viceda-s/42-cursus-level-6</a>
+  — resumen del milestone 6 (ft_resume y ft_transcendence)</li>
+  <li><a href="https://github.com/loreeue/42_collaborative_resume">github.com/loreeue/42_collaborative_resume</a>
+  — entrega de 42 Madrid</li>
+  <li>Página del proyecto en la intra (requiere sesión):
+  <a href="https://projects.intra.42.fr/projects/42_collaborative_resume">projects.intra.42.fr/projects/42_collaborative_resume</a></li>
+</ul>
+</div>
+
+<footer>42.zenidx.com — ft_resume · <a href="../../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>
