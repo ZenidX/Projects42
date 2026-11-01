@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NetPractice — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — NetPractice <span class="tag">pendiente</span></h1>
+<p class="sub">Diez redes pequeñas que no funcionan y una interfaz web para arreglarlas tocando
+direcciones IP, máscaras, puertas de enlace y rutas. No se programa nada: se calcula. Proyecto del
+<strong>rank 04</strong>.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#interfaz">La interfaz de entrenamiento</a></li>
+  <li><a href="#ip">Direcciones IPv4 y máscaras</a></li>
+  <li><a href="#equipos">Switches, routers y gateway</a></li>
+  <li><a href="#rutas">Tablas de rutas</a></li>
+  <li><a href="#defensa">Entrega y defensa</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde sale</b> — Internet funciona porque cada máquina sabe dos
+cosas: qué direcciones están «en su misma red» (a esas les habla directamente) y a quién pasarle
+todo lo demás (su puerta de enlace). Eso es lo que decide una máscara de subred y una tabla de
+rutas, y es lo que NetPractice te hace calcular a mano. El sistema de direcciones que se usa
+hoy viene de dos cambios de los años noventa: en 1993 el <em>CIDR</em> (RFC 1518 y 1519) sustituyó
+el reparto rígido en clases A, B y C por máscaras de cualquier longitud (la notación
+<code>/24</code>, <code>/26</code>…), para frenar el agotamiento de direcciones; y en 1996 el
+RFC 1918 reservó rangos privados (<code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>,
+<code>192.168.0.0/16</code>) que se pueden repetir en cada casa u oficina porque nunca salen tal
+cual a Internet. NetPractice existe en el common core desde hace años (el enunciado actual va por
+la versión 6.2) y es el mismo en el camino antiguo y en 42next.</div>
+
+<div class="card" id="pide">
+<h2><span class="ex">00</span>Qué pide</h2>
+<div class="meta"><span>Rank: <b>04</b></span><span>Lenguaje: <b>ninguno</b> (ejercicios en el navegador)</span><span>Equipo: <b>no lo indica el enunciado</b></span></div>
+<p>El enunciado lo presenta como un ejercicio práctico para descubrir lo básico de las redes:
+configurar direcciones IP, conectar equipos a través de un router y entender el papel de la
+puerta de enlace. Hay que completar <strong>10 niveles</strong> y subir al repositorio la
+configuración de cada uno.</p>
+<ul>
+  <li>Las redes son <em>simuladas</em>: no se toca ninguna red real. Todo pasa en una página web
+  que se abre en local.</li>
+  <li>Hay que entender el direccionamiento TCP/IP: máscara de subred y <em>default gateway</em>,
+  y cómo se comportan routers y switches.</li>
+  <li>Entrega: 10 ficheros de configuración exportados (uno por nivel) en la raíz del repo, más un
+  <code>README.md</code> en inglés con los requisitos comunes del cursus y unos añadidos propios
+  (ver <a href="#defensa">Entrega y defensa</a>).</li>
+</ul>
+</div>
+
+<div class="card" id="interfaz">
+<h2><span class="ex">01</span>La interfaz de entrenamiento</h2>
+<p>Se descarga un archivo adjunto en la página del proyecto en la intra, se descomprime en
+cualquier carpeta y se ejecuta <code>run.sh</code>, que levanta un servidor web local y abre el
+navegador. Si el script falla, el propio enunciado da la alternativa manual:</p>
+<pre><code>python3 -m http.server 49242
+# y abrir http://localhost:49242 en el navegador</code></pre>
+<p>Hace falta un servidor local (y no abrir el HTML a pelo) por las restricciones de seguridad
+de los navegadores con las páginas cargadas desde <code>file://</code>.</p>
+<p>Dentro, dos modos: escribir tu <strong>login</strong> para tener tu configuración personal
+(la que se entrega), o usar la pestaña <strong>evaluation</strong>, que genera configuraciones
+aleatorias y es la que se usa en la defensa. En cada nivel aparece un diagrama de red que no
+funciona y, arriba, uno o varios objetivos (que tal equipo pueda hablar con tal otro). Solo se
+pueden modificar los campos sin sombrear. Dos botones: <code>Check again</code> para comprobar y
+<code>Get my config</code> para descargar la configuración. Abajo hay unos logs que dicen por qué
+falla (falta una gateway, una IP no es válida…).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A leer un diagrama de red como lo leería
+un paquete: de dónde sale, por qué interfaz, qué decide cada equipo al recibirlo. Los logs del
+fondo de la página son tu único depurador, igual que los mensajes del compilador en C.</div>
+</div>
+
+<div class="card" id="ip">
+<h2><span class="ex">02</span>Direcciones IPv4 y máscaras</h2>
+<p>Una dirección IPv4 son 32 bits, escritos como cuatro bytes en decimal. La máscara dice cuántos
+de esos bits, empezando por la izquierda, identifican la <em>red</em>; el resto identifican al
+<em>equipo</em> dentro de ella. <code>/26</code> y <code>255.255.255.192</code> son la misma
+máscara: 26 unos seguidos de 6 ceros. Un ejemplo cualquiera, para ver la mecánica (no es de ningún
+nivel):</p>
+<pre><code>dirección   192.168.10.77   ...01001101   (77 en binario, último byte)
+máscara /26 255.255.255.192 ...11000000
+AND         192.168.10.64   ...01000000   → dirección de red
+broadcast   192.168.10.127  ...01111111   → todos los bits de equipo a 1
+equipos     .65 – .126      2^6 − 2 = 62 direcciones utilizables</code></pre>
+<p>Es aritmética de bits, la misma de los operadores <code>&amp;</code> y <code>|</code> de C:
+la red es <code>ip &amp; mask</code> y el broadcast <code>ip | ~mask</code>. Dos equipos están
+en la misma red si al aplicar la máscara obtienen la misma dirección de red. La primera dirección
+(la de red) y la última (broadcast) no se pueden asignar a un equipo.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A pasar con soltura entre decimal, binario
+y notación CIDR, y a saber qué direcciones están reservadas: los rangos privados del RFC 1918, el
+<code>127.0.0.0/8</code> de <em>loopback</em> (la propia máquina) y las direcciones de red y
+broadcast de cada subred. También por qué dos subredes no pueden <em>solaparse</em> si están
+conectadas a un mismo router: el router no sabría por qué lado enviar.</div>
+</div>
+
+<div class="card" id="equipos">
+<h2><span class="ex">03</span>Switches, routers y gateway</h2>
+<p>El enunciado recomienda entender cómo funciona el direccionamiento en una red con routers y
+switches. La diferencia, en dos líneas:</p>
+<ul>
+  <li><b>Switch</b> (capa 2 del modelo OSI): reparte tramas entre los equipos de una misma red
+  local. No tiene dirección IP propia en estos diagramas ni decide nada sobre IPs: todos los que
+  cuelgan de él forman una sola red y deben compartir máscara y dirección de red.</li>
+  <li><b>Router</b> (capa 3): une redes <em>distintas</em>. Cada una de sus interfaces tiene una IP
+  dentro de la red a la que está conectada, y reenvía paquetes de una a otra según su tabla de
+  rutas.</li>
+  <li><b>Default gateway</b>: la dirección a la que un equipo manda todo lo que no es de su red.
+  Tiene que ser una IP alcanzable directamente, es decir, de su misma red — en la práctica, la
+  interfaz del router que da a ella.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El modelo de capas: OSI (siete capas,
+norma ISO de 1984) y TCP/IP (cuatro, el que de verdad se implementó). NetPractice vive casi
+entero en la capa de red, pero para entender por qué un switch no necesita IP hay que saber que
+trabaja una capa por debajo, con direcciones MAC.</div>
+</div>
+
+<div class="card" id="rutas">
+<h2><span class="ex">04</span>Tablas de rutas</h2>
+<p>Cada equipo y cada router tiene una tabla que dice «para llegar a tal red, pásaselo a tal
+siguiente salto». La entrada especial <code>default</code> (o <code>0.0.0.0/0</code>) casa con
+cualquier destino: es la ruta por defecto. Cuando varias entradas casan, gana la más específica
+(la de máscara más larga). Para que una comunicación funcione hace falta el camino de ida
+<em>y</em> el de vuelta: el paquete de respuesta también necesita rutas.</p>
+<p>Según las guías públicas de estudiantes, los niveles van creciendo en dificultad: primero dos
+equipos que deben compartir red, luego redes con switch, después routers con varias interfaces,
+tablas de rutas encadenadas y, en los últimos, un nodo «Internet» al que hay que llegar. Cada
+login genera sus propios valores, así que no hay respuestas universales — y aquí no se dan.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el enrutado es una decisión
+<em>local</em> que se toma salto a salto: ningún equipo conoce la ruta completa, solo el siguiente
+paso. Es la idea que hace escalar Internet, y la que hay que tener en la cabeza para depurar un
+«no llega» en cualquier red real (o en los contenedores de Inception, más adelante).</div>
+</div>
+
+<div class="card" id="defensa">
+<h2><span class="ex">05</span>Entrega y defensa</h2>
+<ul>
+  <li><b>Repositorio</b>: los 10 ficheros exportados con <code>Get my config</code>, uno por
+  nivel, en la raíz. El enunciado insiste: hay que haber escrito el <em>login</em> en la interfaz
+  antes de exportar.</li>
+  <li><b>README</b>: además de las secciones comunes (Description, Instructions, Resources con el
+  uso de IA), la sección Resources debe citar los conceptos de red estudiados (direccionamiento
+  TCP/IP, máscaras, gateway, routers y switches, capas OSI…), Instructions debe explicar cómo
+  lanzar la interfaz, cómo exportar y qué se entrega, y debe constar que los 10 ficheros van en la
+  raíz.</li>
+  <li><b>Defensa</b>: hay que resolver <strong>tres niveles aleatorios</strong> en el modo
+  evaluation, con tiempo limitado (el enunciado no dice cuánto). No se permiten herramientas
+  externas; como mucho una calculadora simple tipo <code>bc</code>.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que hay que saber calcular, no haber
+calculado. Los ficheros del repo demuestran que hiciste tus niveles, pero la nota sale de resolver
+en directo configuraciones que no has visto, sin calculadora de subredes.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2><span class="ex">!</span>Puntos delicados</h2>
+<ul>
+  <li>Asignar a un equipo la dirección de red o la de broadcast de su subred.</li>
+  <li>Subredes que se solapan en un mismo router: dos máscaras distintas pueden hacer que dos
+  rangos que parecen separados compartan direcciones.</li>
+  <li>Una gateway que no está en la misma red que el equipo que la usa.</li>
+  <li>Olvidar la ruta de vuelta: que A llegue a B no sirve si B no sabe responder a A.</li>
+  <li>Usar rangos privados donde el paquete tiene que cruzar «Internet» en el simulador.</li>
+  <li>Exportar sin haber puesto el login, o pasar de nivel sin exportar el anterior.</li>
+  <li>Preparar la defensa con la pestaña evaluation y no solo con la configuración personal.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2><span class="ex">src</span>Fuente</h2>
+<p>El enunciado no está descargado en el pack. Lo usado aquí es el <code>en.subject</code>
+v6.2, copiado como texto en un repo público de estudiante, contrastado con las guías públicas más
+conocidas (que dan respuestas por nivel; no se han usado para eso):</p>
+<ul>
+  <li><a href="https://github.com/simon231442/netpractice/blob/main/en.subject.txt">github.com/simon231442/netpractice — en.subject.txt (v6.2)</a></li>
+  <li><a href="https://github.com/lpaube/NetPractice">github.com/lpaube/NetPractice</a></li>
+  <li><a href="https://www.rfc-editor.org/rfc/rfc1918">RFC 1918 — direcciones privadas</a> ·
+  <a href="https://www.rfc-editor.org/rfc/rfc4632">RFC 4632 — CIDR</a> (actualiza el RFC 1519)</li>
+</ul>
+<p>El enunciado oficial está en la página del proyecto en la intra (slug
+<code>netpractice</code>), con el archivo de la interfaz adjunto.</p>
+</div>
+
+<footer>42.zenidx.com — NetPractice · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

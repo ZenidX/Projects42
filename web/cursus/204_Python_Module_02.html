@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 02 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 02 <span class="tag">pendiente</span></h1>
+<p class="sub">«Garden Guardian»: el módulo de las excepciones. Cinco ejercicios, del rank 02,
+que siguen en el huerto de los módulos anteriores — ahora lleno de sensores que fallan — y
+enseñan <code>try</code>, <code>except</code>, <code>raise</code>, <code>finally</code> y las
+excepciones propias. <strong>Aún no está hecho</strong>: esta ficha explica el enunciado; el
+código llegará cuando lo esté.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#ex0">ex0 — ft_first_exception</a></li>
+  <li><a href="#ex1">ex1 — ft_raise_exception</a></li>
+  <li><a href="#ex2">ex2 — ft_different_errors</a></li>
+  <li><a href="#ex3">ex3 — ft_custom_errors</a></li>
+  <li><a href="#ex4">ex4 — ft_finally_block</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Del código de retorno a la excepción</b> — En C, un error es un
+valor: <code>malloc</code> devuelve <code>NULL</code>, <code>open</code> devuelve
+<code>-1</code> y deja el motivo en <code>errno</code>, y cada llamada exige su
+<code>if</code>. Si se te olvida comprobarlo, el programa sigue como si nada hasta que
+revienta más adelante. Las excepciones, que vienen de lenguajes como PL/I, CLU o Ada y se
+popularizaron con C++ y Java, cambian el reparto: el código que detecta el problema
+<em>lanza</em> (<code>raise</code>) un objeto que describe el error, y ese objeto sube por la
+pila de llamadas hasta que alguien lo <em>captura</em> (<code>except</code>). Si nadie lo
+hace, el intérprete para el programa e imprime el famoso <em>traceback</em>. Python va más
+allá que la mayoría y usa excepciones para casi todo — hasta el final de un bucle
+<code>for</code> es, por dentro, una <code>StopIteration</code> —, y su comunidad tiene un
+lema para ello: <em>EAFP</em>, «es más fácil pedir perdón que permiso» (intentar y capturar)
+frente a <em>LBYL</em>, «mira antes de saltar» (comprobarlo todo antes), que es el estilo de
+C. Este módulo es el primero en el que una regla general dice que tus programas
+<strong>no pueden romperse nunca</strong>.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o superior</b></span><span>Obligatorio: <b>flake8</b>, <b>mypy</b></span><span>Ejercicios: <b>5</b> (ex0–ex4)</span></div>
+<p>Las instrucciones generales del enunciado:</p>
+<ul>
+  <li>Código que pase <strong>flake8</strong> y anotaciones de tipo en todas las funciones
+  y métodos, comprobadas con <strong>mypy</strong>. Ajustar esas anotaciones es cosa tuya
+  (por ejemplo, qué devuelve una función que puede lanzar).</li>
+  <li>Cada ejercicio en su propio fichero, dentro de su carpeta <code>exN/</code>.</li>
+  <li>Todos los ejercicios usan bloques <code>try</code>/<code>except</code>. Las palabras
+  clave <code>try</code>, <code>except</code>, <code>finally</code> y <code>raise</code> no
+  cuentan como funciones autorizadas: se pueden usar siempre.</li>
+  <li>Se puede usar cualquier excepción predefinida (<code>ValueError</code>,
+  <code>TypeError</code>, <code>ZeroDivisionError</code>, <code>FileNotFoundError</code>,
+  <code>KeyError</code>, <code>IndexError</code>, <code>AttributeError</code>, la clase base
+  <code>Exception</code>…).</li>
+  <li>Mostrar tanto el funcionamiento normal como los casos de error, con soluciones
+  sencillas y centradas en el concepto.</li>
+  <li>Los programas <strong>nunca deben romperse</strong>.</li>
+</ul>
+<p>La sintaxis general que recorre el módulo, con un ejemplo que no tiene nada que ver con
+el huerto:</p>
+<pre><code>try:
+    valor = 10 / divisor          # código que puede fallar
+except ZeroDivisionError as e:    # solo si falla con ese tipo
+    print(f"No se pudo: {e}")
+else:                             # solo si no ha fallado
+    print(valor)
+finally:                          # siempre, falle o no
+    print("fin")</code></pre>
+</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>ft_first_exception</h2>
+<div class="meta"><span>Entrega: <b>ex0/ft_first_exception.py</b></span><span>Autorizado: <b>int(), print()</b></span></div>
+<p>Una función <code>input_temperature(temp_str)</code> que recibe una cadena, la convierte en
+número y devuelve la temperatura como entero. Después, <code>test_temperature()</code> la
+prueba con una entrada válida (<code>"25"</code>) y otra inválida (<code>"abc"</code>),
+captura el fallo, imprime un mensaje de error y demuestra que el programa sigue vivo. La
+salida del ejemplo termina con «All tests completed - program didn't crash!».</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Lo que en el Module 00 era «el
+comportamiento esperado» (que <code>int("a")</code> parara el programa con un
+<code>ValueError</code>) ahora hay que controlarlo. Es la primera vez que ves la excepción
+como un objeto que se puede atrapar e imprimir: el texto del ejemplo, «invalid literal for
+int() with base 10: 'abc'», es el mensaje que Python mete dentro del propio error. El
+enunciado deja elegir entre capturar <code>Exception</code> a secas o averiguar qué excepción
+concreta lanza la conversión; lo segundo es la costumbre buena.</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>ft_raise_exception</h2>
+<div class="meta"><span>Entrega: <b>ex1/ft_raise_exception.py</b></span><span>Autorizado: <b>int(), print()</b></span></div>
+<p>Se parte del ejercicio anterior. Ahora <code>input_temperature</code> además comprueba que
+la temperatura sea razonable para las plantas, <strong>de 0 a 40 °C, límites incluidos</strong>:
+si lo es la devuelve y, si no, <em>lanza</em> una excepción. Las pruebas añaden dos valores
+extremos, <code>"100"</code> y <code>"-50"</code>, con mensajes que dicen si hace demasiado
+calor o demasiado frío y cuál es el límite. La parte principal del fichero llama a
+<code>test_temperature()</code>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que no solo Python lanza
+excepciones: también tú. <code>raise</code> crea el error en el punto donde se detecta el
+problema y deja que lo trate quien llamó, que es quien sabe qué hacer con él. Fíjate en que
+<code>"100"</code> es un número perfectamente válido para <code>int()</code>: el error ya no es
+de formato sino de <em>regla de negocio</em>, y aun así se captura en el mismo sitio y de la
+misma forma.</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>ft_different_errors</h2>
+<div class="meta"><span>Entrega: <b>ex2/ft_different_errors.py</b></span><span>Autorizado: <b>print(), open(), int()</b></span></div>
+<p>Una función <code>garden_operations(operation_number)</code> que contiene código
+defectuoso a propósito: para cada valor de 0 a 3 provoca una excepción distinta —
+<code>ValueError</code> (datos malos para <code>int()</code>), <code>ZeroDivisionError</code>,
+<code>FileNotFoundError</code> (abrir un fichero que no existe) y <code>TypeError</code>
+(mezclar tipos incompatibles, como sumar cadena y número). Con cualquier otro valor no hace
+nada raro y simplemente vuelve. Luego <code>test_error_types()</code> provoca cada error, lo
+captura, explica qué ha pasado, sigue adelante y enseña cómo capturar <strong>varios tipos con
+un solo <code>try</code></strong>.</p>
+<p>La sintaxis para capturar varios tipos en la misma rama es una tupla:</p>
+<pre><code>except (KeyError, IndexError) as e:
+    ...</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que las excepciones forman una
+<em>jerarquía</em> de clases: todas las del ejercicio heredan de <code>Exception</code>, y
+<code>FileNotFoundError</code> es a su vez un caso particular de <code>OSError</code>, que es el
+<code>errno</code> de C convertido en objeto (de ahí el «[Errno 2]» del mensaje). Capturar por
+tipo permite reaccionar distinto a cada problema. El enunciado prohíbe usar
+<code>type()</code> para distinguirlos: hay que dejar que <code>except</code> haga el trabajo.
+Y avisa de algo curioso: mypy marcará como error la línea que provoca el
+<code>TypeError</code>. Es justo su trabajo — detectar antes de ejecutar que estás sumando
+una cadena y un número —, y aquí ese error se mantiene a propósito.</div>
+</div>
+
+<div class="card" id="ex3">
+<h2><span class="ex">ex3</span>ft_custom_errors</h2>
+<div class="meta"><span>Entrega: <b>ex3/ft_custom_errors.py</b></span><span>Autorizado: <b>print()</b></span></div>
+<p>Tres excepciones propias: <code>GardenError</code>, un error genérico del huerto que hereda
+de <code>Exception</code>, y <code>PlantError</code> y <code>WaterError</code>, que heredan de
+<code>GardenError</code>. Cada una tiene un <strong>mensaje por defecto</strong> propio (por
+ejemplo «Unknown plant error») para cuando no se le pasa ninguno. Después, funciones que las
+lancen en distintas situaciones, que muestren cómo capturar cada tipo concreto y que
+demuestren que capturar <code>GardenError</code> atrapa todos los errores del huerto.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La herencia del Module 01 aplicada a
+algo útil. Una excepción propia es una clase como cualquier otra, y su lugar en el árbol
+decide quién la captura: <code>except GardenError</code> atrapa también las
+<code>PlantError</code> y las <code>WaterError</code>, porque una subclase <em>es</em> su clase
+madre. Así un módulo puede ofrecer una familia de errores y quien lo use elige el nivel de
+detalle. Las dos preguntas del enunciado van por ahí: cuándo merece la pena un error propio en
+vez de uno predefinido, y cómo ayuda la herencia a organizarlos.</div>
+</div>
+
+<div class="card" id="ex4">
+<h2><span class="ex">ex4</span>ft_finally_block</h2>
+<div class="meta"><span>Entrega: <b>ex4/ft_finally_block.py</b></span><span>Autorizado: <b>print(), str.capitalize()</b></span></div>
+<p>Una función <code>water_plant(plant_name)</code> que «riega» la planta si su nombre está
+capitalizado e imprime un mensaje de éxito; si no, lanza la <code>PlantError</code> del
+ejercicio anterior. Y una función <code>test_watering_system()</code> que abre el sistema de
+riego (basta con un mensaje), riega varias plantas con una estructura
+<code>try</code>/<code>except</code>/<code>finally</code> y, si un nombre no es válido,
+<strong>detiene la prueba y vuelve de inmediato a main</strong>. El sistema de riego se cierra
+siempre en el bloque <code>finally</code>: el ejemplo muestra «Closing watering system» tanto
+en la tanda válida como en la que falla a mitad.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que liberar recursos no puede
+depender de que todo vaya bien. En C, cada salida anticipada de una función obligaba a repetir
+el <code>free</code> o el <code>close</code> (o a un <code>goto</code> hacia el final);
+<code>finally</code> se ejecuta pase lo que pase: si el bloque termina normal, si salta una
+excepción y hasta si hay un <code>return</code> dentro del <code>try</code>. Es la base de lo
+que en el Module 04 hará la sentencia <code>with</code> por ti.</div>
+</div>
+
+<div class="trasfondo" id="delicados"><b>Puntos delicados</b>
+<ul>
+  <li><b>«Nunca debe romperse».</b> Un solo error sin capturar en cualquier ejercicio es un
+  fallo de la regla general, incluidos los casos que el enunciado no enseña.</li>
+  <li><b>Los límites del ex1 entran.</b> 0 y 40 son temperaturas válidas («limits
+  included»): el viejo dilema de <code>&gt;</code> frente a <code>&gt;=</code>.</li>
+  <li><b>Las anotaciones de tipo.</b> El enunciado avisa de que ajustarlas es cosa tuya, y esa
+  nota vale para todos los ejercicios y proyectos siguientes.</li>
+  <li><b>El fichero que no existe no se cierra.</b> En ex2, si <code>open()</code> falla no hay
+  nada que cerrar; el propio enunciado lo recuerda.</li>
+  <li><b>El aviso de mypy en ex2 es intencionado.</b> Conviene saber explicar en la evaluación
+  por qué está ahí y por qué no se «arregla».</li>
+  <li><b>El orden de los <code>except</code>.</b> Python prueba las ramas de arriba abajo y usa
+  la primera que encaja: si <code>except GardenError</code> va antes que
+  <code>except PlantError</code>, la segunda nunca se ejecuta.</li>
+  <li><b>Qué es «capitalizado» en ex4.</b> La única herramienta autorizada es
+  <code>str.capitalize()</code>, así que el criterio es el de ese método: primera letra en
+  mayúscula y el resto en minúscula.</li>
+  <li><b>Volver a main y aun así limpiar.</b> En ex4 la prueba se corta al primer nombre
+  inválido, pero el cierre tiene que aparecer igualmente: es justo lo que demuestra el
+  ejercicio.</li>
+  <li><b>Lo que pregunta la evaluación.</b> El enunciado avisa de que puede pedirte que
+  expliques los conceptos de manejo de errores y cómo responde tu programa a cada tipo de
+  problema. Sus preguntas guía: por qué hay tipos distintos de error, cómo capturar varios con
+  un solo <code>try</code>, cuándo crear tus propios errores y por qué limpiar aunque haya
+  fallos.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Enunciado oficial en inglés, <em>Garden Guardian — Data Engineering for Smart
+Agriculture</em>, versión 3.0: <code>packs/cursus/M2/204_Python_Module_02/en.subject.pdf</code>,
+con el texto extraído en <code>subject.txt</code> en la misma carpeta.</p>
+</div>
+
+<footer>42.zenidx.com — Python Module 02 · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

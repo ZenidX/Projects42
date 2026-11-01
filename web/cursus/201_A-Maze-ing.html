@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A-Maze-ing — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — A-Maze-ing <span class="tag">pendiente</span></h1>
+<p class="sub">Un generador de laberintos en Python: lee una configuración, genera un
+laberinto (perfecto o jugable tipo Pac-Man), lo guarda en hexadecimal, lo dibuja y lo
+empaqueta como módulo reutilizable. Rank 02. <strong>Aún no está hecho</strong>: esta ficha
+explica qué pide el enunciado; se ampliará con el código cuando esté terminado.</p>
+
+<ul class="toc">
+  <li><a href="#pide">01 — Qué pide</a></li>
+  <li><a href="#reglas">02 — Reglas comunes de Python</a></li>
+  <li><a href="#config">03 — El fichero de configuración</a></li>
+  <li><a href="#laberinto">04 — Requisitos del laberinto</a></li>
+  <li><a href="#salida">05 — El fichero de salida</a></li>
+  <li><a href="#visual">06 — Representación visual</a></li>
+  <li><a href="#paquete">07 — Módulo reutilizable y licencia</a></li>
+  <li><a href="#readme">08 — README y bonus</a></li>
+  <li><a href="#delicados">09 — Puntos delicados</a></li>
+  <li><a href="#fuente">10 — Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De qué va el proyecto</b> — Generar laberintos es un clásico de la
+informática porque, debajo del juego, es teoría de grafos pura: cada celda es un nodo, cada
+pared que se abre es una arista, y un <em>laberinto perfecto</em> (un único camino entre
+dos puntos cualesquiera) es exactamente un <strong>árbol generador</strong> de la cuadrícula.
+Por eso los algoritmos famosos de generación — el <em>recursive backtracker</em> (búsqueda
+en profundidad), Prim o Kruskal, que el propio enunciado cita — son los mismos que se usan
+para diseñar redes o en generación procedimental de contenido en videojuegos. Resolver el
+laberinto, a su vez, es buscar el camino más corto en un grafo.
+<br><br>El proyecto es además una pieza de algo más grande: el enunciado pide que el
+generador sea un paquete instalable con <code>pip</code> porque se reutilizará en un
+proyecto posterior, y el modo «no perfecto» tiene que producir un tablero directamente
+usable en un juego tipo Pac-Man (que en 42next es un proyecto del rank 04). Es el primer
+proyecto del cursus que piensa en quien va a usar tu código después.</div>
+
+<div class="card" id="pide">
+<h2><span class="ex">01</span>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Lenguaje: <b>Python 3.10+</b></span><span>Grupo: <b>en equipo (el README pide los roles de cada miembro; tamaño no indicado)</b></span><span>Entrega: <b>repositorio Git</b></span></div>
+<ul>
+  <li>Un programa <code>a_maze_ing.py</code> que se ejecuta con
+  <code>python3 a_maze_ing.py config.txt</code>.</li>
+  <li>Generar un laberinto aleatorio pero reproducible con semilla, perfecto o no según la
+  configuración, y con un «42» dibujado con celdas cerradas.</li>
+  <li>Escribirlo en un fichero con una cifra hexadecimal por celda, más la entrada, la salida
+  y el camino más corto.</li>
+  <li>Mostrarlo en terminal (ASCII) o con la MiniLibX, con interacciones mínimas.</li>
+  <li>Encapsular la generación en una clase dentro de un módulo independiente, empaquetada
+  como <code>mazegen-*</code> (<code>.whl</code> o <code>.tar.gz</code>) en la raíz del
+  repositorio, con su <code>LICENSE.md</code>.</li>
+  <li>Un Makefile con reglas concretas y un README con secciones específicas.</li>
+</ul>
+</div>
+
+<div class="card" id="reglas">
+<h2><span class="ex">02</span>Reglas comunes de Python</h2>
+<p>Las mismas exigencias de calidad que ya aparecen en los Python Module, aquí todas
+juntas:</p>
+<ul>
+  <li>Python 3.10 o posterior, estilo <b>flake8</b>.</li>
+  <li>Anotaciones de tipo en parámetros, retornos y variables donde aplique, y pasar
+  <b>mypy</b> sin errores.</li>
+  <li><b>Docstrings</b> en funciones y clases según PEP 257 (estilo Google o NumPy).</li>
+  <li>Excepciones controladas con <code>try</code>/<code>except</code>: si el programa
+  revienta con una excepción no capturada durante la evaluación, se considera no
+  funcional.</li>
+  <li>Recursos (ficheros…) gestionados con <em>context managers</em> para no dejar nada
+  abierto.</li>
+  <li><b>Makefile</b> con las reglas <code>install</code>, <code>run</code>,
+  <code>debug</code> (con <code>pdb</code> o similar), <code>clean</code> y
+  <code>lint</code> (flake8 y mypy con unos flags concretos que fija el enunciado);
+  <code>lint-strict</code> con <code>mypy --strict</code> es opcional.</li>
+  <li>Recomendado, aunque no se evalúa: tests propios (pytest, unittest), un
+  <code>.gitignore</code> y un entorno virtual.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en un proyecto Python
+«real» el código es solo una parte: hay comprobación estática de tipos, linter, entorno
+aislado y unas órdenes estándar para instalar, ejecutar y limpiar. El Makefile aquí no
+compila nada; se usa como lo que también es: un menú de tareas del proyecto.</div>
+</div>
+
+<div class="card" id="config">
+<h2><span class="ex">03</span>El fichero de configuración</h2>
+<p>Un fichero de texto con un par <code>CLAVE=VALOR</code> por línea; las líneas que
+empiezan por <code>#</code> son comentarios. Claves obligatorias:</p>
+<table>
+  <tr><th>Clave</th><th>Significado</th><th>Ejemplo</th></tr>
+  <tr><td><code>WIDTH</code></td><td>ancho en celdas</td><td><code>WIDTH=20</code></td></tr>
+  <tr><td><code>HEIGHT</code></td><td>alto en celdas</td><td><code>HEIGHT=15</code></td></tr>
+  <tr><td><code>ENTRY</code></td><td>coordenadas de entrada (x,y)</td><td><code>ENTRY=0,0</code></td></tr>
+  <tr><td><code>EXIT</code></td><td>coordenadas de salida (x,y)</td><td><code>EXIT=19,14</code></td></tr>
+  <tr><td><code>OUTPUT_FILE</code></td><td>fichero de salida</td><td><code>OUTPUT_FILE=maze.txt</code></td></tr>
+  <tr><td><code>PERFECT</code></td><td>¿laberinto perfecto?</td><td><code>PERFECT=True</code></td></tr>
+</table>
+<p>Se pueden añadir claves propias (semilla, algoritmo, modo de visualización…). Tiene que
+haber un fichero de configuración por defecto en el repositorio. Y cualquier error —
+configuración inválida, fichero inexistente, sintaxis mala, parámetros imposibles — debe
+dar un mensaje claro, nunca un cierre inesperado.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A escribir un parser defensivo:
+validar tipos, rangos y coherencia (¿la entrada cae dentro del laberinto?, ¿es distinta de
+la salida?) antes de empezar a trabajar, y a convertir cada fallo en un mensaje útil en vez
+de un <em>traceback</em>.</div>
+</div>
+
+<div class="card" id="laberinto">
+<h2><span class="ex">04</span>Requisitos del laberinto</h2>
+<p>Para todos los laberintos:</p>
+<ul>
+  <li>Aleatorio, pero <b>reproducible con una semilla</b>.</li>
+  <li>Cada celda tiene entre 0 y 4 paredes (norte, este, sur, oeste).</li>
+  <li>Entrada y salida existen, son distintas y están dentro de los límites; hay paredes en
+  todo el borde exterior.</li>
+  <li>Conectividad total, sin celdas aisladas (salvo las del «42»).</li>
+  <li><b>Coherencia</b>: si una celda tiene pared al este, la vecina tiene pared al oeste.</li>
+  <li>Nada de grandes zonas abiertas: pasillos de como mucho 2 celdas de ancho (una zona
+  abierta de 2×3 vale, una de 3×3 no).</li>
+  <li>Un <b>«42» visible</b> formado por varias celdas totalmente cerradas. Si el tamaño no
+  lo permite, se omite y se muestra un mensaje de error por consola.</li>
+</ul>
+<p>Con <code>PERFECT=True</code>: exactamente <b>un camino</b> entre entrada y salida, sin
+ningún bucle.</p>
+<p>Con <code>PERFECT=False</code> (el valor por defecto), un tablero para un juego tipo
+Pac-Man:</p>
+<ul>
+  <li>todos los pasillos accesibles, para poder llenarlo de bolitas y que siga siendo
+  ganable;</li>
+  <li>las cuatro esquinas y el centro son pasillos abiertos (fantasmas y súper-bolitas en
+  las esquinas, el jugador empieza en el centro);</li>
+  <li>al menos <b>dos rutas independientes</b> (bucles): un laberinto perfecto, o uno
+  perfecto con una sola pared quitada, no vale;</li>
+  <li>pocos callejones sin salida (se toleran un par); ninguno es el ideal y cuenta como
+  bonus.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Grafos sin llamarlos así. Un
+laberinto perfecto en una cuadrícula de N celdas es un árbol: N nodos, N−1 pasos abiertos,
+ningún ciclo. Cada algoritmo clásico lo construye de forma distinta y deja una «textura»
+distinta: la búsqueda en profundidad da pasillos largos y sinuosos; Prim y Kruskal, muchos
+callejones cortos. Para el modo Pac-Man hay que salir del árbol a propósito y añadir ciclos
+sin crear salas grandes ni romper el «42», y eso obliga a razonar sobre grados de los nodos
+(un callejón es una celda con una sola salida). La reproducibilidad enseña que lo
+«aleatorio» de un ordenador es pseudoaleatorio: misma semilla, misma secuencia.</div>
+</div>
+
+<div class="card" id="salida">
+<h2><span class="ex">05</span>El fichero de salida</h2>
+<p>Una cifra hexadecimal por celda, fila a fila, una fila por línea. Cada bit dice si una
+pared está cerrada (1) o abierta (0):</p>
+<table>
+  <tr><th>Bit</th><th>Dirección</th></tr>
+  <tr><td>0 (el menos significativo)</td><td>Norte</td></tr>
+  <tr><td>1</td><td>Este</td></tr>
+  <tr><td>2</td><td>Sur</td></tr>
+  <tr><td>3</td><td>Oeste</td></tr>
+</table>
+<p>Los ejemplos del enunciado: <code>3</code> (<code>0011</code>) es norte y este cerrados,
+sur y oeste abiertos; <code>A</code> (<code>1010</code>), este y oeste cerrados. Tras una
+línea vacía van tres líneas: coordenadas de entrada, de salida y el <b>camino más corto</b>
+escrito con las letras <code>N</code>, <code>E</code>, <code>S</code>, <code>W</code>. Todas
+las líneas acaban en <code>\n</code>.</p>
+<p>El enunciado incluye un script, <code>maze_analyzer.py</code>, que lee un fichero de
+salida, comprueba que las paredes compartidas estén codificadas igual en las dos celdas e
+informa de si el laberinto es perfecto o un tablero jugable; sus umbrales se ajustan con
+<code>--min-loops</code> (por defecto 2) y <code>--max-dead-ends</code> (por defecto 2).
+Una Moulinette podría probar el fichero de forma automática.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Máscaras de bits, ahora en Python:
+cuatro booleanos empaquetados en un nibble, que se consultan y modifican con
+<code>&amp;</code>, <code>|</code> y desplazamientos. Y el camino más corto en un grafo sin
+pesos, el terreno natural de la búsqueda en anchura (BFS), que encuentra primero los
+destinos más cercanos.</div>
+</div>
+
+<div class="card" id="visual">
+<h2><span class="ex">06</span>Representación visual</h2>
+<p>Hay que poder ver el laberinto, a elegir entre renderizado <b>ASCII en terminal</b> o
+una ventana gráfica con la <b>MiniLibX</b> (el pack trae la versión para Python,
+<code>mlx-2.2</code>, como <code>.whl</code> para Ubuntu y Fedora). Se deben distinguir
+paredes, entrada, salida y camino solución, y como mínimo el usuario debe poder:</p>
+<ul>
+  <li>generar un laberinto nuevo y mostrarlo;</li>
+  <li>mostrar u ocultar un camino más corto de la entrada a la salida;</li>
+  <li>cambiar el color de las paredes;</li>
+  <li>opcional: dar colores propios al «42».</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Separar el modelo (el laberinto
+como datos) de la vista (cómo se dibuja). Si la generación no sabe nada del dibujo, se
+puede cambiar ASCII por MiniLibX — o reutilizar el generador en otro proyecto — sin tocarla.
+La MiniLibX es la pequeña librería gráfica de 42, la de so_long o FdF en el camino antiguo:
+abre una ventana, dibuja píxeles y recibe eventos de teclado.</div>
+</div>
+
+<div class="card" id="paquete">
+<h2><span class="ex">07</span>Módulo reutilizable y licencia</h2>
+<ul>
+  <li>La generación va en <b>una única clase</b> (por ejemplo <code>MazeGenerator</code>)
+  dentro de un módulo independiente que se pueda importar en otro proyecto.</li>
+  <li>Una documentación breve: cómo instanciarla con un ejemplo básico, cómo pasarle
+  parámetros (tamaño, semilla) y cómo acceder a la estructura generada y al menos a una
+  solución. La estructura interna no tiene por qué tener el formato del fichero de salida.</li>
+  <li>El módulo y su documentación, empaquetados en un solo fichero instalable con
+  <code>pip</code>, llamado <code>mazegen-*</code>, <code>.tar.gz</code> o <code>.whl</code>
+  (ejemplo: <code>mazegen-1.0.0-py3-none-any.whl</code>), en la raíz del repositorio.</li>
+  <li>Todo lo necesario para reconstruir el paquete desde las fuentes: en la evaluación se
+  pedirá hacerlo en un entorno virtual.</li>
+  <li>Un <code>LICENSE.md</code> con una licencia que permita explícitamente reutilizar y
+  distribuir el generador en proyectos posteriores. Elegirla y escribirla es parte del
+  ejercicio.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Cómo se distribuye el código
+Python: un <em>wheel</em> (<code>.whl</code>) es un zip con el código listo para instalar,
+y un <em>sdist</em> (<code>.tar.gz</code>) las fuentes para construirlo; ambos salen de la
+construcción estándar a partir de un fichero de metadatos del proyecto (hoy,
+<code>pyproject.toml</code>). El nombre del wheel codifica versión, versión de Python, ABI
+y plataforma (<code>py3-none-any</code>: cualquier Python 3, puro, cualquier sistema). Y
+licencias: sin licencia, el código es legalmente tuyo y nadie puede reutilizarlo; las
+permisivas (MIT, BSD, Apache) dejan hacer casi todo, las <em>copyleft</em> (GPL) obligan a
+que lo derivado siga siendo libre. Es el primer contacto del cursus con la propiedad
+intelectual.</div>
+</div>
+
+<div class="card" id="readme">
+<h2><span class="ex">08</span>README y bonus</h2>
+<p>Además de lo común (primera línea en cursiva con los logins, Description, Instructions,
+Resources con el uso de la IA), el README debe incluir: la estructura y el formato completos
+del fichero de configuración, el algoritmo de generación elegido y por qué, qué parte del
+código es reutilizable y cómo (con la documentación del módulo), y la gestión del equipo:
+roles de cada miembro, planificación prevista y cómo evolucionó, qué funcionó y qué
+mejorar, y herramientas usadas.</p>
+<p>Bonus propuestos por el enunciado:</p>
+<ul>
+  <li>un laberinto por defecto (no perfecto) <b>sin ningún callejón sin salida</b>,
+  «trenzado» del todo, comprobable con <code>maze_analyzer.py --max-dead-ends 0</code>;</li>
+  <li>varios algoritmos de generación;</li>
+  <li>animación durante la generación.</li>
+</ul>
+</div>
+
+<div class="card" id="delicados">
+<h2><span class="ex">09</span>Puntos delicados</h2>
+<ul>
+  <li><b>Coherencia de paredes.</b> Abrir una pared es tocar <em>dos</em> celdas. Olvidar
+  la vecina es el fallo que <code>maze_analyzer.py</code> está hecho para detectar.</li>
+  <li><b>El «42» y la conectividad.</b> Las celdas del «42» son las únicas aisladas
+  permitidas; el resto del laberinto tiene que seguir conectado a su alrededor, y en modo
+  Pac-Man no deben contar como callejones.</li>
+  <li><b>Perfecto de verdad.</b> Con <code>PERFECT=True</code>, ni un solo bucle. Con
+  <code>False</code>, al menos dos rutas independientes: quitar una pared a un laberinto
+  perfecto no basta.</li>
+  <li><b>Zonas de 3×3.</b> Al añadir bucles es fácil abrir sin querer una sala demasiado
+  grande.</li>
+  <li><b>Coordenadas.</b> La configuración usa (x,y) — columna, fila — y es fácil
+  confundirlas con (fila, columna) al indexar una lista de listas.</li>
+  <li><b>Nunca un traceback.</b> Configuración mal formada, valores fuera de rango,
+  laberinto demasiado pequeño, fichero de salida no escribible: todo debe acabar en un
+  mensaje claro.</li>
+  <li><b>Reconstruir el paquete en la evaluación.</b> El <code>.whl</code> del repositorio
+  tiene que poder regenerarse desde cero en un entorno virtual limpio.</li>
+  <li><b>Modificación en directo.</b> El enunciado avisa de que puede pedirse un cambio
+  pequeño durante la evaluación.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2><span class="ex">10</span>Fuente</h2>
+<p>Enunciado oficial <b>A-Maze-ing «This is the way», versión 2.2</b> (slug
+<code>a-maze-ing</code>), en inglés: <code>packs/cursus/M2/201_A-Maze-ing/en.subject.pdf</code>
+y <code>subject.txt</code>, más los adjuntos de <code>extra/</code>
+(<code>maze_analyzer.py</code> y <code>mlx-2.2.tgz</code>). El contexto del rank sale de
+<code>ref/42cursus.md</code>. El trasfondo sobre grafos, empaquetado y licencias es
+conocimiento general, no del enunciado.</p>
+</div>
+
+<footer>42.zenidx.com — A-Maze-ing · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

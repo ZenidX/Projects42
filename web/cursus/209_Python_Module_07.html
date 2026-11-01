@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 07 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 07 <span class="tag">pendiente</span></h1>
+<p class="sub">«DataDeck»: un juego de cartas de criaturas al estilo de los de coleccionar
+monstruos que sirve de excusa para tres patrones de diseño — factoría abstracta,
+capacidades separadas y estrategia —. Módulo del rank 02.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#ex0">ex0 — Creature Factory</a></li>
+  <li><a href="#ex1">ex1 — Capabilities</a></li>
+  <li><a href="#ex2">ex2 — Abstract Strategy</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Pensar como arquitecto</b> — Hasta aquí los módulos de Python
+enseñaban herramientas del lenguaje: clases, herencia, clases abstractas, polimorfismo,
+imports. DataDeck da el salto a cómo se <em>combinan</em> esas piezas para que un sistema
+aguante miles de tipos distintos sin volverse inmantenible. Los patrones que usa vienen de
+<em>Design Patterns: Elements of Reusable Object-Oriented Software</em> (1994), el libro de
+la llamada «Banda de los Cuatro» (Gamma, Helm, Johnson y Vlissides), que puso nombre a
+soluciones que los programadores ya repetían una y otra vez. El enunciado lo resume en su
+prólogo con un guiño: «Gotta catch ’em all; but sometimes, the real treasure is the skills
+we made along the way». Como prerrequisito pide dominar herencia, clases abstractas,
+polimorfismo e imports, y recomienda hacer antes los proyectos correspondientes. Ojo: el
+<a href="208_Python_Module_06.html#nexus">Module 06 bis</a> incluye una versión reducida de
+estos mismos ejercicios.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o posterior</b></span><span>Obligatorio: <b>flake8</b>, <b>mypy</b> (anotaciones de tipo completas)</span><span>Prohibido: <b>eval()</b>, <b>exec()</b>, librerías externas</span></div>
+<p>Tres ejercicios, cada uno en su carpeta <code>ex0/</code>, <code>ex1/</code> y
+<code>ex2/</code>, que deben ser <em>paquetes</em>: el <code>__init__.py</code> es
+obligatorio en cada una. Los scripts de prueba (<code>battle.py</code>,
+<code>capacitor.py</code>, <code>tournament.py</code>) van en la raíz del repositorio. En
+todos se pueden usar las funciones integradas, los tipos estándar, <code>typing</code> y
+<code>abc</code>. Las funciones deben manejar las excepciones con cuidado para no provocar
+cierres inesperados.</p>
+<p>Los ejercicios se construyen uno sobre otro: el ex1 usa el paquete del ex0 y el ex2 usa
+los dos.</p>
+</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>Creature Factory</h2>
+<div class="meta"><span>Entrega: <b>battle.py</b>, <b>ex0/</b> como paquete</span><span>Autorizado: <b>builtins, tipos estándar, typing, abc</b></span></div>
+<p>Las cartas básicas. En <code>ex0/</code>:</p>
+<ul>
+<li>Una clase abstracta <code>Creature</code> con atributos para el nombre y el tipo, un
+método abstracto <code>attack</code> y un método concreto genérico
+<code>describe</code> que devuelve un mensaje estándar con nombre y tipo («Flameling is a
+Fire type Creature»).</li>
+<li>Cuatro criaturas concretas: <code>Flameling</code>, <code>Pyrodon</code>,
+<code>Aquabub</code> y <code>Torragon</code>, cada una con su mensaje de ataque.</li>
+<li>Una clase abstracta <code>CreatureFactory</code> con los métodos abstractos
+<code>create_base</code> y <code>create_evolved</code>.</li>
+<li>Dos factorías concretas: <code>FlameFactory</code> (Flameling y Pyrodon) y
+<code>AquaFactory</code> (Aquabub y Torragon).</li>
+<li>El paquete <code>ex0</code> <em>no puede exponer</em> las criaturas concretas: solo
+las factorías.</li>
+</ul>
+<p><code>battle.py</code> instancia las dos factorías, usa una única función que recibe una
+factoría y comprueba que crea la base y la evolucionada y que ambas se describen y atacan,
+y otra función que recibe las dos factorías y hace pelear a sus criaturas base. Se pueden
+usar otras criaturas siempre que se mantengan las familias y las factorías abstractas.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El patrón <em>factoría
+abstracta</em>: una interfaz para crear familias de objetos relacionados sin nombrar sus
+clases concretas. El código cliente recibe «una factoría» y le pide «la base» o «la
+evolucionada»; no sabe ni le importa si son de fuego o de agua. Cambiar de familia es
+cambiar de factoría, sin tocar una línea del resto. El requisito de que el paquete solo
+exponga las factorías es lo que lo hace real: si el cliente pudiera importar
+<code>Flameling</code> directamente, nada le impediría saltarse el patrón. Ahí entra lo
+aprendido sobre <code>__init__.py</code> como interfaz pública del paquete.</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>Capabilities</h2>
+<div class="meta"><span>Entrega: <b>capacitor.py</b>, <b>ex1/</b> como paquete</span><span>Autorizado: <b>builtins, tipos estándar, typing, abc</b></span></div>
+<p>Capacidades extra que «quizá algún día» no se apliquen solo a criaturas, así que se
+mantienen aparte: las clases de capacidad <em>no heredan</em> de <code>Creature</code>. En
+<code>ex1/</code>, construido sobre el paquete del ex0:</p>
+<ul>
+<li><code>HealCapability</code>, abstracta, con el método abstracto <code>heal</code> (que
+puede recibir un objetivo si quieres).</li>
+<li><code>TransformCapability</code>, abstracta, con <code>transform</code> y
+<code>revert</code>. Un atributo guarda el estado de forma persistente y afecta a lo que
+hace <code>attack</code> en las criaturas que la tienen.</li>
+<li>Todo devuelve cadenas sencillas que describen la acción, como <code>attack</code>.</li>
+<li><code>Sproutling</code> y <code>Bloomelle</code> heredan de <code>Creature</code> y de
+<code>HealCapability</code>, y forman una familia que se obtiene con
+<code>HealingCreatureFactory</code>.</li>
+<li><code>Shiftling</code> y <code>Morphagon</code> heredan de <code>Creature</code> y de
+<code>TransformCapability</code>, con su <code>TransformCreatureFactory</code>.</li>
+<li>Otra vez, el paquete solo expone factorías.</li>
+</ul>
+<p><code>capacitor.py</code> crea la factoría curativa y, con la base y la evolucionada:
+describir, atacar, curar. Luego la de transformación: describir, atacar, transformar, atacar
+de nuevo y revertir. El segundo ataque debe notar la transformación.</p>
+<p>La herencia múltiple en Python, en general:</p>
+<pre><code>class Pato(Animal, Volador, Nadador):
+    ...   # hereda de las tres; el orden importa para resolver métodos</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A separar <em>lo que algo es</em>
+de <em>lo que algo sabe hacer</em>. Si <code>heal</code> estuviera en
+<code>Creature</code>, todas las criaturas tendrían que implementarla aunque no curen, y
+ninguna otra cosa que no sea criatura podría curar. Una capacidad como clase abstracta
+independiente es lo que en Java se llamaría una interfaz y en Python suele llamarse
+<em>mixin</em>. También introduce la herencia múltiple y el <em>MRO</em> (orden de
+resolución de métodos), que Python calcula con el algoritmo C3 para decidir de qué padre
+sale cada método, y el estado interno que cambia el comportamiento de un objeto (un atributo
+que hace que el mismo <code>attack</code> devuelva otra cosa).</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>Abstract Strategy</h2>
+<div class="meta"><span>Entrega: <b>tournament.py</b>, <b>ex2/</b> como paquete</span><span>Autorizado: <b>builtins, tipos estándar, typing, abc</b></span></div>
+<p>Cada familia actúa distinto: la curativa cura después de atacar, la transformable se
+transforma, ataca y revierte. Un torneo con cartas de varias familias necesitaría un código
+de combate que conozca cada capacidad… o no. En <code>ex2/</code>:</p>
+<ul>
+<li><code>BattleStrategy</code>, abstracta, con <code>act</code> e
+<code>is_valid</code>. <code>is_valid</code> devuelve un <code>bool</code> que dice si una
+criatura es adecuada para la estrategia; <code>act</code> es lo que llama el torneo.</li>
+<li>Tres estrategias concretas: <code>NormalStrategy</code> (cualquier criatura, solo
+ataca), <code>AggressiveStrategy</code> (criaturas que se transforman: transformar, atacar,
+revertir) y <code>DefensiveStrategy</code> (criaturas que curan: atacar y curar).</li>
+<li>Con una combinación inválida, <code>is_valid</code> devuelve <code>False</code>; si aun
+así se llama a <code>act</code>, se lanza una excepción propia con un mensaje claro.</li>
+</ul>
+<p><code>tournament.py</code> crea factorías de ex0 y ex1 y las tres estrategias, y define
+una única función de combate que recibe la lista de rivales —cada uno, una tupla de
+<code>CreatureFactory</code> y <code>BattleStrategy</code>—, hace que cada rival luche una
+vez contra todos los demás, organiza cada pelea según la estrategia de cada criatura y
+gestiona bien las parejas inválidas. El ejemplo del enunciado muestra tres torneos: uno
+básico, uno que se aborta por una pareja inválida y uno con tres rivales (tres combates).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El patrón <em>estrategia</em>:
+encapsular cada forma de comportarse en un objeto intercambiable con una interfaz común. El
+torneo solo sabe llamar a <code>act</code>; quién cura, quién se transforma o quién solo
+ataca lo decide la estrategia asociada. Añadir una capacidad nueva significa añadir una
+estrategia, no reescribir el torneo. También obliga a comprobar capacidades en tiempo de
+ejecución (<code>isinstance</code> contra la clase abstracta de la capacidad, no contra la
+familia concreta), a definir tu propia excepción y a generar todos los emparejamientos de
+una lista sin repetir ninguno.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2>Puntos delicados</h2>
+<ul>
+<li><strong>Las capacidades no heredan de <code>Creature</code>.</strong> Es un requisito
+explícito, no una sugerencia, y la evaluación preguntará por qué.</li>
+<li><strong>Los paquetes solo exponen factorías.</strong> Tanto <code>ex0</code> como
+<code>ex1</code>; lo que pongas en cada <code>__init__.py</code> se mira.</li>
+<li><strong>El ex1 se apoya en el ex0.</strong> El enunciado dice que hay que usar el
+paquete del ex0 y construir encima, no copiarlo; eso implica imports entre paquetes
+hermanos ejecutando los scripts desde la raíz.</li>
+<li><strong>Estado de la transformación.</strong> El atributo debe hacer que el ataque
+cambie de verdad tras <code>transform</code> y vuelva a la normalidad tras
+<code>revert</code>.</li>
+<li><strong>Parejas inválidas.</strong> <code>is_valid</code> dice la verdad sin lanzar
+nada; <code>act</code> con una pareja inválida lanza la excepción propia, y el torneo la
+gestiona sin estrellarse (el ejemplo aborta el torneo con un mensaje).</li>
+<li><strong>Cada rival contra todos los demás, una vez.</strong> Con tres rivales hay tres
+combates, no seis.</li>
+<li><strong>flake8 y mypy.</strong> Con herencia múltiple y clases abstractas, mypy es
+exigente con las firmas de los métodos redefinidos.</li>
+<li><strong>En la evaluación</strong> pueden pedirte explicar los patrones; el enunciado
+insiste en entender los conceptos, no solo la implementación.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>«DataDeck — Abstract Card Architecture», versión 3.0:
+<code>packs/cursus/M2/209_Python_Module_07/en.subject.pdf</code> (texto en
+<code>subject.txt</code>). Solo existe en inglés. Slug de la intra:
+<code>python-module-07</code>.</p>
+</div>
+
+<footer>42.zenidx.com — Python Module 07 · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

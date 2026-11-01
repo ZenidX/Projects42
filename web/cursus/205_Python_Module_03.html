@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 03 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 03 <span class="tag">pendiente</span></h1>
+<p class="sub">«Data Quest»: las colecciones de Python. Siete ejercicios, del rank 02,
+ambientados en un videojuego, que desbloquean uno a uno <code>sys.argv</code>, listas,
+tuplas, conjuntos, diccionarios, generadores y comprensiones. <strong>Aún no está
+hecho</strong>: esta ficha explica el enunciado; el código llegará cuando lo esté.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#ex0">ex0 — ft_command_quest</a></li>
+  <li><a href="#ex1">ex1 — ft_score_analytics</a></li>
+  <li><a href="#ex2">ex2 — ft_coordinate_system</a></li>
+  <li><a href="#ex3">ex3 — ft_achievement_tracker</a></li>
+  <li><a href="#ex4">ex4 — ft_inventory_system</a></li>
+  <li><a href="#ex5">ex5 — ft_data_stream</a></li>
+  <li><a href="#ex6">ex6 — ft_data_alchemist</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Tu estructura de datos es tu algoritmo</b> — El prólogo del
+enunciado cuenta una historia de los primeros años de Twitter: código limpio y correcto que
+usaba listas para preguntar «¿esto ya está?» y que, cuando el tráfico se disparó, se convirtió
+en un cuello de botella. Buscar en una lista es recorrerla entera (O(n)); buscar en un
+conjunto o un diccionario, que por dentro son <em>tablas hash</em>, cuesta de media lo mismo
+tenga diez elementos o diez millones (O(1)). En C todo esto lo habrías construido a mano: un
+array con su tamaño, una lista enlazada como las de Libft, una tabla hash con su función de
+dispersión y sus colisiones. Python trae cuatro colecciones de serie, cada una con su
+carácter: la <strong>lista</strong> (ordenada, indexada, crece sola), la <strong>tupla</strong>
+(ordenada e inmutable: «datos escritos en piedra»), el <strong>conjunto</strong> (sin orden y
+sin repetidos) y el <strong>diccionario</strong> (parejas clave-valor). Encima de ellas, dos
+herramientas de sintaxis: los generadores y las comprensiones.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o superior</b></span><span>Obligatorio: <b>flake8</b>, <b>mypy</b></span><span>Ejercicios: <b>7</b> (ex0–ex6)</span></div>
+<ul>
+  <li>Código que pase <strong>flake8</strong> y anotaciones de tipo en todas las funciones
+  y métodos, comprobadas con <strong>mypy</strong>.</li>
+  <li>Las funciones deben gestionar las excepciones para no romperse: lo aprendido en el
+  Module 02 sigue vigente.</li>
+  <li>Los argumentos de línea de comandos se leen con el módulo <code>sys</code>, mediante
+  <code>import</code> (los imports se verán a fondo en un proyecto posterior).</li>
+  <li><strong>Prohibido</strong> leer o escribir ficheros: todo se procesa en memoria o llega
+  por la línea de comandos.</li>
+  <li>De partida solo se permiten los tipos <code>str</code>, <code>int</code> y
+  <code>float</code> con sus métodos. Cada estructura nueva, cuando un ejercicio la presenta,
+  se puede usar desde ahí con todos sus métodos.</li>
+  <li>Mostrar las operaciones básicas y alguna técnica avanzada de cada estructura.</li>
+</ul>
+</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>ft_command_quest</h2>
+<div class="meta"><span>Entrega: <b>ex0/ft_command_quest.py</b></span><span>Autorizado: <b>import sys, sys.argv, len(), print()</b></span></div>
+<p>Un script que muestra lo que recibe por la línea de comandos: el nombre del programa, cuántos
+argumentos hay, cada uno numerado y el total (que incluye el nombre del programa). Sin
+argumentos, avisa con «No arguments provided!». Una cadena entre comillas, como
+<code>"Data Quest"</code>, llega como un único argumento.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Las listas, empezando por una que ya
+existe: <code>sys.argv</code> es el <code>argv</code> del <code>main</code> de C convertido en
+lista de cadenas, con el nombre del programa en la posición 0. La diferencia es que ya no hace
+falta <code>argc</code>, porque la lista sabe su longitud (<code>len</code>). El enunciado avisa
+de que hay varias formas de no volver a imprimir el nombre del programa junto a los argumentos
+y de que en la evaluación te pedirán alternativas: es la puerta a los índices negativos y al
+<em>slicing</em> (<code>lista[inicio:fin]</code>).</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>ft_score_analytics</h2>
+<div class="meta"><span>Entrega: <b>ex1/ft_score_analytics.py</b></span><span>Autorizado: <b>import sys, sys.argv, len(), sum(), max(), min(), print()</b></span></div>
+<p>Las puntuaciones de unos jugadores llegan como argumentos. Hay que guardarlas en una
+<strong>lista nueva</strong>, gestionar los errores (sin argumentos, valores no numéricos) con
+mensajes adecuados y calcular estadísticas: cuántas hay, total, media, máxima, mínima y rango.
+Si se mezclan valores válidos e inválidos, los inválidos se descartan con un aviso y se sigue
+con el resto, salvo que no quede ninguno, en cuyo caso se muestra el mensaje de uso.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Construir una lista propia y hacerla
+crecer, combinando el <code>try</code>/<code>except</code> del módulo anterior con la limpieza
+de datos: el usuario es humano y se equivoca. También el placer de las funciones
+predefinidas: <code>sum</code>, <code>max</code> y <code>min</code> sobre una lista hacen en
+una palabra lo que en C era un bucle con su variable acumuladora. Ojo a la media del ejemplo,
+<code>1930.0</code>: en Python 3 la división <code>/</code> siempre devuelve un
+<code>float</code>, aunque sea exacta.</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>ft_coordinate_system</h2>
+<div class="meta"><span>Entrega: <b>ex2/ft_coordinate_system.py</b></span><span>Autorizado: <b>import math, math.sqrt(), input(), round(), print()</b></span></div>
+<p>Una función <code>get_player_pos()</code> que pide al usuario unas coordenadas con el
+formato <code>x,y,z</code>, gestiona las entradas incorrectas, <strong>repite la pregunta
+hasta recibir unas válidas</strong> y devuelve una <strong>tupla</strong> con las tres. Con ella,
+el programa pide un primer punto, muestra la tupla y cada coordenada por separado, calcula la
+distancia al origen <code>(0, 0, 0)</code>, pide un segundo punto y calcula la distancia entre
+los dos. La distancia es la euclídea, que el enunciado da con la fórmula: la raíz de la suma de
+las diferencias al cuadrado, el teorema de Pitágoras llevado a tres dimensiones. En el ejemplo
+los resultados salen con cuatro decimales.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Las tuplas y la idea de
+inmutabilidad: una posición se crea entera y no se modifica, y si el jugador se mueve se crea
+otra. Eso permite usarlas donde una lista no vale, como clave de un diccionario. También
+partir una cadena por un separador y convertir cada trozo, con dos errores distintos que el
+ejemplo diferencia: la sintaxis mala («Invalid syntax») y el número malo («Error on parameter
+'abc': could not convert string to float: 'abc'»). Y el primer <code>import</code> de algo que
+no es <code>sys</code>: el módulo <code>math</code>.</div>
+</div>
+
+<div class="card" id="ex3">
+<h2><span class="ex">ex3</span>ft_achievement_tracker</h2>
+<div class="meta"><span>Entrega: <b>ex3/ft_achievement_tracker.py</b></span><span>Autorizado: <b>len(), print(), import random, random.*, set(), set.union(), set.intersection(), set.difference()</b></span></div>
+<p>Una función <code>gen_player_achievements()</code> que, a partir de una lista fija y larga
+de logros, elige un número aleatorio de ellos y devuelve ese <strong>conjunto</strong> para un
+jugador. Con al menos cuatro jugadores, el programa calcula:</p>
+<ul>
+  <li>todos los logros distintos conseguidos entre todos;</li>
+  <li>los que tienen <em>todos</em> los jugadores;</li>
+  <li>para cada jugador, los que solo tiene él;</li>
+  <li>para cada jugador, los que le faltan para tenerlos todos.</li>
+</ul>
+<p>El enunciado pide ajustar el número total de logros y cuántos se reparten para que todos
+esos conjuntos tengan probabilidades de no salir vacíos.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La teoría de conjuntos de las
+matemáticas convertida en tipo de datos: unión, intersección y diferencia, los diagramas de
+Venn de toda la vida. Un conjunto no admite repetidos y no tiene orden, y por eso al imprimirlo
+los elementos salen en un orden que puede cambiar de una ejecución a otra. La pregunta del
+enunciado — cómo imprime Python un conjunto vacío y por qué — tiene que ver con las llaves:
+<code>{}</code> ya estaba cogido por el diccionario vacío.</div>
+</div>
+
+<div class="card" id="ex4">
+<h2><span class="ex">ex4</span>ft_inventory_system</h2>
+<div class="meta"><span>Entrega: <b>ex4/ft_inventory_system.py</b></span><span>Autorizado: <b>import sys, sys.argv, len(), print(), sum(), list(), round(), dict.keys(), dict.values(), dict.update()</b></span></div>
+<p>Cada argumento tiene el formato <code>&lt;item_name&gt;:&lt;quantity&gt;</code>. Los
+inválidos (sintaxis mala, cantidad que no es un número, objeto repetido) se descartan con un
+mensaje de error; los válidos van a un <strong>diccionario</strong> con la cantidad guardada como
+<code>int</code>. Después: mostrar el inventario, la lista de objetos, la cantidad total, el
+porcentaje que representa cada objeto (con un decimal en el ejemplo), el más y el menos
+abundante — <strong>en caso de empate, el primero que apareció en la línea de comandos</strong>
+— y, por último, añadir un objeto nuevo y mostrar el inventario otra vez.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El diccionario, la estructura estrella
+de Python: por dentro, los propios objetos y módulos guardan sus atributos en diccionarios.
+Buscar por clave es inmediato, comprobar si una clave ya existe también, y desde Python 3.7 los
+diccionarios <em>recuerdan el orden de inserción</em>: eso es lo que hace posible el criterio de
+desempate «el primero de la línea de comandos» y que el inventario se imprima en el mismo orden
+en que llegó. La pista del enunciado: «al principio del juego, el inventario suele estar
+vacío».</div>
+</div>
+
+<div class="card" id="ex5">
+<h2><span class="ex">ex5</span>ft_data_stream</h2>
+<div class="meta"><span>Entrega: <b>ex5/ft_data_stream.py</b></span><span>Autorizado: <b>next(), range(), len(), print(), import typing, typing.Generator, import random, random.*</b></span></div>
+<p>Una función generadora <strong>infinita</strong>, <code>gen_event()</code>, que en cada
+<code>next()</code> devuelve un evento nuevo como tupla <code>(nombre, acción)</code>, con un
+jugador y una acción elegidos al azar de sendas listas. El programa muestra mil eventos sacados
+de ella, luego construye una lista de diez eventos con el mismo generador y, por último, una
+segunda función generadora, <code>consume_event</code>, recibe esa lista y, hasta vaciarla, elige
+uno de sus elementos al azar, lo quita de la lista y lo entrega con <code>yield</code>. Esta
+última debe usarse directamente en un <code>for … in …</code>.</p>
+<p>La idea general, con un ejemplo ajeno al ejercicio:</p>
+<pre><code>def cuenta_atras(n: int) -&gt; Generator[int, None, None]:
+    while n &gt; 0:
+        yield n      # entrega un valor y se queda en pausa aquí
+        n -= 1</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Los generadores (Python 2.2, 2001):
+funciones que, en lugar de calcular una lista entera y devolverla, producen los valores
+<em>bajo demanda</em> y conservan su estado entre una petición y la siguiente. Por eso uno
+puede ser infinito sin agotar la memoria: solo existe el valor actual. Es la misma idea que el
+<code>get_next_line</code> del rank 01 — una función que recuerda dónde se quedó —, pero sin
+variables estáticas: el lenguaje guarda el estado por ti. Y es lo que hace un <code>for</code>
+por dentro: pedir <code>next()</code> hasta que se acaba.</div>
+</div>
+
+<div class="card" id="ex6">
+<h2><span class="ex">ex6</span>ft_data_alchemist</h2>
+<div class="meta"><span>Entrega: <b>ex6/ft_data_alchemist.py</b></span><span>Autorizado: <b>import random, random.*, print(), len(), sum(), round()</b></span></div>
+<p>Una lista de nombres de jugadores, unos capitalizados y otros no. Con
+<strong>comprensiones de lista</strong>: una lista nueva con todos los nombres capitalizados y
+otra solo con los que ya lo estaban en la original. Con una <strong>comprensión de
+diccionario</strong>: un diccionario con los nombres capitalizados como claves y puntuaciones
+aleatorias dentro de un rango como valores. Con otra: un segundo diccionario solo con las
+puntuaciones por encima de la media. Cada comprensión, en una sola línea salvo que no quepa.</p>
+<p>La forma general de una comprensión:</p>
+<pre><code>[expresión for x in iterable if condición]          # lista
+{clave: valor for x in iterable if condición}       # diccionario</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Las comprensiones, que vienen de la
+notación de conjuntos de las matemáticas («los x tales que…») a través de lenguajes funcionales
+como Haskell: describir <em>qué</em> lista quieres en vez de escribir el bucle que la rellena.
+Combinan el <code>map</code> y el <code>filter</code> que en la piscine hacías con punteros a
+función (C 11) en una sola expresión. El enunciado recuerda que también existen para
+conjuntos.</div>
+</div>
+
+<div class="trasfondo" id="delicados"><b>Puntos delicados</b>
+<ul>
+  <li><b>Las funciones autorizadas cambian en cada ejercicio.</b> Y cada estructura solo se
+  puede usar a partir del ejercicio que la presenta: nada de diccionarios en ex1.</li>
+  <li><b>Nada de ficheros.</b> Todo en memoria o desde la línea de comandos.</li>
+  <li><b>ex1 sin argumentos válidos.</b> Si todos son inválidos, se avisa de cada uno y se
+  termina con el mensaje de uso, igual que sin argumentos.</li>
+  <li><b>ex2 no se rinde.</b> Ante una entrada mala vuelve a preguntar, sin romperse; el
+  ejemplo acepta espacios alrededor de los números (<code>1.0 , 2.5, 3.0</code>).</li>
+  <li><b>ex3 es aleatorio.</b> La salida cambia en cada ejecución, y con pocos logros por
+  jugador los conjuntos de «comunes» o «exclusivos» salen vacíos casi siempre: el enunciado pide
+  ajustar los números para evitarlo.</li>
+  <li><b>ex4: repetidos y empates.</b> El objeto repetido se descarta (se queda el primero) y
+  el empate se resuelve a favor del primero de la línea de comandos.</li>
+  <li><b>ex5: el generador infinito.</b> Un <code>for</code> directo sobre él no termina
+  nunca; y <code>consume_event</code> tiene que ir dentro del <code>for … in …</code>, no
+  llamado a mano.</li>
+  <li><b>Tipos de los generadores para mypy.</b> <code>typing.Generator</code> lleva tres
+  parámetros: lo que entrega, lo que recibe y lo que devuelve al terminar.</li>
+  <li><b>Lo que pregunta la evaluación.</b> Según el enunciado, que expliques por qué elegiste
+  cada estructura, que demuestres operaciones con ellas o que amplíes tus programas con
+  funciones nuevas en el momento.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Enunciado oficial en inglés, <em>Data Quest — Mastering Python Collections</em>, versión
+3.0: <code>packs/cursus/M2/205_Python_Module_03/en.subject.pdf</code>, con el texto extraído en
+<code>subject.txt</code> en la misma carpeta.</p>
+</div>
+
+<footer>42.zenidx.com — Python Module 03 · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

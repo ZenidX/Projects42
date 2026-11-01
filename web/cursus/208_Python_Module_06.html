@@ -239,8 +239,8 @@ el fallo de <code>create_earth</code> es parte del enunciado: si la exportas «p
 comodidad», el ejercicio deja de demostrar lo que pide.</li>
 <li><strong>flake8 y mypy en los <code>__init__.py</code>.</strong> El enunciado ya avisa
 de que aparecerán avisos y pide resolverlos «según las convenciones habituales»; saber
-explicar cuál usas y por qué forma parte de la defensa. Los únicos errores admitidos a
-propósito son el de mypy de <code>ft_alembic_4</code>.</li>
+explicar cuál usas y por qué forma parte de la defensa. El error de mypy de
+<code>ft_alembic_4</code>, en cambio, es intencionado.</li>
 <li><strong>Nada de <code>sys.path</code>.</strong> Está prohibido modificarlo, y solo se
 pueden importar módulos creados en el propio proyecto.</li>
 <li><strong>Las cuatro preguntas.</strong> La evaluación puede pedir explicar los
@@ -425,10 +425,10 @@ una lista sin repetir combates.</div>
 int)</code> da <code>True</code>; al validar datos numéricos merece la pena decidir qué
 hacer con los booleanos y saber explicarlo.</li>
 <li><strong>Listas vacías y mezcladas.</strong> El numérico acepta listas mixtas de
-<code>int</code> y <code>float</code>; una lista con un intruso no debería colarse a
-medias.</li>
-<li><strong>mypy a propósito.</strong> El único aviso admitido es el de la ingesta inválida
-del ex0; el resto debe pasar limpio.</li>
+<code>int</code> y <code>float</code>; conviene pensar qué pasa con una lista vacía o con
+una que trae un elemento de otro tipo.</li>
+<li><strong>mypy a propósito.</strong> El enunciado anuncia un aviso de mypy intencionado,
+el de la ingesta inválida del ex0; todo lo demás va con anotaciones completas.</li>
 <li><strong>Qué expone cada paquete.</strong> <code>ex3</code> solo debe ofrecer factorías;
 es justo lo que el Module 06 clásico enseña con <code>__init__.py</code>.</li>
 <li><strong>En la evaluación</strong> pueden pedirte explicar el polimorfismo, demostrar la

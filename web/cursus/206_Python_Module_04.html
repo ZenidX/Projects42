@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 04 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 04 <span class="tag">pendiente</span></h1>
+<p class="sub">«Data Archivist»: ficheros y flujos de datos. Cuatro ejercicios, del rank 02,
+en unos archivos digitales del año 2087, que recorren <code>open</code>, lectura y escritura,
+la entrada, salida y error estándar y, al final, la sentencia <code>with</code>. <strong>Aún
+no está hecho</strong>: esta ficha explica el enunciado; el código llegará cuando lo esté.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#ex0">ex0 — ft_ancient_text</a></li>
+  <li><a href="#ex1">ex1 — ft_archive_creation</a></li>
+  <li><a href="#ex2">ex2 — ft_stream_management</a></li>
+  <li><a href="#ex3">ex3 — ft_vault_security</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Del descriptor al objeto fichero</b> — En C abrir un fichero era
+pedirle al sistema un número: <code>open</code> devuelve un descriptor, un <code>int</code>,
+y con él <code>read</code> y <code>write</code> mueven bytes hasta que <code>close</code> lo
+libera. Lo hiciste en C 10 (<code>ft_cat</code>, <code>ft_tail</code>) y en
+<code>get_next_line</code>. Python envuelve ese descriptor en un <em>objeto</em> que decodifica
+el texto, lleva su propio búfer y sabe leerse entero, por líneas o a trozos. Debajo sigue
+estando lo mismo: las llamadas al sistema de Unix y sus tres canales heredados de los años
+setenta — entrada estándar (0), salida estándar (1) y error estándar (2) —, «más antiguos que
+Internet», como dice el enunciado. Y sigue estando el viejo problema de cerrar lo que abres,
+que Python resolvió en 2006 (Python 2.5) con la sentencia <code>with</code> y los
+<em>gestores de contexto</em>: el último ejercicio.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o superior</b></span><span>Obligatorio: <b>flake8</b>, <b>mypy</b></span><span>Ejercicios: <b>4</b> (ex0–ex3)</span></div>
+<ul>
+  <li>Código que pase <strong>flake8</strong> y anotaciones de tipo en todas las funciones
+  y métodos, comprobadas con <strong>mypy</strong>.</li>
+  <li>Las funciones deben gestionar las excepciones para no romperse.</li>
+  <li><strong>La sentencia <code>with</code> está prohibida hasta el ex3</strong>, que es donde
+  se presenta.</li>
+  <li>Tipos permitidos, con sus métodos y constructores: <code>str</code>, <code>int</code>,
+  <code>float</code>, <code>list</code>, <code>dict</code>, <code>set</code> y
+  <code>tuple</code>.</li>
+  <li>Los ejemplos de terminal sugieren el formato de salida: hay que mantener la estructura,
+  pero los mensajes se pueden personalizar mientras conserven la información esencial.</li>
+</ul>
+<p>Los ejemplos usan un fichero de prueba, <code>ancient_fragment.txt</code>, con tres líneas
+del tipo <code>[FRAGMENT 001] …</code>; hay que crearlo a mano para probar.</p>
+</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>ft_ancient_text</h2>
+<div class="meta"><span>Entrega: <b>ex0/ft_ancient_text.py</b></span><span>Autorizado: <b>import sys, sys.argv, len(), open(), import typing, typing.IO, io.read(), io.close(), print()</b></span></div>
+<p>Recibe el nombre de un fichero por la línea de comandos, lo lee y muestra su contenido como
+haría <code>cat</code>, entre una cabecera y un pie como los del ejemplo (que acaba con
+«File '…' closed.»). Sin argumento, muestra el uso. Hay que gestionar los fallos: fichero
+inexistente (<code>[Errno 2] No such file or directory</code>), sin permisos
+(<code>[Errno 13] Permission denied</code>), etc.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El ciclo abrir, leer y cerrar en
+Python, y que los errores del sistema llegan como excepciones (la familia
+<code>OSError</code> del Module 02) con el mismo <code>errno</code> que en C. El enunciado
+pregunta qué tipo de dato devuelve <code>open()</code>: no es un número como en C sino un objeto
+fichero, y para anotarlo en las firmas está autorizado <code>typing.IO</code>.</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>ft_archive_creation</h2>
+<div class="meta"><span>Entrega: <b>ex1/ft_archive_creation.py</b></span><span>Autorizado: <b>import sys, sys.argv, len(), open(), import typing, typing.IO, io.read(), io.write(), io.close(), print(), input()</b></span></div>
+<p>Se parte del ex0 y, al final, se añade: poner un carácter <code>#</code> al final de cada
+línea, mostrar el contenido transformado y preguntar al usuario el nombre del fichero donde
+guardarlo, o dejarlo vacío para no guardar nada. Si da un nombre, se guarda (creando el fichero o
+<strong>sustituyéndolo si ya existe</strong>) y se muestra un mensaje final.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Escribir: los <em>modos</em> de
+<code>open</code> («r» para leer, «w» para escribir desde cero, «a» para añadir al final…), que
+son los <code>O_RDONLY</code>, <code>O_WRONLY | O_CREAT | O_TRUNC</code> y compañía de C con
+otro nombre. Y transformar texto línea a línea sin perder los saltos de línea: el
+<code>#</code> va antes del <code>\n</code>, no después.</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>ft_stream_management</h2>
+<div class="meta"><span>Entrega: <b>ex2/ft_stream_management.py</b></span><span>Autorizado: <b>import sys, sys.argv, sys.stdin, sys.stdout, sys.stderr, len(), open(), import typing, typing.IO, io.read(), io.readline(), io.write(), io.flush(), io.close(), print()</b></span></div>
+<p>Se parte del ex1 con dos cambios: los mensajes de error que salen de las excepciones se
+escriben en la <strong>salida de error</strong>, no en la estándar, con un prefijo claro
+(<code>[STDERR]</code> en el ejemplo); y la respuesta del usuario se lee <strong>sin usar
+<code>input()</code></strong>.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <code>sys.stdin</code>,
+<code>sys.stdout</code> y <code>sys.stderr</code> son objetos fichero como los que abres tú, ya
+abiertos al arrancar: el <code>write(2, …)</code> de C es aquí escribir en
+<code>sys.stderr</code>. Separar los canales importa porque permite redirigirlos por separado
+(<code>2&gt; errores.log</code>) y que un error nunca se cuele en los datos que se pasan por una
+tubería. Hacer a mano el trabajo de <code>input()</code> enseña lo que hacía por ti: mostrar la
+pregunta, asegurarse de que se ve aunque no acabe en salto de línea (el búfer de salida y
+<code>flush</code>) y quitar el <code>\n</code> final de lo leído.</div>
+</div>
+
+<div class="card" id="ex3">
+<h2><span class="ex">ex3</span>ft_vault_security</h2>
+<div class="meta"><span>Entrega: <b>ex3/ft_vault_security.py</b></span><span>Autorizado: <b>open(), read(), write(), print()</b></span></div>
+<p>Una función <code>secure_archive()</code> que da acceso seguro a cualquier fichero, para leer
+o para escribir, usando <strong><code>with</code></strong>. Recibe un nombre de fichero
+obligatorio, un parámetro opcional (un <code>int</code> o un <code>str</code>, a elegir) que
+indica la acción, y otra cadena opcional con el contenido a escribir. Devuelve una tupla
+<code>(True|False, str)</code>: si la operación ha ido bien y el contenido asociado (lo leído o
+un mensaje de error). El ejemplo prueba un fichero inexistente, uno sin permisos, uno normal y la
+escritura de lo leído en un fichero nuevo. En la evaluación se revisará que la estructura del
+código cumpla estos requisitos.</p>
+<p>La sintaxis general de <code>with</code>:</p>
+<pre><code>with open("notas.txt") as f:
+    texto = f.read()
+# aquí f ya está cerrado, haya habido error o no</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Los gestores de contexto: un objeto
+que sabe prepararse al entrar en el bloque y limpiar al salir, salga como salga. Es el
+<code>try</code>/<code>finally</code> del Module 02 empaquetado y reutilizable, y la razón por
+la que el enunciado prohíbe <code>with</code> antes: para que en ex0–ex2 cierres a mano y
+entiendas lo que <code>with</code> te ahorra. También los parámetros opcionales con valor por
+defecto y devolver un resultado en forma de tupla en lugar de lanzar la excepción.</div>
+</div>
+
+<div class="trasfondo" id="delicados"><b>Puntos delicados</b>
+<ul>
+  <li><b>Nada de <code>with</code> en ex0–ex2.</b> Y entonces cerrar el fichero es
+  responsabilidad tuya también cuando algo falla a mitad.</li>
+  <li><b>Lo que no se abrió no se cierra.</b> Si <code>open()</code> falla no hay objeto que
+  cerrar.</li>
+  <li><b>El fichero sin permisos del ejemplo.</b> <code>/etc/master.passwd</code> existe en
+  macOS, no en Linux, donde daría «No such file». Para probar el <code>Permission denied</code>
+  en Linux sirve, por ejemplo, <code>/etc/shadow</code>, o un fichero propio tras un
+  <code>chmod 000</code> (como root no fallaría ninguno).</li>
+  <li><b>Respuesta vacía en ex1.</b> Intro sin escribir nada significa «no guardar» y debe
+  decirlo.</li>
+  <li><b>Lo que devuelve <code>readline()</code>.</b> La línea incluye su <code>\n</code>, y
+  al final de la entrada (Ctrl+D) devuelve una cadena vacía: hay que tratar los dos casos.</li>
+  <li><b>La pregunta tiene que verse.</b> Sin <code>input()</code>, un texto sin salto de línea
+  puede quedarse en el búfer de salida; por eso está autorizado <code>flush()</code>.</li>
+  <li><b>Errores a stderr, el resto no.</b> Probarlo redirigiendo:
+  <code>python3 ft_stream_management.py foo 2&gt;/dev/null</code> no debería mostrar el
+  error.</li>
+  <li><b>Lo que pregunta la evaluación.</b> Según el enunciado, que expliques las operaciones
+  con ficheros, demuestres la gestión de errores o enseñes cómo funciona <code>with</code>.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Enunciado oficial en inglés, <em>Data Archivist — Digital Preservation in the Cyber
+Archives</em>, versión 3.0: <code>packs/cursus/M2/206_Python_Module_04/en.subject.pdf</code>,
+con el texto extraído en <code>subject.txt</code> en la misma carpeta.</p>
+</div>
+
+<footer>42.zenidx.com — Python Module 04 · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

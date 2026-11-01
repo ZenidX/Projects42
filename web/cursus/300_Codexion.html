@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codexion — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Codexion <span class="tag">pendiente</span></h1>
+<p class="sub">Concurrencia en C con hilos POSIX: varias personas programando comparten
+pocos dongles USB y tienen que compilar antes de agotarse. Es el proyecto de C del rank 03 de
+42next y el heredero directo de Philosophers.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#modelo">El modelo: mesa, dongles y ciclo</a></li>
+  <li><a href="#args">Argumentos y logs</a></li>
+  <li><a href="#sincro">Mutex, condiciones y monitor</a></li>
+  <li><a href="#sched">Cooldown y planificador: fifo y edf</a></li>
+  <li><a href="#readme">El README obligatorio</a></li>
+  <li><a href="#delicado">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde viene</b> — En 1965 Edsger Dijkstra planteó a sus
+alumnos un ejercicio sobre cinco ordenadores que compiten por unidades de cinta, y Tony Hoare
+lo rebautizó como la <em>cena de los filósofos</em>: filósofos sentados en círculo, un
+tenedor entre cada dos, y cada uno necesita los dos de sus lados para comer. Es el ejemplo
+clásico de <strong>interbloqueo</strong> (todos cogen el tenedor izquierdo y se quedan
+esperando el derecho para siempre) y de <strong>inanición</strong> (alguien que nunca consigue
+los dos). En el camino antiguo de 42 esto era el proyecto <em>Philosophers</em>; en 42next se
+llama Codexion y cambia el disfraz: los filósofos son personas que programan, los tenedores son
+dongles USB, comer es compilar y morir de hambre es <em>agotarse</em> (burnout). Pero el
+enunciado añade tres cosas que Philosophers no tenía: un <strong>tiempo de enfriamiento</strong>
+de los dongles, un <strong>planificador</strong> que decide quién se lleva un dongle disputado
+(<code>fifo</code> o <code>edf</code>) y la obligación de programar tu propia <strong>cola de
+prioridad</strong>. Es decir, del «que no se bloquee» se pasa al «que además sea justo».</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta">
+  <span>Rank: <b>03</b></span>
+  <span>Lenguaje: <b>C</b></span>
+  <span>Programa: <b>codexion</b></span>
+  <span>Entrega: <b>Makefile, *.c, *.h en coders/</b></span>
+  <span>Libft: <b>no</b></span>
+  <span>Individual/grupo: <b>no confirmado</b></span>
+</div>
+<p>Un único programa, <code>codexion</code>, que simula la mesa con un hilo por persona y un
+hilo monitor aparte, y escribe por la salida un log con marca de tiempo de cada cambio de
+estado. La simulación acaba cuando alguien se agota o cuando todo el mundo ha compilado al
+menos el número de veces pedido.</p>
+<p>Las reglas generales son las de los proyectos de C de siempre: Norma, nada de segfaults ni
+double free, sin fugas de memoria, <code>Makefile</code> con <code>$(NAME)</code>,
+<code>all</code>, <code>clean</code>, <code>fclean</code> y <code>re</code> que no haga
+relink, compilando con <code>cc</code> y <code>-Wall -Wextra -Werror -pthread</code>. Y una
+específica de este proyecto: <strong>las variables globales están prohibidas</strong>.</p>
+<p>Funciones autorizadas: <code>pthread_create</code>, <code>pthread_join</code>,
+<code>pthread_mutex_init</code>, <code>pthread_mutex_lock</code>,
+<code>pthread_mutex_unlock</code>, <code>pthread_mutex_destroy</code>,
+<code>pthread_cond_init</code>, <code>pthread_cond_wait</code>,
+<code>pthread_cond_timedwait</code>, <code>pthread_cond_broadcast</code>,
+<code>pthread_cond_destroy</code>, <code>gettimeofday</code>, <code>usleep</code>,
+<code>write</code>, <code>malloc</code>, <code>free</code>, <code>printf</code>,
+<code>fprintf</code>, <code>strcmp</code>, <code>strlen</code>, <code>atoi</code> y
+<code>memset</code>. Fíjate en lo que <em>no</em> está: ni <code>pthread_detach</code>, ni
+<code>pthread_cond_signal</code> (solo <code>broadcast</code>), ni semáforos.</p>
+<p>No hay parte bonus en el enunciado. Sí hay <em>recode</em>: en la evaluación pueden pedirte
+una modificación pequeña del proyecto en directo.</p>
+</div>
+
+<div class="card" id="modelo">
+<h2><span class="ex">01</span>El modelo: mesa, dongles y ciclo</h2>
+<p>Las personas se sientan en círculo, numeradas de <code>1</code> a
+<code>number_of_coders</code>; la <code>1</code> se sienta junto a la última y cada
+<code>N</code> entre <code>N - 1</code> y <code>N + 1</code>. Hay <strong>tantos dongles
+como personas</strong>, uno entre cada dos, y para compilar hay que tener los dos de los lados
+a la vez. Si solo hay una persona, sobre la mesa hay un único dongle.</p>
+<p>Cada persona repite el ciclo <em>coger dos dongles → compilar → soltarlos → depurar →
+refactorizar</em> y, al acabar de refactorizar, intenta enseguida volver a coger dongles. Los
+tres estados se excluyen entre sí. Las personas <strong>no se comunican</strong> y no saben si
+otra está a punto de agotarse.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A pensar en un recurso compartido
+como algo que hay que <em>proteger</em>. Dos hilos que leen y escriben a la vez el estado de un
+dongle pueden acabar creyendo los dos que lo tienen: el enunciado pide proteger el estado de
+cada dongle con su propio <code>pthread_mutex_t</code> precisamente «para evitar que se
+dupliquen dongles». Y el caso de una sola persona con un solo dongle es la trampa clásica de
+Philosophers: nunca podrá tener dos, así que la simulación tiene que acabar en burnout en lugar
+de quedarse colgada.</div>
+</div>
+
+<div class="card" id="args">
+<h2><span class="ex">02</span>Argumentos y logs</h2>
+<p>Ocho argumentos, todos obligatorios:</p>
+<pre><code>./codexion number_of_coders time_to_burnout time_to_compile time_to_debug \
+           time_to_refactor number_of_compiles_required dongle_cooldown scheduler</code></pre>
+<table>
+  <tr><th>Argumento</th><th>Significado (según el enunciado)</th></tr>
+  <tr><td><code>number_of_coders</code></td><td>personas, y también dongles</td></tr>
+  <tr><td><code>time_to_burnout</code></td><td>ms: si alguien no <em>empieza</em> a compilar
+  en ese tiempo desde el inicio de su última compilación (o desde el inicio de la simulación),
+  se agota</td></tr>
+  <tr><td><code>time_to_compile</code></td><td>ms compilando, con los dos dongles en la
+  mano</td></tr>
+  <tr><td><code>time_to_debug</code></td><td>ms depurando</td></tr>
+  <tr><td><code>time_to_refactor</code></td><td>ms refactorizando</td></tr>
+  <tr><td><code>number_of_compiles_required</code></td><td>si todo el mundo llega a este número
+  de compilaciones, la simulación se detiene</td></tr>
+  <tr><td><code>dongle_cooldown</code></td><td>ms que un dongle queda no disponible después de
+  soltarlo</td></tr>
+  <tr><td><code>scheduler</code></td><td>exactamente <code>fifo</code> o <code>edf</code></td></tr>
+</table>
+<p>Hay que rechazar las entradas no válidas: números negativos, valores que no sean enteros o
+un planificador distinto de esos dos.</p>
+<p>Los únicos mensajes posibles son estos cinco, con el tiempo en milisegundos y el número de
+la persona:</p>
+<pre><code>timestamp_in_ms X has taken a dongle
+timestamp_in_ms X is compiling
+timestamp_in_ms X is debugging
+timestamp_in_ms X is refactoring
+timestamp_in_ms X burned out</code></pre>
+<p>Dos mensajes nunca pueden mezclarse en una línea, y el de <code>burned out</code> tiene que
+salir <strong>como mucho 10 ms</strong> después del momento real del agotamiento. El enunciado
+recomienda <code>gettimeofday()</code> para medir el tiempo.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el tiempo en un programa
+concurrente es resbaladizo. <code>usleep(200000)</code> no duerme exactamente 200 ms: duerme
+<em>al menos</em> eso, y luego el sistema operativo te devuelve la CPU cuando le parece. Con
+muchos hilos esos retrasos se acumulan, y es justo lo que puede hacer que el burnout se anuncie
+tarde. El margen de 10 ms es la versión medible de «tu programa reacciona a tiempo».</div>
+</div>
+
+<div class="card" id="sincro">
+<h2><span class="ex">03</span>Mutex, variables de condición y monitor</h2>
+<p>Lo que pide la parte obligatoria, punto por punto:</p>
+<ul>
+  <li>cada persona es un hilo creado con <code>pthread_create</code>;</li>
+  <li>el estado de cada dongle está protegido por un mutex, y se puede usar una variable de
+  condición (<code>pthread_cond_t</code>) para gestionar las colas de espera;</li>
+  <li>un hilo <strong>monitor</strong> separado detecta el agotamiento y detiene la
+  simulación;</li>
+  <li>la salida está serializada con un mutex, para que no se mezclen dos mensajes.</li>
+</ul>
+<p>Una variable de condición es la forma de esperar «hasta que pase algo» sin estar
+preguntando en bucle (espera activa). El patrón general, que viene en cualquier manual de
+pthreads, es siempre el mismo: se espera <em>dentro de un while</em> que vuelve a comprobar la
+condición, porque al despertar no hay garantía de que siga cumpliéndose:</p>
+<pre><code>pthread_mutex_lock(&amp;m);
+while (!condicion)
+    pthread_cond_wait(&amp;c, &amp;m);   /* suelta m, duerme, y lo recupera al despertar */
+/* aquí condicion es cierta y tienes m */
+pthread_mutex_unlock(&amp;m);</code></pre>
+<p><code>pthread_cond_timedwait</code> hace lo mismo pero con un tiempo límite, algo útil
+cuando además de esperar a un recurso tienes un reloj corriendo.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Las <strong>condiciones de
+Coffman</strong> (Edward Coffman y otros, 1971): un interbloqueo solo puede producirse si se
+dan a la vez exclusión mutua, retener y esperar, no expropiación y espera circular. Basta con
+romper una para que sea imposible, y el README te pide explicar cuál rompes y cómo. También las
+<em>condiciones de carrera</em>: el monitor lee la hora de la última compilación mientras el
+hilo de la persona la escribe, así que esa lectura también tiene que ir protegida. Y el
+problema contrario al interbloqueo: proteger <em>demasiado</em>, con un único mutex para todo,
+hace que los hilos se esperen entre sí y el programa vaya a trompicones.</div>
+</div>
+
+<div class="card" id="sched">
+<h2><span class="ex">04</span>Cooldown y planificador: fifo y edf</h2>
+<p><b>Enfriamiento obligatorio.</b> Cuando alguien suelta un dongle, nadie puede volver a
+cogerlo hasta que pasen <code>dongle_cooldown</code> milisegundos.</p>
+<p><b>Arbitraje justo obligatorio.</b> Si varias personas piden el mismo dongle, se concede
+según el planificador:</p>
+<ul>
+  <li><code>fifo</code> (<em>First In, First Out</em>): a quien lo pidió primero;</li>
+  <li><code>edf</code> (<em>Earliest Deadline First</em>): a quien tenga el plazo de
+  agotamiento más próximo, con plazo = <code>last_compile_start + time_to_burnout</code>.</li>
+</ul>
+<p>El enunciado exige que, con <code>edf</code>, <strong>nadie se agote siempre que los
+parámetros sean viables</strong>, y que la planificación se haga con una <strong>cola de
+prioridad (heap)</strong> programada por ti, porque C89 no trae ninguna en su biblioteca
+estándar.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Planificación de tiempo real. EDF es
+un algoritmo clásico (Liu y Layland, 1973): servir siempre primero a quien vence antes, y se
+demuestra óptimo en un procesador con expropiación para tareas con plazos. FIFO es la cola de toda la vida,
+justa en el orden de llegada pero ciega a la urgencia. La diferencia se ve en los casos
+apretados: con FIFO alguien que llegó tarde a la cola puede agotarse esperando a otros que
+iban sobrados de tiempo. Y el heap es la estructura que hace barato «dame el más urgente»: un
+árbol binario guardado en un array donde cada nodo es menor que sus hijos, con inserción y
+extracción en O(log n). Es el mismo tipo de estructura que usa el algoritmo de Dijkstra que
+aparece en Fly-in.</div>
+</div>
+
+<div class="card" id="readme">
+<h2><span class="ex">05</span>El README obligatorio</h2>
+<p>Además de lo de siempre (primera línea en cursiva con los logins, secciones de
+Descripción, Instrucciones y Recursos con el uso de IA), este proyecto pide dos secciones más:</p>
+<ul>
+  <li><b>Blocking cases handled</b>: todos los problemas de concurrencia que resuelves
+  (interbloqueo y condiciones de Coffman, inanición, cooldown, detección precisa del burnout,
+  serialización del log).</li>
+  <li><b>Thread synchronization mechanisms</b>: qué primitivas usas
+  (<code>pthread_mutex_t</code>, <code>pthread_cond_t</code>, eventos propios), cómo coordinan
+  el acceso a dongles, log y estado del monitor, con ejemplos de cómo evitas las condiciones de
+  carrera.</li>
+</ul>
+<p>El idioma del README es libre (se recomienda inglés). La convención del usuario de tener un
+README en cada repo encaja aquí sin esfuerzo extra.</p>
+</div>
+
+<div class="card" id="delicado">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>El plazo cuenta desde que <em>empiezas</em> a compilar</b>, no desde que terminas.
+  Si <code>time_to_compile</code> es mayor que <code>time_to_burnout</code>, el agotamiento es
+  inevitable.</li>
+  <li><b>Una sola persona, un solo dongle</b>: no puede compilar nunca y tiene que acabar en
+  <code>burned out</code>, sin colgarse.</li>
+  <li><b>Coger un dongle no es atómico con coger el otro.</b> Entre los dos pasos otro hilo
+  puede llevarse el segundo: ahí nace la espera circular.</li>
+  <li><b>El cooldown y la cola se pisan</b>: un dongle puede estar libre pero aún frío, y quien
+  va primero en la cola tiene que esperar a que se enfríe sin que otro le adelante.</li>
+  <li><b>Nada sale después del burnout.</b> Una vez detectado, ningún hilo debería seguir
+  imprimiendo estados; y los hilos dormidos esperando un dongle tienen que despertarse para
+  terminar (de ahí que <code>pthread_cond_broadcast</code> esté autorizada).</li>
+  <li><b>Sin variables globales</b>: todo el estado compartido viaja por punteros a una
+  estructura común.</li>
+  <li><b>Limpieza</b>: hacer <code>join</code> de todos los hilos y destruir todos los mutex y
+  condiciones, tanto si acaba bien como si acaba en burnout. Herramientas útiles para
+  comprobarlo: <code>valgrind --tool=helgrind</code> o <code>-fsanitize=thread</code>.</li>
+  <li><b>Validar los argumentos</b>: negativos, no enteros y planificadores distintos de
+  <code>fifo</code>/<code>edf</code> se rechazan. Ojo con <code>atoi</code>, que no avisa de
+  nada.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>El enunciado no está aún en el pack. Esta ficha sale de una transcripción pública del
+enunciado en castellano (versión 1.0), contrastada con los README de dos entregas de otros
+estudiantes, que coinciden en argumentos, mensajes, planificadores y cola de prioridad:</p>
+<ul>
+  <li>Enunciado transcrito (es, v1.0):
+  <a href="https://github.com/janette-2/Codexion/blob/HEAD/Codexion.md">github.com/janette-2/Codexion — Codexion.md</a></li>
+  <li><a href="https://github.com/gvanboxtel/42_codam/blob/HEAD/Codexion.md">github.com/gvanboxtel/42_codam — Codexion.md</a> (README de una entrega)</li>
+  <li><a href="https://github.com/Flipsbone/Codexion-42">github.com/Flipsbone/Codexion-42</a> (README de una entrega)</li>
+  <li><a href="https://github.com/69Nesta/42-Codexion">github.com/69Nesta/42-Codexion</a> (README de una entrega)</li>
+</ul>
+<p>No confirmado: si se hace individual o en grupo, y las horas estimadas.</p>
+</div>
+
+<footer>42.zenidx.com — Codexion · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam atonement — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Exam atonement <span class="tag">pendiente</span></h1>
+<p class="sub">El examen «de expiación» del rank 01 de 42next: la vía para conseguir el
+requisito que piden Born2beroot, A-Maze-ing y Python Module 00 a quien no lo tiene.
+<strong>Ficha provisional</strong>: no hay enunciado local ni información pública fiable
+sobre su contenido; se completará más adelante.</p>
+
+<ul class="toc">
+  <li><a href="#pide">01 — Qué se sabe</a></li>
+  <li><a href="#examenes">02 — Cómo son los exámenes de 42</a></li>
+  <li><a href="#delicados">03 — Puntos delicados</a></li>
+  <li><a href="#fuente">04 — Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Por qué existe</b> — Tres proyectos del rank 02 (Born2beroot,
+A-Maze-ing y Python Module 00) piden, además de tener el rank 01, haber validado la quest
+<code>42bcn-libft-exam</code>. Por el nombre, es un requisito propio del campus de
+Barcelona ligado a la Libft, pero de qué consiste exactamente esa quest <em>no está
+confirmado</em> aquí. Exam atonement es, según los datos de la intra, el camino para quien
+no la tiene: <em>atonement</em> significa «expiación» o «reparación», es decir, una segunda
+oportunidad de demostrar lo que faltaba antes de seguir avanzando.</div>
+
+<div class="card" id="pide">
+<h2><span class="ex">01</span>Qué se sabe</h2>
+<div class="meta"><span>Rank: <b>01</b></span><span>Entorno: <b>examen presencial (formato concreto no confirmado)</b></span><span>Individual/grupo: <b>individual, como todo examen de 42</b></span></div>
+<ul>
+  <li>Pertenece al <b>rank 01</b> de 42next, junto a ft_printf, get_next_line y
+  push_swap.</li>
+  <li>Es la vía del rank 01 para quien <b>no tiene</b> la quest
+  <code>42bcn-libft-exam</code>, que Born2beroot, A-Maze-ing y Python Module 00 exigen.</li>
+  <li><b>No confirmado:</b> duración, lenguaje, número de niveles y tipo de ejercicios. El
+  directorio del pack está vacío (no hay enunciado descargado) y no se ha encontrado
+  documentación pública fiable sobre este examen concreto.</li>
+</ul>
+</div>
+
+<div class="card" id="examenes">
+<h2><span class="ex">02</span>Cómo son los exámenes de 42</h2>
+<p>Lo que sigue describe cómo funcionan en general los exámenes de 42 — los mismos que
+los de los viernes de la piscine — y no está verificado para este examen en particular:</p>
+<ul>
+  <li><b>Presenciales y en sesión programada</b>: hay que inscribirse al evento en la
+  intra, y solo se puede hacer en los puestos del campus durante la franja del examen.</li>
+  <li><b>Sin internet ni ayudas</b>: ni web, ni móvil, ni IA, ni apuntes. Los propios
+  enunciados de 42next lo recuerdan: «durante los exámenes la IA no está disponible».</li>
+  <li><b>examshell</b>: un programa en terminal desde el que se recibe cada enunciado, se
+  entrega el ejercicio (con git, en un repositorio de examen) y se pide la corrección.</li>
+  <li><b>Por niveles</b>: los ejercicios se ordenan por dificultad y cada nivel te asigna
+  uno al azar de una lista. Si lo apruebas, pasas al siguiente; si fallas, normalmente te
+  toca otro del mismo nivel, y cada fallo puede penalizar.</li>
+  <li><b>Corrección automática</b> y estricta: un error de compilación, un nombre de
+  fichero mal escrito o una función prohibida bastan para suspender el ejercicio.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A programar sin red: sin buscar
+la sintaxis, sin tests de otros y con el reloj corriendo. Es el contrapunto de los
+proyectos, donde se puede consultar todo y trabajar en grupo: el examen comprueba lo que
+de verdad se ha interiorizado.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2><span class="ex">03</span>Puntos delicados</h2>
+<ul>
+  <li><b>Inscribirse a tiempo</b>: en la piscine ya había que apuntarse al evento
+  <em>y</em> al proyecto (ver <a href="../piscine/001_shell01.html">Shell 01</a>).</li>
+  <li><b>Leer el enunciado entero</b>: nombre exacto del fichero, del directorio, funciones
+  autorizadas y formato de salida.</li>
+  <li><b>Probar antes de entregar</b>: con tu propio <code>main</code>, casos límite
+  incluidos, porque la corrección no da segundas lecturas.</li>
+  <li><b>Saber usar el editor de terminal</b> (vim, por ejemplo) y compilar con los flags
+  habituales, ya que no habrá entorno gráfico de desarrollo garantizado.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2><span class="ex">04</span>Fuente</h2>
+<p>No hay enunciado local: <code>packs/cursus/M1/103_Exam_atonement/</code> está vacío. Lo
+específico sale de <code>ref/42cursus.md</code> (datos de la intra leídos el 2026-09-24 y
+revisados el 2026-10-25). La descripción general de los exámenes es conocimiento común de
+42 y de la experiencia de la piscine, no de un documento oficial. Una búsqueda web
+(noviembre de 2026) no encontró información pública fiable sobre «Exam atonement». La ficha
+se completará cuando haya enunciado o se haya hecho el examen.</p>
+</div>
+
+<footer>42.zenidx.com — Exam atonement · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

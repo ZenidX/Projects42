@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inception — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Inception <span class="tag">pendiente</span></h1>
+<p class="sub">Montar dentro de una máquina virtual una pequeña infraestructura web
+(NGINX con TLS, WordPress con php-fpm y MariaDB), cada servicio en su propio contenedor
+Docker construido a mano y orquestado con docker compose. Proyecto del rank 05.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#contenedores">Contenedores e imágenes propias</a></li>
+  <li><a href="#servicios">Los tres servicios</a></li>
+  <li><a href="#datos">Volúmenes y red</a></li>
+  <li><a href="#secretos">Variables, .env y secretos</a></li>
+  <li><a href="#docs">README, USER_DOC y DEV_DOC</a></li>
+  <li><a href="#bonus">Bonus</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De dónde viene</b> — Born2beroot enseñaba a montar <em>una</em>
+máquina virtual y administrarla. Inception da el siguiente paso de la historia de la
+administración de sistemas: en lugar de una máquina por servicio, un único sistema que
+ejecuta varios servicios aislados entre sí con <strong>contenedores</strong>. Un contenedor no
+es una máquina virtual: no emula hardware ni arranca otro núcleo, sino que es un proceso
+normal del mismo kernel al que Linux le da una vista propia del sistema (sus propios
+<em>namespaces</em> de procesos, red y ficheros) y unos límites de recursos
+(<em>cgroups</em>). Docker (2013) popularizó la idea empaquetando esos mecanismos con un
+formato de imagen por capas y una receta reproducible, el <code>Dockerfile</code>; docker
+compose añadió la descripción de varios contenedores, sus redes y volúmenes en un único
+fichero YAML. Inception existe desde hace años en el common core; aquí se describe la
+versión 5.3 del enunciado, la que circula en 2026 y que ya incluye las instrucciones sobre IA
+y los ficheros de documentación. No se ha podido confirmar si 42next tiene una versión propia
+distinta.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>05</b></span><span>Herramientas: <b>Docker, docker compose, Makefile</b></span><span>Modalidad: <b>individual</b> (no confirmado para 42next)</span><span>Versión: <b>5.3</b></span></div>
+<ul>
+  <li>Todo el proyecto se hace <b>en una máquina virtual</b>.</li>
+  <li>Los ficheros de configuración van en una carpeta <code>srcs</code>; en la raíz, un
+  <code>Makefile</code> que levanta toda la aplicación construyendo las imágenes a través de
+  <code>docker-compose.yml</code>.</li>
+  <li>Un contenedor por servicio, cada uno con <b>su propio Dockerfile escrito por ti</b>, y
+  cada imagen con el mismo nombre que su servicio.</li>
+  <li>Imagen base: la <b>penúltima versión estable</b> de Alpine o de Debian. Prohibido bajar
+  imágenes ya hechas o usar servicios como DockerHub (salvo esas bases) y prohibida la
+  etiqueta <code>latest</code>.</li>
+  <li>Los contenedores deben reiniciarse si se caen.</li>
+  <li>Dominio <code>login.42.fr</code> (con tu login) apuntando a tu IP local.</li>
+  <li>README con secciones obligatorias, más <code>USER_DOC.md</code> y
+  <code>DEV_DOC.md</code> en la raíz como requisito de validación.</li>
+</ul>
+</div>
+
+<div class="card" id="contenedores">
+<h2><span class="ex">01</span>Contenedores e imágenes propias</h2>
+<p>La regla central es que tú construyes las imágenes: partes de una base mínima de Alpine o
+Debian e instalas y configuras el servicio encima. Nada de usar la imagen oficial de
+WordPress o de MariaDB. El enunciado añade dos prohibiciones que dicen mucho de lo que
+quiere que entiendas: no vale <code>network: host</code>, <code>--link</code> ni
+<code>links:</code>, y ningún contenedor puede arrancar con un bucle infinito
+(<code>tail -f</code>, <code>bash</code>, <code>sleep infinity</code>, <code>while
+true</code>), ni directamente ni dentro de un script de entrada.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es el <em>PID 1</em>. Dentro de
+un contenedor, el proceso que lanzas es el proceso 1 de su espacio de procesos: el contenedor
+vive mientras viva él. Si ese proceso es un servicio que se va a segundo plano (un
+<em>daemon</em> clásico), el contenedor se queda sin proceso principal y se para; por eso la
+tentación es «sujetarlo» con un <code>tail -f</code>. El enunciado lo prohíbe porque es un
+parche: el proceso que de verdad importa no es el que Docker vigila, no recibe las señales de
+parada y si muere nadie se entera. La idea es que el servicio corra en primer plano como
+proceso principal. Además el PID 1 tiene responsabilidades especiales en Unix (recoger hijos
+huérfanos, tratar señales), que es lo que el enunciado te invita a leer.</div>
+</div>
+
+<div class="card" id="servicios">
+<h2><span class="ex">02</span>Los tres servicios</h2>
+<ul>
+  <li><b>NGINX</b>, solo con <b>TLSv1.2 o TLSv1.3</b>. Es la <b>única puerta de entrada</b> a
+  la infraestructura, por el puerto <b>443</b> únicamente.</li>
+  <li><b>WordPress + php-fpm</b>, instalado y configurado, sin nginx dentro.</li>
+  <li><b>MariaDB</b>, sin nginx dentro.</li>
+  <li>En la base de datos de WordPress tiene que haber <b>dos usuarios</b>, uno de ellos
+  administrador, y el nombre del administrador no puede contener «admin» ni
+  «administrator» en ninguna variante.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La arquitectura clásica de una web
+dinámica partida en piezas. NGINX es un servidor web y <em>proxy inverso</em>: recibe la
+petición HTTPS, descifra TLS y, para lo que es PHP, se lo pasa a php-fpm por el protocolo
+<strong>FastCGI</strong>. php-fpm («FastCGI Process Manager») mantiene un grupo de procesos
+PHP listos para ejecutar el código de WordPress, que a su vez habla con MariaDB (un fork de
+MySQL nacido en 2009) por la red interna. Separarlos en contenedores obliga a entender qué
+habla con qué, por qué puerto y con qué protocolo, cosa que en una instalación «todo en uno»
+queda escondida. TLS es el sucesor de SSL; limitarlo a 1.2 y 1.3 deja fuera las versiones
+antiguas con debilidades conocidas.</div>
+</div>
+
+<div class="card" id="datos">
+<h2><span class="ex">03</span>Volúmenes y red</h2>
+<ul>
+  <li>Un volumen para la base de datos y otro para los ficheros de la web.</li>
+  <li>Deben ser <b>volúmenes con nombre</b> de Docker, no <em>bind mounts</em>, y sus datos
+  tienen que quedar en <code>/home/login/data</code> en la máquina anfitriona.</li>
+  <li>Una red de Docker que conecte los contenedores; la línea de red tiene que aparecer en
+  el <code>docker-compose.yml</code>.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un contenedor es efímero: lo
+que escribe en su propio sistema de ficheros desaparece cuando se recrea. Los datos que deben
+sobrevivir (la base de datos, los ficheros subidos) viven fuera, en volúmenes. La diferencia
+entre un volumen con nombre (lo gestiona Docker) y un bind mount (montas una ruta concreta
+del anfitrión) es una de las comparaciones que el README tiene que explicar. Con la red pasa
+igual: en una red de Docker los contenedores se encuentran por el nombre del servicio, como si
+hubiera un DNS interno, y solo lo que publicas hacia fuera (aquí, el 443 de NGINX) es
+accesible desde el anfitrión.</div>
+</div>
+
+<div class="card" id="secretos">
+<h2><span class="ex">04</span>Variables, .env y secretos</h2>
+<ul>
+  <li>Ninguna contraseña en los Dockerfiles.</li>
+  <li>Uso <b>obligatorio</b> de variables de entorno y de un fichero <code>.env</code>
+  (en el ejemplo, dentro de <code>srcs/</code>).</li>
+  <li>Muy recomendado usar <b>Docker secrets</b> para lo confidencial; el ejemplo de
+  estructura tiene una carpeta <code>secrets/</code> con ficheros de credenciales.</li>
+  <li>Cualquier credencial, clave o contraseña que aparezca en el repositorio Git (fuera de
+  secretos bien configurados) supone suspender el proyecto.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A separar la configuración del
+código, una de las ideas de la metodología <em>twelve-factor</em>: la misma imagen tiene que
+servir con otras contraseñas sin reconstruirla. Y la diferencia entre una variable de entorno
+(visible para cualquiera que inspeccione el contenedor o sus procesos) y un secreto (un
+fichero montado solo donde hace falta). El README tiene que comparar ambos.</div>
+</div>
+
+<div class="card" id="docs">
+<h2><span class="ex">05</span>README, USER_DOC y DEV_DOC</h2>
+<p>El README sigue el formato común de los enunciados nuevos (primera línea en cursiva con
+los logins, secciones Description, Instructions y Resources con el uso de IA) y además debe
+explicar el uso de Docker, las decisiones de diseño y cuatro comparaciones: <b>máquinas
+virtuales frente a Docker</b>, <b>secretos frente a variables de entorno</b>, <b>red de Docker
+frente a red del anfitrión</b> y <b>volúmenes frente a bind mounts</b>.</p>
+<p>Para validar hacen falta también:</p>
+<ul>
+  <li><code>USER_DOC.md</code>: qué servicios ofrece la pila, cómo arrancarla y pararla,
+  cómo entrar a la web y al panel de administración, dónde están las credenciales y cómo
+  comprobar que todo funciona.</li>
+  <li><code>DEV_DOC.md</code>: cómo montar el entorno desde cero, construir y lanzar con el
+  Makefile y compose, qué comandos usar para contenedores y volúmenes, y dónde se guardan y
+  persisten los datos.</li>
+</ul>
+</div>
+
+<div class="card" id="bonus">
+<h2><span class="ex">bonus</span>Servicios extra</h2>
+<p>Cada servicio extra con su propio Dockerfile y contenedor: caché <b>Redis</b> para
+WordPress, servidor <b>FTP</b> apuntando al volumen de la web, una <b>web estática</b> en
+cualquier lenguaje salvo PHP, <b>Adminer</b> y un servicio a tu elección que haya que
+justificar. Solo se evalúa si la parte obligatoria está perfecta.</p>
+</div>
+
+<div class="card" id="delicados">
+<h2>Puntos delicados</h2>
+<ul>
+  <li><b>El orden de arranque.</b> WordPress necesita que MariaDB esté lista, no solo
+  arrancada; «el contenedor existe» y «el servicio acepta conexiones» son cosas
+  distintas.</li>
+  <li><b>La primera ejecución frente a las siguientes.</b> Con volúmenes persistentes, la
+  configuración inicial (crear la base de datos, los usuarios, instalar WordPress) no puede
+  repetirse a ciegas en cada arranque.</li>
+  <li><b>«Penúltima versión estable»</b> cambia con el tiempo: hay que comprobarla cuando se
+  haga el proyecto y no copiarla de un repo antiguo.</li>
+  <li><b>Los secretos en Git.</b> Un <code>.env</code> o una carpeta <code>secrets/</code>
+  subidos por descuido son suspenso directo; el <code>.gitignore</code> va antes del primer
+  commit.</li>
+  <li><b>Nada de parches para mantener vivo el contenedor</b> (ver PID 1), ni red host ni
+  links.</li>
+  <li><b>El dominio</b> <code>login.42.fr</code> tiene que resolver a la IP local dentro de
+  la VM.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<ul>
+  <li>Enunciado <b>Inception v5.3</b> (en.subject.pdf), copia pública en
+  <a href="https://github.com/itsmeyeshua/1337_Inception">github.com/itsmeyeshua/1337_Inception</a>
+  (campus 1337). No es la copia de la intra de 42 Barcelona: si la versión 42next difiere, esta
+  ficha se corregirá con el enunciado oficial.</li>
+  <li>Documentación de Docker:
+  <a href="https://docs.docker.com/">docs.docker.com</a>.</li>
+</ul>
+</div>
+
+<footer>42.zenidx.com — Inception · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>
