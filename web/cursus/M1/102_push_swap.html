@@ -136,22 +136,239 @@ void	pb(t_ps *ps)
 	ps-&gt;count[PB]++;
 	ft_putendl_fd("pb", 1);
 }</code></pre>
-<p><code>push</code> mueve el nodo entero, sin <code>malloc</code> ni <code>free</code>. El
-<code>swap</code> ni siquiera mueve nodos: intercambia los dos <code>content</code>, que es lo
-mismo y más sencillo. <code>rotate</code> engancha la cima detrás de <code>ft_lstlast</code>, y
-<code>reverse_rotate</code> busca el penúltimo (el que cumple <code>pen-&gt;next-&gt;next ==
-NULL</code>) porque es el que tiene que quedarse con <code>next = NULL</code>:</p>
-<pre><code>	pen = *s;
+<p><code>push</code> mueve el nodo entero, sin <code>malloc</code> ni <code>free</code>; el
+<code>swap</code> ni siquiera mueve nodos; <code>rotate</code> engancha la cima detrás de
+<code>ft_lstlast</code>, y <code>reverse_rotate</code> tiene que buscar el penúltimo. Cada una tiene
+su desplegable con los punteros dibujados antes y después.</p>
+<p>Dos reglas que comentan los propios ficheros: las dobles (<code>ss</code>, <code>rr</code>,
+<code>rrr</code>) mueven las dos pilas pero cuentan y escriben <em>una</em> operación; y con 0 o 1
+nodos la operación no hace nada, pero se escribe y se cuenta igual. El header lo deja dicho: los
+algoritmos solo mueven las pilas a través de estas once funciones.</p>
+<details id="fn-swap">
+<summary>Cómo funciona <code>swap</code></summary>
+<pre><code>/*
+** Intercambia los dos primeros. No se mueven los nodos: se intercambian
+** sus content (los int*), que es lo mismo y mas sencillo.
+**     [1]-&gt;[2]-&gt;[3]  =&gt;  [2]-&gt;[1]-&gt;[3]
+*/
+static void	swap(t_list *s)
+{
+	void	*tmp;
+
+	if (!s || !s-&gt;next)
+		return ;
+	tmp = s-&gt;content;
+	s-&gt;content = s-&gt;next-&gt;content;
+	s-&gt;next-&gt;content = tmp;
+}</code></pre>
+
+<h3>Se cambian los contenidos, no los nodos</h3>
+<p>Los nodos se quedan donde están y en el mismo orden; lo que se intercambia son sus
+<code>content</code>, los punteros a los <code>int</code>. Es el intercambio de siempre con una
+variable auxiliar, solo que con <code>void *</code>: no se copian los números ni hace falta saber
+qué tipo hay detrás.</p>
+<pre><code>antes
+  s ──▶ [nodo1] ──▶ [nodo2] ──▶ [nodo3] ──▶ NULL
+           │           │           │
+           ▼           ▼           ▼
+           1           2           3
+
+tmp = s-&gt;content;                  tmp ──▶ 1
+s-&gt;content = s-&gt;next-&gt;content;     nodo1 ──▶ 2   (ahora 2 está en los dos nodos)
+s-&gt;next-&gt;content = tmp;            nodo2 ──▶ 1
+
+después
+  s ──▶ [nodo1] ──▶ [nodo2] ──▶ [nodo3] ──▶ NULL
+           │           │           │
+           ▼           ▼           ▼
+           2           1           3</code></pre>
+
+<h3>Por qué recibe <code>t_list *</code> y no <code>t_list **</code></h3>
+<p>Las otras tres funciones static reciben la dirección de la cabeza (<code>&amp;ps-&gt;a</code>)
+porque la cima pasa a ser otro nodo y hay que cambiar el propio <code>ps-&gt;a</code>. Aquí no: el
+primer nodo sigue siendo el primero y solo cambia lo que guarda dentro. Con una copia del puntero
+(<code>swap(ps-&gt;a)</code>) basta.</p>
+
+<h3>Casos límite</h3>
+<ul>
+<li>Pila vacía (<code>s == NULL</code>) o de un solo nodo (<code>s-&gt;next == NULL</code>): no hay
+dos que intercambiar y vuelve sin tocar nada. <code>sa</code> se escribe y se cuenta igual.</li>
+<li>El orden de la condición importa: <code>||</code> se para en el primer verdadero, así que
+<code>s-&gt;next</code> solo se lee cuando ya se sabe que <code>s</code> no es
+<code>NULL</code>.</li>
+</ul>
+
+<h3>Dónde se usa</h3>
+<p>Ojo: ninguna estrategia llama a <code>sa</code>, <code>sb</code> ni <code>ss</code> (tampoco a
+<code>rr</code> ni a <code>rrr</code>), así que en <code>--bench</code> esos contadores salen siempre
+a 0. Existen porque el enunciado define las once y el checker las entiende. Se nota con listas
+cortas: <code>2 1</code> sale como <code>ra pb pa</code> y no como <code>sa</code> (sección <a
+href="#adaptive">12</a>).</p>
+</details>
+<details id="fn-push">
+<summary>Cómo funciona <code>push</code></summary>
+<p>El código es el de arriba. Su comentario en <code>push.c</code> lo resume así:</p>
+<pre><code>/*
+** Saca la cima de src y la pone como cima de dest, moviendo el nodo
+** entero (sin malloc ni free):
+**     src  [x]-&gt;[y]-&gt;...        src  [y]-&gt;...
+**     dest [z]-&gt;...        =&gt;   dest [x]-&gt;[z]-&gt;...
+** pa: de b a a.  pb: de a a b.  Si src esta vacia no hace nada.
+*/</code></pre>
+
+<h3>Las cuatro líneas, una a una</h3>
+<p>Un <code>pb</code> con <code>a = x y w</code> y <code>b = z</code>, es decir,
+<code>push(&amp;ps-&gt;b, &amp;ps-&gt;a)</code>:</p>
+<pre><code>antes
+  a ──▶ [x] ──▶ [y] ──▶ [w] ──▶ NULL
+  b ──▶ [z] ──▶ NULL
+
+tmp = *src;             tmp ──▶ [x]
+*src = (*src)-&gt;next;    a ──▶ [y] ──▶ [w] ──▶ NULL
+                        ([x] sigue apuntando a [y], pero ya no es de a)
+tmp-&gt;next = *dest;      tmp ──▶ [x] ──▶ [z] ──▶ NULL
+*dest = tmp;            b ──▶ [x] ──▶ [z] ──▶ NULL
+
+después
+  a ──▶ [y] ──▶ [w] ──▶ NULL
+  b ──▶ [x] ──▶ [z] ──▶ NULL</code></pre>
+<p>El orden no es casual: <code>*src</code> avanza <em>antes</em> de tocar
+<code>tmp-&gt;next</code>. Si se hiciera al revés, <code>tmp-&gt;next = *dest</code> borraría el
+único enlace a <code>[y]</code> y el resto de a se perdería (y con él, su memoria).</p>
+
+<h3>Por qué <code>t_list **</code></h3>
+<p>Las dos cabezas cambian: a pasa a empezar en <code>[y]</code> y b en <code>[x]</code>. Si
+<code>push</code> recibiera <code>t_list *</code>, cambiaría copias locales y
+<code>ps-&gt;a</code> y <code>ps-&gt;b</code> seguirían igual. Con la dirección de cada cabeza,
+<code>*src = …</code> y <code>*dest = …</code> escriben en la struct. Los parámetros van en orden
+<em>destino, origen</em>, como en <code>memcpy</code>: <code>pa</code> es
+<code>push(&amp;ps-&gt;a, &amp;ps-&gt;b)</code> y <code>pb</code> al revés.</p>
+
+<h3>Casos límite</h3>
+<ul>
+<li><code>src</code> vacía: no hay nada que mover y vuelve sin tocar nada (el
+<code>pa</code>/<code>pb</code> se escribe y se cuenta igual).</li>
+<li><code>dest</code> vacía: no necesita trato especial. <code>*dest</code> es <code>NULL</code>,
+así que <code>tmp-&gt;next = NULL</code> y el nodo queda solo en su nueva pila. Es lo que pasa en
+cada primer <code>pb</code>.</li>
+</ul>
+<p>Como se mueven nodos ya reservados, la memoria total no cambia en toda la ejecución: los mismos
+<code>size</code> nodos van y vienen, y <code>free_ps</code> los libera al final estén en la pila
+que estén.</p>
+</details>
+<details id="fn-rotate">
+<summary>Cómo funciona <code>rotate</code></summary>
+<pre><code>/*
+** La cima pasa al fondo y todos suben un puesto:
+**     [1]-&gt;[2]-&gt;[3]  =&gt;  [2]-&gt;[3]-&gt;[1]
+** Se guarda el segundo (la nueva cima), se engancha el primero detras del
+** ultimo y se corta su next. ft_lstlast recorre la lista entera; da igual,
+** porque solo se puntua el numero de operaciones.
+*/
+static void	rotate(t_list **s)
+{
+	t_list	*tmp;
+
+	if (!*s || !(*s)-&gt;next)
+		return ;
+	tmp = (*s)-&gt;next;
+	ft_lstlast(*s)-&gt;next = *s;
+	(*s)-&gt;next = NULL;
+	*s = tmp;
+}</code></pre>
+
+<h3>Paso a paso</h3>
+<pre><code>antes
+  *s ──▶ [1] ──▶ [2] ──▶ [3] ──▶ NULL
+
+tmp = (*s)-&gt;next;            tmp ──▶ [2]
+ft_lstlast(*s)-&gt;next = *s;   [3]-&gt;next = [1]: durante un instante es un anillo
+                             *s ──▶ [1] ──▶ [2] ──▶ [3] ──▶ [1] ──▶ …
+(*s)-&gt;next = NULL;           se corta el anillo por detrás del 1
+                             tmp ──▶ [2] ──▶ [3] ──▶ [1] ──▶ NULL
+*s = tmp;
+
+después
+  *s ──▶ [2] ──▶ [3] ──▶ [1] ──▶ NULL</code></pre>
+
+<h3>Por qué en este orden</h3>
+<ul>
+<li><code>tmp</code> se guarda primero porque <code>(*s)-&gt;next</code> se va a poner a
+<code>NULL</code> y sin él no habría forma de llegar a la nueva cima.</li>
+<li><code>ft_lstlast</code> se llama <em>antes</em> de cortar. Si se cortara primero,
+<code>[1]</code> quedaría como una lista de un nodo, <code>ft_lstlast(*s)</code> devolvería el
+propio <code>[1]</code> y se engancharía a sí mismo: el nodo se perdería del resto.</li>
+</ul>
+
+<h3>Casos límite</h3>
+<p>Con pila vacía o de un nodo vuelve sin hacer nada, y aquí el chequeo de
+<code>(*s)-&gt;next</code> no es solo un atajo. Sin él, con un único nodo <code>[1]</code>:
+<code>tmp = NULL</code>, <code>[1]-&gt;next = [1]</code>, luego <code>[1]-&gt;next = NULL</code> y
+<code>*s = NULL</code>. La pila se quedaría vacía y el nodo, sin nadie que lo apunte.</p>
+<p>Con dos nodos, <code>[1]→[2]</code> pasa a <code>[2]→[1]</code>: el mismo resultado que un
+<code>swap</code>.</p>
+</details>
+<details id="fn-reverse_rotate">
+<summary>Cómo funciona <code>reverse_rotate</code></summary>
+<pre><code>/*
+** Lo contrario de rotate: el fondo pasa a la cima.
+**     [1]-&gt;[2]-&gt;[3]  =&gt;  [3]-&gt;[1]-&gt;[2]
+** Hay que encontrar el penultimo (pen: el que cumple pen-&gt;next-&gt;next ==
+** NULL), porque su next pasa a ser NULL; el ultimo se engancha delante de
+** la cima y se convierte en la nueva cima.
+*/
+static void	reverse_rotate(t_list **s)
+{
+	t_list	*pen;
+	t_list	*last;
+
+	if (!*s || !(*s)-&gt;next)
+		return ;
+	pen = *s;
 	while (pen-&gt;next-&gt;next)
 		pen = pen-&gt;next;
 	last = pen-&gt;next;
 	pen-&gt;next = NULL;
 	last-&gt;next = *s;
-	*s = last;</code></pre>
-<p>Dos reglas que comentan los propios ficheros: las dobles (<code>ss</code>, <code>rr</code>,
-<code>rrr</code>) mueven las dos pilas pero cuentan y escriben <em>una</em> operación; y con 0 o 1
-nodos la operación no hace nada, pero se escribe y se cuenta igual. El header lo deja dicho: los
-algoritmos solo mueven las pilas a través de estas once funciones.</p>
+	*s = last;
+}</code></pre>
+
+<h3>Por qué hace falta el penúltimo</h3>
+<p>La lista es simple: cada nodo sabe quién va detrás, pero no quién va delante. El último pasa a
+la cima, y el que se queda como nuevo fondo, con <code>next = NULL</code>, es el penúltimo. Con
+<code>ft_lstlast</code> no basta: da el último, pero no quién lo apunta. Por eso se busca a mano el
+nodo cuyo siguiente es el último, que es el que cumple <code>pen-&gt;next-&gt;next == NULL</code>.</p>
+
+<h3>Paso a paso</h3>
+<pre><code>antes
+  *s ──▶ [1] ──▶ [2] ──▶ [3] ──▶ [4] ──▶ NULL
+
+pen = [1]   [1]-&gt;next-&gt;next = [3]     sigue
+pen = [2]   [2]-&gt;next-&gt;next = [4]     sigue
+pen = [3]   [3]-&gt;next-&gt;next = NULL    para: pen es el penúltimo
+
+last = pen-&gt;next;     last ──▶ [4]
+pen-&gt;next = NULL;     *s ──▶ [1] ──▶ [2] ──▶ [3] ──▶ NULL
+last-&gt;next = *s;      last ──▶ [4] ──▶ [1] ──▶ [2] ──▶ [3] ──▶ NULL
+*s = last;
+
+después
+  *s ──▶ [4] ──▶ [1] ──▶ [2] ──▶ [3] ──▶ NULL</code></pre>
+
+<h3>Casos límite</h3>
+<ul>
+<li>Pila vacía o de un nodo: vuelve sin hacer nada. Además es lo que hace seguro el bucle: leer
+<code>pen-&gt;next-&gt;next</code> exige que <code>pen-&gt;next</code> exista, y con dos nodos o
+más existe siempre.</li>
+<li>Dos nodos: el bucle no da ninguna vuelta (<code>[1]-&gt;next-&gt;next</code> ya es
+<code>NULL</code>), <code>pen = [1]</code>, <code>last = [2]</code>, y queda
+<code>[2]→[1]</code>. Con dos nodos <code>ra</code>, <code>rra</code> y <code>sa</code> dan lo
+mismo.</li>
+</ul>
+<p>Recorrer hasta el penúltimo cuesta O(n) de CPU en cada <code>rra</code>, igual que el
+<code>ft_lstlast</code> de <code>rotate</code>. Da igual, porque solo cuenta que sea <em>una</em>
+operación impresa.</p>
+</details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A separar el <em>mecanismo</em> (mover
 punteros) de la <em>contabilidad</em> (contar e imprimir). Como cada operación pública imprime y
 cuenta, es imposible que un algoritmo haga un movimiento "gratis" que el checker no vea, y el
@@ -162,7 +379,7 @@ lista vacía o de un solo nodo.</div>
 
 <div class="card" id="main">
 <h2><span class="ex">03</span>main y el flujo</h2>
-<div class="meta"><span>Fichero: <b>push_swap.c</b></span><span>Funciones: <b>main, run_strategy, error_exit, free_ps</b></span></div>
+<div class="meta"><span>Fichero: <b>push_swap.c</b></span><span>Funciones: <b>main, run_strategy, error_exit, free_ps, free_split</b></span></div>
 <pre><code>int	main(int argc, char **argv)
 {
 	t_ps	ps;
@@ -189,10 +406,161 @@ lista vacía o de un solo nodo.</div>
 operación; y <code>--bench</code> informa al final. <code>run_strategy</code> es un
 <code>if</code>/<code>else</code> sobre <code>ps-&gt;strategy</code> que cae en
 <code>sort_adaptive</code> si no se forzó otra.</p>
-<p>Cualquier entrada inválida acaba en <code>error_exit</code>, que libera las dos pilas
-(<code>ft_lstclear(&amp;ps-&gt;a, free)</code>: los nodos y el <code>int *</code> de cada uno),
-escribe <code>Error\n</code> por el fd 2 y sale con <code>exit(1)</code>. Pasado por valgrind, el
+<p>Cualquier entrada inválida acaba en <code>error_exit</code>, que libera las dos pilas, escribe
+<code>Error\n</code> por el fd 2 y sale con <code>exit(1)</code>. Pasado por valgrind, el
 binario no deja fugas ni con las cuatro estrategias ni en la salida por error.</p>
+<details id="fn-run_strategy">
+<summary>Cómo funciona <code>run_strategy</code></summary>
+<pre><code>/*
+** Ejecuta la estrategia forzada por flag o, si no se paso ninguno, la
+** adaptativa (que elige por su cuenta segun el desorden).
+*/
+void	run_strategy(t_ps *ps)
+{
+	if (ps-&gt;strategy == SIMPLE)
+		sort_simple(ps);
+	else if (ps-&gt;strategy == MEDIUM)
+		sort_medium(ps);
+	else if (ps-&gt;strategy == COMPLEX)
+		sort_complex(ps);
+	else
+		sort_adaptive(ps);
+}</code></pre>
+
+<h3>Una cadena de <code>if</code> en vez de un <code>switch</code></h3>
+<p>Es un despachador: mira el valor del enum y llama a una función. En otro sitio sería un
+<code>switch</code>, pero la Norma de 42 no lo permite, así que es un <code>if</code>/<code>else
+if</code>. El último <code>else</code> no pregunta por <code>ADAPTIVE</code>: recoge todo lo que no
+sea una de las tres forzadas, y eso es la adaptativa.</p>
+
+<h3>De dónde sale <code>ps-&gt;strategy</code></h3>
+<table>
+<tr><th>Argumentos</th><th><code>ps-&gt;strategy</code></th><th>Se ejecuta</th></tr>
+<tr><td>ningún flag</td><td><code>ADAPTIVE</code> (0, por el <code>ft_bzero</code>)</td><td><code>sort_adaptive</code></td></tr>
+<tr><td><code>--adaptive</code></td><td><code>ADAPTIVE</code></td><td><code>sort_adaptive</code></td></tr>
+<tr><td><code>--simple</code></td><td><code>SIMPLE</code></td><td><code>sort_simple</code></td></tr>
+<tr><td><code>--medium</code></td><td><code>MEDIUM</code></td><td><code>sort_medium</code></td></tr>
+<tr><td><code>--complex</code></td><td><code>COMPLEX</code></td><td><code>sort_complex</code></td></tr>
+</table>
+<p>Lo fija <code>parse_flag</code> durante el parseo. Ojo: <code>main</code> hace
+<code>ps.strategy = ADAPTIVE</code> justo después del <code>ft_bzero</code>, que ya lo había dejado a
+0. Es redundante (el header explica que <code>ADAPTIVE</code> va primero justo para no necesitarlo),
+pero no hace daño y deja la intención escrita.</p>
+
+<h3>Cuándo no se llama</h3>
+<p><code>main</code> solo la llama si <code>ps.mistakes &gt; 0</code>. Así ninguna estrategia
+recibe nunca una pila vacía ni ya ordenada, y todas pueden dar por hecho que hay al menos dos
+números y al menos una pareja al revés.</p>
+</details>
+<details id="fn-error_exit">
+<summary>Cómo funciona <code>error_exit</code></summary>
+<pre><code>/*
+** Cualquier entrada invalida acaba aqui: el enunciado pide "Error\n" por
+** stderr. Se libera antes de salir para no dejar leaks.
+*/
+void	error_exit(t_ps *ps)
+{
+	free_ps(ps);
+	write(2, "Error\n", 6);
+	exit(1);
+}</code></pre>
+
+<h3>Tres pasos</h3>
+<ol>
+<li><code>free_ps(ps)</code>: libera lo que se haya leído hasta el fallo. Al acabar el proceso el
+sistema recupera la memoria de todos modos, pero valgrind la señalaría y en 42 cuenta como
+fuga.</li>
+<li><code>write(2, "Error\n", 6)</code>: el mensaje exacto que pide el enunciado, por stderr. El 6
+son los bytes <code>E r r o r \n</code>, sin el <code>'\0'</code>.</li>
+<li><code>exit(1)</code>: termina el programa con un estado distinto de 0. <code>exit</code> no
+vuelve, así que quien la llama no necesita nada detrás.</li>
+</ol>
+<pre><code>$ ./push_swap 3 2 abc; echo $?
+Error
+1</code></pre>
+
+<h3>Por qué se puede llamar en cualquier momento</h3>
+<p>Solo se llama desde <code>main</code> cuando <code>parse_args</code> devuelve 0, y en ese
+momento todo está en un estado que <code>free_ps</code> sabe limpiar: <code>ps</code> se puso a cero
+con <code>ft_bzero</code>, así que <code>a</code> y <code>b</code> son <code>NULL</code> o listas
+válidas. En <code>./push_swap 3 x 1</code>, el 3 ya está en a cuando falla la <code>x</code>, y se
+libera aquí. Lo que no está en <code>ps</code> (el array de <code>ft_split</code>, el
+<code>int</code> del número malo) ya lo han liberado <code>add_words</code> y
+<code>add_number</code> antes de devolver 0.</p>
+</details>
+<details id="fn-free_ps">
+<summary>Cómo funciona <code>free_ps</code></summary>
+<pre><code>/*
+** Libera las dos pilas: los nodos y el int* de cada uno (por eso se pasa
+** free como funcion para el content).
+*/
+void	free_ps(t_ps *ps)
+{
+	ft_lstclear(&amp;ps-&gt;a, free);
+	ft_lstclear(&amp;ps-&gt;b, free);
+}</code></pre>
+
+<h3>Dos reservas por número</h3>
+<p>Cada número ocupa dos bloques de <code>malloc</code>: el <code>int</code> (en
+<code>add_number</code>) y el nodo que lo apunta (en <code>ft_lstnew</code>).
+<code>ft_lstclear</code> recibe una función para borrar el contenido y, por cada nodo, la llama con
+su <code>content</code> y después libera el nodo. Como el contenido es un simple <code>int *</code>,
+esa función es el propio <code>free</code>: su tipo, <code>void (*)(void *)</code>, es justo el que
+pide el parámetro.</p>
+<pre><code>a ──▶ [nodo] ──▶ [nodo] ──▶ NULL
+        │          │
+        ▼          ▼
+       int        int        → 4 free: 2 int (del) + 2 nodos
+
+después: ps-&gt;a == NULL</code></pre>
+
+<h3>Detalles</h3>
+<ul>
+<li>Libera las dos pilas aunque al terminar bien b esté vacía (y en un error, también): con
+<code>*lst == NULL</code>, <code>ft_lstclear</code> no hace nada, y así no hay que pensar en qué
+estado quedó cada una.</li>
+<li><code>ft_lstclear</code> deja la cabeza a <code>NULL</code>, de modo que llamar dos veces a
+<code>free_ps</code> no daría un doble <code>free</code>.</li>
+<li>La <code>ft_lstclear</code> de esta libft es recursiva: una llamada por nodo. Con los tamaños
+de push_swap (500) no es problema.</li>
+</ul>
+</details>
+<details id="fn-free_split">
+<summary>Cómo funciona <code>free_split</code></summary>
+<pre><code>/* Libera lo que devuelve ft_split: cada palabra y luego el array. */
+void	free_split(char **words)
+{
+	int	i;
+
+	i = 0;
+	while (words[i])
+		free(words[i++]);
+	free(words);
+}</code></pre>
+
+<h3>La forma de lo que devuelve <code>ft_split</code></h3>
+<p><code>ft_split</code> hace un <code>malloc</code> para el array de punteros y otro por cada
+palabra, y marca el final con un <code>NULL</code>. Hay que liberar en ese orden: primero cada
+palabra (mientras aún se puede leer el array) y luego el array.</p>
+<pre><code>ft_split("3 2 1", ' ')
+
+words ──▶ [ * | * | * | NULL ]
+            │   │   │
+            ▼   ▼   ▼
+           "3" "2" "1"          → 4 free: 3 palabras + el array</code></pre>
+
+<h3>Casos límite</h3>
+<ul>
+<li><code>""</code> o <code>"   "</code>: <code>ft_split</code> devuelve un array con solo el
+<code>NULL</code>. El bucle no da ninguna vuelta y se libera el array, que también era memoria
+reservada.</li>
+<li><code>words == NULL</code> (falló el <code>malloc</code> de <code>ft_split</code>): aquí
+fallaría al leer <code>words[0]</code>, pero no llega a pasar porque <code>add_words</code> lo
+comprueba antes.</li>
+</ul>
+<p>Está en <code>push_swap.c</code> y declarada en el header, aunque solo la usa
+<code>add_words</code>, en <code>parse.c</code>.</p>
+</details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A que <code>main</code> cuente la
 historia del programa en diez líneas y delegue el resto. Y a pensar en el camino de error tanto
 como en el bueno: un <code>exit</code> a mitad del parseo no libera nada por sí solo, así que toda
@@ -233,6 +601,54 @@ cualquier programa con recursos (ficheros, sockets, hilos).</div>
 Error). <code>n</code> es <code>long</code> y el rango se comprueba <em>en cada dígito</em>, así que
 <code>2147483648</code> falla en el último y nunca llega a desbordar. A diferencia del
 <code>atoi</code> de la libc, aquí no se salta nada: <code>"12abc"</code> es Error, no 12.</p>
+<details id="fn-to_int">
+<summary>Cómo funciona <code>to_int</code></summary>
+<p>El código es el de arriba. Su comentario:</p>
+<pre><code>/*
+** Un atoi estricto: signo opcional y despues solo digitos, al menos uno
+** ("-" o "+" solos son Error). n es long para poder comprobar el overflow
+** en cada digito, antes de que se salga del int: con 2147483648 la
+** comprobacion falla en el ultimo digito y se devuelve Error.
+** El resultado va a *out; el return dice si era valido.
+*/</code></pre>
+
+<h3>Dos salidas: el número y si era válido</h3>
+<p>El <code>return</code> solo dice sí o no, y el número se escribe en <code>*out</code>. Con un
+único valor de retorno no se podría distinguir el <code>0</code> de un <code>"0"</code> válido del
+de un error. <code>*out</code> solo se escribe al final, cuando ya se sabe que todo era
+correcto.</p>
+
+<h3>El signo</h3>
+<p>Dos <code>if</code> seguidos: el primero apunta el signo y el segundo se salta el carácter, sea
+<code>+</code> o <code>-</code>. Solo se acepta uno: con <code>"+-5"</code> se salta el
+<code>+</code>, queda <code>"-5"</code> y el <code>-</code> ya no es un dígito, así que es Error.
+Después, <code>if (!*s)</code> rechaza que tras el signo no quede nada (<code>"+"</code>,
+<code>"-"</code>).</p>
+
+<h3>Los dos límites del <code>int</code></h3>
+<p><code>n</code> acumula el valor sin signo y el rango se comprueba con el signo ya aplicado,
+<code>n * sign</code>. Hace falta así porque los límites no son simétricos: <code>INT_MAX</code> es
+2147483647 pero <code>INT_MIN</code> es −2147483648. Los dos últimos dígitos de cada caso:</p>
+<pre><code>"-2147483648"   sign = -1
+   n = 214748364     n * sign = -214748364     bien
+   n = 2147483648    n * sign = -2147483648    no es &lt; INT_MIN: bien
+   *out = INT_MIN
+
+"2147483648"    sign = 1
+   n = 214748364     n * sign = 214748364      bien
+   n = 2147483648    n * sign = 2147483648     &gt; INT_MAX: return (0)</code></pre>
+<p>Comprobar solo <code>n &gt; INT_MAX</code> rechazaría el <code>INT_MIN</code>, que es un número
+válido. Y como se comprueba en cada dígito, <code>n</code> nunca pasa de unos once dígitos aunque
+la entrada tenga veinte: <code>"99999999999999999999"</code> se rechaza en el undécimo y el
+<code>long</code> no llega a desbordar.</p>
+
+<h3>Casos límite, comprobados</h3>
+<pre><code>"+5"                      5
+"-0"                      0     (y "-0 0" es un duplicado: Error)
+"00000000000000000001"    1     (los ceros no suman, n no crece)
+"+"  "-"  "+-5"  "12abc"  Error
+"99999999999999999999"    Error</code></pre>
+</details>
 <p>Los flags se reconocen con <code>ft_strncmp</code> comparando <em>longitud + 1</em>:</p>
 <pre><code>	if (ft_strncmp(s, "--bench", 8) == 0)
 	...
@@ -242,12 +658,197 @@ Error). <code>n</code> es <code>long</code> y el rango se comprueba <em>en cada 
 <code>"--simple"</code>, así que <code>--simplex</code> no cuela. <code>--bench</code> se puede
 repetir; un segundo flag de estrategia es Error (<code>strategy_set</code>), y cualquier otro
 argumento que empiece por <code>--</code> también.</p>
+<details id="fn-parse_flag">
+<summary>Cómo funciona <code>parse_flag</code></summary>
+<pre><code>/*
+** Reconoce un flag. Las comparaciones usan longitud + 1 para meter el '\0'
+** en la comparacion: asi "--simplex" no cuela como "--simple".
+** --bench se puede repetir sin problema; la estrategia solo se puede fijar
+** una vez (strategy_set), un segundo flag de estrategia es Error.
+** Cualquier otro "--algo" tambien es Error.
+*/
+static int	parse_flag(t_ps *ps, char *s)
+{
+	t_strategy	st;
+
+	if (ft_strncmp(s, "--bench", 8) == 0)
+	{
+		ps-&gt;bench = 1;
+		return (1);
+	}
+	if (ft_strncmp(s, "--simple", 9) == 0)
+		st = SIMPLE;
+	else if (ft_strncmp(s, "--medium", 9) == 0)
+		st = MEDIUM;
+	else if (ft_strncmp(s, "--complex", 10) == 0)
+		st = COMPLEX;
+	else if (ft_strncmp(s, "--adaptive", 11) == 0)
+		st = ADAPTIVE;
+	else
+		return (0);
+	if (ps-&gt;strategy_set)
+		return (0);
+	ps-&gt;strategy = st;
+	ps-&gt;strategy_set = 1;
+	return (1);
+}</code></pre>
+
+<h3>Cómo se llega aquí</h3>
+<p><code>parse_args</code> manda a <code>parse_flag</code> todo argumento cuyos dos primeros
+caracteres sean <code>--</code>. Un número negativo como <code>-5</code> solo tiene un guion y va a
+<code>add_words</code>; <code>--5</code> sí llega aquí, no coincide con nada y es Error.</p>
+
+<h3>Cada <code>n</code> es la longitud del flag más uno</h3>
+<table>
+<tr><th>Flag</th><th>Letras</th><th><code>n</code></th></tr>
+<tr><td><code>--bench</code></td><td>7</td><td>8</td></tr>
+<tr><td><code>--simple</code>, <code>--medium</code></td><td>8</td><td>9</td></tr>
+<tr><td><code>--complex</code></td><td>9</td><td>10</td></tr>
+<tr><td><code>--adaptive</code></td><td>10</td><td>11</td></tr>
+</table>
+<p>El byte de más compara el <code>'\0'</code> del literal con lo que haya en esa posición del
+argumento. Así la coincidencia tiene que ser exacta por los dos lados:</p>
+<pre><code>"--simplex" contra "--simple", n = 9:  los 8 primeros iguales, el 9.º 'x' ≠ '\0'  → distinto
+"--sim"     contra "--simple", n = 9:  en el 6.º '\0' ≠ 'p'                     → distinto
+"--simple"  contra "--simple", n = 9:  los 9 iguales, '\0' incluido              → 0</code></pre>
+
+<h3>El orden de las comprobaciones</h3>
+<ul>
+<li><code>--bench</code> va primero y vuelve enseguida sin mirar <code>strategy_set</code>: por eso
+se puede repetir.</li>
+<li>Las cuatro ramas de estrategia solo deciden el valor de <code>st</code>; la comprobación de
+<code>strategy_set</code> y la asignación están una sola vez al final, en vez de repetidas en cada
+rama.</li>
+<li><code>--adaptive</code> también marca <code>strategy_set</code>, aunque su valor sea el de por
+defecto: <code>--adaptive --simple</code> es Error, igual que <code>--simple --simple</code>.</li>
+</ul>
+<pre><code>./push_swap --bench --bench 2 1      ra pb pa  (y el bench una vez)
+./push_swap --benchx 2 1             Error
+./push_swap --adaptive --adaptive 2 1  Error
+./push_swap --5 1                    Error</code></pre>
+</details>
 <p>Y un argumento puede traer varios números: <code>add_words</code> lo parte con
 <code>ft_split(arg, ' ')</code>, así que <code>./push_swap "3 2 1"</code> vale lo mismo que
 <code>./push_swap 3 2 1</code>. Un argumento sin palabras (<code>""</code> o <code>"   "</code>)
 da <code>words[0] == NULL</code> y es Error. Cada número se añade con
 <code>ft_lstadd_back</code>, de modo que el primero de la línea de comandos queda en la cima, como
 pide el enunciado. Los duplicados no se miran aquí: los detecta <code>normalize</code>.</p>
+<details id="fn-add_words">
+<summary>Cómo funciona <code>add_words</code></summary>
+<pre><code>/*
+** Un argumento puede llevar varios numeros: "3 2 1" vale lo mismo que
+** 3 2 1. Se parte por espacios y se anade cada palabra.
+** Un argumento sin palabras ("" o "   ") da words[0] == NULL -&gt; Error.
+** Se para en el primer numero malo (ok a 0) y se libera el split siempre.
+*/
+static int	add_words(t_ps *ps, char *arg)
+{
+	char	**words;
+	int		ok;
+	int		i;
+
+	words = ft_split(arg, ' ');
+	if (!words)
+		return (0);
+	ok = (words[0] != NULL);
+	i = 0;
+	while (ok &amp;&amp; words[i])
+		ok = add_number(ps, words[i++]);
+	free_split(words);
+	return (ok);
+}</code></pre>
+
+<h3>Paso a paso</h3>
+<pre><code>arg = "3 2 1"
+words = { "3", "2", "1", NULL }
+ok = 1                  (hay al menos una palabra)
+add_number("3")  → 1    a: 3
+add_number("2")  → 1    a: 3 2
+add_number("1")  → 1    a: 3 2 1
+free_split(words)
+return (1)</code></pre>
+
+<h3>La variable <code>ok</code></h3>
+<p>Hace dos papeles. Empieza como «¿hay alguna palabra?» (<code>words[0] != NULL</code>), y luego
+guarda el resultado del último <code>add_number</code>. El bucle sigue mientras
+<code>ok</code> sea 1 y queden palabras, de modo que se para en el primer número malo:</p>
+<pre><code>./push_swap 3 x 1
+  "3"  → a: 3
+  "x"  → add_number devuelve 0, ok = 0, el bucle acaba
+  "1"  → ni se mira
+  → Error (el 3 que ya estaba en a lo libera error_exit)</code></pre>
+<p>Lo importante es que no hay un <code>return</code> en medio: se sale del bucle, se pasa siempre
+por <code>free_split</code> y solo después se devuelve <code>ok</code>. Así el array de
+<code>ft_split</code> se libera tanto si todo fue bien como si no.</p>
+
+<h3>Casos límite</h3>
+<ul>
+<li><code>""</code> o <code>"   "</code>: <code>words = { NULL }</code>, <code>ok = 0</code> desde
+el principio, se libera y es Error.</li>
+<li><code>ft_split</code> devuelve <code>NULL</code> (falló un <code>malloc</code>): return 0
+directamente, porque no hay nada que liberar.</li>
+<li>Se pueden mezclar: <code>./push_swap "3 2" 1</code> da exactamente las mismas operaciones que
+<code>./push_swap 3 2 1</code>.</li>
+</ul>
+</details>
+<details id="fn-add_number">
+<summary>Cómo funciona <code>add_number</code></summary>
+<pre><code>/*
+** Convierte una palabra y la mete al final de a (asi el primer numero de
+** la linea de comandos queda en la cima). Se reserva el int primero y se
+** libera si la palabra no es un numero o falla ft_lstnew.
+** Los duplicados no se miran aqui sino en normalize().
+*/
+static int	add_number(t_ps *ps, char *word)
+{
+	int		*value;
+	t_list	*node;
+
+	value = malloc(sizeof(int));
+	if (!value)
+		return (0);
+	node = NULL;
+	if (to_int(word, value))
+		node = ft_lstnew(value);
+	if (!node)
+	{
+		free(value);
+		return (0);
+	}
+	ft_lstadd_back(&amp;ps-&gt;a, node);
+	ps-&gt;size++;
+	return (1);
+}</code></pre>
+
+<h3>El <code>int</code> se reserva antes de convertir</h3>
+<p><code>to_int</code> escribe directamente en <code>*value</code>, el <code>int</code> que acabará
+siendo el <code>content</code> del nodo. Así no hay que copiar el número de una variable local a la
+memoria reservada.</p>
+
+<h3>Una sola salida para los dos fallos</h3>
+<p><code>node</code> empieza a <code>NULL</code> y solo deja de serlo si <code>to_int</code> va bien
+<em>y</em> <code>ft_lstnew</code> consigue su <code>malloc</code>. Con un único
+<code>if (!node)</code> se cubren los dos casos, y en los dos hay que hacer lo mismo: liberar el
+<code>int</code>, que nadie más apunta, y devolver 0.</p>
+<table>
+<tr><th>Qué pasa</th><th><code>node</code></th><th>Resultado</th></tr>
+<tr><td>falla el <code>malloc</code> del <code>int</code></td><td>(no llega)</td><td>return 0</td></tr>
+<tr><td><code>to_int</code> rechaza la palabra</td><td><code>NULL</code></td><td><code>free(value)</code>, return 0</td></tr>
+<tr><td>falla <code>ft_lstnew</code></td><td><code>NULL</code></td><td><code>free(value)</code>, return 0</td></tr>
+<tr><td>todo bien</td><td>nodo nuevo</td><td>al final de a, <code>size++</code>, return 1</td></tr>
+</table>
+<p>Ojo: un fallo de memoria acaba en el mismo camino que una entrada inválida, así que también
+imprime <code>Error</code>.</p>
+
+<h3>Al final, no al principio</h3>
+<p><code>ft_lstadd_back</code> deja los números en el orden de la línea de comandos: con
+<code>5 1 8</code>, a queda <code>5 → 1 → 8</code>, con el 5 en la cima, que es lo que pide el
+enunciado. Con <code>ft_lstadd_front</code> la pila saldría al revés. El precio es que
+<code>ft_lstadd_back</code> recorre la lista entera cada vez (O(n²) para leer n números), que con
+500 no se nota.</p>
+<p><code>ps-&gt;size</code> cuenta los números leídos y es el tamaño que usan luego
+<code>copy_values</code>, <code>normalize</code>, el radix y <code>push_non_lis</code>.</p>
+</details>
 <p>Lo comprobado al ejecutarlo:</p>
 <pre><code>./push_swap --simplex 3 2 1          Error
 ./push_swap --simple --medium 2 1    Error
@@ -299,6 +900,97 @@ pisando los <code>content</code> con los rangos y cada rango tiene que calculars
 originales. Si <code>rank_of</code> encuentra un igual en otra posición devuelve
 <code>-1</code>: es un duplicado, y así la detección de duplicados sale gratis del mismo bucle. Es
 O(n²) en tiempo de cálculo, que da igual: aquí solo puntúan las operaciones.</p>
+<details id="fn-copy_values">
+<summary>Cómo funciona <code>copy_values</code></summary>
+<pre><code>/*
+** Copia la pila a un array. Hace falta porque normalize() va pisando los
+** content con los rangos y cada rango se tiene que calcular con los
+** valores originales. Tambien la usa sort_low para calcular la LIS.
+*/
+int	*copy_values(t_ps *ps)
+{
+	int		*vals;
+	t_list	*n;
+	int		i;
+
+	vals = malloc(sizeof(int) * ps-&gt;size);
+	if (!vals)
+		return (NULL);
+	n = ps-&gt;a;
+	i = 0;
+	while (n)
+	{
+		vals[i++] = *(int *)n-&gt;content;
+		n = n-&gt;next;
+	}
+	return (vals);
+}</code></pre>
+
+<h3>De lista a array</h3>
+<p>Reserva <code>size</code> enteros y recorre a de la cima al fondo copiando cada número. La
+posición en el array es la posición en la pila: <code>vals[0]</code> es la cima.</p>
+<pre><code>a: 42 → -7 → 100 → 5 → NULL
+vals = { 42, -7, 100, 5 }</code></pre>
+<p>Son números copiados, no punteros a los <code>content</code>. Eso es lo que la hace útil en
+<code>normalize</code>: cuando el bucle escribe el rango del 42 en el primer nodo,
+<code>vals[0]</code> sigue valiendo 42 y los rangos de los siguientes se calculan contra los valores
+de verdad.</p>
+
+<h3>Por qué es pública</h3>
+<p>Es la única de <code>index.c</code> que se usa fuera: <code>sort_low</code> la llama para tener
+los rangos en un array y calcular la LIS con acceso por índice, que en una lista sería un
+recorrido cada vez. Quien la llama tiene que hacer el <code>free</code>.</p>
+
+<h3>Casos límite</h3>
+<ul>
+<li>Si falla <code>malloc</code> devuelve <code>NULL</code>: <code>normalize</code> devuelve 0 (y el
+programa acaba en Error) y <code>sort_low</code> cambia a <code>sort_medium</code>.</li>
+<li>Ojo: reserva <code>ps-&gt;size</code> y no <code>ft_lstsize(ps-&gt;a)</code>, así que solo es
+correcta mientras todos los números están en a. Se cumple en las dos llamadas (durante el parseo y
+al principio de <code>sort_low</code>, antes de mover nada); si se llamara con nodos en b, las
+últimas casillas del array quedarían sin rellenar.</li>
+</ul>
+</details>
+<details id="fn-rank_of">
+<summary>Cómo funciona <code>rank_of</code></summary>
+<p>El código es el de arriba. Recibe el array completo y el índice <code>i</code> del valor del que
+se quiere el rango, y lo compara con todos los demás.</p>
+
+<h3>Traza con <code>42 -7 100 5</code></h3>
+<p>Para <code>i = 0</code> (el 42):</p>
+<pre><code>j = 0   vals[0] = 42    es él mismo: ni duplicado ni menor
+j = 1   vals[1] = -7    -7 &lt; 42     rank = 1
+j = 2   vals[2] = 100   no
+j = 3   vals[3] = 5     5 &lt; 42      rank = 2
+return (2)</code></pre>
+<p>Y así con cada uno:</p>
+<table>
+<tr><th><code>i</code></th><th>valor</th><th>menores que él</th><th>rango</th></tr>
+<tr><td>0</td><td>42</td><td>−7, 5</td><td>2</td></tr>
+<tr><td>1</td><td>−7</td><td>ninguno</td><td>0</td></tr>
+<tr><td>2</td><td>100</td><td>42, −7, 5</td><td>3</td></tr>
+<tr><td>3</td><td>5</td><td>−7</td><td>1</td></tr>
+</table>
+
+<h3>Por qué salen exactamente <code>0..n-1</code></h3>
+<p>Si no hay repetidos, el k-ésimo menor tiene exactamente k números por debajo: el menor tiene 0,
+el siguiente 1… y el mayor, n − 1. Cada rango sale una sola vez y no queda ningún hueco, así que
+el resultado es una permutación de <code>0..n-1</code>.</p>
+
+<h3>Los duplicados, en el mismo bucle</h3>
+<p>Si dos valores fueran iguales, los dos tendrían el mismo rango y la permutación se rompería.
+<code>rank_of</code> lo detecta al vuelo: si encuentra otro igual en una posición distinta devuelve
+<code>-1</code>, que no es un rango posible.</p>
+<pre><code>./push_swap 1 01      vals = { 1, 1 }
+  i = 0, j = 1:  j != i y vals[1] == vals[0]  →  return (-1)  →  Error</code></pre>
+<p>El <code>j != i</code> es imprescindible: sin él, cada valor se encontraría a sí mismo y todo
+sería «duplicado». Se comprueba antes que el <code>&lt;</code>, así que en cuanto aparece un igual
+la función sale sin seguir contando.</p>
+
+<h3>Coste</h3>
+<p>Una llamada recorre los n valores y <code>normalize</code> la llama n veces: n² comparaciones,
+250 000 para 500 números. Es instantáneo, y no imprime ni una operación.</p>
+</details>
 <p>El orden relativo no cambia, así que ordenar los rangos es ordenar los números, y el desorden
 sale idéntico. Lo que se gana es que los valores pasan a ser exactamente <code>0..n-1</code>, y
 de eso viven todas las estrategias:</p>
@@ -344,6 +1036,53 @@ así no aparece ni un <code>float</code> en todo el programa:</p>
 (sin redondeos), y <code>* 2</code> es el umbral de 0.5. <code>mistakes</code> y
 <code>pairs</code> son <code>long</code>, así que estas multiplicaciones no desbordan (con 500 números hay
 124750 pares).</p>
+<details id="fn-disorder_regime">
+<summary>Cómo funciona <code>disorder_regime</code></summary>
+<p>El código es el de arriba. Su comentario resume la equivalencia:</p>
+<pre><code>/*
+** Que regimen pide el enunciado segun el desorden d = mistakes / pairs,
+** multiplicando en vez de dividir para no usar float:
+**
+**     mistakes * 5 &lt; pairs   &lt;=&gt;  d &lt; 0.2    -&gt; 0  (metodo O(n))
+**     mistakes * 2 &lt; pairs   &lt;=&gt;  d &lt; 0.5    -&gt; 1  (metodo O(n sqrt n))
+**     si no                       d &gt;= 0.5   -&gt; 2  (metodo O(n log n))
+*/</code></pre>
+
+<h3>Por qué multiplicar es lo mismo que dividir</h3>
+<p>Partiendo de <code>d &lt; 0.2</code> y multiplicando los dos lados por <code>5 · pairs</code>,
+que es positivo y no cambia el sentido de la desigualdad:</p>
+<pre><code>mistakes / pairs &lt; 1/5
+mistakes · 5     &lt; pairs</code></pre>
+<p>Con 0.5 = 1/2 sale <code>mistakes · 2 &lt; pairs</code>. Las dos versiones son exactas con
+enteros: no hay ni redondeo ni división entera que trunque.</p>
+
+<h3>El orden de los <code>if</code></h3>
+<p>Primero se prueba el umbral más bajo. Si no se cumple, ya se sabe que <code>d ≥ 0.2</code> y
+basta con mirar si es menor que 0.5; si tampoco, queda <code>d ≥ 0.5</code>.</p>
+<table>
+<tr><th>Entrada</th><th>mistakes</th><th>pairs</th><th><code>·5 &lt; pairs</code></th><th><code>·2 &lt; pairs</code></th><th>Régimen</th></tr>
+<tr><td><code>1 2 3 5 4</code></td><td>1</td><td>10</td><td>5 &lt; 10 sí</td><td>—</td><td>0 (low)</td></tr>
+<tr><td><code>1 3 2</code></td><td>1</td><td>3</td><td>5 &lt; 3 no</td><td>2 &lt; 3 sí</td><td>1 (medium)</td></tr>
+<tr><td><code>3 2 1</code></td><td>3</td><td>3</td><td>15 &lt; 3 no</td><td>6 &lt; 3 no</td><td>2 (complex)</td></tr>
+</table>
+
+<h3>Los bordes exactos</h3>
+<p>Como las comparaciones son estrictas, un desorden de exactamente 0.2 ya no es «bajo» y uno de
+exactamente 0.5 ya es «alto», tal como lo plantea el enunciado (<code>d &lt; 0.2</code>,
+<code>d ≥ 0.5</code>). Comprobado con <code>--bench</code>:</p>
+<pre><code>2 1 4 3 5   mistakes 2, pairs 10   10 &lt; 10 no, 4 &lt; 10 sí   20.00%  Adaptive / O(n√n)
+1 4 3 2     mistakes 3, pairs 6    15 &lt; 6 no,  6 &lt; 6 no    50.00%  Adaptive / O(n log n)</code></pre>
+
+<h3>Quién la llama</h3>
+<p><code>sort_adaptive</code>, para elegir método, y <code>put_strategy</code>, para decir en
+<code>--bench</code> cuál se usó. Las dos leen los mismos <code>mistakes</code> y
+<code>pairs</code>, medidos una sola vez antes de mover nada, así que siempre coinciden.</p>
+<p>Ojo con <code>pairs == 0</code> (un solo número): <code>0 &lt; 0</code> es falso las dos veces y
+devuelve 2. A <code>sort_adaptive</code> no llega nunca (con <code>mistakes == 0</code> no se ordena
+nada), pero <code>./push_swap --bench 5</code> imprime <code>Adaptive / O(n log n)</code>, y con una
+lista ya ordenada de dos o más números imprime <code>Adaptive / O(n)</code>, aunque en ninguno de
+los dos casos se haya ejecutado ningún método.</p>
+</details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que "contar inversiones" es una medida
 de lo lejos que está una permutación de estar ordenada (es justo el número de intercambios entre
 vecinos que haría el burbuja). Y el truco de comparar fracciones multiplicando en cruz: con
@@ -373,6 +1112,108 @@ buscar el cuarto menor. Y la pieza más usada de todo el proyecto:</p>
 <code>pos</code> veces si está en la mitad de arriba, <code>rra</code> <code>size - pos</code>
 veces si está en la de abajo. Nunca cuesta más de <code>size / 2</code>.
 <code>rotate_to_top_b</code> es lo mismo con <code>rb</code> y <code>rrb</code>.</p>
+<details id="fn-stack_pos">
+<summary>Cómo funciona <code>stack_pos</code></summary>
+<pre><code>/*
+** Posicion del valor v en la pila (0 = cima), o -1 si no esta. Como las
+** pilas tienen rangos, buscar "el 3" es buscar el cuarto menor.
+*/
+int	stack_pos(t_list *s, int v)
+{
+	int	i;
+
+	i = 0;
+	while (s)
+	{
+		if (*(int *)s-&gt;content == v)
+			return (i);
+		s = s-&gt;next;
+		i++;
+	}
+	return (-1);
+}</code></pre>
+
+<h3>Una búsqueda lineal</h3>
+<p>Recorre la pila desde la cima con <code>i</code> contando posiciones y devuelve la primera en la
+que encuentra <code>v</code>. Si llega al final sin encontrarlo, <code>-1</code>, que no puede ser
+una posición.</p>
+<pre><code>a: 3 0 2 1
+stack_pos(a, 2)   →  i = 0 (3), i = 1 (0), i = 2 (2)  →  2
+stack_pos(a, 5)   →  recorre los cuatro sin éxito      →  -1</code></pre>
+<p><code>s</code> es una copia del puntero, así que avanzar con <code>s = s-&gt;next</code> no
+cambia la pila de quien la llama. Una pila vacía devuelve <code>-1</code> sin entrar en el
+bucle.</p>
+
+<h3>Por qué funciona tan bien con rangos</h3>
+<p>Como no hay repetidos, «la primera coincidencia» es la única. Y como los valores son
+<code>0..n-1</code>, quien la llama sabe de antemano qué valor busca sin tener que calcular mínimos
+ni máximos:</p>
+<ul>
+<li><code>sort_simple</code>: <code>stack_pos(a, next)</code>, el siguiente menor.</li>
+<li><code>sort_medium</code>: <code>stack_pos(b, ft_lstsize(b) - 1)</code>, el mayor de b.</li>
+<li><code>sort_low</code>: <code>stack_pos(a, 0)</code>, para dejar el 0 en la cima al final.</li>
+</ul>
+<p>En los tres casos el valor está seguro en la pila, así que el <code>-1</code> no llega a
+<code>rotate_to_top_*</code>. Si llegara, no haría nada: <code>-1 &lt;= size / 2</code> y
+<code>while (pos-- &gt; 0)</code> no daría ninguna vuelta.</p>
+<p>Cuesta O(n) de CPU y ninguna operación: solo mira.</p>
+</details>
+<details id="fn-rotate_to_top">
+<summary>Cómo funcionan <code>rotate_to_top_a</code> y <code>rotate_to_top_b</code></summary>
+<p><code>rotate_to_top_a</code> es la de arriba. La de b es idéntica cambiando la pila y las
+operaciones:</p>
+<pre><code>/* Lo mismo para b, con rb y rrb. */
+void	rotate_to_top_b(t_ps *ps, int pos)
+{
+	int	size;
+
+	size = ft_lstsize(ps-&gt;b);
+	if (pos &lt;= size / 2)
+		while (pos-- &gt; 0)
+			rb(ps);
+	else
+		while (pos++ &lt; size)
+			rrb(ps);
+}</code></pre>
+
+<h3>Contar con <code>pos--</code> y <code>pos++</code></h3>
+<p>Los dos bucles usan el post-incremento: primero se compara el valor que tenía
+<code>pos</code> y después cambia. Así, el propio <code>pos</code> hace de contador sin variable
+extra:</p>
+<pre><code>pos = 3, arriba:   3 &gt; 0 (pos→2)   2 &gt; 0 (pos→1)   1 &gt; 0 (pos→0)   0 &gt; 0 no
+                   → 3 vueltas = pos
+
+pos = 3, size 5:   3 &lt; 5 (pos→4)   4 &lt; 5 (pos→5)   5 &lt; 5 no
+                   → 2 vueltas = size - pos</code></pre>
+
+<h3>Qué hace con cada posición</h3>
+<table>
+<tr><th><code>pos</code></th><th>size 5 (<code>size / 2 = 2</code>)</th><th>size 4 (<code>size / 2 = 2</code>)</th></tr>
+<tr><td>0</td><td>nada</td><td>nada</td></tr>
+<tr><td>1</td><td><code>ra</code></td><td><code>ra</code></td></tr>
+<tr><td>2</td><td><code>ra ra</code></td><td><code>ra ra</code> (empate: <code>rra rra</code> también serían 2)</td></tr>
+<tr><td>3</td><td><code>rra rra</code></td><td><code>rra</code></td></tr>
+<tr><td>4</td><td><code>rra</code></td><td>—</td></tr>
+</table>
+<p>Con <code>size</code> impar, la posición del medio (<code>size / 2</code>, división entera) está
+más cerca por arriba: con 5, la 2 cuesta 2 <code>ra</code> frente a 3 <code>rra</code>. Con
+<code>size</code> par es un empate y el <code>&lt;=</code> lo resuelve hacia <code>ra</code>. En los
+dos casos el coste es el mínimo de <code>pos</code> y <code>size - pos</code>, y nunca pasa de
+<code>size / 2</code>.</p>
+
+<h3>Un ejemplo de la traza de <code>sort_low</code></h3>
+<pre><code>a: 4 0 1 3   (size 4), el hueco del 2 está en la posición 3
+3 &lt;= 2 no  →  while (3 &lt; 4)  →  una sola rra
+a: 3 4 0 1</code></pre>
+
+<h3>Casos límite</h3>
+<ul>
+<li><code>pos = 0</code>: ya está en la cima, no imprime nada.</li>
+<li>Pila vacía: <code>size = 0</code>, <code>pos</code> (0 o −1) cae en la primera rama y no se
+hace nada.</li>
+<li>Calcula <code>ft_lstsize</code> en cada llamada, que recorre la pila: CPU, no operaciones.</li>
+</ul>
+</details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una pila con rotaciones es en
 realidad un <em>anillo</em>: el fondo está a un <code>rra</code> de la cima, así que la distancia
 real a una posición es el mínimo de ir por arriba o por abajo. Este medio anillo de ahorro es lo
@@ -627,6 +1468,60 @@ pequeños del tramo y se manda al fondo de b con <code>rb</code>; si no está en
 <code>ra</code> y se mira el siguiente. Siempre hay alguno que entra: el menor que queda en a es
 <code>&lt;= i</code>. La ventana avanza a medida que se empuja, así que nadie espera más de un
 tramo de rotaciones.</p>
+<details id="fn-push_chunks">
+<summary>Cómo funciona <code>push_chunks</code></summary>
+<p>El código es el de arriba. Su comentario:</p>
+<pre><code>/*
+** Pasa todo a b por tramos. i cuenta cuantos van ya en b; se acepta la cima
+** de a si su rango es &lt;= i + range (esta en el tramo actual):
+**   - si ademas es &lt;= i, es de los pequenos del tramo: pb y rb, abajo de b
+**   - si no, pb y se queda arriba
+**   - si no esta en el tramo, ra y se mira el siguiente
+** Siempre hay alguno en el tramo: el menor que queda en a es &lt;= i. Asi b
+** queda como una "mariposa": los grandes cerca de la cima, los pequenos
+** abajo, y sacar el mayor cada vez es barato.
+*/</code></pre>
+
+<h3>Traza decisión a decisión</h3>
+<p>Con la entrada de la traza de abajo, <code>5 1 8 3 0 7 2 6 4</code> (ya son rangos) y
+<code>range = 4</code>. Cada fila es una vuelta del bucle:</p>
+<table>
+<tr><th>cima <code>v</code></th><th><code>i</code></th><th><code>i + range</code></th><th>¿entra?</th><th>¿<code>v &lt;= i</code>?</th><th>ops</th></tr>
+<tr><td>5</td><td>0</td><td>4</td><td>no</td><td>—</td><td><code>ra</code></td></tr>
+<tr><td>1</td><td>0</td><td>4</td><td>sí</td><td>no</td><td><code>pb</code></td></tr>
+<tr><td>8</td><td>1</td><td>5</td><td>no</td><td>—</td><td><code>ra</code></td></tr>
+<tr><td>3</td><td>1</td><td>5</td><td>sí</td><td>no</td><td><code>pb</code></td></tr>
+<tr><td>0</td><td>2</td><td>6</td><td>sí</td><td>sí</td><td><code>pb rb</code></td></tr>
+<tr><td>7</td><td>3</td><td>7</td><td>sí</td><td>no</td><td><code>pb</code></td></tr>
+<tr><td>2</td><td>4</td><td>8</td><td>sí</td><td>sí</td><td><code>pb rb</code></td></tr>
+<tr><td>6</td><td>5</td><td>9</td><td>sí</td><td>no</td><td><code>pb</code></td></tr>
+<tr><td>4</td><td>6</td><td>10</td><td>sí</td><td>sí</td><td><code>pb rb</code></td></tr>
+<tr><td>5</td><td>7</td><td>11</td><td>sí</td><td>sí</td><td><code>pb rb</code></td></tr>
+<tr><td>8</td><td>8</td><td>12</td><td>sí</td><td>sí</td><td><code>pb rb</code></td></tr>
+</table>
+<p>16 operaciones (2 <code>ra</code>, 9 <code>pb</code>, 5 <code>rb</code>) y b queda
+<code>6 7 3 1 0 2 4 5 8</code>, la que se ve al principio de la traza de la tarjeta.</p>
+
+<h3>Una ventana que se desliza, no tramos fijos</h3>
+<p>No se reparten los números en bloques fijos (0–3, 4–7…). El límite <code>i + range</code> sube
+uno con cada <code>pb</code>, así que el tramo avanza en cuanto entra alguien. Los que están por
+encima de la ventana esperan con <code>ra</code>, y los que ya quedaron por debajo
+(<code>v &lt;= i</code>) son «pequeños para el momento» y bajan al fondo de b con
+<code>rb</code>. Los de la parte alta de la ventana se quedan arriba. De ahí la forma de mariposa: lo
+grande se acumula hacia los dos extremos de b y lo pequeño, en el centro.</p>
+
+<h3>Por qué el bucle siempre acaba</h3>
+<p>Hace falta que, por muchos <code>ra</code> que se hagan, alguna cima llegue a entrar. Tras
+<code>i</code> empujes, b tiene <code>i</code> números, así que como mucho hay <code>i</code> valores
+menores que el mínimo de a: ese mínimo es <code>&lt;= i</code> y entra seguro. En el peor caso se
+da casi una vuelta entera de a antes de llegar a él, pero nunca se queda girando.</p>
+
+<h3>Casos límite</h3>
+<p>El desperdicio de la regla ya está en la tarjeta: el último elemento siempre cumple
+<code>v &lt;= i</code> y recibe un <code>rb</code> que la segunda fase deshace con
+<code>rrb</code>, y un <code>0</code> que entre el primero recibe un <code>rb</code> sobre una b de
+un nodo, que no mueve nada pero cuenta.</p>
+</details>
 <p>Segunda fase: devolverlos de mayor a menor.</p>
 <pre><code>void	sort_medium(t_ps *ps)
 {
@@ -664,6 +1559,50 @@ operaciones por ejecución.</p>
 <p>Medido sobre 10 entradas aleatorias: <b>~570</b> para 100 números (por debajo de 700, nivel
 excelente) y <b>~5060</b> para 500 (por debajo de 5500, también excelente). Es la estrategia
 que mejor puntúa de las cuatro con entradas aleatorias.</p>
+<details id="fn-isqrt">
+<summary>Cómo funciona <code>isqrt</code></summary>
+<pre><code>/* Raiz cuadrada entera: el mayor r con r * r &lt;= n. */
+static int	isqrt(int n)
+{
+	int	r;
+
+	r = 1;
+	while ((r + 1) * (r + 1) &lt;= n)
+		r++;
+	return (r);
+}</code></pre>
+
+<h3>Probar el siguiente</h3>
+<p>Empieza en 1 y sube mientras el siguiente candidato, al cuadrado, siga cabiendo en
+<code>n</code>. Se para en el último <code>r</code> que cumple <code>r · r &lt;= n</code>, que es la
+raíz redondeada hacia abajo. Sin <code>sqrt</code> de <code>math.h</code> y sin decimales:</p>
+<pre><code>n = 9:    2·2 = 4 &lt;= 9   r = 2
+          3·3 = 9 &lt;= 9   r = 3
+          4·4 = 16 &gt; 9   para → 3
+
+n = 500:  … 22·22 = 484 &lt;= 500   r = 22
+          23·23 = 529 &gt; 500       para → 22</code></pre>
+<p>Da unas √n vueltas: 22 para 500, nada.</p>
+
+<h3>El tamaño del tramo que sale</h3>
+<table>
+<tr><th><code>size</code></th><th><code>isqrt</code></th><th><code>isqrt * 3 / 2</code></th></tr>
+<tr><td>2, 3</td><td>1</td><td>1</td></tr>
+<tr><td>5</td><td>2</td><td>3</td></tr>
+<tr><td>9</td><td>3</td><td>4</td></tr>
+<tr><td>100</td><td>10</td><td>15</td></tr>
+<tr><td>500</td><td>22</td><td>33</td></tr>
+</table>
+<p>El orden de <code>isqrt(ps-&gt;size) * 3 / 2</code> importa, porque todo es división entera: se
+multiplica primero (22 · 3 = 66) y se divide después (66 / 2 = 33). Escrito <code>3 / 2 *
+isqrt(…)</code>, el <code>3 / 2</code> daría 1 y el factor 1.5 desaparecería.</p>
+
+<h3>Casos límite</h3>
+<p>Ojo: como <code>r</code> empieza en 1, <code>isqrt(0)</code> devuelve 1 y no 0. Aquí no importa,
+porque <code>sort_medium</code> solo se ejecuta con al menos dos números. Y
+<code>(r + 1) * (r + 1)</code> solo desbordaría un <code>int</code> con <code>n</code> cerca de
+<code>INT_MAX</code>, muy lejos de los tamaños de push_swap.</p>
+</details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — De dónde sale un √n: si los tramos son
 de tamaño k, cada elemento espera hasta k rotaciones (n·k en total) y hay n/k tramos; el
 equilibrio está en k ≈ √n. El factor 1.5 es un ajuste empírico de esa constante. Y enseña a pensar
@@ -700,9 +1639,220 @@ final más largo y retrocede por <code>prev</code> marcando un array <code>keep<
 ahorro: <code>len</code> y <code>prev</code> van en un solo <code>malloc</code> de
 <code>2n</code> y la primera mitad se reutiliza como <code>keep</code>. Todo esto se calcula sobre
 una copia y no mueve las pilas.</p>
+<details id="fn-lis_lengths">
+<summary>Cómo funciona <code>lis_lengths</code></summary>
+<pre><code>/*
+** len[i] = largo de la subsecuencia creciente mas larga que acaba en i,
+** prev[i] = el elemento anterior en esa subsecuencia (-1 si no hay).
+** Es O(n^2) en tiempo de calculo, pero no mueve las pilas (lo que puntua
+** son las operaciones).
+*/
+static void	lis_lengths(int *vals, int n, int *len, int *prev)
+{
+	int	i;
+	int	j;
+
+	i = 0;
+	while (i &lt; n)
+	{
+		len[i] = 1;
+		prev[i] = -1;
+		j = 0;
+		while (j &lt; i)
+		{
+			if (vals[j] &lt; vals[i] &amp;&amp; len[j] + 1 &gt; len[i])
+			{
+				len[i] = len[j] + 1;
+				prev[i] = j;
+			}
+			j++;
+		}
+		i++;
+	}
+}</code></pre>
+
+<h3>La idea: aprovechar lo ya calculado</h3>
+<p>Una subsecuencia creciente que acaba en <code>i</code> es, o bien solo <code>vals[i]</code>
+(largo 1), o bien una que acaba en algún <code>j</code> anterior con <code>vals[j] &lt;
+vals[i]</code>, alargada con <code>vals[i]</code>. Como <code>len[j]</code> ya está calculado para
+todos los <code>j &lt; i</code>, basta con probar cada uno y quedarse con el que dé más:
+<code>len[i] = max(len[j] + 1)</code>. Eso es programación dinámica: cada respuesta se construye con
+respuestas más pequeñas ya guardadas. <code>prev[i]</code> apunta qué <code>j</code> dio ese
+máximo, para poder reconstruir la subsecuencia después.</p>
+
+<h3>Tabla con un ejemplo</h3>
+<p>La entrada <code>2 1 3 6 5 8</code> de la sección <a href="#bench">13</a> se normaliza a
+<code>1 0 2 4 3 5</code>:</p>
+<table>
+<tr><th><code>i</code></th><th><code>vals[i]</code></th><th><code>len</code></th><th><code>prev</code></th><th>por qué</th></tr>
+<tr><td>0</td><td>1</td><td>1</td><td>−1</td><td>no hay nada antes</td></tr>
+<tr><td>1</td><td>0</td><td>1</td><td>−1</td><td>ningún anterior es menor que 0</td></tr>
+<tr><td>2</td><td>2</td><td>2</td><td>0</td><td>desde el 1 (<code>j = 0</code>); el 0 (<code>j = 1</code>) también daría 2, pero no supera</td></tr>
+<tr><td>3</td><td>4</td><td>3</td><td>2</td><td>desde el 2, que tenía <code>len</code> 2</td></tr>
+<tr><td>4</td><td>3</td><td>3</td><td>2</td><td>desde el 2; el 4 no es menor que 3</td></tr>
+<tr><td>5</td><td>5</td><td>4</td><td>3</td><td>desde el 4 (3 + 1); el 3 también daría 4, pero no supera</td></tr>
+</table>
+
+<h3>La condición del <code>if</code></h3>
+<ul>
+<li><code>vals[j] &lt; vals[i]</code>: solo se puede alargar una subsecuencia que acabe en un
+número menor, si no dejaría de ser creciente.</li>
+<li><code>len[j] + 1 &gt; len[i]</code>: solo se cambia si mejora. Al ser estricta, en un empate
+se queda el primer <code>j</code> que alcanzó el máximo. Por eso en la fila 5 gana el 4 y no el
+3.</li>
+</ul>
+
+<h3>Coste</h3>
+<p>El bucle interno da <code>i</code> vueltas para cada <code>i</code>: 0 + 1 + … + (n − 1) =
+n(n − 1)/2, 124 750 comparaciones para 500 números. Es O(n²) de CPU y cero operaciones. Existe una
+LIS en O(n log n), pero aquí no aporta nada porque el tiempo no puntúa.</p>
+</details>
+<details id="fn-lis_keep">
+<summary>Cómo funciona <code>lis_keep</code></summary>
+<pre><code>/*
+** Array keep: keep[i] = 1 si el elemento en la posicion i esta en la LIS.
+** Se parte del final mas largo y se va hacia atras con prev. len y prev van
+** en un solo malloc (prev es la segunda mitad) y la primera mitad se
+** reutiliza como keep. NULL si falla malloc.
+*/
+static int	*lis_keep(int *vals, int n)
+{
+	int	*len;
+	int	*prev;
+	int	best;
+	int	i;
+
+	len = malloc(sizeof(int) * n * 2);
+	if (!len)
+		return (NULL);
+	prev = len + n;
+	lis_lengths(vals, n, len, prev);
+	best = 0;
+	i = 0;
+	while (++i &lt; n)
+		if (len[i] &gt; len[best])
+			best = i;
+	ft_bzero(len, sizeof(int) * n);
+	while (best &gt;= 0)
+	{
+		len[best] = 1;
+		best = prev[best];
+	}
+	return (len);
+}</code></pre>
+
+<h3>1. Un <code>malloc</code> para dos arrays</h3>
+<p>Se reservan <code>2n</code> enteros y <code>prev = len + n</code> apunta a la mitad: con
+aritmética de punteros, <code>len + n</code> es la dirección <code>n</code> enteros más
+allá.</p>
+<pre><code>len                       prev = len + n
+ │                          │
+ ▼                          ▼
+[ len[0] … len[n-1] ][ prev[0] … prev[n-1] ]</code></pre>
+
+<h3>2. Dónde acaba la LIS más larga</h3>
+<p><code>best</code> empieza en 0 y el bucle mira desde <code>i = 1</code> (el
+<code>++i</code> incrementa antes de comparar). Con <code>&gt;</code> estricto se queda con el
+<em>primer</em> índice de largo máximo. Siguiendo el ejemplo de <code>1 0 2 4 3 5</code>:</p>
+<pre><code>len  = 1 1 2 3 3 4
+best = 0 → 2 → 3 → 5   (en i = 1 y i = 4 no supera)</code></pre>
+
+<h3>3. Reconstruir hacia atrás y marcar</h3>
+<p>A partir de aquí <code>len</code> ya no hace falta, así que se pone a cero con
+<code>ft_bzero</code> y se reutiliza como <code>keep</code>. <code>prev</code> está en la otra
+mitad y no se toca. Luego se sigue la cadena de <code>prev</code> desde <code>best</code> hasta el
+−1, marcando un 1 en cada posición:</p>
+<pre><code>prev = -1 -1 0 2 2 3
+
+best = 5   keep[5] = 1   prev[5] = 3
+best = 3   keep[3] = 1   prev[3] = 2
+best = 2   keep[2] = 1   prev[2] = 0
+best = 0   keep[0] = 1   prev[0] = -1  → fin
+
+keep = 1 0 1 1 0 1     LIS: 1 2 4 5     fuera: el 0 y el 3</code></pre>
+<p>La cadena sale del final al principio, pero no importa: se marcan posiciones, no se escribe la
+subsecuencia en orden.</p>
+
+<h3>Un detalle con el <code>free</code></h3>
+<p>Devuelve <code>len</code>, que es el puntero que dio <code>malloc</code>. Cuando
+<code>sort_low</code> hace <code>free(keep)</code> se libera el bloque entero de <code>2n</code>,
+<code>prev</code> incluido. No se podría hacer <code>free(prev)</code>: no es una dirección que haya
+devuelto <code>malloc</code>.</p>
+
+<h3>Casos límite</h3>
+<ul>
+<li>Si falla <code>malloc</code> devuelve <code>NULL</code> y <code>sort_low</code> pasa a
+<code>sort_medium</code>.</li>
+<li>Con <code>n = 1</code> el bucle de <code>best</code> no da vueltas y sale <code>keep = { 1
+}</code>. No llega a pasar: <code>sort_low</code> solo se ejecuta con al menos una pareja al revés,
+es decir, con dos números o más.</li>
+</ul>
+</details>
 <p>Luego, <code>push_non_lis</code> recorre a: los de la LIS se quedan (<code>ra</code>) y el resto
 va a b (<code>pb</code>). Cuenta antes cuántos hay fuera (<code>left</code>) para parar en cuanto
-sale el último, sin dar la vuelta entera. Y cada uno de b vuelve a su hueco en a:</p>
+sale el último, sin dar la vuelta entera.</p>
+<details id="fn-push_non_lis">
+<summary>Cómo funciona <code>push_non_lis</code></summary>
+<pre><code>/*
+** Recorre a desde la cima: los de la LIS se quedan (ra) y el resto va a b
+** (pb). Primero cuenta cuantos no son de la LIS (left) para parar en cuanto
+** ha pasado el ultimo, sin dar la vuelta entera.
+*/
+static void	push_non_lis(t_ps *ps, int *keep)
+{
+	int	left;
+	int	i;
+
+	left = 0;
+	i = 0;
+	while (i &lt; ps-&gt;size)
+		left += !keep[i++];
+	i = 0;
+	while (left &gt; 0)
+	{
+		if (keep[i++])
+			ra(ps);
+		else
+		{
+			pb(ps);
+			left--;
+		}
+	}
+}</code></pre>
+
+<h3>1. Contar los que sobran</h3>
+<p><code>!keep[i]</code> vale 1 si <code>keep[i]</code> es 0 y 0 si es 1, así que
+<code>left += !keep[i++]</code> suma uno por cada elemento fuera de la LIS sin necesitar un
+<code>if</code>. Con <code>keep = 1 0 1 1 0 1</code>, <code>left = 2</code>.</p>
+
+<h3>2. Por qué <code>keep[i]</code> siempre habla de la cima</h3>
+<p><code>keep</code> se calculó con las posiciones originales de a, y la pila se va moviendo. Pero
+en cada vuelta la cima, o pasa al fondo (<code>ra</code>), o se va a b (<code>pb</code>), y en los
+dos casos la nueva cima es el siguiente de la lista original. Así que la cima de la vuelta
+<code>i</code> es siempre el elemento que estaba en la posición <code>i</code>, y basta con avanzar
+<code>i</code> una vez por vuelta.</p>
+<pre><code>         a: 1 0 2 4 3 5    b:        keep = 1 0 1 1 0 1, left = 2
+i = 0    keep 1  ra   a: 0 2 4 3 5 1    b:
+i = 1    keep 0  pb   a: 2 4 3 5 1      b: 0      left = 1
+i = 2    keep 1  ra   a: 4 3 5 1 2      b: 0
+i = 3    keep 1  ra   a: 3 5 1 2 4      b: 0
+i = 4    keep 0  pb   a: 5 1 2 4        b: 3 0    left = 0 → fin
+                      (el 5, i = 5, ni se visita)</code></pre>
+
+<h3>3. Lo que queda en a</h3>
+<p>Solo los de la LIS, en su orden original, aunque rotados: <code>5 1 2 4</code> leído como un
+anillo es <code>1 2 4 5</code>. Por eso <code>insert_pos</code> puede tratar a como «ordenada,
+quizá rotada».</p>
+
+<h3>Coste</h3>
+<p>Se hacen tantos <code>ra</code> como elementos de la LIS haya antes del último que sobra, más un
+<code>pb</code> por cada uno de fuera: como mucho n operaciones. Siempre avanza con
+<code>ra</code>, nunca con <code>rra</code>, así que un único elemento fuera de sitio a mitad de la
+lista ya cuesta unas n/2 rotaciones, y su reinserción otras tantas. Con <code>1..100</code> y el 50 y
+el 51 intercambiados salen 102 operaciones (50 <code>ra</code>, 50 <code>rra</code>, un
+<code>pb</code> y un <code>pa</code>).</p>
+</details>
+<p>Y cada uno de b vuelve a su hueco en a:</p>
 <pre><code>static int	insert_pos(t_list *a, int v)
 {
 	...
@@ -725,9 +1875,90 @@ sale el último, sin dar la vuelta entera. Y cada uno de b vuelve a su hueco en 
 hay ninguno mayor (v es el nuevo máximo), encima del menor de todos. El truco hace las dos
 búsquedas en una: a los menores que <code>v</code> se les suma <code>INT_MAX</code> (en un
 <code>long</code>, para no desbordar), así que solo pueden ganar el mínimo si no hay ningún mayor,
-y entre ellos gana el más pequeño. Funciona aunque a esté rotada. Al final se sube el
-<code>0</code> a la cima. Traza real con <code>0 1 3 2 4</code> (desorden 10 %, 8
-operaciones):</p>
+y entre ellos gana el más pequeño. Funciona aunque a esté rotada.</p>
+<details id="fn-insert_pos">
+<summary>Cómo funciona <code>insert_pos</code></summary>
+<pre><code>/*
+** Donde hay que meter v en a (que esta ordenada, quiza rotada): encima del
+** menor que sea mayor que v. Si no hay ninguno mayor, encima del menor de
+** todos. Las dos cosas a la vez: a los &lt;= v se les suma INT_MAX para que
+** solo ganen si no hay ninguno mayor, y se busca el minimo.
+*/
+static int	insert_pos(t_list *a, int v)
+{
+	long	key;
+	long	best;
+	int		pos;
+	int		i;
+
+	best = LONG_MAX;
+	pos = 0;
+	i = 0;
+	while (a)
+	{
+		key = *(int *)a-&gt;content;
+		if (key &lt; v)
+			key += INT_MAX;
+		if (key &lt; best)
+		{
+			best = key;
+			pos = i;
+		}
+		a = a-&gt;next;
+		i++;
+	}
+	return (pos);
+}</code></pre>
+
+<h3>Dónde va <code>v</code></h3>
+<p>a es un anillo ordenado. <code>v</code> tiene que quedar justo antes de su sucesor, el menor de
+los que son mayores que él: si se sube ese a la cima y se hace <code>pa</code>, <code>v</code> queda
+encima y el anillo sigue ordenado. Si no hay ninguno mayor, <code>v</code> es el nuevo máximo y su
+sitio en el anillo está entre el máximo actual y el mínimo, es decir, encima del menor de
+todos.</p>
+
+<h3>El truco de <code>INT_MAX</code>, con números</h3>
+<p>Dos búsquedas («el menor de los mayores» y, si no hay, «el menor de todos») se convierten en un
+solo mínimo cambiando la clave: los menores que <code>v</code> se penalizan sumándoles
+<code>INT_MAX</code>. Del ejemplo de <code>2 1 3 6 5 8</code>, tras <code>push_non_lis</code> queda
+<code>a = 5 1 2 4</code> y toca meter el <code>v = 3</code>:</p>
+<table>
+<tr><th>pos</th><th>valor</th><th>¿&lt; 3?</th><th><code>key</code></th></tr>
+<tr><td>0</td><td>5</td><td>no</td><td>5</td></tr>
+<tr><td>1</td><td>1</td><td>sí</td><td>1 + 2147483647 = 2147483648</td></tr>
+<tr><td>2</td><td>2</td><td>sí</td><td>2 + 2147483647 = 2147483649</td></tr>
+<tr><td>3</td><td>4</td><td>no</td><td><b>4</b> ← mínimo</td></tr>
+</table>
+<pre><code>pos 3 de 4  →  rra   a: 4 5 1 2
+pa                   a: 3 4 5 1 2</code></pre>
+<p>Después viene el <code>v = 0</code>, con <code>a = 3 4 5 1 2</code>: ninguno es menor que 0,
+ninguna clave se penaliza y gana el 1, en la posición 3 de 5 (<code>rra rra</code>, <code>pa</code>
+→ <code>0 1 2 3 4 5</code>). Y el caso del nuevo máximo, con <code>10 0 1 2 … 9</code>: el 10 es el
+único fuera de la LIS, y al reinsertarlo en <code>a = 0 1 … 9</code> todos son menores, todas las
+claves llevan <code>+ INT_MAX</code> y gana la del 0, en la posición 0. Se hace <code>pa</code> sin
+rotar, queda <code>10 0 1 … 9</code> y el <code>ra</code> final que sube el 0 lo deja ordenado: 3
+operaciones en total.</p>
+
+<h3>Por qué <code>INT_MAX</code> y por qué <code>long</code></h3>
+<p>Basta con que cualquier clave penalizada sea mayor que cualquier clave sin penalizar. Los
+valores son rangos menores que n, así que sumar n ya serviría, pero <code>INT_MAX</code> vale para
+cualquier <code>int</code> no negativo sin pensar en el tamaño. El precio es que
+<code>1 + INT_MAX</code> no cabe en un <code>int</code> (desbordaría, y eso es comportamiento
+indefinido); por eso <code>key</code> y <code>best</code> son <code>long</code>.
+<code>best</code> empieza en <code>LONG_MAX</code> para que la primera clave siempre gane y
+<code>pos</code> siempre salga de algún nodo.</p>
+
+<h3>Casos límite</h3>
+<ul>
+<li>a vacía: devolvería 0. No ocurre: tras <code>push_non_lis</code> en a queda como mínimo la
+LIS, que tiene al menos un elemento.</li>
+<li>Ojo: el comentario dice «a los <code>&lt;= v</code>», pero el código usa
+<code>key &lt; v</code>. Es equivalente, porque <code>v</code> está en b y ningún valor de a puede
+ser igual a él.</li>
+</ul>
+</details>
+<p>Al final se sube el <code>0</code> a la cima. Traza real con <code>0 1 3 2 4</code> (desorden
+10 %, 8 operaciones):</p>
 <pre><code>         a: 0 1 3 2 4    b:      LIS = 0 1 3 4, fuera: 2
 ra       a: 1 3 2 4 0    b:
 ra       a: 3 2 4 0 1    b:
@@ -827,6 +2058,50 @@ así <code>--bench</code> no lo estropea. El porcentaje con dos decimales se imp
 <code>(10000 + 1) / 3 = 3333</code>, que se imprime como <code>33.33%</code>. Luego
 <code>p / 100</code> es la parte entera y los dos dígitos de <code>p % 100</code> se escriben uno a
 uno, para no perder el cero de <code>10.05</code>.</p>
+<details id="fn-put_disorder">
+<summary>Cómo funciona <code>put_disorder</code></summary>
+<p>El código es el de arriba. Lo que hace, por partes:</p>
+
+<h3>1. Escalar y redondear</h3>
+<p>Un porcentaje con dos decimales es un número de diezmilésimas: 33.33 % = 0.3333 = 3333 / 10000.
+Así que se multiplica <code>mistakes</code> por 10000 <em>antes</em> de dividir (si se dividiera
+primero, <code>mistakes / pairs</code> daría 0 en casi todos los casos). Sumar <code>pairs / 2</code>
+al numerador es sumar medio divisor, y convierte el truncado de la división entera en un redondeo al
+más cercano:</p>
+<table>
+<tr><th>Caso</th><th>Sin redondeo</th><th>Con <code>+ pairs / 2</code></th><th>Sale</th></tr>
+<tr><td>1 de 3</td><td>10000 / 3 = 3333</td><td>10001 / 3 = 3333</td><td><code>33.33%</code></td></tr>
+<tr><td>2 de 3</td><td>20000 / 3 = 6666</td><td>20001 / 3 = 6667</td><td><code>66.67%</code></td></tr>
+<tr><td>2 de 15</td><td>20000 / 15 = 1333</td><td>20007 / 15 = 1333</td><td><code>13.33%</code></td></tr>
+<tr><td>1 de 4950</td><td>10000 / 4950 = 2</td><td>12475 / 4950 = 2</td><td><code>0.02%</code></td></tr>
+<tr><td>3 de 3</td><td>30000 / 3 = 10000</td><td>30001 / 3 = 10000</td><td><code>100.00%</code></td></tr>
+</table>
+<p>«2 de 3» es <code>3 1 2</code>, «2 de 15» es el <code>2 1 3 6 5 8</code> de abajo y «1 de 4950»
+son los números del 1 al 100 con dos vecinos intercambiados; todos comprobados con
+<code>--bench</code>.</p>
+
+<h3>2. Partir en parte entera y decimales</h3>
+<p>Con <code>p = 2</code> (el 0.02 %):</p>
+<pre><code>p / 100        = 0    →  "0"
+'.'                   →  "."
+p % 100 / 10   = 0    →  "0"
+p % 10         = 2    →  "2"
+                         "0.02%"</code></pre>
+<p>Si se imprimiera <code>p % 100</code> con <code>ft_putnbr_fd</code>, saldría <code>0.2%</code>:
+el cero de las décimas se perdería. Escribir cada cifra como <code>'0' + dígito</code> garantiza
+siempre dos. (<code>%</code> y <code>/</code> tienen la misma precedencia y van de izquierda a
+derecha, así que <code>p % 100 / 10</code> es <code>(p % 100) / 10</code>.)</p>
+
+<h3>Casos límite</h3>
+<ul>
+<li><code>pairs == 0</code> (un solo número): no se puede dividir entre 0, así que el
+<code>if</code> lo salta y <code>p</code> se queda en 0: <code>0.00%</code>.</li>
+<li>Desbordamiento: con 500 números, <code>mistakes</code> llega como mucho a 124 750, y por 10000
+son unos 1 250 millones, que cabe en un <code>long</code> sobradamente.</li>
+<li><code>p / 100</code> va de 0 a 100 y se pasa a <code>ft_putnbr_fd</code>, que recibe un
+<code>int</code>: la conversión de <code>long</code> no pierde nada.</li>
+</ul>
+</details>
 <p><code>put_strategy</code> imprime nombre y clase; con la adaptativa recalcula
 <code>disorder_regime</code> para decir qué método usó de verdad. El total es la suma de los once
 contadores. Salida real con el ejemplo del enunciado:</p>
@@ -845,6 +2120,98 @@ contadores. Salida real con el ejemplo del enunciado:</p>
 [bench] ra:  3  rb:  0  rr:  0  rra:  3  rrb:  0  rrr:  0</code></pre>
 <p>Si la lista ya está ordenada, el bench se imprime igual con <code>disorder: 0.00%</code> y
 <code>total_ops: 0</code>.</p>
+<details id="fn-put_strategy">
+<summary>Cómo funciona <code>put_strategy</code></summary>
+<pre><code>/*
+** Nombre de la estrategia y su clase de complejidad. Con adaptive, la clase
+** depende del regimen que eligio sort_adaptive, asi que se vuelve a
+** calcular igual que alli.
+*/
+static void	put_strategy(t_ps *ps)
+{
+	int	regime;
+
+	ft_putstr_fd("[bench] strategy:  ", 2);
+	regime = disorder_regime(ps);
+	if (ps-&gt;strategy == SIMPLE)
+		ft_putendl_fd("Simple / O(n²)", 2);
+	else if (ps-&gt;strategy == MEDIUM)
+		ft_putendl_fd("Medium / O(n√n)", 2);
+	else if (ps-&gt;strategy == COMPLEX)
+		ft_putendl_fd("Complex / O(n log n)", 2);
+	else if (regime == 0)
+		ft_putendl_fd("Adaptive / O(n)", 2);
+	else if (regime == 1)
+		ft_putendl_fd("Adaptive / O(n√n)", 2);
+	else
+		ft_putendl_fd("Adaptive / O(n log n)", 2);
+}</code></pre>
+
+<h3>Seis salidas en una cadena</h3>
+<p>Primero las tres forzadas, que tienen clase fija. Si no es ninguna, la estrategia es la
+adaptativa y la clase depende del régimen:</p>
+<table>
+<tr><th><code>ps-&gt;strategy</code></th><th><code>regime</code></th><th>Imprime</th></tr>
+<tr><td><code>SIMPLE</code></td><td>(da igual)</td><td><code>Simple / O(n²)</code></td></tr>
+<tr><td><code>MEDIUM</code></td><td>(da igual)</td><td><code>Medium / O(n√n)</code></td></tr>
+<tr><td><code>COMPLEX</code></td><td>(da igual)</td><td><code>Complex / O(n log n)</code></td></tr>
+<tr><td><code>ADAPTIVE</code></td><td>0</td><td><code>Adaptive / O(n)</code></td></tr>
+<tr><td><code>ADAPTIVE</code></td><td>1</td><td><code>Adaptive / O(n√n)</code></td></tr>
+<tr><td><code>ADAPTIVE</code></td><td>2</td><td><code>Adaptive / O(n log n)</code></td></tr>
+</table>
+
+<h3>Por qué se puede recalcular el régimen</h3>
+<p><code>sort_adaptive</code> no guarda en <code>ps</code> qué método eligió. Pero no hace falta:
+<code>disorder_regime</code> solo depende de <code>mistakes</code> y <code>pairs</code>, que se
+midieron antes de mover nada y no cambian, así que aquí da exactamente la misma respuesta que
+dio allí.</p>
+
+<h3>Detalles</h3>
+<ul>
+<li>El régimen se calcula siempre, aunque la estrategia sea forzada y no se use. Es una
+comparación de enteros y no tiene efecto.</li>
+<li><code>²</code> y <code>√</code> no son ASCII: en UTF-8 ocupan 2 y 3 bytes. <code>ft_putendl_fd</code>
+los escribe byte a byte tal cual, y es la terminal la que los muestra como un solo carácter.</li>
+<li>Ojo: dice el método que <em>correspondería</em>, no si se ejecutó. Con una lista ya ordenada
+no se ejecuta ninguno, pero sale <code>Adaptive / O(n)</code>, y con un solo número
+(<code>pairs == 0</code>) sale <code>Adaptive / O(n log n)</code>; se explica en <a
+href="#fn-disorder_regime"><code>disorder_regime</code></a>.</li>
+</ul>
+</details>
+<details id="fn-put_count">
+<summary>Cómo funciona <code>put_count</code></summary>
+<pre><code>/* "nombre:  n" seguido de end (separador o salto de linea). */
+static void	put_count(char *name, int n, char *end)
+{
+	ft_putstr_fd(name, 2);
+	ft_putstr_fd(":  ", 2);
+	ft_putnbr_fd(n, 2);
+	ft_putstr_fd(end, 2);
+}</code></pre>
+
+<h3>Un contador con su separador</h3>
+<p>Escribe un trozo <code>nombre:  n</code> y, detrás, lo que diga <code>end</code>. Toda la
+gracia está en ese tercer parámetro: <code>print_bench</code> la llama once veces y con
+<code>end</code> decide si detrás va un hueco o un cambio de línea.</p>
+<pre><code>put_count("sa", 0, "  ")              "sa:  0  "
+put_count("pb", 5, "\n[bench] ")      "pb:  5\n[bench] "
+put_count("rrr", 0, "\n")             "rrr:  0\n"</code></pre>
+
+<h3>Cómo salen las dos líneas</h3>
+<p><code>print_bench</code> escribe <code>"\n[bench] "</code> después del total y luego cinco
+contadores: los cuatro primeros con <code>"  "</code> y <code>pb</code> con
+<code>"\n[bench] "</code>, que es el salto de línea y, ya pegado, el prefijo de la siguiente.
+Después van los otros seis, y <code>rrr</code> cierra con <code>"\n"</code>:</p>
+<pre><code>[bench] total_ops:  13
+[bench] sa:  0  sb:  0  ss:  0  pa:  5  pb:  5
+[bench] ra:  0  rb:  2  rr:  0  rra:  0  rrb:  1  rrr:  0</code></pre>
+<p>Si el separador fuera siempre <code>"  "</code>, cada línea acabaría con dos espacios de sobra y
+el salto y el prefijo habría que escribirlos aparte. Con <code>end</code>, el último de cada línea
+cierra la suya y abre la siguiente.</p>
+<p>Todo va por el fd 2, como el resto del informe, y los contadores se leen de
+<code>ps-&gt;count</code> indexando con el enum: <code>ps-&gt;count[SA]</code>,
+<code>ps-&gt;count[PB]</code>…</p>
+</details>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Para qué existen stdout y stderr por
 separado: datos por un canal, diagnóstico por otro, y una tubería (<code>| ./checker_linux</code>)
 que solo ve los datos. Y aritmética de punto fijo: escalar por 10000, redondear sumando la mitad
