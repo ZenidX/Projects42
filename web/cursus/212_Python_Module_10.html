@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 10 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 10 <span class="tag">pendiente</span></h1>
+<p class="sub">«FuncMage»: programación funcional en Python. Cinco ejercicios con
+ambientación de magos que recorren lambdas, funciones de orden superior, closures,
+<code>functools</code> y decoradores. Rank 02. <strong>Proyecto aún no hecho</strong>:
+aquí se explica qué pide y qué enseña, sin solución.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#ex0">ex0 — lambda_spells</a></li>
+  <li><a href="#ex1">ex1 — higher_magic</a></li>
+  <li><a href="#ex2">ex2 — scope_mysteries</a></li>
+  <li><a href="#ex3">ex3 — functools_artifacts</a></li>
+  <li><a href="#ex4">ex4 — decorator_mastery</a></li>
+  <li><a href="#delicados">Puntos delicados</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Funciones como datos</b> — En C una función es código fijo:
+como mucho puedes pasar un puntero a ella, como hacía el <code>ft_lstiter</code> de Libft
+o el <code>qsort</code> de la libc. En Python las funciones son <em>ciudadanos de primera
+clase</em>: objetos como cualquier otro, que se guardan en variables, se meten en listas o
+diccionarios, se pasan como argumento, se devuelven desde otra función y además se crean
+en tiempo de ejecución, recordando el entorno donde nacieron. Sobre eso se apoya la
+programación funcional. Sus raíces son antiguas: el <em>cálculo lambda</em> de Alonzo
+Church (años 30) es el modelo matemático en el que todo es función, y de él toma nombre
+la palabra clave <code>lambda</code>; Lisp (1958) llevó la idea a un lenguaje real, con
+<code>map</code>, <code>filter</code> y <code>reduce</code>. Python adoptó parte de esa
+herencia sin dejar de ser un lenguaje imperativo y orientado a objetos: en Python 3
+<code>reduce</code> se movió de las funciones integradas al módulo
+<code>functools</code>, los closures ganaron <code>nonlocal</code> (PEP 3104) y los
+decoradores (PEP 318, Python 2.4) se convirtieron en una de las herramientas más usadas
+del lenguaje, desde <code>@staticmethod</code> hasta los frameworks web. Este módulo no
+usa librerías externas: todo sale de la biblioteca estándar.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o superior</b></span><span>Estilo: <b>flake8</b></span><span>Tipos: <b>type hints en todas las firmas</b></span><span>Sin <b>pip install</b></span></div>
+<p>Cinco directorios, <code>ex0/</code> a <code>ex4/</code>, con un fichero cada uno.
+Las reglas comunes:</p>
+<ul>
+  <li>Anotaciones de tipo en todas las firmas y valores de retorno; el estilo,
+  <code>flake8</code>. Cuando se use <code>Callable</code> como tipo, debe importarse de
+  <code>collections.abc</code>.</li>
+  <li>Permitidos: el módulo <code>typing</code>, <code>itertools</code>, todas las
+  funciones integradas salvo <code>eval()</code> y <code>exec()</code>, los tipos estándar
+  con sus métodos y los módulos de la biblioteca estándar que hagan falta.
+  <code>functools</code> y <code>operator</code> solo donde el ejercicio los autorice.</li>
+  <li>Prohibidos: librerías externas, operaciones con ficheros (todo en memoria),
+  algoritmos complejos (el foco está en los patrones funcionales), <code>eval()</code>,
+  <code>exec()</code> y las variables globales.</li>
+  <li>El manejo de excepciones debe proteger los datos de corrupciones.</li>
+  <li>La salida de los ejemplos es orientativa: hay que mantener la estructura y la
+  información esencial, pero los mensajes se pueden personalizar.</li>
+</ul>
+<p>Como adjunto viene un <code>data_generator.py</code> que genera datos de prueba (magos,
+artefactos y hechizos) para usar en las implementaciones y durante la evaluación.</p>
+</div>
+
+<div class="card" id="ex0">
+<h2><span class="ex">ex0</span>lambda_spells</h2>
+<div class="meta"><span>Directorio: <b>ex0/</b></span><span>Entrega: <b>lambda_spells.py</b></span><span>Autorizado: <b>map, filter, sorted, min, max, round, sum, len</b></span></div>
+<p>Cuatro funciones con firma dada, y todas las transformaciones con expresiones
+<code>lambda</code>; nada de <code>def</code> para operaciones simples o de un solo
+uso:</p>
+<ul>
+  <li><code>artifact_sorter(artifacts)</code>: ordena con <code>sorted()</code> y una
+  lambda una lista de artefactos (<code>{'name', 'power', 'type'}</code>) por
+  <code>power</code>, de mayor a menor.</li>
+  <li><code>power_filter(mages, min_power)</code>: con <code>filter()</code> y una lambda,
+  devuelve en una lista los magos cuyo <code>power</code> es mayor o igual que
+  <code>min_power</code>.</li>
+  <li><code>spell_transformer(spells)</code>: con <code>map()</code> y una lambda, rodea
+  cada nombre de hechizo con <code>"* "</code> y <code>" *"</code>.</li>
+  <li><code>mage_stats(mages)</code>: con lambdas en <code>max()</code> y
+  <code>min()</code>, devuelve un diccionario con <code>max_power</code>,
+  <code>min_power</code> y <code>avg_power</code> (la media, redondeada a 2
+  decimales).</li>
+</ul>
+<p>Para recordar la forma general, que no la del ejercicio: una lambda es una expresión
+que produce una función sin nombre, y se pasa como <code>key</code> a funciones como
+<code>sorted</code>:</p>
+<pre><code>&gt;&gt;&gt; sorted(["kiwi", "fig", "banana"], key=lambda s: len(s))
+['fig', 'kiwi', 'banana']</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una función puede ser un
+dato que se escribe en el mismo sitio donde se usa. Una lambda solo admite una
+expresión (sin sentencias, sin <code>return</code>): sirve para lo corto. El ejercicio
+también enseña cómo trabajan <code>sorted</code>, <code>min</code> y <code>max</code>
+con el parámetro <code>key</code> (comparan por lo que devuelve la función, pero
+devuelven el elemento original) y que <code>map</code> y <code>filter</code> no devuelven
+listas sino iteradores perezosos. El enunciado pregunta cuándo usar
+<code>lambda</code> y cuándo una función normal.</div>
+</div>
+
+<div class="card" id="ex1">
+<h2><span class="ex">ex1</span>higher_magic</h2>
+<div class="meta"><span>Directorio: <b>ex1/</b></span><span>Entrega: <b>higher_magic.py</b></span><span>Autorizado: <b>callable(), Callable</b></span></div>
+<p>Todos los hechizos siguen el mismo contrato,
+<code>spell(target: str, power: int) -&gt; str</code>: reciben un objetivo y una potencia
+y devuelven una frase con lo ocurrido. Hay que escribir cuatro funciones que reciben
+hechizos y devuelven hechizos nuevos:</p>
+<ul>
+  <li><code>spell_combiner(spell1, spell2)</code>: una función que llama a los dos con los
+  mismos argumentos y devuelve una tupla con ambos resultados.</li>
+  <li><code>power_amplifier(base_spell, multiplier)</code>: un hechizo con la misma firma
+  que multiplica la potencia antes de lanzar el original.</li>
+  <li><code>conditional_caster(condition, spell)</code>: un hechizo que solo se lanza si
+  la condición es verdadera (condición y hechizo reciben los mismos argumentos); si no,
+  devuelve <code>"Spell fizzled"</code>.</li>
+  <li><code>spell_sequence(spells)</code>: una función que lanza todos los hechizos en
+  orden con los mismos argumentos y devuelve la lista de resultados.</li>
+</ul>
+<p>El programa debe demostrar el uso de todos estos modificadores.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Las funciones de orden
+superior: las que reciben funciones, devuelven funciones o ambas cosas. Es la idea de
+<em>composición</em>: piezas pequeñas que se combinan para formar comportamientos nuevos
+sin tocar las originales. Las preguntas del enunciado van a lo conceptual: qué hace a
+una función «ciudadana de primera clase», de qué paquete se recomienda importar
+<code>Callable</code> (de <code>collections.abc</code>; el de <code>typing</code> es un
+alias obsoleto desde Python 3.9) y para qué sirve <code>callable()</code>, que comprueba
+en tiempo de ejecución si un objeto se puede llamar.</div>
+</div>
+
+<div class="card" id="ex2">
+<h2><span class="ex">ex2</span>scope_mysteries</h2>
+<div class="meta"><span>Directorio: <b>ex2/</b></span><span>Entrega: <b>scope_mysteries.py</b></span><span>Autorizado: <b>nonlocal</b></span></div>
+<p>Cuatro fábricas de funciones que guardan estado sin variables globales:</p>
+<ul>
+  <li><code>mage_counter()</code>: devuelve una función que cuenta cuántas veces se la ha
+  llamado y devuelve la cuenta (empezando en 1). Dos contadores distintos tienen estado
+  independiente.</li>
+  <li><code>spell_accumulator(initial_power)</code>: devuelve una función que suma a un
+  total que parte de <code>initial_power</code> la cantidad recibida y devuelve el nuevo
+  total.</li>
+  <li><code>enchantment_factory(enchantment_type)</code>: devuelve una función que recibe
+  un objeto y devuelve <code>"enchantment_type item_name"</code> (por ejemplo,
+  <code>"Flaming Sword"</code>).</li>
+  <li><code>memory_vault()</code>: devuelve un diccionario con dos funciones,
+  <code>'store'</code> (guarda un par clave-valor) y <code>'recall'</code> (devuelve el
+  valor o <code>"Memory not found"</code>), que comparten una memoria privada.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El alcance léxico y los
+<em>closures</em>. Una función definida dentro de otra ve las variables de la de fuera, y
+las sigue viendo después de que esta haya terminado: la función interna se lleva consigo
+su entorno. Es el equivalente de una variable <code>static</code> de C, pero una por
+cada función creada y sin que nadie de fuera pueda tocarla. Con eso se consigue estado
+privado sin clases ni globales. La pregunta del enunciado es la buena: por qué
+<code>global</code> está prohibido y <code>nonlocal</code> permitido, y en qué se
+diferencian (uno apunta al ámbito del módulo, compartido por todos; el otro, al ámbito de
+la función que envuelve, propio de cada closure).</div>
+</div>
+
+<div class="card" id="ex3">
+<h2><span class="ex">ex3</span>functools_artifacts</h2>
+<div class="meta"><span>Directorio: <b>ex3/</b></span><span>Entrega: <b>functools_artifacts.py</b></span><span>Autorizado: <b>functools, operator</b></span></div>
+<ul>
+  <li><code>spell_reducer(spells, operation)</code>: combina una lista de potencias con
+  <code>functools.reduce</code> y las funciones del módulo <code>operator</code>. Admite
+  <code>"add"</code>, <code>"multiply"</code>, <code>"max"</code> y <code>"min"</code>;
+  con la lista vacía devuelve 0, y una operación desconocida debe tratarse como
+  error.</li>
+  <li><code>partial_enchanter(base_enchantment)</code>: a partir de una función
+  <code>(power: int, element: str, target: str) -&gt; str</code>, crea con
+  <code>functools.partial</code> tres versiones especializadas, todas con
+  <code>power=50</code> y cada una con su elemento, y las devuelve en un
+  diccionario.</li>
+  <li><code>memoized_fibonacci(n)</code>: el n-ésimo número de Fibonacci con el decorador
+  <code>functools.lru_cache</code>; la caché debe acelerar las llamadas repetidas, cosa
+  que se puede comprobar con <code>cache_info()</code>.</li>
+  <li><code>spell_dispatcher()</code>: devuelve una función construida con
+  <code>functools.singledispatch</code> que se comporta según el tipo del argumento:
+  <code>int</code> (hechizo de daño), <code>str</code> (encantamiento) y
+  <code>list</code> (lanzamiento múltiple); la función base recibe <code>Any</code> y
+  maneja los tipos desconocidos.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Las herramientas clásicas de la
+programación funcional que trae la biblioteca estándar. <code>reduce</code> pliega una
+secuencia en un único valor aplicando una operación de dos en dos (la sacaron de las
+funciones integradas en Python 3 porque un bucle suele leerse mejor, pero sigue en
+<code>functools</code>). <code>operator</code> ofrece los operadores como funciones
+(<code>operator.add</code> es <code>+</code>). <code>partial</code> fija algunos
+argumentos y devuelve una función nueva con menos parámetros. <code>lru_cache</code> es
+<em>memoización</em>: guardar resultados ya calculados, lo que convierte un Fibonacci
+recursivo exponencial en lineal. Y <code>singledispatch</code> (PEP 443) son las
+funciones genéricas: una implementación distinta según el tipo del primer argumento,
+registrada aparte, en lugar de una cadena de <code>isinstance</code>.</div>
+</div>
+
+<div class="card" id="ex4">
+<h2><span class="ex">ex4</span>decorator_mastery</h2>
+<div class="meta"><span>Directorio: <b>ex4/</b></span><span>Entrega: <b>decorator_mastery.py</b></span><span>Autorizado: <b>functools.wraps, staticmethod</b></span></div>
+<ul>
+  <li><code>spell_timer(func)</code>: decorador que mide el tiempo de ejecución. Imprime
+  <code>Casting nombre_de_la_función...</code> antes y
+  <code>Spell completed in X.XXX seconds</code> (3 decimales) después, conserva los
+  metadatos con <code>functools.wraps</code> y devuelve el resultado original.</li>
+  <li><code>power_validator(min_power)</code>: fábrica de decoradores con parámetro. Si la
+  potencia es suficiente (<code>&gt;= min_power</code>) ejecuta la función; si no,
+  devuelve <code>"Insufficient power for this spell"</code>. También con
+  <code>wraps</code>.</li>
+  <li><code>retry_spell(max_attempts)</code>: si la función lanza una excepción, la
+  reintenta hasta <code>max_attempts</code> veces imprimiendo
+  <code>Spell failed, retrying... (attempt n/max_attempts)</code>; si todos los intentos
+  fallan devuelve <code>"Spell casting failed after max_attempts attempts"</code>, y si
+  alguno sale bien, su resultado.</li>
+  <li>Clase <code>MageGuild</code>: un método estático
+  <code>validate_mage_name(name)</code> (válido si tiene al menos 3 caracteres y solo
+  letras y espacios) y un método de instancia <code>cast_spell(self, spell_name,
+  power)</code> decorado con <code>power_validator</code> con
+  <code>min_power=10</code>, que devuelve
+  <code>"Successfully cast spell_name with &lt;power&gt; power"</code> o el mensaje de
+  potencia insuficiente.</li>
+</ul>
+<p>El enunciado sugiere <code>time.sleep</code> para simular hechizos que tardan.</p>
+<p>Recordatorio de la sintaxis: la arroba es solo azúcar para reasignar el nombre.</p>
+<pre><code>@decorador
+def f(): ...
+
+# equivale a
+def f(): ...
+f = decorador(f)</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Todo lo anterior junto. Un
+decorador es una función de orden superior que recibe una función y devuelve otra que la
+envuelve (un closure), y la sintaxis <code>@</code> la aplica al definirla. Sirve para
+separar responsabilidades: medir tiempos, validar o reintentar sin ensuciar el código del
+hechizo. Un decorador con parámetros, como <code>power_validator(10)</code>, añade un
+nivel más: es una función que devuelve el decorador. <code>functools.wraps</code> copia
+el nombre, la docstring y demás metadatos de la original al envoltorio; sin él, la
+función decorada pasa a llamarse como la interna. Y <code>@staticmethod</code>, que ya
+salió en el Module 01, se ve ahora como lo que es: un decorador más, que hace que el
+método no reciba <code>self</code>.</div>
+</div>
+
+<div class="trasfondo" id="delicados"><b>Puntos delicados</b> — Lo que conviene tener
+claro antes de la evaluación, donde el enunciado avisa de que puede tocar explicar
+conceptos, enseñar cómo funciona un closure o cómo un decorador transforma una función:
+<ul>
+  <li><b>Iteradores perezosos.</b> <code>map</code> y <code>filter</code> no devuelven
+  listas; si la firma promete <code>list</code>, hay que convertir. Y un iterador se
+  agota al recorrerlo una vez.</li>
+  <li><b>Listas vacías.</b> La media de cero magos divide entre cero, y
+  <code>max()</code>/<code>min()</code> sobre una secuencia vacía lanzan
+  <code>ValueError</code>. En ex3 el enunciado fija qué devolver con la lista vacía; en
+  ex0 hay que decidirlo.</li>
+  <li><b>Ordenar de mayor a menor.</b> <code>sorted</code> devuelve una lista nueva y no
+  toca la original, a diferencia de <code>list.sort()</code>.</li>
+  <li><b>Asignar dentro de un closure.</b> Leer una variable de fuera funciona sin más;
+  reasignarla (un <code>+=</code> sobre un entero) la convierte en local y da
+  <code>UnboundLocalError</code> si no se declara <code>nonlocal</code>. Modificar un
+  objeto mutable de fuera, como un diccionario, no es reasignar.</li>
+  <li><b>Lambdas creadas en bucle.</b> Capturan la variable, no su valor en ese momento:
+  todas acaban viendo el último. Es la trampa clásica del alcance léxico.</li>
+  <li><b><code>reduce</code> sin valor inicial.</b> Con una secuencia vacía lanza
+  <code>TypeError</code>. Y una operación desconocida no debe romper el programa sin
+  control.</li>
+  <li><b><code>lru_cache</code> en una función recursiva.</b> Las llamadas recursivas
+  también pasan por la caché; <code>cache_info()</code> enseña aciertos y fallos.</li>
+  <li><b>Decorar un método.</b> <code>power_validator</code> se aplica a una función suelta
+  y también a <code>cast_spell</code>, que recibe <code>self</code> antes que los demás
+  argumentos: el envoltorio tiene que funcionar en los dos casos.</li>
+  <li><b><code>*args</code> y <code>**kwargs</code>.</b> Un envoltorio genérico no conoce
+  la firma de la función que decora; y las anotaciones de tipo siguen siendo
+  obligatorias también en él.</li>
+  <li><b>Prohibido <code>global</code>.</b> Todo el estado vive en closures o en objetos,
+  y tampoco se permiten ficheros, <code>eval</code> ni <code>exec</code>.</li>
+</ul></div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<p>Enunciado «FuncMage — Master the Ancient Arts of Functional Programming», versión 3.2,
+en <code>packs/cursus/M2/212_Python_Module_10/</code> (<code>en.subject.pdf</code> y su
+extracción <code>subject.txt</code>). El generador de datos adjunto está en
+<code>extra/generator.tar.gz</code>.</p>
+</div>
+
+<footer>42.zenidx.com — Python Module 10 · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

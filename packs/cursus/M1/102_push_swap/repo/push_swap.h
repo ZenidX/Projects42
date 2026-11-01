@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/25 01:06:57 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/30 12:48:57 by xalara           ###   ########.fr       */
+/*   Updated: 2026/11/01 13:00:00 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,6 +83,7 @@ typedef struct s_ps
 
 /* parse.c, index.c, bench.c: de los argumentos a una pila lista y medida */
 int		parse_args(t_ps *ps, int n, char **args);
+int		*copy_values(t_ps *ps);
 int		normalize(t_ps *ps);
 void	compute_disorder(t_ps *ps);
 int		disorder_regime(t_ps *ps);
@@ -94,6 +95,14 @@ void	sort_simple(t_ps *ps);
 void	sort_medium(t_ps *ps);
 void	sort_complex(t_ps *ps);
 void	sort_adaptive(t_ps *ps);
+void	sort_low(t_ps *ps);
+
+/* stack_utils.c: posiciones en las pilas y subir un nodo a la cima */
+int		lstindex(t_list *list, t_list *p);
+t_list	*indexlst(t_list *list, size_t index);
+int		stack_pos(t_list *s, int v);
+void	rotate_to_top_a(t_ps *ps, int pos);
+void	rotate_to_top_b(t_ps *ps, int pos);
 
 /* push_swap.c: liberar memoria y salir con error */
 void	free_split(char **words);

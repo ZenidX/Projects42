@@ -20,7 +20,8 @@ LIBFT	= $(LIBFT_DIR)/libft.a
 
 SRCS	= push_swap.c parse.c index.c bench.c \
 		  swap.c push.c rotate.c rotate_reverse.c \
-		  sort_simple.c sort_medium.c sort_complex.c sort_adaptive.c
+		  sort_simple.c sort_medium.c sort_complex.c sort_adaptive.c \
+		  sort_low.c stack_utils.c
 
 OBJS	= $(SRCS:.c=.o)
 

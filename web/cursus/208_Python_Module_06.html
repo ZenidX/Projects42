@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python Module 06 — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Python Module 06 <span class="tag">pendiente</span></h1>
+<p class="sub">Un módulo del rank 02 con dos enunciados a elegir: «The Codex», sobre cómo
+funciona de verdad <code>import</code> (paquetes, <code>__init__.py</code>, rutas absolutas y
+relativas, dependencias circulares), y su alternativa «Code Nexus» (06 bis), sobre clases
+abstractas, polimorfismo y patrones de diseño.</p>
+
+<ul class="toc">
+  <li><a href="#pide">Qué pide</a></li>
+  <li><a href="#codex">Bloque 1 — Module 06: The Codex</a></li>
+  <li><a href="#codex-1">Parte I — The Alembic</a></li>
+  <li><a href="#codex-2">Parte II — Distillation</a></li>
+  <li><a href="#codex-3">Parte III — The Great Transmutation</a></li>
+  <li><a href="#codex-4">Parte IV — Avoid the Explosion</a></li>
+  <li><a href="#codex-trampas">Puntos delicados del Codex</a></li>
+  <li><a href="#nexus">Bloque 2 — Module 06 bis: Code Nexus</a></li>
+  <li><a href="#nexus-ex0">ex0 — data_processor</a></li>
+  <li><a href="#nexus-ex1">ex1 — data_stream</a></li>
+  <li><a href="#nexus-ex2">ex2 — data_pipeline</a></li>
+  <li><a href="#nexus-ex3">ex3 — factorías y capacidades</a></li>
+  <li><a href="#nexus-ex4">ex4 — estrategia abstracta</a></li>
+  <li><a href="#nexus-trampas">Puntos delicados del Code Nexus</a></li>
+  <li><a href="#fuente">Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>Dos caminos por el mismo tramo</b> — Los módulos de Python del
+rank 02 existen en dos versiones. El recorrido «clásico» va así: Module 05 (Code Nexus,
+polimorfismo), Module 06 (The Codex, imports), Module 07 (DataDeck, patrones de diseño) y
+Module 08 (The Matrix, entornos virtuales y dependencias). El recorrido «bis» comprime lo
+mismo en dos: el <em>05 bis</em> es otro «The Codex» que junta los imports del 06 con los
+entornos y la configuración del 08, y el <em>06 bis</em> es otro «Code Nexus» que junta el
+polimorfismo del 05 con las factorías y estrategias del 07. Por eso Python Module 09 pide
+literalmente <code>1 of python-module-06-bis and python-module-08</code>: basta con haber
+llegado al final de cualquiera de los dos caminos. Esta ficha cubre los dos enunciados del
+pack: <a href="#codex">el 06</a> y <a href="#nexus">el 06 bis</a>; solo se entrega uno.</div>
+
+<div class="card" id="pide">
+<h2>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Python: <b>3.10 o posterior</b></span><span>Obligatorio: <b>flake8</b>, <b>mypy</b> (anotaciones de tipo completas)</span><span>Prohibido: <b>eval()</b>, <b>exec()</b></span></div>
+<p>Los dos enunciados comparten las reglas generales de todos los módulos de Python: código
+que pase <code>flake8</code>, anotaciones de tipo en todo y comprobadas con
+<code>mypy</code>, colecciones y funciones integradas permitidas salvo <code>eval</code> y
+<code>exec</code>. A partir de ahí divergen:</p>
+<table>
+<tr><th></th><th>Module 06 — The Codex</th><th>Module 06 bis — Code Nexus</th></tr>
+<tr><td>Tema</td><td>El sistema de imports</td><td>ABC, polimorfismo, <code>Protocol</code>, factoría abstracta, estrategia</td></tr>
+<tr><td>Versión</td><td>2.0</td><td>1.0</td></tr>
+<tr><td>Imports permitidos</td><td>Solo los módulos que crees tú</td><td><code>abc</code> y <code>typing</code></td></tr>
+<tr><td>Prohibición especial</td><td>Modificar <code>sys.path</code></td><td>Librerías externas</td></tr>
+<tr><td>Estructura</td><td>Un paquete <code>alchemy/</code> y 13 scripts de prueba</td><td>Tres ficheros sueltos y dos paquetes (<code>ex3/</code>, <code>ex4/</code>)</td></tr>
+</table>
+<p>El propio 06 bis avisa de que sus ejercicios 3 y 4 son paquetes que se importan entre sí,
+y recomienda hacer antes «el proyecto de empaquetado» si no te manejas con
+<code>__init__.py</code> y con lo que un paquete decide exponer.</p>
+</div>
+
+<h2 id="codex">Bloque 1 — Module 06: The Codex</h2>
+
+<div class="trasfondo"><b>Por qué un módulo entero sobre <code>import</code></b> — En C,
+«importar» era el preprocesador pegando el texto de un <code>.h</code> y el enlazador
+juntando <code>.o</code>. En Python, <code>import</code> es una instrucción que se
+<em>ejecuta</em>: busca el módulo en las rutas de <code>sys.path</code> (la primera es la
+carpeta del script que lanzas), ejecuta su código de arriba abajo una sola vez, guarda el
+objeto módulo resultante en <code>sys.modules</code> y enlaza un nombre en tu espacio de
+nombres. Casi todos los misterios del enunciado —qué se ve desde dónde, por qué un import
+relativo falla, por qué dos módulos que se importan mutuamente revientan— salen de ahí. Un
+<em>paquete</em> es una carpeta de módulos; el fichero <code>__init__.py</code> es el código
+que se ejecuta al importar la carpeta, y decide qué nombres ofrece el paquete hacia fuera.
+El enunciado lo ambienta en un laboratorio de alquimia y te prohíbe tocar
+<code>sys.path</code>: tienes que conseguirlo todo con la estructura de carpetas y los
+imports correctos.</div>
+
+<p>Al final hay que tener exactamente este árbol en la raíz del repositorio (todas las
+funciones son simples y devuelven cadenas; lo que se evalúa son los imports, no la
+lógica):</p>
+<pre><code>.
+|-- alchemy
+|   |-- __init__.py
+|   |-- elements.py
+|   |-- grimoire
+|   |   |-- __init__.py
+|   |   |-- dark_spellbook.py
+|   |   |-- dark_validator.py
+|   |   |-- light_spellbook.py
+|   |   `-- light_validator.py
+|   |-- potions.py
+|   `-- transmutation
+|       |-- __init__.py
+|       `-- recipes.py
+|-- elements.py
+|-- ft_alembic_0.py … ft_alembic_5.py
+|-- ft_distillation_0.py, ft_distillation_1.py
+|-- ft_kaboom_0.py, ft_kaboom_1.py
+`-- ft_transmutation_0.py … ft_transmutation_2.py</code></pre>
+
+<div class="card" id="codex-1">
+<h2><span class="ex">I</span>The Alembic</h2>
+<div class="meta"><span>Entrega: <b>elements.py</b>, <b>alchemy/elements.py</b>, <b>alchemy/__init__.py</b>, <b>ft_alembic_0.py</b> … <b>ft_alembic_5.py</b></span></div>
+<p>Dos ficheros con el mismo nombre en sitios distintos: <code>elements.py</code> en la raíz
+(con <code>create_fire()</code> y <code>create_water()</code>) y
+<code>alchemy/elements.py</code> (con <code>create_earth()</code> y
+<code>create_air()</code>). Cada función devuelve una frase fija del tipo «Fire element
+created». Luego seis scripts que llegan a ellas de seis formas:</p>
+<ul>
+<li><code>ft_alembic_0</code> y <code>_1</code>: el <code>elements.py</code> de la raíz, con
+<code>import …</code> y con <code>from … import …</code>.</li>
+<li><code>ft_alembic_2</code> y <code>_3</code>: <code>alchemy/elements.py</code>
+directamente, con las mismas dos formas.</li>
+<li><code>ft_alembic_4</code>: solo <code>import alchemy</code>. Desde ahí
+<code>create_air</code> tiene que funcionar, pero <code>create_earth</code>
+<em>no</em> debe estar expuesto: llamarla tiene que lanzar un <code>AttributeError</code>
+(puedes capturarlo o dejar que salga) y mypy también protestará, a propósito.</li>
+<li><code>ft_alembic_5</code>: <code>from alchemy import …</code> para crear aire.</li>
+</ul>
+<p>La pieza clave es <code>alchemy/__init__.py</code>, que debe contener «lo que haga falta»
+para que el paquete exponga parcialmente su contenido. Las dos formas de import, en
+general:</p>
+<pre><code>import paquete.modulo          # enlaza el nombre «paquete»; se usa paquete.modulo.f()
+from paquete.modulo import f   # enlaza directamente «f»</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que importar un paquete no importa
+sus submódulos: <code>import alchemy</code> ejecuta solo <code>alchemy/__init__.py</code>, y
+el objeto <code>alchemy</code> tiene únicamente los nombres que ese fichero define o trae.
+Por eso <code>__init__.py</code> es la «interfaz pública» del paquete: lo que no
+re-exporta, no se ve desde fuera. Y que un nombre importado en <code>__init__.py</code> que
+no se usa ahí es, para flake8, un aviso de «importado y no usado»; el enunciado te pide
+seguir las convenciones habituales para ese caso (la lista <code>__all__</code>, la
+re-exportación explícita o el comentario <code>noqa</code>, según lo que elijas y sepas
+justificar).</div>
+</div>
+
+<div class="card" id="codex-2">
+<h2><span class="ex">II</span>Distillation</h2>
+<div class="meta"><span>Entrega: <b>alchemy/potions.py</b>, <b>ft_distillation_0.py</b>, <b>ft_distillation_1.py</b> (y mejoras en <b>alchemy/__init__.py</b>)</span></div>
+<p><code>alchemy/potions.py</code> tiene dos funciones cuyo texto se construye con los
+resultados de las de los elementos: <code>healing_potion()</code> usa tierra y aire,
+<code>strength_potion()</code> fuego y agua. O sea, un módulo dentro del paquete necesita
+código de su propio paquete <em>y</em> del <code>elements.py</code> de la raíz.</p>
+<ul>
+<li><code>ft_distillation_0</code> accede a <code>alchemy/potions.py</code> con
+<code>from … import …</code> y prepara las dos pociones.</li>
+<li><code>ft_distillation_1</code> solo hace <code>import alchemy</code> y usa
+<code>strength_potion</code> y un <code>heal()</code> que es un <em>alias de paquete</em>
+de la poción curativa: hay que ampliar <code>__init__.py</code> para que exista ese
+nombre.</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que las rutas de import se
+resuelven desde <code>sys.path</code>, no desde el fichero que importa: cuando lanzas
+<code>python3 ft_distillation_0.py</code> desde la raíz, la raíz es lo que ve todo el
+mundo, también <code>alchemy/potions.py</code>. Y que en Python un alias no es más que otro
+nombre apuntando al mismo objeto función: <code>import x as y</code> o una simple
+asignación en <code>__init__.py</code> crean nombres nuevos sin copiar nada.</div>
+</div>
+
+<div class="card" id="codex-3">
+<h2><span class="ex">III</span>The Great Transmutation</h2>
+<div class="meta"><span>Entrega: <b>alchemy/transmutation/__init__.py</b>, <b>alchemy/transmutation/recipes.py</b>, <b>ft_transmutation_0.py</b> … <b>_2.py</b></span></div>
+<p>Un subpaquete dentro del paquete. <code>recipes.py</code> define
+<code>lead_to_gold()</code>, que combina aire, la poción de fuerza y fuego, y el enunciado
+exige que contenga <em>al menos un import absoluto y uno relativo</em>. Los tres scripts
+llegan a la receta desde tres niveles: el fichero <code>recipes.py</code> directamente, el
+módulo <code>transmutation</code> y el paquete <code>alchemy</code> a secas. El enunciado
+avisa de que tendrás que crear o retocar algún fichero más para que funcionen.</p>
+<p>La sintaxis de los dos tipos, en general:</p>
+<pre><code>from alchemy.potions import algo   # absoluto: desde la raíz de sys.path
+from ..potions import algo         # relativo: un punto = este paquete, dos = el padre</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La pregunta que deja el propio
+enunciado: ¿cuándo conviene cada ruta? El import absoluto es explícito y se lee igual desde
+cualquier sitio; el relativo no depende del nombre del paquete (puedes renombrarlo o
+moverlo sin tocar sus tripas), pero solo funciona dentro de un paquete: si ejecutas un
+módulo con imports relativos como script suelto, Python no sabe cuál es su «paquete padre»
+y falla. La PEP 8 recomienda los absolutos y acepta los relativos explícitos en paquetes
+complejos. También verás que importar <code>alchemy</code> no hace aparecer
+<code>alchemy.transmutation</code> salvo que algún <code>__init__.py</code> lo traiga.</div>
+</div>
+
+<div class="card" id="codex-4">
+<h2><span class="ex">IV</span>Avoid the Explosion</h2>
+<div class="meta"><span>Entrega: <b>alchemy/grimoire/</b> (<b>__init__.py</b>, <b>light_spellbook.py</b>, <b>light_validator.py</b>, <b>dark_spellbook.py</b>, <b>dark_validator.py</b>), <b>ft_kaboom_0.py</b>, <b>ft_kaboom_1.py</b></span></div>
+<p>Dos módulos que se necesitan mutuamente. El <em>spellbook</em> tiene la lista de
+ingredientes permitidos y <code>light_spell_record(spell_name: str, ingredients: str)</code>,
+que decide si registra o rechaza el hechizo según lo que diga el validador. El
+<em>validator</em> tiene <code>validate_ingredients(ingredients: str)</code>, que devuelve
+los ingredientes y «VALID» o «INVALID»: válidos si incluyen al menos uno de los permitidos
+por el spellbook, sin distinguir mayúsculas. La magia de luz usa «earth», «air», «fire» y
+«water»; la oscura, en copias renombradas de los dos ficheros, «bats», «frogs», «arsenic»
+y «eyeball».</p>
+<ul>
+<li><code>ft_kaboom_0</code> usa el módulo <code>grimoire</code> y registra un hechizo de
+luz <em>sin problemas</em>: tú eliges cómo evitar la dependencia circular, y en la
+evaluación tendrás que explicar las distintas formas de hacerlo.</li>
+<li><code>ft_kaboom_1</code> accede directamente a <code>dark_spellbook.py</code> y
+<em>debe explotar</em> con un <code>ImportError</code> por import circular (capturado o
+no, a tu elección).</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Por qué un import circular falla
+a veces y a veces no. Cuando A importa B y B importa A, Python no entra en bucle: al
+empezar a ejecutar A ya lo ha registrado en <code>sys.modules</code>, así que B recibe un
+módulo A <em>a medio inicializar</em>. Si B solo necesita el módulo, puede salir bien; si
+pide un nombre concreto con <code>from A import nombre</code> y ese nombre aún no se ha
+definido, salta <code>ImportError: cannot import name … from partially initialized
+module</code>. Las salidas habituales son conceptuales: reorganizar (sacar lo compartido a
+un tercer módulo del que dependan ambos), retrasar el import a dentro de la función que lo
+usa, o importar el módulo y acceder al atributo en el momento de usarlo. El enunciado te
+pide demostrar a la vez la versión que funciona y la que revienta.</div>
+</div>
+
+<div class="card" id="codex-trampas">
+<h2>Puntos delicados del Codex</h2>
+<ul>
+<li><strong>Desde dónde se ejecuta.</strong> Todos los scripts están en la raíz y se lanzan
+como <code>python3 ft_x.py</code> desde ahí; esa carpeta es la que entra en
+<code>sys.path</code>. Probar a ejecutar un módulo interno suelto es la forma más rápida de
+ver por qué falla un import relativo.</li>
+<li><strong>Dos <code>elements.py</code>.</strong> El de la raíz y el de
+<code>alchemy/</code> se llaman igual; la ruta del import decide cuál se carga. Conviene
+tener claro cuál ve cada fichero.</li>
+<li><strong>Lo que <code>__init__.py</code> expone.</strong> En <code>ft_alembic_4</code>
+el fallo de <code>create_earth</code> es parte del enunciado: si la exportas «por
+comodidad», el ejercicio deja de demostrar lo que pide.</li>
+<li><strong>flake8 y mypy en los <code>__init__.py</code>.</strong> El enunciado ya avisa
+de que aparecerán avisos y pide resolverlos «según las convenciones habituales»; saber
+explicar cuál usas y por qué forma parte de la defensa. Los únicos errores admitidos a
+propósito son el de mypy de <code>ft_alembic_4</code>.</li>
+<li><strong>Nada de <code>sys.path</code>.</strong> Está prohibido modificarlo, y solo se
+pueden importar módulos creados en el propio proyecto.</li>
+<li><strong>Las cuatro preguntas.</strong> La evaluación puede pedir explicar los
+mecanismos de import, demostrar estilos distintos o modificar el laboratorio en directo: el
+enunciado insiste en entender, no solo en que funcione.</li>
+</ul>
+</div>
+
+<h2 id="nexus">Bloque 2 — Module 06 bis: Code Nexus</h2>
+
+<div class="trasfondo"><b>De las clases a la arquitectura</b> — En 2087, en un Neo-Tokio de
+fibra cuántica, un sistema recibe flujos de datos de tipos muy distintos y tiene que tratarlos
+con el mismo código. El enunciado tiene dos movimientos. Los ejercicios 0–2 son los
+cimientos: una jerarquía abstracta con <code>abc.ABC</code>, un flujo que reparte cada dato a
+quien sepa procesarlo (polimorfismo de subtipos) y un sistema de plugins basado en
+<code>typing.Protocol</code> (tipado estructural, el «duck typing» comprobado por mypy). Los
+ejercicios 3–4 son la arquitectura: un arenero de combate donde se aprenden tres patrones
+del libro de la «Banda de los Cuatro» (<em>Design Patterns</em>, 1994) y de la práctica
+diaria: la <em>factoría abstracta</em>, las <em>capacidades</em> como clases abstractas
+aparte y la <em>estrategia</em>. Solo se pueden importar <code>abc</code> y
+<code>typing</code>, y el enunciado pide que la gestión de excepciones proteja los flujos
+de datos.</div>
+
+<p>Árbol final: <code>data_processor.py</code>, <code>data_stream.py</code> y
+<code>data_pipeline.py</code> sueltos en la raíz (cada uno mejora el anterior); los paquetes
+<code>ex3/</code> y <code>ex4/</code>, cada uno con su <code>__init__.py</code> obligatorio;
+y los scripts de prueba <code>battle.py</code>, <code>capacitor.py</code> y
+<code>tournament.py</code>, también en la raíz.</p>
+
+<div class="card" id="nexus-ex0">
+<h2><span class="ex">ex0</span>data_processor</h2>
+<div class="meta"><span>Entrega: <b>data_processor.py</b></span><span>Autorizado: <b>builtins, tipos estándar, typing, abc</b></span></div>
+<p>Una clase abstracta <code>DataProcessor</code> (hereda de <code>ABC</code>) con dos
+métodos abstractos y uno normal, y tres subclases: <code>NumericProcessor</code>,
+<code>TextProcessor</code> y <code>LogProcessor</code>.</p>
+<ul>
+<li><code>validate(self, data: Any) -&gt; bool</code>: dice si el procesador puede con ese
+dato. Las subclases mantienen <em>la misma</em> firma, porque no saben qué les llegará.</li>
+<li><code>ingest(self, data: Any) -&gt; None</code>: procesa el dato. Aquí las subclases
+<em>sí</em> cambian la firma para reflejar los tipos que aceptan, y si alguien llama a
+<code>ingest</code> con un dato inválido sin validar antes, se lanza una excepción.</li>
+<li><code>output(self) -&gt; tuple[int, str]</code>: método común, sin redefinir, que saca
+el dato más antiguo almacenado junto con su número de orden en ese procesador, y lo
+elimina.</li>
+</ul>
+<p>El numérico acepta <code>int</code>, <code>float</code> y listas de ambos (mezclados
+incluidos); el de texto, <code>str</code> y listas de cadenas; el de logs, diccionarios de
+cadena a cadena y listas de ellos. Todos guardan cada elemento por separado, como texto. La
+prueba debe crear los tres, validar datos buenos y malos, forzar al menos una ingesta
+inválida sin validar (que deja un aviso de mypy a propósito) e ir extrayendo con
+<code>output</code>.</p>
+<p>La sintaxis general de una clase abstracta:</p>
+<pre><code>from abc import ABC, abstractmethod
+
+class Forma(ABC):
+    @abstractmethod
+    def area(self) -&gt; float: ...</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué impide de verdad una clase
+abstracta: no puedes instanciar <code>DataProcessor</code> ni una subclase que olvide
+implementar algún método abstracto; Python lo comprueba al crear el objeto. Y una sutileza
+de tipos que mypy vigila: estrechar los parámetros de un método redefinido (aceptar
+<em>menos</em> que el padre) rompe el principio de sustitución de Liskov. El enunciado te
+hace hacerlo a propósito en <code>ingest</code> y mantenerlo en <code>validate</code>, para
+que veas la diferencia. Y una cola FIFO: lo primero que entra es lo primero que sale.</div>
+</div>
+
+<div class="card" id="nexus-ex1">
+<h2><span class="ex">ex1</span>data_stream</h2>
+<div class="meta"><span>Entrega: <b>data_stream.py</b></span><span>Autorizado: <b>builtins, tipos estándar, typing, abc</b></span></div>
+<p>Partiendo del ex0, una clase <code>DataStream</code> con tres métodos de firma
+impuesta:</p>
+<ul>
+<li><code>register_processor(self, proc: DataProcessor) -&gt; None</code>: añade un
+procesador.</li>
+<li><code>process_stream(self, stream: list[typing.Any]) -&gt; None</code>: recorre la
+lista y manda cada elemento al procesador registrado que pueda con él; si ninguno puede,
+imprime un mensaje de error.</li>
+<li><code>print_processors_stats(self) -&gt; None</code>: total procesado y pendiente por
+procesador.</li>
+</ul>
+<p>La prueba registra al principio solo el numérico, de modo que textos y logs dan error;
+luego registra los demás, reenvía el lote, consume algunos elementos y vuelve a mostrar
+estadísticas.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La pregunta del enunciado:
+¿cómo puede <code>DataStream</code> manejar tipos distintos sin conocer sus
+implementaciones? Porque solo habla con la interfaz de <code>DataProcessor</code>
+(<code>validate</code>, <code>ingest</code>, <code>output</code>) y cada objeto responde a
+su manera. Añadir un procesador nuevo no obliga a tocar <code>DataStream</code>: eso es el
+principio abierto/cerrado en la práctica.</div>
+</div>
+
+<div class="card" id="nexus-ex2">
+<h2><span class="ex">ex2</span>data_pipeline</h2>
+<div class="meta"><span>Entrega: <b>data_pipeline.py</b></span><span>Autorizado: <b>builtins, tipos estándar, typing, abc</b></span></div>
+<p>Ahora la salida. Una clase <code>ExportPlugin</code> que hereda de <code>Protocol</code>
+y fija un único método:
+<code>process_output(self, data: list[tuple[int, str]]) -&gt; None</code> (la lista de
+tuplas coincide con lo que devuelve <code>output</code>). <code>DataStream</code> gana
+<code>output_pipeline(self, nb: int, plugin: ExportPlugin) -&gt; None</code>, que consume
+<code>nb</code> elementos de cada procesador registrado y los pasa al plugin. Hay que
+crear al menos un plugin CSV y uno JSON, generando el texto a mano, sin importar módulos
+para ello.</p>
+<pre><code>from typing import Protocol
+
+class Volador(Protocol):
+    def volar(self) -&gt; None: ...   # cualquier clase con volar() encaja, sin heredar</code></pre>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La pregunta con la que cierra el
+ejercicio: <code>DataProcessor</code> es una ABC y <code>ExportPlugin</code> un
+<code>Protocol</code>; los dos imponen qué debe tener una clase, pero de forma distinta. La
+ABC es <em>nominal</em>: hay que heredar de ella explícitamente. El Protocol es
+<em>estructural</em>: cualquier clase con el método adecuado lo cumple, aunque no sepa que
+existe, y es mypy quien lo comprueba. Para un sistema de plugins eso es oro: un tercero
+puede escribir un exportador sin depender de tu código. Y de paso, que CSV y JSON tienen
+reglas de formato (comas, comillas, escapes) que conviene respetar cuando los generas a
+mano.</div>
+</div>
+
+<div class="card" id="nexus-ex3">
+<h2><span class="ex">ex3</span>Entity Factories and Capabilities</h2>
+<div class="meta"><span>Entrega: <b>battle.py</b>, <b>capacitor.py</b>, <b>ex3/</b> como paquete</span><span>Autorizado: <b>builtins, tipos estándar, typing, abc</b></span></div>
+<p>Dentro de <code>ex3/</code>:</p>
+<ul>
+<li><code>Creature</code> (ABC) con nombre y tipo, un método abstracto
+<code>attack</code> y un método concreto <code>describe</code> que devuelve un mensaje
+estándar con nombre y tipo.</li>
+<li>Dos criaturas simples: <code>Flameling</code> y <code>Pyrodon</code>.</li>
+<li><code>TransformCapability</code> (ABC) con <code>transform</code> y
+<code>revert</code> abstractos, que <em>no</em> hereda de <code>Creature</code>. Un
+atributo guarda si está transformada y cambia lo que devuelve <code>attack</code>.</li>
+<li>Dos criaturas que heredan de las dos: <code>Shiftling</code> y
+<code>Morphagon</code>.</li>
+<li><code>CreatureFactory</code> (ABC) con <code>create_base</code> y
+<code>create_evolved</code>, y dos factorías concretas: <code>FlameFactory</code>
+(Flameling/Pyrodon) y <code>TransformCreatureFactory</code> (Shiftling/Morphagon).</li>
+<li>El paquete solo expone las factorías, nunca las criaturas concretas.</li>
+</ul>
+<p>Los nombres pueden cambiar si se mantienen los patrones. <code>battle.py</code> prueba
+cada factoría con una función que crea base y evolucionada, las describe y ataca, y otra que
+enfrenta las bases de dos factorías. <code>capacitor.py</code> recorre describir, atacar,
+transformar, atacar otra vez y revertir.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos preguntas que una jerarquía
+sola no responde. <em>Quién crea los objetos</em>: con una factoría abstracta el código que
+usa criaturas nunca nombra la clase concreta, solo pide «la base» o «la evolucionada» de una
+familia. <em>Cómo dar una habilidad a algunos tipos</em> sin imponérsela a todos: una clase
+abstracta aparte combinada por herencia múltiple (lo que en otros lenguajes sería una
+interfaz o un <em>mixin</em>). La pregunta del enunciado: ¿qué se rompería si
+<code>transform</code> y <code>revert</code> estuvieran en <code>Creature</code>?</div>
+</div>
+
+<div class="card" id="nexus-ex4">
+<h2><span class="ex">ex4</span>Abstract Strategy</h2>
+<div class="meta"><span>Entrega: <b>tournament.py</b>, <b>ex4/</b> como paquete</span><span>Autorizado: <b>builtins, tipos estándar, typing, abc</b></span></div>
+<p>En <code>ex4/</code>, una ABC <code>BattleStrategy</code> con <code>act</code> e
+<code>is_valid</code> abstractos (<code>is_valid</code> dice si una criatura sirve para esa
+estrategia; <code>act</code> lo llama el torneo) y al menos dos estrategias:
+<code>NormalStrategy</code>, válida para cualquiera, que solo ataca, y
+<code>AggressiveStrategy</code>, para criaturas con la capacidad de transformarse, que
+transforma, ataca y revierte. Si se llama a <code>act</code> con una criatura no válida, se
+lanza una excepción propia con un mensaje claro. Las estrategias comprueban
+<em>capacidades</em> con <code>isinstance</code>, nunca la familia concreta.</p>
+<p><code>tournament.py</code> crea factorías del ex3 y estrategias, y define una única
+función de combate que recibe una lista de rivales —tuplas de
+<code>(CreatureFactory, BattleStrategy)</code>—, enfrenta a cada uno con todos los demás una
+vez y aborta el torneo ante una pareja criatura-estrategia inválida.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El patrón estrategia: sacar el
+«cómo se comporta» a un objeto intercambiable. El torneo no pregunta nunca a qué familia
+pertenece cada criatura y aun así cada una pelea distinto: la decisión se ha mudado a la
+estrategia. El día que aparezca una capacidad nueva, se añade una estrategia y el torneo no
+cambia. También practica crear tu propia clase de excepción y recorrer todas las parejas de
+una lista sin repetir combates.</div>
+</div>
+
+<div class="card" id="nexus-trampas">
+<h2>Puntos delicados del Code Nexus</h2>
+<ul>
+<li><strong>Las firmas son literales.</strong> El enunciado da las firmas exactas de
+<code>validate</code>, <code>ingest</code>, <code>output</code>,
+<code>register_processor</code>, <code>process_stream</code>,
+<code>print_processors_stats</code>, <code>process_output</code> y
+<code>output_pipeline</code>.</li>
+<li><strong><code>bool</code> es un <code>int</code>.</strong> <code>isinstance(True,
+int)</code> da <code>True</code>; al validar datos numéricos merece la pena decidir qué
+hacer con los booleanos y saber explicarlo.</li>
+<li><strong>Listas vacías y mezcladas.</strong> El numérico acepta listas mixtas de
+<code>int</code> y <code>float</code>; una lista con un intruso no debería colarse a
+medias.</li>
+<li><strong>mypy a propósito.</strong> El único aviso admitido es el de la ingesta inválida
+del ex0; el resto debe pasar limpio.</li>
+<li><strong>Qué expone cada paquete.</strong> <code>ex3</code> solo debe ofrecer factorías;
+es justo lo que el Module 06 clásico enseña con <code>__init__.py</code>.</li>
+<li><strong>En la evaluación</strong> pueden pedirte explicar el polimorfismo, demostrar la
+redefinición de métodos o ampliar el sistema en directo con un tipo de dato, una familia o
+una estrategia nuevos, y justificar para qué existe cada patrón.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2>Fuente</h2>
+<ul>
+<li>Module 06, «The Codex — Mastering Python’s Import Mysteries», versión 2.0:
+<code>packs/cursus/M2/208_Python_Module_06/en.subject.pdf</code> (texto en
+<code>subject.txt</code>).</li>
+<li>Module 06 bis, «Code Nexus — Abstract Architecture, from Data Streams to Battle
+Strategies», versión 1.0: <code>packs/cursus/M2/208_Python_Module_06/bis.en.subject.pdf</code>
+(texto en <code>subject_bis.txt</code>).</li>
+</ul>
+<p>Los dos enunciados solo existen en inglés. Slugs de la intra:
+<code>python-module-06</code> y <code>python-module-06-bis</code>.</p>
+</div>
+
+<footer>42.zenidx.com — Python Module 06 · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>

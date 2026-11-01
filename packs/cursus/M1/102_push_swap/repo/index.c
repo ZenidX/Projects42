@@ -6,7 +6,7 @@
 /*   By: xalara <zenid77@gmail.com>                 +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/25 01:38:51 by xalara            #+#    #+#             */
-/*   Updated: 2026/10/25 01:38:51 by xalara           ###   ########.fr       */
+/*   Updated: 2026/11/01 13:00:00 by xalara           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,9 +31,9 @@
 /*
 ** Copia la pila a un array. Hace falta porque normalize() va pisando los
 ** content con los rangos y cada rango se tiene que calcular con los
-** valores originales.
+** valores originales. Tambien la usa sort_low para calcular la LIS.
 */
-static int	*copy_values(t_ps *ps)
+int	*copy_values(t_ps *ps)
 {
 	int		*vals;
 	t_list	*n;

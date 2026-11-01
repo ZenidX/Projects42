@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Born2beroot — 42.zenidx.com</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="../index.html">42.zenidx.com</a>
+    <nav>
+      <a href="../index.html">Inicio</a>
+      <a href="../index.html#piscine">Piscine</a>
+      <a href="../index.html#cursus" class="active">Cursus</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>Cursus — Born2beroot <span class="tag">pendiente</span></h1>
+<p class="sub">Montar a mano tu primer servidor Linux en una máquina virtual, sin interfaz
+gráfica y con reglas de seguridad estrictas. Proyecto de administración de sistemas del
+rank 02. <strong>Aún no está hecho</strong>: esta ficha explica qué pide el enunciado; se
+ampliará con la configuración real cuando esté terminado.</p>
+
+<ul class="toc">
+  <li><a href="#pide">01 — Qué pide</a></li>
+  <li><a href="#vm">02 — La máquina virtual y el sistema</a></li>
+  <li><a href="#particiones">03 — Particiones cifradas con LVM</a></li>
+  <li><a href="#red">04 — SSH y cortafuegos</a></li>
+  <li><a href="#usuarios">05 — Usuarios, contraseñas y sudo</a></li>
+  <li><a href="#monitoring">06 — monitoring.sh</a></li>
+  <li><a href="#readme">07 — README y entrega</a></li>
+  <li><a href="#bonus">08 — Bonus</a></li>
+  <li><a href="#delicados">09 — Puntos delicados</a></li>
+  <li><a href="#fuente">10 — Fuente</a></li>
+</ul>
+
+<div class="trasfondo"><b>De qué va el proyecto</b> — Hasta ahora el sistema operativo
+venía dado: los Mac o los Ubuntu del campus, ya instalados y administrados por otros. Aquí
+te toca el otro lado: instalar un Linux desde cero en <strong>VirtualBox</strong> (o UTM si
+no puedes usar VirtualBox) y dejarlo como un servidor de verdad: solo la consola, un único
+puerto abierto, acceso remoto por SSH, contraseñas que caducan y un <code>sudo</code> que lo
+registra todo. No se entrega código: se entrega la <em>huella</em> del disco virtual, y en
+la evaluación se arranca tu máquina y se comprueba que cumple las reglas, que puedes
+modificarla en directo (cambiar el hostname, crear un usuario) y, sobre todo, que entiendes
+lo que has configurado. El nombre es un juego de palabras con <em>born to be wild</em>:
+<code>root</code> es el superusuario de Unix, el que lo puede todo.
+<br><br>La virtualización es la base de casi toda la informática actual: los servidores en
+la nube son máquinas virtuales sobre un hipervisor, y los contenedores (que llegarán con
+Inception en el rank 05) son la versión ligera de la misma idea. Aprender a instalar y
+blindar una máquina a mano es lo que luego permite entender qué automatizan esas
+herramientas.</div>
+
+<div class="card" id="pide">
+<h2><span class="ex">01</span>Qué pide</h2>
+<div class="meta"><span>Rank: <b>02</b></span><span>Entorno: <b>VirtualBox / UTM · Debian o Rocky · bash</b></span><span>Individual/grupo: <b>no lo indica el enunciado</b></span><span>Entrega: <b>signature.txt + README.md</b></span></div>
+<p>El enunciado (versión 5.2, slug <code>42next-born2beroot</code>) pide, en resumen:</p>
+<ul>
+  <li>Una máquina virtual con la última versión estable de <b>Debian</b> (recomendada si
+  empiezas) o de <b>Rocky</b>, sin ningún servidor gráfico: instalar X.org, Wayland o
+  equivalente es un 0 directo.</li>
+  <li>Al menos <b>dos particiones cifradas con LVM</b>.</li>
+  <li><b>AppArmor</b> (Debian) o <b>SELinux</b> (Rocky) activo desde el arranque.</li>
+  <li>Un servicio <b>SSH en el puerto 4242</b>, sin posibilidad de entrar como root.</li>
+  <li>Cortafuegos <b>UFW</b> (o firewalld en Rocky) activo al arrancar, con solo el
+  puerto 4242 abierto.</li>
+  <li>Hostname = tu login terminado en <code>42</code>; un usuario con tu login en los
+  grupos <code>user42</code> y <code>sudo</code>.</li>
+  <li>Una política de contraseñas fuerte y un <code>sudo</code> con reglas estrictas.</li>
+  <li>Un script <code>monitoring.sh</code> en bash que muestre el estado del servidor en
+  todas las terminales al arrancar y cada 10 minutos.</li>
+  <li>Un <code>README.md</code> con comparativas razonadas y un
+  <code>signature.txt</code> con el SHA-1 del disco virtual.</li>
+</ul>
+</div>
+
+<div class="card" id="vm">
+<h2><span class="ex">02</span>La máquina virtual y el sistema</h2>
+<p>Debian o Rocky, siempre la versión estable (nada de <em>testing</em> ni
+<em>unstable</em>). El enunciado avisa de que Rocky es bastante más complicado: no hace falta
+configurar KDump, pero SELinux debe estar en marcha y adaptado a lo que pide el proyecto. En
+Debian, el equivalente es AppArmor, también activo al arrancar.</p>
+<p>En la evaluación te preguntarán por el sistema que elegiste: el propio enunciado pone como
+ejemplo la diferencia entre <code>aptitude</code> y <code>apt</code>, o qué son SELinux y
+AppArmor. «En resumen: entiende lo que usas».</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es un hipervisor y qué
+significa que un ordenador «falso» crea tener su propio disco, CPU y tarjeta de red. Y las
+dos grandes familias de Linux de servidor: Debian (paquetes <code>.deb</code>,
+<code>apt</code>, comunidad) y la rama Red Hat, de la que Rocky es un clon libre nacido en
+2020 cuando CentOS dejó de ser una versión estable de RHEL (paquetes <code>.rpm</code>,
+<code>dnf</code>). AppArmor y SELinux son sistemas de <em>control de acceso obligatorio</em>
+(MAC): por encima de los permisos de usuario de siempre, limitan qué puede tocar cada
+programa aunque se ejecute como root. AppArmor lo hace con perfiles por ruta de fichero;
+SELinux, desarrollado originalmente por la NSA, etiqueta cada fichero y proceso y decide con
+reglas sobre esas etiquetas.</div>
+</div>
+
+<div class="card" id="particiones">
+<h2><span class="ex">03</span>Particiones cifradas con LVM</h2>
+<p>Mínimo dos particiones cifradas usando LVM. El enunciado enseña un ejemplo de
+<code>lsblk</code>: una partición <code>/boot</code> sin cifrar y otra cifrada que, una vez
+abierta, contiene un grupo de volúmenes LVM con volúmenes lógicos para <code>/</code>, swap y
+<code>/home</code>. Los tamaños del ejemplo son arbitrarios: te toca decidir cuánto necesita
+cada uno para que todo funcione sin desperdiciar disco.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Tres capas que en un ordenador
+de escritorio no se ven. <b>Particiones</b>: cómo se reparte un disco (y por qué
+<code>/boot</code> se queda fuera del cifrado: el cargador de arranque tiene que poder leer
+el núcleo antes de que nadie haya escrito la clave). <b>Cifrado</b> con LUKS/dm-crypt: el
+disco entero es ruido sin la frase de paso, y el sistema la pide al arrancar.
+<b>LVM</b> (<em>Logical Volume Manager</em>): una capa entre el disco y los sistemas de
+ficheros que agrupa espacio físico en «grupos de volúmenes» y lo reparte en «volúmenes
+lógicos» que se pueden ampliar o mover sin reparticionar. Es lo que permite que un servidor
+crezca sin apagarse.</div>
+</div>
+
+<div class="card" id="red">
+<h2><span class="ex">04</span>SSH y cortafuegos</h2>
+<p>Un servidor SSH escuchando en el <b>puerto 4242</b> (no en el 22 habitual), y prohibido
+entrar por SSH como root. En la evaluación se prueba creando una cuenta nueva y conectándose
+con ella, así que hay que entender cómo funciona.</p>
+<p>El cortafuegos, UFW en Debian o firewalld en Rocky, debe estar activo al arrancar la
+máquina y dejar abierto <b>solo el 4242</b>. El enunciado muestra cómo comprobarlo, por
+ejemplo, con <code>ss -tunlp</code> (qué está escuchando y en qué puerto) y con el estado del
+cortafuegos.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — SSH (<em>Secure Shell</em>,
+1995) sustituyó a telnet y rlogin, que enviaban contraseñas en claro por la red; hoy es la
+forma estándar de administrar cualquier servidor. Prohibir el login directo de root obliga a
+entrar como un usuario normal y escalar con <code>sudo</code>, que deja rastro de quién hizo
+qué. Cambiar el puerto no es seguridad de verdad, pero quita de en medio a los robots que
+barren el 22. El cortafuegos aplica la regla de «denegar todo salvo lo necesario»: UFW
+(<em>Uncomplicated Firewall</em>) y firewalld son capas amigables sobre el filtrado de
+paquetes del núcleo (netfilter). Y como la máquina está detrás del NAT de VirtualBox, para
+conectar desde el anfitrión tendrás que entender la redirección de puertos.</div>
+</div>
+
+<div class="card" id="usuarios">
+<h2><span class="ex">05</span>Usuarios, contraseñas y sudo</h2>
+<p><b>Usuarios.</b> Además de root, un usuario con tu login, miembro de <code>user42</code>
+y <code>sudo</code>. En la evaluación tendrás que crear otro usuario y meterlo en un grupo,
+y cambiar el hostname.</p>
+<p><b>Política de contraseñas</b>, según el enunciado:</p>
+<ul>
+  <li>caducan cada 30 días; mínimo 2 días entre cambios; aviso 7 días antes de caducar;</li>
+  <li>al menos 10 caracteres, con una mayúscula, una minúscula y un número, y nunca más de
+  3 caracteres idénticos seguidos;</li>
+  <li>no pueden contener el nombre del usuario;</li>
+  <li>al menos 7 caracteres que no estuvieran en la contraseña anterior (esta regla no se
+  aplica a root);</li>
+  <li>la contraseña de root también cumple la política.</li>
+</ul>
+<p>Ojo a la nota del enunciado: después de configurarlo todo, hay que <b>cambiar las
+contraseñas de todas las cuentas</b>, root incluido, porque las reglas solo se aplican a las
+contraseñas nuevas.</p>
+<p><b>sudo</b>, según el enunciado:</p>
+<ul>
+  <li>como máximo 3 intentos si la contraseña es incorrecta;</li>
+  <li>un mensaje personalizado al fallar la contraseña;</li>
+  <li>cada acción con sudo registrada, entrada y salida, en <code>/var/log/sudo/</code>;</li>
+  <li>modo TTY activado;</li>
+  <li>rutas utilizables por sudo restringidas (el enunciado da como ejemplo
+  <code>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin</code>).</li>
+</ul>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Cómo guarda Unix los usuarios
+(<code>/etc/passwd</code>, <code>/etc/shadow</code>, <code>/etc/group</code>) y que las
+reglas de contraseñas viven en dos sitios distintos: la caducidad, ligada a cada cuenta, y
+la «calidad» de la contraseña, que comprueba <b>PAM</b> (<em>Pluggable Authentication
+Modules</em>) en el momento de cambiarla. Herramientas como <code>chage</code> sirven para
+ver y cambiar la caducidad de una cuenta concreta. Y <code>sudo</code>: ejecutar una orden
+como otro usuario (normalmente root) sin compartir la contraseña de root, con un fichero de
+reglas que se edita siempre con <code>visudo</code>, que comprueba la sintaxis antes de
+guardar — un <code>sudoers</code> roto te puede dejar sin forma de ser root. El modo TTY
+impide usar sudo desde procesos sin terminal, como algunos scripts lanzados de forma
+remota.</div>
+</div>
+
+<div class="card" id="monitoring">
+<h2><span class="ex">06</span>monitoring.sh</h2>
+<p>Un script en <b>bash</b> que, al arrancar el servidor y luego cada <b>10 minutos</b>,
+muestre en <b>todas las terminales</b> (el enunciado sugiere mirar <code>wall</code>) esta
+información, sin que aparezca ningún error:</p>
+<ul>
+  <li>arquitectura del sistema y versión del núcleo;</li>
+  <li>número de procesadores físicos y de procesadores virtuales;</li>
+  <li>RAM disponible y su porcentaje de uso;</li>
+  <li>almacenamiento disponible y su porcentaje de uso;</li>
+  <li>porcentaje de uso de CPU;</li>
+  <li>fecha y hora del último arranque;</li>
+  <li>si LVM está activo o no;</li>
+  <li>número de conexiones activas y de usuarios conectados;</li>
+  <li>dirección IPv4 y dirección MAC;</li>
+  <li>número de órdenes ejecutadas con sudo.</li>
+</ul>
+<p>El enunciado trae un ejemplo de salida con el formato de un mensaje de difusión
+(«Broadcast message from root…»), con líneas como <code>#Memory Usage: 74/987MB (7.50%)</code>
+o <code>#LVM use: yes</code>. El banner es opcional. En la evaluación tendrás que explicar
+cómo funciona el script e <b>interrumpirlo sin modificarlo</b>; la pista del enunciado es
+«mira <code>cron</code>».</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dónde guarda Linux la
+información del sistema: casi todo sale de ficheros virtuales en <code>/proc</code> y
+<code>/sys</code>, que no existen en disco sino que el núcleo genera al leerlos (lo mismo
+que hacen por dentro <code>free</code>, <code>df</code>, <code>uptime</code> o
+<code>lscpu</code>). Después, encadenar herramientas con pipes y filtrar con
+<code>grep</code>/<code>awk</code>, lo que empezó en Shell 01. Y <b>cron</b>, el
+planificador de tareas de Unix desde los años 70: una tabla con cinco campos (minuto, hora,
+día, mes, día de la semana) que dice cuándo ejecutar qué.</div>
+<p>La forma general de una línea de cron:</p>
+<pre><code># ┌ minuto  ┌ hora  ┌ día del mes  ┌ mes  ┌ día de la semana
+#  *         *       *              *      *     orden</code></pre>
+<p>Lo que se programe ahí, y cómo se consigue lo de «al arrancar», es parte del proyecto.</p>
+</div>
+
+<div class="card" id="readme">
+<h2><span class="ex">07</span>README y entrega</h2>
+<p>Solo se entregan dos ficheros en la raíz del repositorio:</p>
+<ul>
+  <li><b>README.md</b>, con la primera línea en cursiva («This project has been created as
+  part of the 42 curriculum by &lt;login&gt;»), las secciones Description, Instructions y
+  Resources (incluido cómo se ha usado la IA) y, específico de este proyecto, una
+  descripción que justifique la elección de sistema, las decisiones de diseño (particiones,
+  políticas de seguridad, gestión de usuarios, servicios) y cuatro comparativas:
+  <b>Debian vs Rocky</b>, <b>AppArmor vs SELinux</b>, <b>UFW vs firewalld</b> y
+  <b>VirtualBox vs UTM</b>.</li>
+  <li><b>signature.txt</b>, con el SHA-1 del disco virtual (<code>.vdi</code>, o
+  <code>.qcow2</code> en UTM), obtenido por ejemplo con <code>sha1sum</code> en Linux.</li>
+</ul>
+<p>La máquina virtual en sí está <b>prohibida</b> en el repositorio. En la defensa se
+compara la firma con la del disco: si no coinciden, un 0.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es un hash: una huella de
+tamaño fijo que cambia por completo si cambia un solo bit del fichero. Por eso arrancar la
+máquina una sola vez altera la firma (el sistema escribe logs, actualiza fechas…), y el
+enunciado sugiere duplicar el disco o usar instantáneas para poder evaluar varias veces.</div>
+</div>
+
+<div class="card" id="bonus">
+<h2><span class="ex">08</span>Bonus</h2>
+<p>Solo se evalúa si la parte obligatoria está perfecta. El enunciado propone:</p>
+<ul>
+  <li>Un particionado más completo, con volúmenes separados para <code>/var</code>,
+  <code>/srv</code>, <code>/tmp</code> y <code>/var/log</code> además de los básicos
+  (el enunciado da otro <code>lsblk</code> de ejemplo, con tamaños arbitrarios).</li>
+  <li>Un WordPress funcionando con <b>lighttpd</b>, <b>MariaDB</b> y <b>PHP</b>.</li>
+  <li>Un servicio útil a tu elección, que habrá que justificar (NGINX y Apache2
+  excluidos).</li>
+</ul>
+<p>Para los servicios extra se pueden abrir más puertos, adaptando las reglas del
+cortafuegos.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Por qué se separa
+<code>/var/log</code> o <code>/tmp</code> en volúmenes propios: si un log se descontrola y
+llena su volumen, el resto del sistema sigue funcionando. Y la pila clásica de una web
+dinámica: servidor web, intérprete del lenguaje y base de datos, cada uno como servicio
+independiente.</div>
+</div>
+
+<div class="card" id="delicados">
+<h2><span class="ex">09</span>Puntos delicados</h2>
+<ul>
+  <li><b>Instantáneas.</b> No puede haber ninguna al empezar cada evaluación; durante la
+  defensa se crea una y se borra al final. Conviene practicar con ellas antes de entregar.</li>
+  <li><b>La firma.</b> Cualquier arranque cambia el SHA-1 del disco. Firma, cierra y no
+  vuelvas a arrancar esa copia sin un plan (duplicado o instantánea).</li>
+  <li><b>Contraseñas antiguas.</b> Las reglas nuevas no se aplican a las cuentas que ya
+  existían: hay que cambiar todas las contraseñas, root incluido, y las caducidades de las
+  cuentas creadas antes de configurar la política.</li>
+  <li><b>Interfaz gráfica.</b> Ni siquiera «por comodidad durante la instalación»: un
+  servidor gráfico instalado es un 0.</li>
+  <li><b>monitoring.sh sin errores.</b> Ningún mensaje de error puede llegar a las
+  terminales, y hay que saber pararlo sin tocar el script.</li>
+  <li><b>Modificaciones en directo.</b> Cambiar el hostname, crear un usuario y añadirlo a
+  un grupo, conectarse por SSH con la cuenta nueva: todo eso se pide en la evaluación, y el
+  enunciado avisa de que puede pedirse alguna modificación breve más.</li>
+  <li><b>Explicar, no recitar.</b> El enunciado insiste: qué es LVM, qué hace AppArmor o
+  SELinux, apt frente a aptitude, por qué no root por SSH… Las preguntas son conceptuales.</li>
+</ul>
+</div>
+
+<div class="card" id="fuente">
+<h2><span class="ex">10</span>Fuente</h2>
+<p>Enunciado oficial <b>Born2beRoot, versión 5.2</b> (slug <code>42next-born2beroot</code>),
+en inglés: <code>packs/cursus/M2/200_Born2beroot/en.subject.pdf</code> y su extracción en
+texto <code>subject.txt</code>. Los ejemplos de particionado y de comprobación (capturas de
+<code>lsblk</code>, <code>ss</code>, <code>ufw</code>, <code>sestatus</code>) están como
+imagen en el PDF. El contexto del rank sale de <code>ref/42cursus.md</code>. El trasfondo
+histórico y técnico (LUKS, PAM, cron, Rocky/CentOS) es conocimiento general, no del
+enunciado.</p>
+</div>
+
+<footer>42.zenidx.com — Born2beroot · <a href="../index.html#cursus">← volver al cursus</a></footer>
+</div>
+</body>
+</html>
