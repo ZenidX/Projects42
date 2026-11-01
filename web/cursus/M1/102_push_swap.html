@@ -1441,6 +1441,27 @@ números queda por encima de los chunks. Por eso la adaptativa no lo usa para to
 <div class="card" id="medium">
 <h2><span class="ex">10</span>--medium: chunks, la "mariposa", O(n√n)</h2>
 <div class="meta"><span>Fichero: <b>sort_medium.c</b></span><span>Funciones: <b>sort_medium, push_chunks, isqrt</b></span></div>
+<p><b>La idea en una frase:</b> meter todo en b <em>medio ordenado</em> y luego sacar siempre el
+mayor, que estará cerca de la cima o del fondo. Son dos fases:</p>
+<ol>
+<li><b>Ida, de a a b</b> (<code>push_chunks</code>). Se recorre a con una ventana de rangos
+<code>[0, i + range]</code>, donde <code>i</code> es cuántos van ya en b y <code>range</code> ≈
+1.5·√n. Por cada cima <code>v</code> de a:
+<table>
+<tr><th>Condición</th><th>Qué significa</th><th>Acción</th></tr>
+<tr><td><code>v &gt; i + range</code></td><td>demasiado grande para meterlo todavía</td><td><code>ra</code> y mirar el siguiente</td></tr>
+<tr><td><code>i &lt; v &lt;= i + range</code></td><td>está en la ventana</td><td><code>pb</code>: se queda arriba de b</td></tr>
+<tr><td><code>v &lt;= i</code></td><td>en la ventana y ya pequeño para el momento</td><td><code>pb</code> + <code>rb</code>: al fondo de b</td></tr>
+</table>
+Cada <code>pb</code> sube <code>i</code>, así que la ventana se desliza: no hay bloques fijos.</li>
+<li><b>Vuelta, de b a a.</b> Con a vacía, b tiene exactamente los rangos
+<code>0..tamaño-1</code>, así que el mayor es siempre <code>tamaño - 1</code>: se sube por el
+camino corto y <code>pa</code>. Como salen de mayor a menor, a se construye ordenada desde
+abajo (<code>8</code>, <code>7 8</code>, <code>6 7 8</code>…).</li>
+</ol>
+<p>La primera fase deja b con forma de <b>mariposa</b>: los grandes cerca de los dos extremos y
+los pequeños en el centro (en la traza de abajo, <code>8 6 7 · 3 1 0 2 · 4 5</code>). Gracias a eso,
+en la segunda fase el mayor siempre está a una o dos rotaciones de la cima.</p>
 <p>Primera fase: pasar todo a b por tramos de unos 1.5·√n rangos.</p>
 <pre><code>static void	push_chunks(t_ps *ps, int range)
 {
