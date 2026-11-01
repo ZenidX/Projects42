@@ -40,6 +40,7 @@ según lo desordenada que llegue la lista.</p>
   <li><a href="#low">11 — sort_low: LIS + inserción</a></li>
   <li><a href="#adaptive">12 — --adaptive</a></li>
   <li><a href="#bench">13 — --bench</a></li>
+  <li><a href="#cortes">14 — Rendimiento frente a los cortes</a></li>
 </ul>
 
 <div class="trasfondo"><b>De qué va el proyecto</b> — Te dan una pila <code>a</code> con enteros
@@ -2875,6 +2876,69 @@ separado: datos por un canal, diagnóstico por otro, y una tubería (<code>| ./c
 que solo ve los datos. Y <a href="#g-punto-fijo">aritmética de punto fijo</a>: escalar por 10000, redondear sumando la mitad
 del divisor y partir el resultado con <code>/</code> y <code>%</code>, la misma técnica con la que
 se manejan céntimos en software financiero para no fiarse de la <a href="#g-coma-flotante">coma flotante</a>.</div>
+</div>
+
+<div class="card" id="cortes">
+<h2><span class="ex">14</span>Rendimiento frente a los cortes</h2>
+<div class="meta"><span>Probado con: <b>extra/checker_linux</b></span><span>Fecha: <b>01-11-2026</b></span></div>
+<p>El enunciado fija cuántas operaciones se permiten con 100 y 500 números aleatorios, y en la
+evaluación se comprueba con el <code>checker</code> que se da como recurso del proyecto:</p>
+<table>
+<tr><th>Números</th><th>Pasa (mínimo)</th><th>Bueno</th><th>Excelente</th></tr>
+<tr><td>100</td><td>&lt; 2000</td><td>&lt; 1500</td><td>&lt; 700</td></tr>
+<tr><td>500</td><td>&lt; 12000</td><td>&lt; 8000</td><td>&lt; 5500</td></tr>
+</table>
+<p>Lo que saca este push_swap con cada estrategia: 20 entradas aleatorias por tamaño (semillas
+fijas, valores en todo el rango de <code>int</code>), todas con <code>OK</code> del checker. El nivel
+se cuenta con el <b>peor caso</b>, no con la media:</p>
+<table>
+<tr><th>Estrategia</th><th>100: media</th><th>100: peor</th><th>Nivel</th><th>500: media</th><th>500: peor</th><th>Nivel</th></tr>
+<tr><td><code>--simple</code></td><td>1448</td><td>1619</td><td>pasa</td><td>31984</td><td>33629</td><td><b>no pasa</b></td></tr>
+<tr><td><code>--medium</code></td><td>580</td><td>602</td><td>excelente</td><td>5038</td><td>5132</td><td>excelente</td></tr>
+<tr><td><code>--complex</code></td><td>1084</td><td>1084</td><td>bueno</td><td>6784</td><td>6784</td><td>bueno</td></tr>
+<tr><td><b>sin flag</b> (<code>--adaptive</code>)</td><td>858</td><td>1084</td><td>bueno</td><td>5813</td><td>6784</td><td>bueno</td></tr>
+</table>
+<p>Cómo leerla:</p>
+<ul>
+<li><b>Sin flag es lo que cuenta.</b> Con entradas aleatorias el desorden ronda el 50 %, así que la
+adaptativa elige unas veces <code>sort_medium</code> (desorden &lt; 0.5) y otras el radix (≥ 0.5).
+Cuando cae en el radix sale exactamente 1084 o 6784, y eso la deja en «bueno».</li>
+<li><b><code>--medium</code> es la mejor de las cuatro</b> con entradas aleatorias: excelente en los
+dos tamaños.</li>
+<li><b><code>--complex</code> siempre da la misma cifra</b> para un tamaño dado, porque el radix hace
+sus pasadas completas sea cual sea la entrada.</li>
+<li><b>Que <code>--simple</code> no pase con 500 es lo esperado</b> de un <a href="#g-o-n2">O(n²)</a>:
+es la estrategia de referencia, no la que se entrega por defecto.</li>
+</ul>
+<details id="cortes-pequenos">
+<summary>Entradas pequeñas y casi ordenadas</summary>
+<p>El enunciado no pone cortes para listas cortas, pero en las evaluaciones se suelen probar a mano.
+Peor caso de todas las permutaciones posibles, con todas dando <code>OK</code>:</p>
+<table>
+<tr><th>Peor caso</th><th>n = 2</th><th>n = 3</th><th>n = 4</th><th>n = 5</th></tr>
+<tr><td><code>--simple</code></td><td>3</td><td>6</td><td>10</td><td>14</td></tr>
+<tr><td><code>--medium</code></td><td>5</td><td>12</td><td>13</td><td>20</td></tr>
+<tr><td><code>--complex</code></td><td>3</td><td>10</td><td>12</td><td>25</td></tr>
+<tr><td>sin flag</td><td>3</td><td>10</td><td>13</td><td>25</td></tr>
+</table>
+<p>Como referencia, 2 números se ordenan siempre con 1 operación como mucho (<code>sa</code>), 3 con 2
+como mucho, y en las evaluaciones con 5 se suele esperar 12 o menos. Ninguna estrategia trata aparte
+las listas cortas ni usa <code>sa</code>, y ahí se nota.</p>
+<p>Casi ordenadas (vecinos intercambiados en <code>0..n-1</code>), sin flag:</p>
+<pre><code>100 números, 1 intercambio     104 operaciones
+100 números, 5 intercambios    154
+100 números, 25 intercambios   196
+500 números, 1 intercambio     504
+500 números, 5 intercambios    808
+500 números, 25 intercambios   1000</code></pre>
+<p>Es el régimen de <code>sort_low</code>: muy por debajo del radix, pero un solo intercambio
+cuesta unas n operaciones, porque <code>push_non_lis</code> recorre a con <code>ra</code> hasta el
+elemento descolocado.</p>
+</details>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A medir en vez de suponer: la
+complejidad dice cómo crece el coste, pero los cortes se ganan o se pierden por las constantes, como
+el 1.5·√n de los tramos. Y a mirar el peor caso además de la media, porque en la evaluación sale una
+entrada concreta, no la media de veinte.</div>
 </div>
 
 <footer>42.zenidx.com — push_swap · <a href="../../index.html#cursus">volver al cursus →</a></footer>
