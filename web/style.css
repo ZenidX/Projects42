@@ -101,3 +101,22 @@ footer { margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--bord
 .toc { font-size: .92rem; columns: 2; margin-bottom: 1rem; }
 @media (max-width: 640px) { .toc { columns: 1; } }
 .tag.pend { background: var(--border); color: var(--muted); }
+details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  margin: 1rem 0;
+  padding: 0 1.1rem;
+}
+details summary {
+  cursor: pointer;
+  padding: .7rem 0;
+  color: var(--accent);
+  font-weight: 600;
+  list-style: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::before { content: "▸ "; display: inline-block; width: 1.1em; }
+details[open] summary::before { content: "▾ "; }
+details[open] { padding-bottom: .4rem; }
+details[open] summary { border-bottom: 1px dashed var(--border); margin-bottom: .8rem; }
