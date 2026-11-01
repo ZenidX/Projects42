@@ -41,6 +41,7 @@ según lo desordenada que llegue la lista.</p>
   <li><a href="#adaptive">12 — --adaptive</a></li>
   <li><a href="#bench">13 — --bench</a></li>
   <li><a href="#cortes">14 — Rendimiento frente a los cortes</a></li>
+  <li><a href="#preguntas">15 — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>De qué va el proyecto</b> — Te dan una pila <code>a</code> con enteros
@@ -2939,6 +2940,160 @@ elemento descolocado.</p>
 complejidad dice cómo crece el coste, pero los cortes se ganan o se pierden por las constantes, como
 el 1.5·√n de los tramos. Y a mirar el peor caso además de la media, porque en la evaluación sale una
 entrada concreta, no la media de veinte.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">15</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: diseño, algoritmos, entrada y errores, y puntos
+débiles. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Diseño</h3>
+<details id="q-rangos">
+<summary>¿Por qué cambias los números por su rango antes de ordenar?</summary>
+<p>Porque el orden relativo no cambia, así que ordenar los rangos <code>0..n-1</code> es ordenar los
+números, y a cambio todo es más sencillo: «el menor que queda» es el siguiente rango
+(<code>--simple</code>), «los k menores» son <code>0..k-1</code> (<code>--medium</code>), y el radix
+puede leer los bits de números pequeños y no negativos (<code>--complex</code>). De paso,
+<code>normalize</code> detecta los duplicados. → <a href="#rangos">05</a></p>
+</details>
+<details id="q-listas">
+<summary>¿Por qué listas enlazadas y no arrays?</summary>
+<p>Las pilas son <code>t_list</code> de la libft, que ya estaba hecha y probada. <code>pa</code>/<code>pb</code>
+y <code>sa</code>/<code>sb</code> son O(1) porque solo mueven punteros o intercambian contents.
+<code>ra</code> y <code>rra</code> recorren la lista hasta el final y cuestan O(n) de CPU, pero eso
+no importa: el proyecto puntúa el número de operaciones, no el tiempo. → <a href="#datos">01</a>,
+<a href="#ops">02</a></p>
+</details>
+<details id="q-desorden">
+<summary>¿Cómo calculas el desorden y por qué no usas float?</summary>
+<p>Para cada par <code>(i, j)</code> con <code>i</code> antes que <code>j</code> se suma 1 a
+<code>pairs</code>, y si <code>a[i] &gt; a[j]</code>, 1 a <code>mistakes</code>. El desorden es
+<code>mistakes / pairs</code>. Para comparar con 0.2 y 0.5 se multiplica en lugar de dividir
+(<code>mistakes * 5 &lt; pairs</code>), y para imprimirlo con dos decimales se escala por 10000.
+Todo con enteros: exacto y sin depender de la <a href="#g-coma-flotante">coma flotante</a>.
+→ <a href="#desorden">06</a>, <a href="#bench">13</a></p>
+</details>
+<details id="q-stderr">
+<summary>¿Por qué <code>--bench</code> escribe por stderr?</summary>
+<p>Porque el checker lee stdout y solo acepta nombres de operaciones. Si el informe saliera por
+stdout, <code>./push_swap --bench … | ./checker_linux …</code> daría <code>Error</code>. Por stderr
+se ve en pantalla y la tubería solo recibe las operaciones. → <a href="#bench">13</a></p>
+</details>
+
+<h3>Algoritmos</h3>
+<details id="q-adaptive">
+<summary>Sin flag, ¿qué algoritmo se ejecuta?</summary>
+<p>El que toca según el desorden medido antes de mover nada: menos de 0.2, <code>sort_low</code>
+(LIS + inserción, O(n) cuando hay poco desorden); menos de 0.5, <code>sort_medium</code> (chunks,
+O(n√n)); a partir de 0.5, <code>sort_complex</code> (radix, O(n log n)). Si ya está ordenada,
+nada. → <a href="#adaptive">12</a>, <a href="#fn-disorder_regime">disorder_regime</a></p>
+</details>
+<details id="q-medium">
+<summary>Explícame <code>--medium</code>. ¿Por qué es O(n√n)?</summary>
+<p>Ida: se pasan los números a b con una ventana de rangos <code>[0, i + range]</code> que se
+desliza con cada <code>pb</code> (range ≈ 1.5·√n); los que ya son pequeños para el momento bajan al
+fondo con <code>rb</code>, y b queda en forma de mariposa. Vuelta: el mayor de b es siempre
+<code>tamaño - 1</code>; se sube por el camino corto y <code>pa</code>. Cada número espera como mucho
+el ancho de la ventana (unas √n rotaciones), y son n números: n·√n. → <a href="#medium">10</a></p>
+</details>
+<details id="q-radix">
+<summary>¿Por qué el radix siempre hace 1084 operaciones con 100 números?</summary>
+<p>Porque no mira la entrada: hace una pasada por cada bit del mayor rango (99 tiene 7 bits, así
+que son 7 pasadas), y en cada una recorre a entera (100 <code>ra</code> o <code>pb</code>) y
+devuelve con <code>pa</code> los que mandó a b. Lo único que cambia con la entrada es cuántos van a
+b en cada pasada, y con rangos <code>0..n-1</code> eso también está fijado. Funciona porque es
+<a href="#g-estable">estable</a>. → <a href="#complex">09</a>, <a href="#bits">&gt;&gt; y &amp; 1</a></p>
+</details>
+<details id="q-lis">
+<summary>¿Qué es la LIS y por qué sirve cuando hay poco desorden?</summary>
+<p>La subsecuencia creciente más larga: el mayor grupo de números que ya están en orden entre sí,
+aunque no estén seguidos. Esos se dejan quietos, se sacan a b los demás (pocos, si hay poco
+desorden) y se reinsertan uno a uno en su hueco. Con <code>0 1 3 2 4</code> la LIS es
+<code>0 1 2 4</code> o <code>0 1 3 4</code>, y solo hay que mover un número.
+→ <a href="#low">11</a>, <a href="#fn-lis_keep">lis_keep</a></p>
+</details>
+<details id="q-rotar">
+<summary>¿Cómo decides entre <code>ra</code> y <code>rra</code>?</summary>
+<p>Por el camino más corto: si el elemento está en la mitad de arriba (<code>pos &lt;= size / 2</code>),
+<code>ra</code> <code>pos</code> veces; si no, <code>rra</code> <code>size - pos</code> veces. Nunca
+cuesta más de <code>size / 2</code>. → <a href="#fn-rotate_to_top">rotate_to_top</a></p>
+</details>
+
+<h3>Entrada y errores</h3>
+<details id="q-errores">
+<summary>¿Qué entradas dan <code>Error</code>?</summary>
+<p>Un argumento que no es un número entero (<code>abc</code>, <code>-</code>, <code>+</code>,
+<code>1.5</code>), un número fuera del rango de <code>int</code> (<code>2147483648</code>), un
+duplicado, un argumento vacío o solo con espacios (<code>""</code>), un flag desconocido
+(<code>--simplex</code>, <code>--</code>) y dos flags de estrategia. Siempre <code>Error\n</code>
+por stderr y nada por stdout. Sin argumentos, o con solo flags, no se imprime nada.
+→ <a href="#parseo">04</a></p>
+</details>
+<details id="q-duplicados">
+<summary>¿<code>1 01</code> y <code>-0 0</code> son duplicados?</summary>
+<p>Sí. Los duplicados se comparan por valor, después de convertir: <code>01</code> vale 1 y
+<code>-0</code> vale 0. Se detectan en <code>rank_of</code>, al normalizar. → <a href="#fn-rank_of">rank_of</a></p>
+</details>
+<details id="q-overflow">
+<summary>¿Cómo detectas que un número no cabe en un <code>int</code>?</summary>
+<p><code>to_int</code> acumula en un <code>long</code> y comprueba el rango <em>después de cada
+dígito</em>, así que corta en cuanto se pasa y el <code>long</code> nunca llega a desbordar.
+<code>-2147483648</code> es válido y <code>2147483648</code> no. → <a href="#fn-to_int">to_int</a></p>
+</details>
+<details id="q-varios">
+<summary>¿Puedo pasar los números en un solo argumento, o mezclar flags y números?</summary>
+<p>Sí a las dos cosas. <code>"3 2 1"</code> vale lo mismo que <code>3 2 1</code>, porque cada
+argumento se parte por espacios. Los flags pueden ir en cualquier posición, pero cada uno tiene que
+ser un argumento propio: <code>"1 --bench"</code> es un número mal escrito. Ojo: el separador es
+solo el espacio, así que un tabulador da <code>Error</code>. → <a href="#fn-add_words">add_words</a></p>
+</details>
+<details id="q-leaks">
+<summary>¿Hay leaks? ¿Qué pasa si falla un malloc?</summary>
+<p>Al acabar, <code>free_ps</code> libera las dos pilas (los nodos y el <code>int*</code> de cada uno),
+también al salir por error. Valgrind no da fugas. Si falla un malloc, la función devuelve 0 hasta
+<code>main</code> y se sale por <code>error_exit</code>, así que se imprime <code>Error</code>, igual
+que con una entrada inválida. → <a href="#fn-error_exit">error_exit</a>,
+<a href="#fn-free_ps">free_ps</a></p>
+</details>
+
+<h3>Puntos débiles (mejor tener la respuesta preparada)</h3>
+<details id="q-pequenos">
+<summary>¿Por qué <code>3 2 1</code> tarda 10 operaciones si con <code>sa</code> + <code>rra</code> bastan 2?</summary>
+<p>Porque ninguna estrategia trata aparte las listas cortas: <code>3 2 1</code> tiene un 100 % de
+desorden y va al radix, que hace sus pasadas completas. Lo mismo con <code>2 1</code> (3 operaciones
+en vez de 1) y con 5 números (hasta 25). Respuesta honesta: es una mejora pendiente, un caso
+especial para 2, 3 y 5 números antes de elegir estrategia. → <a href="#cortes-pequenos">14</a></p>
+</details>
+<details id="q-sa">
+<summary>¿Por qué nunca usas <code>sa</code>, <code>rr</code> ni <code>rrr</code>?</summary>
+<p>Las funciones existen y funcionan, pero ningún algoritmo las llama: en <code>--bench</code> esos
+contadores salen siempre a 0. Se podrían aprovechar con <code>sa</code> en las listas cortas y en
+<code>sort_low</code> (dos vecinos cambiados se arreglan con una operación), y con <code>rr</code>/<code>rrr</code>
+cuando a y b tienen que rotar en el mismo sentido. → <a href="#ops">02</a></p>
+</details>
+<details id="q-excelente">
+<summary>¿Por qué sin flag sacas «bueno» y no «excelente» si <code>--medium</code> llega?</summary>
+<p>Con entradas aleatorias el desorden ronda 0.5, y cuando pasa de 0.5 la adaptativa elige el radix
+(1084 / 6784 operaciones). Es la elección que pide el enunciado, que asocia cada régimen a una clase
+de complejidad. Mandar también el régimen alto a <code>sort_medium</code> daría excelente.
+→ <a href="#cortes">14</a></p>
+</details>
+<details id="q-bench-mal">
+<summary>¿Qué estrategia dice <code>--bench</code> con un solo número?</summary>
+<p>«Adaptive / O(n log n)», aunque no se ejecuta ninguna: con un número, <code>pairs</code> es 0 y
+<code>disorder_regime</code> devuelve el régimen alto. Con una lista ya ordenada dice
+«Adaptive / O(n)». <code>put_strategy</code> recalcula el régimen sin saber si se llegó a ordenar
+algo. → <a href="#fn-put_strategy">put_strategy</a></p>
+</details>
+
+<h3>Sobre el trabajo</h3>
+<details id="q-pareja">
+<summary>Es un proyecto en pareja: ¿qué hizo cada uno?</summary>
+<p>Esta te la tienes que preparar tú. En la evaluación cualquiera de los dos puede tener que explicar
+cualquier parte del código, también la que escribió el otro. Si os piden un cambio en directo, los
+candidatos naturales son el caso especial de 3 números o cambiar el umbral de la adaptativa.</p>
+</details>
 </div>
 
 <footer>42.zenidx.com — push_swap · <a href="../../index.html#cursus">volver al cursus →</a></footer>
