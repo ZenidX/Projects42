@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ construyen, a mano, las piezas que en cualquier lenguaje moderno se llaman <code
 resuelto con una tabla de funciones.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_foreach</a></li>
   <li><a href="#ex01">ex01 — ft_map</a></li>
   <li><a href="#ex02">ex02 — ft_any</a></li>
@@ -34,6 +37,7 @@ resuelto con una tabla de funciones.</p>
   <li><a href="#ex05">ex05 — do-op</a></li>
   <li><a href="#ex06">ex06 — ft_sort_string_tab</a></li>
   <li><a href="#ex07">ex07 — ft_advanced_sort_string_tab</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>La idea que atraviesa el módulo</b> — Hasta aquí una función era algo que
@@ -42,6 +46,219 @@ mete en un array, se pasa como argumento. La sintaxis <code>void (*f)(int)</code
 una función que toma un <code>int</code> y no devuelve nada». En cuanto lo tienes, puedes escribir
 código que decide <em>qué</em> hacer sin saber <em>cómo</em> se hace: eso es la genericidad, y es la
 base de los <em>callbacks</em>, de <code>qsort</code> y de cualquier <em>event loop</em>.</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 11 trae vocabulario nuevo: funciones que se pasan como datos, predicados, comparadores y tablas
+de funciones. Aquí está cada término explicado desde cero y con un ejemplo sacado del propio módulo.
+En el resto de la página, la primera vez que sale uno de estos términos en cada tarjeta lleva un
+enlace a su entrada.</p>
+
+<h3>Funciones como valores</h3>
+<details id="g-puntero-funcion">
+<summary>Puntero a función</summary>
+<p>El código de una función compilada vive en memoria igual que los datos, así que tiene una
+dirección. Un <em>puntero a función</em> es una variable que guarda esa dirección. Con él puedes
+llamar a la función sin escribir su nombre: la decides en tiempo de ejecución, no al escribir el
+código.</p>
+<p>En C el nombre de una función, usado sin paréntesis, ya es su dirección. Por eso el enunciado de
+ex00 escribe <code>ft_foreach(tab, 1337, &amp;ft_putnbr)</code>, pero
+<code>ft_foreach(tab, 1337, ft_putnbr)</code> es exactamente lo mismo. Y dentro,
+<code>f(tab[i])</code> y <code>(*f)(tab[i])</code> también son equivalentes: el compilador acepta
+las dos formas.</p>
+</details>
+<details id="g-leer-declaracion">
+<summary>Cómo leer <code>int (*f)(int, int)</code></summary>
+<p>Se lee desde el nombre hacia fuera: <code>f</code> es… <code>(*f)</code> un puntero… a una
+función que recibe <code>(int, int)</code>… y devuelve <code>int</code>. Los paréntesis alrededor
+de <code>*f</code> son obligatorios: sin ellos, <code>int *f(int, int)</code> declara una
+<em>función</em> llamada <code>f</code> que devuelve un <code>int *</code>, que es otra cosa.</p>
+<p>En el módulo salen cuatro formas: <code>void (*f)(int)</code> (ex00, no devuelve nada),
+<code>int (*f)(int)</code> (ex01, devuelve el valor transformado), <code>int (*f)(char *)</code>
+(ex02 y ex03, responde sí o no sobre una cadena) e <code>int (*cmp)(char *, char *)</code> (ex07,
+compara dos cadenas). El tipo del puntero tiene que coincidir con el de la función que le pasas: a
+<code>ft_foreach</code> no le puedes dar una función que reciba un <code>char *</code>.</p>
+</details>
+<details id="g-callback">
+<summary>Callback (función de retrollamada)</summary>
+<p>Una función que tú le das a otra para que <em>ella</em> la llame cuando toque. Tú no decides
+cuándo se ejecuta ni con qué argumento: eso lo decide la función que la recibe. El nombre viene del
+inglés <em>call back</em>, «devolver la llamada».</p>
+<p>En C 11 todos los <code>f</code> y <code>cmp</code> son callbacks. <code>ft_foreach</code> no sabe
+qué hace <code>f</code>; solo la llama una vez por elemento, en orden. Con un <code>f</code> que
+imprime, imprime la tabla; con uno que suma en una variable global, la suma.</p>
+</details>
+<details id="g-orden-superior">
+<summary>Función de orden superior: map, filter, any</summary>
+<p>Una función que recibe otra función como argumento (o la devuelve). Los lenguajes modernos traen
+varias hechas, y C 11 te hace escribir sus equivalentes:</p>
+<table>
+<tr><th>Ejercicio</th><th>Qué hace</th><th>En Python</th></tr>
+<tr><td><code>ft_foreach</code></td><td>aplica <code>f</code> a cada elemento</td><td><code>for x in tab: f(x)</code></td></tr>
+<tr><td><code>ft_map</code></td><td>tabla nueva con <code>f(x)</code> de cada uno</td><td><code>map(f, tab)</code></td></tr>
+<tr><td><code>ft_any</code></td><td>¿alguno cumple <code>f</code>?</td><td><code>any(map(f, tab))</code></td></tr>
+<tr><td><code>ft_count_if</code></td><td>cuántos cumplen <code>f</code></td><td><code>sum(1 for x in tab if f(x))</code></td></tr>
+<tr><td><code>ft_advanced_sort_string_tab</code></td><td>ordena según <code>cmp</code></td><td><code>sorted(tab, key=…)</code></td></tr>
+</table>
+</details>
+<details id="g-predicado">
+<summary>Predicado</summary>
+<p>Una función que responde sí o no sobre un elemento. En C no hay tipo booleano en la piscine, así
+que el convenio es: 0 es «no» y cualquier otro valor es «sí». Fíjate en que el enunciado de ex02 no
+dice «devuelve 1», dice «devuelve algo diferente de 0».</p>
+<p>Es el <code>f</code> de <code>ft_any</code> y <code>ft_count_if</code>. Un predicado posible:
+«la cadena empieza por mayúscula». Con <code>{"hola", "Adiós", "Sí", NULL}</code>,
+<code>ft_any</code> devuelve 1 al llegar a <code>"Adiós"</code> y <code>ft_count_if</code> con
+<code>length</code> 3 devuelve 2.</p>
+</details>
+<details id="g-comparador">
+<summary>Comparador y convenio de signo</summary>
+<p>Una función que recibe dos elementos y dice cómo están entre sí con el <em>signo</em> de lo que
+devuelve: negativo si el primero va antes, 0 si son iguales y positivo si el primero va después. No
+importa el valor exacto, solo el signo: <code>strcmp</code> puede devolver −1 o −32 y significa lo
+mismo.</p>
+<p>Es el <code>f</code> de <code>ft_is_sort</code> y el <code>cmp</code> de ex07. Para enteros, el
+comparador más corto es <code>return (a - b);</code>, que vale para números pequeños pero puede
+desbordar con valores extremos (<code>INT_MIN - 1</code>); el seguro es
+<code>return ((a &gt; b) - (a &lt; b));</code>.</p>
+</details>
+<details id="g-dispatch">
+<summary>Tabla de punteros a función (dispatcher)</summary>
+<p>Un array cuyos elementos son punteros a función, a menudo emparejados con una clave. En vez de
+escribir un <code>if</code> por caso, se busca la clave en la tabla y se llama a la función que la
+acompaña. Repartir así el trabajo según una clave se llama <em>dispatch</em>.</p>
+<p>Es lo que pide do-op: la tabla <code>ops[]</code> tiene cinco filas como
+<code>{"+", &amp;ft_add}</code>, y el bucle compara el operador con cada <code>sym</code> hasta dar
+con el bueno. Si ninguno coincide, se devuelve 0, que es justo lo que pide el enunciado para un
+operador desconocido.</p>
+</details>
+<details id="g-typedef-struct">
+<summary><code>struct</code> y <code>typedef</code></summary>
+<p>Un <code>struct</code> agrupa varias variables de tipos distintos bajo un nombre:
+<code>t_op</code> junta un <code>char *sym</code> y un <code>int (*f)(int, int)</code>. Se accede a
+cada campo con un punto: <code>ops[i].sym</code>, <code>ops[i].f</code>. Un <code>typedef</code> le da
+un nombre corto al tipo, para escribir <code>t_op</code> en vez de <code>struct s_op</code>.</p>
+<p>La Norma fija los nombres: los <code>struct</code> empiezan por <code>s_</code> y los
+<code>typedef</code> por <code>t_</code>. Lo mismo verás en C 12 con <code>t_list</code>.</p>
+</details>
+
+<h3>Tablas y memoria</h3>
+<details id="g-tabla-cadenas">
+<summary><code>char **</code>: una tabla de cadenas</summary>
+<p>Una cadena en C es un <code>char *</code>: la dirección de su primer carácter. Una tabla de
+cadenas es entonces un array de <code>char *</code>, y su dirección es un <code>char **</code>.
+<code>tab[i]</code> es la cadena i (un <code>char *</code>) y <code>tab[i][0]</code> su primer
+carácter.</p>
+<p>Lo importante para ex06 y ex07: la tabla solo guarda <em>direcciones</em>. Las letras están en
+otro sitio. Por eso intercambiar <code>tab[i]</code> y <code>tab[i + 1]</code> cambia el orden de las
+cadenas sin mover ni una letra.</p>
+</details>
+<details id="g-centinela">
+<summary>Tabla terminada en <code>NULL</code> frente a tabla con <code>length</code></summary>
+<p>Una función que recibe una tabla tiene que saber dónde acaba. Hay dos formas: que le pasen el
+tamaño (<code>length</code>), o que el último elemento sea un valor especial que marca el final, un
+<em>centinela</em>. Para tablas de punteros el centinela es <code>NULL</code>, igual que el
+<code>'\0'</code> lo es para las cadenas.</p>
+<p>El módulo usa las dos: <code>ft_count_if</code> recibe <code>length</code> y recorre con
+<code>i &lt; length</code>; <code>ft_any</code>, <code>ft_sort_string_tab</code> y
+<code>ft_advanced_sort_string_tab</code> no lo reciben y paran en <code>while (tab[i])</code>. Si
+alguien te pasa una tabla sin el <code>NULL</code> final, el bucle sigue leyendo memoria que no es
+suya.</p>
+</details>
+<details id="g-malloc">
+<summary><code>malloc</code>, el heap y quién libera</summary>
+<p><code>malloc(n)</code> pide n bytes al sistema en el <em>heap</em>, una zona de memoria que no
+desaparece al salir de la función, y devuelve su dirección, o <code>NULL</code> si no hay memoria.
+Lo que se reserva con <code>malloc</code> se queda reservado hasta que alguien llama a
+<code>free</code> con esa dirección; si nadie lo hace, es una fuga de memoria (<em>leak</em>).</p>
+<p><code>ft_map</code> tiene que usar <code>malloc</code> porque devuelve una tabla nueva: un array
+local (<code>int res[length]</code>) moriría al hacer <code>return</code>. Reserva
+<code>sizeof(int) * length</code> bytes, comprueba el <code>NULL</code> y devuelve la tabla. El
+<code>free</code> no es suyo: lo hará quien la reciba cuando ya no la use.</p>
+</details>
+
+<h3>Algoritmos y comportamiento</h3>
+<details id="g-cortocircuito">
+<summary>Cortocircuito (salir en cuanto se sabe)</summary>
+<p>Dejar de trabajar en cuanto el resultado ya está decidido. Los operadores <code>&amp;&amp;</code>
+y <code>||</code> de C lo hacen solos: en <code>a || b</code>, si <code>a</code> es cierto,
+<code>b</code> ni se evalúa.</p>
+<p><code>ft_any</code> lo hace a mano con el <code>return (1)</code> dentro del bucle: si el primer
+elemento cumple <code>f</code>, el resto no se mira. <code>ft_count_if</code> no puede hacerlo, porque
+para contar hay que verlos todos. En el peor caso los dos recorren la tabla entera.</p>
+</details>
+<details id="g-burbuja">
+<summary>Ordenación por intercambio de vecinos (burbuja)</summary>
+<p>Se comparan dos vecinos y, si están al revés, se intercambian. Repitiendo eso hasta que no quede
+ninguna pareja al revés, la tabla queda ordenada. Es el método de la burbuja: fácil de escribir y de
+razonar, pero lento con tablas grandes, porque hace del orden de n² comparaciones.</p>
+<p>El fragmento de ex06 es una variante: tras cada intercambio vuelve a <code>i = 0</code> y empieza
+de nuevo. Es correcto (solo termina cuando recorre la tabla sin encontrar ninguna pareja al revés),
+aunque más lento que la burbuja clásica, que sigue avanzando después de intercambiar.</p>
+</details>
+<details id="g-ascii">
+<summary>Orden ASCII y <code>strcmp</code></summary>
+<p>Cada carácter es un número (su código ASCII): <code>'A'</code> es 65, <code>'Z'</code> 90,
+<code>'a'</code> 97. Ordenar «por código ASCII» es comparar las cadenas carácter a carácter con esos
+números, que es lo que hace <code>strcmp</code>: avanza mientras sean iguales y devuelve la diferencia
+del primer carácter distinto.</p>
+<p>Consecuencias que sorprenden: todas las mayúsculas van antes que todas las minúsculas
+(<code>"Zorro"</code> antes que <code>"abeja"</code>), las cifras antes que las letras, y una cadena va
+antes que las que la continúan (<code>"ab"</code> antes que <code>"abc"</code>, porque su
+<code>'\0'</code> vale 0).</p>
+</details>
+<details id="g-qsort">
+<summary><code>qsort</code></summary>
+<p>La función de ordenación de la biblioteca estándar de C (<code>&lt;stdlib.h&gt;</code>). Ordena
+cualquier array porque no sabe qué hay dentro: recibe la dirección, cuántos elementos hay, cuánto
+mide cada uno y un comparador con el convenio de signo de siempre. No se puede usar en la piscine,
+pero su diseño es el de ex07: el algoritmo es fijo y el criterio llega de fuera.</p>
+</details>
+
+<h3>El programa do-op</h3>
+<details id="g-argv">
+<summary><code>argc</code> y <code>argv</code></summary>
+<p>Los argumentos de <code>main(int argc, char **argv)</code>. <code>argc</code> cuenta las palabras de
+la línea de órdenes, incluido el nombre del programa, y <code>argv</code> es la tabla de esas
+palabras como cadenas, terminada en <code>NULL</code>. Con <code>./do-op 42 "+" 21</code>,
+<code>argc</code> vale 4 y <code>argv[2]</code> es <code>"+"</code>.</p>
+<p>Por eso la primera comprobación de do-op es <code>argc != 4</code>: entonces no se muestra nada.
+Y como todo llega como texto, <code>"42"</code> hay que convertirlo a número a mano.</p>
+</details>
+<details id="g-atoi">
+<summary><code>atoi</code> tolerante</summary>
+<p>El <code>ft_atoi</code> de C 04 convierte texto en <code>int</code> con unas reglas fijas: se salta
+los espacios iniciales, lee cualquier cantidad de <code>+</code> y <code>-</code> (cada
+<code>-</code> cambia el signo), lee cifras y se para en el primer carácter que no lo sea, sin dar
+error.</p>
+<p>Con esas reglas salen los ejemplos del enunciado: <code>42amis</code> vale 42,
+<code>--+-20toto12</code> vale −20 (tres <code>-</code>, impar, negativo), y <code>toto3</code> vale 0
+porque no empieza por cifra. Por eso <code>./do-op 1 + toto3</code> da <code>1</code>.</p>
+</details>
+<details id="g-sigfpe">
+<summary>División por cero y <code>SIGFPE</code></summary>
+<p>Dividir un entero entre 0 en C es <em>comportamiento indefinido</em>: el lenguaje no dice qué pasa.
+En los Linux de 42 (procesadores x86) el procesador lo detecta y el sistema mata el programa con la
+señal <code>SIGFPE</code> (<em>floating point exception</em>, aunque no haya ningún float). Lo mismo
+con <code>%</code>.</p>
+<p>No hay forma de «capturar» el error después con un <code>if</code>: cuando se ejecuta la división
+ya es tarde. Por eso do-op mira <code>b == 0</code> <em>antes</em> de llamar a la función y escribe
+<code>Stop : division by zero</code> o <code>Stop : modulo by zero</code>. Hay un segundo caso que
+también da <code>SIGFPE</code>: <code>-2147483648 / -1</code>, porque el resultado no cabe en un
+<code>int</code>. Compilado con <code>cc</code>, ese programa termina con código 136 (128 + 8, el
+número de <code>SIGFPE</code>).</p>
+</details>
+<details id="g-makefile">
+<summary>Makefile</summary>
+<p>Un archivo de reglas para <code>make</code>: qué se construye, a partir de qué archivos y con qué
+orden. <code>make</code> solo recompila lo que ha cambiado. Las reglas habituales en 42 son
+<code>all</code>, <code>clean</code> (borra los <code>.o</code>), <code>fclean</code> (borra también el
+ejecutable) y <code>re</code>.</p>
+<p>En ex05 el enunciado no da lista de archivos («todos los necesarios») y su ejemplo de prueba
+empieza con <code>make clean</code> y <code>make</code>: la Moulinette compila do-op con tu Makefile,
+así que tiene que existir y producir un ejecutable que se llame exactamente <code>do-op</code>.</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_foreach</h2>
@@ -61,7 +278,7 @@ base de los <em>callbacks</em>, de <code>qsort</code> y de cualquier <em>event l
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el bucle y la acción son cosas separables.
 <code>ft_foreach</code> es el bucle; <code>f</code> es la acción, y llega de fuera. El mismo recorrido
 sirve para imprimir, para sumar o para lo que sea, sin tocar <code>ft_foreach</code>. Es el patrón
-<em>iterador + callback</em> en su forma más pura.</div>
+<em>iterador + <a href="#g-callback">callback</a></em> en su forma más pura.</div>
 </div>
 
 <div class="card" id="ex01">
@@ -86,8 +303,8 @@ nueva que se retorna.</p>
 	return (res);
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre <em>transformar en el sitio</em>
-y <em>producir algo nuevo</em>. <code>map</code> no toca la tabla original: reserva memoria y devuelve
-otra. Aparece aquí la responsabilidad del <code>malloc</code> (comprobar el <code>NULL</code>) y la
+y <em>producir algo nuevo</em>. <a href="#g-orden-superior"><code>map</code></a> no toca la tabla original: reserva memoria y devuelve
+otra. Aparece aquí la responsabilidad del <a href="#g-malloc"><code>malloc</code></a> (comprobar el <code>NULL</code>) y la
 regla implícita: quien reserva, avisa; el <code>free</code> lo hará quien reciba la tabla.</div>
 </div>
 
@@ -95,7 +312,7 @@ regla implícita: quien reserva, avisa; el <code>free</code> lo hará quien reci
 <h2><span class="ex">ex02</span>ft_any</h2>
 <div class="meta"><span>Entregable: <b>ft_any.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
 <p>Devuelve 1 si <em>algún</em> elemento hace que <code>f</code> devuelva algo distinto de 0. La tabla
-acaba en <code>NULL</code>.</p>
+<a href="#g-centinela">acaba en</a> <code>NULL</code>.</p>
 <pre><code>int	ft_any(char **tab, int (*f)(char *))
 {
 	int	i;
@@ -109,16 +326,16 @@ acaba en <code>NULL</code>.</p>
 	}
 	return (0);
 }</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — <code>f</code> aquí es un <em>predicado</em>: una
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <code>f</code> aquí es un <em><a href="#g-predicado">predicado</a></em>: una
 función que responde sí/no sobre un elemento. Y el <code>return (1)</code> en cuanto encuentra uno es
-la <em>evaluación en cortocircuito</em>: no hace falta mirar el resto. Es exactamente el
-<code>any()</code> de Python o el <code>some()</code> de JavaScript.</div>
+la <em>evaluación en <a href="#g-cortocircuito">cortocircuito</a></em>: no hace falta mirar el resto. Es exactamente el
+<a href="#g-orden-superior"><code>any()</code></a> de Python o el <code>some()</code> de JavaScript.</div>
 </div>
 
 <div class="card" id="ex03">
 <h2><span class="ex">ex03</span>ft_count_if</h2>
 <div class="meta"><span>Entregable: <b>ft_count_if.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Cuenta cuántos elementos cumplen el predicado <code>f</code>.</p>
+<p>Cuenta cuántos elementos cumplen el <a href="#g-predicado">predicado</a> <code>f</code>.</p>
 <pre><code>int	ft_count_if(char **tab, int length, int (*f)(char *))
 {
 	int	i;
@@ -135,7 +352,7 @@ la <em>evaluación en cortocircuito</em>: no hace falta mirar el resto. Es exact
 	return (count);
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El mismo predicado de <code>ft_any</code>, pero
-ahora sin cortocircuito: hay que recorrerlo entero. Es la pareja <em>filtrar + contar</em>. Cambiando
+ahora sin <a href="#g-cortocircuito">cortocircuito</a>: hay que recorrerlo entero. Es la pareja <em>filtrar + contar</em>. Cambiando
 solo la función que pasas, la misma rutina cuenta pares, positivos o palabras que empiezan por vocal:
 la lógica del recuento no sabe nada del criterio.</div>
 </div>
@@ -143,7 +360,7 @@ la lógica del recuento no sabe nada del criterio.</div>
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>ft_is_sort</h2>
 <div class="meta"><span>Entregable: <b>ft_is_sort.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Devuelve 1 si la tabla está ordenada según el comparador <code>f</code> (negativo si el primero es
+<p>Devuelve 1 si la tabla está ordenada según el <a href="#g-comparador">comparador</a> <code>f</code> (negativo si el primero es
 menor, 0 si iguales, positivo si mayor).</p>
 <pre><code>int	ft_is_sort(int *tab, int length, int (*f)(int, int))
 {
@@ -164,19 +381,19 @@ menor, 0 si iguales, positivo si mayor).</p>
 	}
 	return (up || down);
 }</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Aquí <code>f</code> no es un predicado sino un
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Aquí <code>f</code> no es un <a href="#g-predicado">predicado</a> sino un
 <em>comparador</em>: no dice sí/no, dice «menor, igual o mayor», con el mismo convenio de signo que
-<code>strcmp</code>. Y una decisión de diseño: «ordenada» debería valer tanto para ascendente como
+<a href="#g-ascii"><code>strcmp</code></a>. Y una decisión de diseño: «ordenada» debería valer tanto para ascendente como
 descendente, así que llevamos dos banderas (<code>up</code>, <code>down</code>) y damos por buena la
-tabla si <em>alguna</em> se mantiene. Ese convenio de signo es el que luego usa <code>qsort</code>.</div>
+tabla si <em>alguna</em> se mantiene. Ese convenio de signo es el que luego usa <a href="#g-qsort"><code>qsort</code></a>.</div>
 </div>
 
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>do-op</h2>
 <div class="meta"><span>Entregable: <b>programa <code>do-op</code></b></span><span>Autorizadas: <b>write</b></span></div>
 <p>Un programa <code>./do-op valor1 operador valor2</code> que aplica <code>+ - * / %</code>. Operador
-desconocido → <code>0</code>; número de argumentos incorrecto → nada; división o módulo por cero →
-mensaje. El enunciado pide explícitamente resolverlo con una <strong>tabla de punteros a función</strong>.</p>
+desconocido → <code>0</code>; <a href="#g-argv">número de argumentos</a> incorrecto → nada; división o módulo por cero →
+mensaje. El enunciado pide explícitamente resolverlo con una <strong><a href="#g-dispatch">tabla de punteros a función</a></strong>.</p>
 <pre><code>typedef struct s_op
 {
 	char	*sym;
@@ -194,24 +411,24 @@ return (0);   /* operador desconocido: el resultado es 0 */</code></pre>
 <p>Dos trampas del enunciado, visibles en sus ejemplos:</p>
 <ul>
 <li><strong>Parsing tolerante</strong>: <code>./do-op 42amis - --+-20toto12</code> da <code>62</code>.
-El <code>ft_atoi</code> tiene que saltarse el sufijo basura (<code>amis</code>), contar
+El <a href="#g-atoi"><code>ft_atoi</code></a> tiene que saltarse el sufijo basura (<code>amis</code>), contar
 <em>varios</em> signos seguidos (<code>--+-</code> = negativo) y parar en la primera no-cifra:
 <code>--+-20toto12</code> vale <code>-20</code>, y <code>42 - (-20) = 62</code>.</li>
 <li><strong>Dividir por cero antes de dividir</strong>: no se puede llamar a <code>ft_div(a, 0)</code>
-y capturar el error después — eso es un <code>SIGFPE</code>. Hay que interceptarlo <em>antes</em> y
+y capturar el error después — eso es un <a href="#g-sigfpe"><code>SIGFPE</code></a>. Hay que interceptarlo <em>antes</em> y
 escribir <code>Stop : division by zero</code>.</li>
 </ul>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una tabla de punteros a función es un
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una tabla de <a href="#g-puntero-funcion">punteros a función</a> es un
 <em>dispatcher</em>: sustituye una escalera de <code>if/else</code> por una búsqueda en datos. Añadir
 un operador es añadir una fila, no tocar la lógica. Así funcionan por dentro los intérpretes, las
 máquinas virtuales y las tablas de <em>syscalls</em> del kernel. La Norma, además, empuja a trocearlo
-en ficheros (máx. 5 funciones cada uno) con un <code>Makefile</code> que los enlaza.</div>
+en ficheros (máx. 5 funciones cada uno) con un <a href="#g-makefile"><code>Makefile</code></a> que los enlaza.</div>
 </div>
 
 <div class="card" id="ex06">
 <h2><span class="ex">ex06</span>ft_sort_string_tab</h2>
 <div class="meta"><span>Entregable: <b>ft_sort_string_tab.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Ordena por código ASCII un array de cadenas terminado en <code>NULL</code>,
+<p>Ordena por <a href="#g-ascii">código ASCII</a> un <a href="#g-tabla-cadenas">array de cadenas</a> <a href="#g-centinela">terminado en</a> <code>NULL</code>,
 <strong>intercambiando los punteros</strong> de la tabla (nunca copiando las cadenas).</p>
 <pre><code>if (ft_strcmp(tab[i], tab[i + 1]) &gt; 0)
 {
@@ -220,7 +437,7 @@ en ficheros (máx. 5 funciones cada uno) con un <code>Makefile</code> que los en
 	tab[i + 1] = tmp;
 	i = 0;
 }</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que ordenar no es mover datos, es mover
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <a href="#g-burbuja">ordenar</a> no es mover datos, es mover
 <em>referencias</em>. Las cadenas se quedan donde están en memoria; lo único que baraja el algoritmo
 son los punteros del array. Intercambiar tres <code>char *</code> es barato; copiar cadenas enteras
 sería caro e innecesario. Es la misma razón por la que se ordenan índices o punteros, no registros
@@ -231,7 +448,7 @@ completos.</div>
 <h2><span class="ex">ex07</span>ft_advanced_sort_string_tab</h2>
 <div class="meta"><span>Entregable: <b>ft_advanced_sort_string_tab.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
 <p>Igual que el anterior, pero el criterio de orden llega como parámetro. Pasándole
-<code>ft_strcmp</code> se obtiene el mismo resultado que <code>ft_sort_string_tab</code>.</p>
+<a href="#g-ascii"><code>ft_strcmp</code></a> se obtiene el mismo resultado que <code>ft_sort_string_tab</code>.</p>
 <pre><code>void	ft_advanced_sort_string_tab(char **tab, int (*cmp)(char *, char *))
 {
 	/* ... mismo bucle, pero comparando con cmp(tab[i], tab[i + 1]) ... */
@@ -239,8 +456,94 @@ completos.</div>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El paso final de la abstracción: sacar el
 <em>criterio</em> fuera del <em>algoritmo</em>. El mismo ordenador sirve para orden ASCII, por
 longitud o inverso; solo cambia la función que le pasas. Esto es, literalmente, la firma de
-<code>qsort</code> de la librería estándar: <code>void qsort(void *, size_t, size_t,
+<a href="#g-qsort"><code>qsort</code></a> de la librería estándar: <code>void qsort(void *, size_t, size_t,
 int (*)(const void *, const void *))</code>. Acabas de reinventarla.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado. Están agrupadas en: punteros a función, casos límite, do-op y entrega. Antes de
+mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Punteros a función</h3>
+<details id="q-sintaxis">
+<summary>¿Qué es exactamente <code>void (*f)(int)</code>? ¿Y si quito los paréntesis?</summary>
+<p>Un parámetro <code>f</code> que es un puntero a una función que recibe un <code>int</code> y no
+devuelve nada. Sin los paréntesis, <code>void *f(int)</code> sería una función que devuelve un
+<code>void *</code>, no un puntero a función. → <a href="#g-leer-declaracion">cómo leer la
+declaración</a>, <a href="#ex00">ex00</a></p>
+</details>
+<details id="q-ampersand">
+<summary>¿Hace falta el <code>&amp;</code> en <code>&amp;ft_putnbr</code>? ¿Y el <code>*</code> al llamar?</summary>
+<p>No. El nombre de una función ya es su dirección, así que <code>ft_putnbr</code> y
+<code>&amp;ft_putnbr</code> son lo mismo, igual que <code>f(x)</code> y <code>(*f)(x)</code>.
+→ <a href="#g-puntero-funcion">puntero a función</a></p>
+</details>
+<details id="q-any-count">
+<summary>¿En qué se diferencian <code>ft_any</code> y <code>ft_count_if</code>, aparte del resultado?</summary>
+<p><code>ft_any</code> para en cuanto encuentra uno (cortocircuito) y sabe dónde acaba la tabla por el
+<code>NULL</code> final; <code>ft_count_if</code> recorre siempre los <code>length</code> elementos,
+porque para contar hay que verlos todos. → <a href="#ex02">ex02</a>, <a href="#ex03">ex03</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-is-sort">
+<summary>¿<code>ft_is_sort</code> da 1 con una tabla descendente? ¿Y con todos iguales o vacía?</summary>
+<p>Sí a las tres. Con <code>{3, 2, 1}</code> se mantiene <code>down</code>; con <code>{2, 2, 2}</code>
+el comparador da siempre 0 y no apaga ninguna bandera; con <code>length</code> 0 o 1 el bucle no
+entra. Solo <code>{1, 3, 2}</code> (sube y baja) da 0. Comprobado compilando el código de la tarjeta.
+→ <a href="#ex04">ex04</a></p>
+</details>
+<details id="q-map-cero">
+<summary>¿Qué pasa con <code>ft_map</code> si <code>length</code> es 0?</summary>
+<p><code>malloc(0)</code> puede devolver <code>NULL</code> o una dirección válida que no se puede usar:
+depende del sistema. En los dos casos el bucle no entra y la función no rompe; quien llame no debe leer
+nada de la tabla, y si no es <code>NULL</code>, debe liberarla igual. → <a href="#g-malloc">malloc</a></p>
+</details>
+<details id="q-map-free">
+<summary>¿Quién libera la tabla de <code>ft_map</code>? ¿Tiene leaks?</summary>
+<p>La función no puede liberarla, porque la devuelve. La libera quien la recibe, con un
+<code>free</code> cuando ya no la use; si no, sí habría una fuga, pero en el programa que llama, no en
+<code>ft_map</code>. → <a href="#ex01">ex01</a></p>
+</details>
+
+<h3>do-op</h3>
+<details id="q-tabla">
+<summary>¿Por qué una tabla de punteros a función y no cinco <code>if</code>?</summary>
+<p>Porque el enunciado lo pide, y porque añadir un operador es añadir una fila (un <a href="#g-typedef-struct"><code>t_op</code></a>) a <code>ops[]</code> sin
+tocar el bucle. El caso «operador desconocido → 0» sale solo: si ninguna fila coincide, se llega al
+<code>return (0)</code>. → <a href="#g-dispatch">dispatcher</a>, <a href="#ex05">ex05</a></p>
+</details>
+<details id="q-cero">
+<summary>¿Cómo evitas que <code>./do-op 25 / 0</code> rompa el programa?</summary>
+<p>Comprobando que el segundo número es 0 antes de dividir, y escribiendo el mensaje en su lugar. Si se
+divide, el programa muere con <code>SIGFPE</code> y ya no se puede arreglar. Punto débil para tener
+preparado: <code>-2147483648 / -1</code> también da <code>SIGFPE</code> y el enunciado no lo
+menciona. → <a href="#g-sigfpe">SIGFPE</a></p>
+</details>
+<details id="q-toto">
+<summary>¿Por qué <code>./do-op 42amis - --+-20toto12</code> da 62?</summary>
+<p>Porque los números se leen con el <code>ft_atoi</code> de C 04: <code>42amis</code> es 42 (para en la
+<code>a</code>) y <code>--+-20toto12</code> es −20 (tres <code>-</code>, para en la <code>t</code>).
+42 − (−20) = 62. → <a href="#g-atoi">atoi tolerante</a></p>
+</details>
+
+<h3>Entrega, Norma y Moulinette</h3>
+<details id="q-entrega">
+<summary>¿Qué entregas en ex05 y qué funciones puedes usar?</summary>
+<p>Todos los archivos que necesite el programa más un Makefile que genere <code>do-op</code>, porque la
+Moulinette hace <code>make clean</code> y <code>make</code>. Solo está autorizada <code>write</code>:
+nada de <code>printf</code> ni <code>atoi</code>, así que el <code>ft_putnbr</code>, el
+<code>ft_atoi</code> y el <code>ft_strcmp</code> son tuyos. Y como es un programa, aquí sí va un
+<code>main</code>. → <a href="#g-makefile">Makefile</a>, <a href="#ex05">ex05</a></p>
+</details>
+<details id="q-punteros">
+<summary>En ex06, ¿por qué intercambias punteros y no copias las cadenas?</summary>
+<p>Porque lo exige el enunciado («intercambiando los punteros de la tabla») y porque es más barato:
+tres asignaciones de <code>char *</code> en vez de copiar letras, que además podría no caber si las
+cadenas miden distinto. → <a href="#g-tabla-cadenas">char **</a>, <a href="#ex06">ex06</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 11 · <a href="014_c12.html">continuar con C 12 →</a></footer>

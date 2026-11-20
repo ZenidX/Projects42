@@ -14,6 +14,8 @@
       <a href="../../index.html">Inicio</a>
       <a href="../../index.html#piscine">Piscine</a>
       <a href="../../index.html#cursus" class="active">Cursus</a>
+      <a href="../../galaxia.html">Galaxia</a>
+      <a href="../../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -27,6 +29,7 @@ ya salió en la piscine, así que aquí se va rápido por lo repetido y se para 
 para lo que viene: compilar una librería y hablar con el sistema de ficheros.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — exo.tar (permisos y enlaces)</a></li>
   <li><a href="#ex01">ex01–ex05 — z, clean, find_sh, MAC, MaRViN</a></li>
   <li><a href="#ex06">ex06–ex08 — alfabeto, números, is_negative</a></li>
@@ -39,6 +42,7 @@ para lo que viene: compilar una librería y hablar con el sistema de ficheros.</
   <li><a href="#ex24">ex24 — Makefile</a></li>
   <li><a href="#ex25">ex25–ex26 — ft_foreach y ft_count_if</a></li>
   <li><a href="#ex27">ex27 — display_file</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>Qué es la Piscine Reloaded</b> — Es el proyecto con el que arranca el
@@ -54,11 +58,275 @@ y no lo definen: si lo definieran, habría dos definiciones y el enlazador falla
 es una biografía de Edward Snowden, y recomienda el documental <em>Citizenfour</em>; no tiene que
 ver con los ejercicios.)</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>La Piscine Reloaded repasa en 28 ejercicios casi todo lo básico de Unix y de C, así que la
+página usa muchas palabras técnicas. Aquí está cada una explicada desde cero y con un ejemplo sacado
+del propio proyecto. En el resto de la página, la primera vez que sale uno de estos términos en
+cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Ficheros y shell</h3>
+<details id="g-permisos">
+<summary>Permisos (<code>rwx</code>)</summary>
+<p>Cada fichero tiene tres grupos de tres permisos: para el dueño, para su grupo y para el resto.
+<code>r</code> es leer, <code>w</code> escribir y <code>x</code> ejecutar (en un directorio,
+<code>x</code> es poder entrar en él). Cada grupo se escribe también como una cifra octal sumando
+r = 4, w = 2 y x = 1.</p>
+<p>En el ex00, <code>test1</code> es <code>-rwx--xr--</code>: el dueño todo (7), el grupo solo
+ejecutar (1), el resto solo leer (4), o sea <code>chmod 714 test1</code>. Y los scripts del ex03 y
+el ex04 están con <code>644</code> (<code>rw-r--r--</code>), sin <code>x</code>.</p>
+</details>
+<details id="g-inodo">
+<summary>Inodo</summary>
+<p>La estructura con la que el sistema de ficheros guarda un fichero de verdad: dónde están sus
+datos, su tamaño, permisos, dueño y fechas. Lo que <em>no</em> guarda es el nombre: los nombres
+viven en los directorios, como entradas que apuntan a un inodo. <code>ls -i</code> muestra el
+número de inodo de cada nombre.</p>
+<p>Por eso en el ex00 <code>test3</code> y <code>test5</code> comparten permisos, tamaño y fecha:
+son dos nombres del mismo inodo, y el 2 de su columna de enlaces es cuántos nombres tiene.</p>
+</details>
+<details id="g-enlace-duro">
+<summary>Enlace duro</summary>
+<p>Otro nombre para un inodo que ya existe, creado con <code>ln origen nuevo</code>. No hay
+«original» y «copia»: los dos nombres valen lo mismo, y el fichero solo desaparece cuando se borra
+el último.</p>
+<p><code>test5</code> es un enlace duro a <code>test3</code>. <code>tar</code> lo sabe y no guarda
+los datos dos veces: en <code>tar -tvf exo.tar</code> sale con tipo <code>h</code> y «link to
+test3».</p>
+</details>
+<details id="g-enlace-simbolico">
+<summary>Enlace simbólico</summary>
+<p>Un fichero aparte, con su propio inodo, cuyo contenido es una ruta hacia otro. Se crea con
+<code>ln -s destino nombre</code>. Si el destino se borra o se mueve, el enlace queda roto.</p>
+<p><code>test6 -&gt; test0</code> es simbólico (tipo <code>l</code>). Su tamaño en el
+<code>ls -l</code> del enunciado es 5 porque eso ocupa la ruta guardada: los cinco caracteres de
+<code>test0</code>.</p>
+</details>
+<details id="g-tar">
+<summary>tar</summary>
+<p>Un empaquetador: junta varios ficheros y directorios en un solo archivo conservando sus nombres,
+permisos, fechas y enlaces. No comprime por sí mismo. <code>tar -cf x.tar ...</code> crea,
+<code>-tvf</code> lista y <code>-xf</code> extrae.</p>
+<p>El ex00 se entrega como <code>exo.tar</code>, hecho con <code>tar -cf exo.tar *</code>, y es el
+tar el que conserva los permisos y fechas que comprueba la Moulinette.</p>
+</details>
+<details id="g-quoting">
+<summary>Comillas y caracteres especiales de la shell</summary>
+<p>La shell interpreta muchos caracteres antes de ejecutar nada: <code>$</code> expande variables,
+<code>*</code> y <code>?</code> son comodines, <code>\</code> escapa el siguiente carácter y las
+comillas agrupan. Dentro de comillas simples no se interpreta nada; dentro de dobles, todavía se
+expanden <code>$</code> y <code>\</code>.</p>
+<p>El nombre del ex05, <code>"\?$*'MaRViN'*$?\"</code>, está hecho para chocar con todo eso a la
+vez: la dificultad del ejercicio es escribirlo de forma que la shell no toque ningún carácter.</p>
+</details>
+
+<h3>Compilar y enlazar</h3>
+<details id="g-prototipo">
+<summary>Declaración (prototipo) y definición</summary>
+<p>Una <em>declaración</em> dice cómo se llama una función, qué recibe y qué devuelve, sin cuerpo:
+<code>void ft_putchar(char a);</code>. Una <em>definición</em> incluye el cuerpo. Con la
+declaración el compilador ya puede generar la llamada; el cuerpo puede estar en otro fichero.</p>
+<p>Los ejercicios que usan <code>ft_putchar</code> solo la declaran, porque la Moulinette compila con
+su propio ft_putchar.c. Si además la definieran, habría dos definiciones del mismo nombre.</p>
+</details>
+<details id="g-enlazador">
+<summary>Enlazador</summary>
+<p>Compilar en C tiene dos fases: el compilador convierte cada <code>.c</code> en un
+<code>.o</code> (código máquina con huecos donde van las llamadas a otras funciones) y el
+<em>enlazador</em> junta los <code>.o</code> y las librerías, rellena esos huecos y produce el
+ejecutable. Si una función no está definida en ninguna parte, o lo está dos veces, falla aquí.</p>
+<p>Es lo que une tu <code>ft_is_negative.o</code> con el <code>ft_putchar</code> de la Moulinette,
+y lo que hace <code>cc $(OBJS) -o $(NAME)</code> en el Makefile del ex27.</p>
+</details>
+<details id="g-libreria-estatica">
+<summary>Librería estática (<code>.a</code>)</summary>
+<p>Un archivo que contiene varios <code>.o</code> y un índice de los símbolos que define. Se crea
+con <code>ar</code>. Al enlazar un programa con ella, el enlazador copia en el ejecutable solo los
+objetos que necesita.</p>
+<p>El ex24 construye <code>libft.a</code> con <code>ar rcs</code> a partir de cinco funciones. Es el
+mismo mecanismo de la entrega de Libft.</p>
+</details>
+<details id="g-makefile">
+<summary>Makefile y relink</summary>
+<p><code>make</code> lee reglas de la forma <em>objetivo: dependencias</em> seguidas de los
+comandos que lo construyen, y solo rehace un objetivo si alguna dependencia es más nueva que él.
+<em>Relink</em> es volver a enlazar (o a archivar) sin que haya cambiado nada; en 42 es un
+error.</p>
+<p>Con el Makefile del ex24 y cinco fuentes de prueba, el segundo <code>make</code> responde
+<code>make: Nothing to be done for 'all'.</code>: no hay relink.</p>
+</details>
+<details id="g-macro">
+<summary>Macro del preprocesador</summary>
+<p>Antes de compilar, el preprocesador sustituye texto: <code>#define</code> crea un nombre que se
+reemplaza por lo que tenga detrás. Una macro con parámetros hace lo mismo copiando los argumentos
+tal cual, sin evaluarlos, y no sabe nada de tipos ni de C.</p>
+<p><code>ABS(Value)</code> del ex22 se expande a <code>((Value) &lt; 0 ? -(Value) : (Value))</code>.
+Por eso los paréntesis, y por eso <code>ABS(i++)</code> incrementaría <code>i</code> dos veces.</p>
+</details>
+<details id="g-include-guard">
+<summary>Include guard</summary>
+<p>El trío <code>#ifndef NOMBRE_H</code> / <code>#define NOMBRE_H</code> / <code>#endif</code> que
+envuelve una cabecera. La primera vez que se incluye, el nombre no está definido y el contenido
+entra; las siguientes ya lo está y se salta. Sin esto, incluirla dos veces definiría dos veces lo
+mismo.</p>
+<p><code>ft_abs.h</code> y <code>ft_point.h</code> lo llevan, con <code>FT_ABS_H</code> y
+<code>FT_POINT_H</code>.</p>
+</details>
+
+<h3>Datos, punteros y memoria</h3>
+<details id="g-puntero">
+<summary>Puntero y paso por dirección</summary>
+<p>Un puntero es una variable que guarda la dirección de otra. En C los argumentos se pasan por
+copia, así que una función solo puede cambiar una variable de quien la llama si recibe su
+dirección: <code>*p = 42</code> escribe en la variable a la que apunta <code>p</code>.</p>
+<p><code>ft_ft</code>, <code>ft_swap</code> y <code>ft_div_mod</code> funcionan así; la última
+devuelve dos resultados escribiéndolos en <code>*div</code> y <code>*mod</code>.</p>
+</details>
+<details id="g-terminador">
+<summary>Terminador nulo</summary>
+<p>En C una cadena es una fila de <code>char</code> que acaba en el byte <code>'\0'</code>. No se
+guarda la longitud: el final se sabe porque ahí está el cero. Una cadena de n caracteres ocupa
+n + 1 bytes.</p>
+<p><code>ft_strlen</code> cuenta hasta el cero sin incluirlo, y <code>ft_strcmp</code> se para en él.
+<code>ft_strdup</code> lo olvida al reservar: pide <code>n</code> bytes y copia <code>n + 1</code>.</p>
+</details>
+<details id="g-signo-char">
+<summary><code>char</code> con signo y <code>unsigned char</code></summary>
+<p>Un <code>char</code> es un byte, pero el estándar deja a cada sistema decidir si va de −128 a
+127 o de 0 a 255. En x86 tiene signo, así que los bytes de 128 a 255 (los de UTF-8 fuera del ASCII)
+valen negativo.</p>
+<p><code>ft_strcmp</code> resta como <code>unsigned char</code>: con <code>"é"</code> (bytes
+<code>0xC3 0xA9</code>) frente a <code>"a"</code> devuelve 98 (195 − 97), positivo, igual que la
+libc. Restando <code>char</code> con signo saldría negativo.</p>
+</details>
+<details id="g-argv">
+<summary><code>argc</code> y <code>argv</code></summary>
+<p>Los parámetros de <code>main</code>: <code>argc</code> es cuántos argumentos hay y
+<code>argv</code> un array de punteros a cadenas (<code>char **</code>) con cada uno.
+<code>argv[0]</code> es el nombre del programa y <code>argv[argc]</code> es <code>NULL</code>.</p>
+<p>En ex18 y ex19 el primero se llama <code>argn</code>, y ambos empiezan en
+<code>i = 1</code> para saltarse <code>argv[0]</code>.</p>
+</details>
+<details id="g-malloc">
+<summary>Memoria dinámica: <code>malloc</code></summary>
+<p><code>malloc(n)</code> reserva un bloque de <code>n</code> bytes en el <em>heap</em>, que vive
+hasta que se libera con <code>free</code>. Si no hay memoria devuelve <code>NULL</code>, y usarlo
+sin comprobar es un fallo esperando a ocurrir.</p>
+<p><code>ft_strdup</code> y <code>ft_range</code> devuelven memoria nueva que tendrá que liberar
+quien las llame. Ninguna de las dos comprueba el <code>NULL</code>.</p>
+</details>
+<details id="g-heap-overflow">
+<summary>Desbordamiento de heap</summary>
+<p>Escribir más allá del final de un bloque reservado con <code>malloc</code>. Puede no notarse
+(malloc suele redondear el tamaño), estropear datos de otro bloque o hacer caer el programa más
+tarde, lejos del fallo. Valgrind y <code>-fsanitize=address</code> lo detectan.</p>
+<p>Con <code>ft_strdup("hola")</code> se reservan 4 bytes y se escriben 5. Valgrind lo señala: un
+<code>Invalid write of size 1</code> al copiar y un <code>Invalid read of size 1</code> al
+imprimir.</p>
+</details>
+<details id="g-struct">
+<summary>Struct y typedef</summary>
+<p>Un <code>struct</code> agrupa varias variables bajo un nombre, y <code>typedef</code> le da un
+alias. Con un puntero, los campos se leen con <code>-&gt;</code>: <code>p-&gt;x</code> es
+<code>(*p).x</code>. La Norma pide <code>s_</code> para la etiqueta y <code>t_</code> para el
+tipo.</p>
+<p><code>ft_point.h</code> define <code>t_point</code>, con <code>x</code> e <code>y</code>; el
+<code>main</code> del enunciado hace <code>point-&gt;x = 42</code>.</p>
+</details>
+<details id="g-puntero-funcion">
+<summary>Puntero a función</summary>
+<p>Las funciones también tienen dirección, y se puede guardar en una variable o pasar como
+argumento. <code>void (*f)(int)</code> se lee «f es un puntero a una función que recibe un
+<code>int</code> y no devuelve nada». Para llamarla valen <code>(*f)(x)</code> y
+<code>f(x)</code>.</p>
+<p><code>ft_foreach</code> aplica <code>f</code> a cada número sin saber qué hace, y
+<code>ft_count_if</code> cuenta cuántas cadenas hacen que <code>f</code> devuelva 1.</p>
+</details>
+
+<h3>Algoritmos y aritmética</h3>
+<details id="g-recursion">
+<summary>Recursión</summary>
+<p>Una función recursiva se llama a sí misma con un problema más pequeño, hasta llegar a un
+<em>caso base</em> que se resuelve sin volver a llamarse. Cada llamada pendiente ocupa sitio en la
+pila de llamadas, y con demasiadas se agota.</p>
+<p><code>ft_recursive_factorial(nb)</code> devuelve <code>nb * ft_recursive_factorial(nb - 1)</code>
+con caso base <code>nb == 0</code>, que da 1. Como corta en 12, nunca pasa de 13 llamadas.</p>
+</details>
+<details id="g-desbordamiento">
+<summary>Desbordamiento de entero</summary>
+<p>Un <code>int</code> de 32 bits va de −2 147 483 648 a 2 147 483 647. Si una operación con signo
+se sale de ese rango, el resultado es indefinido: en la práctica suele dar la vuelta y salir un
+número sin sentido.</p>
+<p><code>ft_iterative_factorial(13)</code> devuelve 1932053504 en lugar de 6 227 020 800, mientras
+que la recursiva devuelve 0. En <code>ft_sqrt</code>, <code>i * i</code> desborda a partir de
+<code>i = 46341</code>.</p>
+</details>
+<details id="g-indefinido">
+<summary>Comportamiento indefinido</summary>
+<p>Lo que el estándar de C no define: el compilador puede hacer cualquier cosa, y lo que haga
+puede cambiar con las opciones de compilación. Desbordar un entero con signo, dividir entre cero o
+escribir fuera de un bloque son los ejemplos clásicos.</p>
+<p><code>ft_div_mod</code> con <code>b == 0</code> es indefinido; en la práctica el programa muere
+con <code>SIGFPE</code>.</p>
+</details>
+<details id="g-busqueda-lineal">
+<summary>Búsqueda lineal</summary>
+<p>Probar los candidatos uno a uno, en orden, hasta encontrar el bueno o acabarse. El coste crece
+en proporción al número de candidatos.</p>
+<p><code>ft_sqrt</code> prueba <code>i = 1, 2, 3...</code> hasta que <code>i * i</code> es
+<code>nb</code> o hasta llegar a <code>nb</code>. Con <code>nb</code> cerca de 2 147 483 647 y sin
+raíz exacta son unos dos mil millones de vueltas; parar cuando <code>i * i &gt; nb</code> las
+dejaría en unas 46 000.</p>
+</details>
+<details id="g-ordenacion">
+<summary>Ordenación por intercambio</summary>
+<p>Para cada posición, se compara con todas las siguientes y se intercambian cuando están al
+revés; al acabar con una posición, en ella queda el menor de lo que quedaba. Son dos bucles
+anidados, así que el coste crece con el cuadrado del número de elementos.</p>
+<p><code>ft_sort_params</code> lo hace sobre <code>argv</code> con <code>ft_strcmp</code>,
+intercambiando punteros y no letras.</p>
+</details>
+
+<h3>Sistema y reglas de 42</h3>
+<details id="g-fd">
+<summary>Descriptor de fichero</summary>
+<p>El número con el que el sistema identifica un fichero abierto. <code>open</code> devuelve uno
+(o -1 si falla), y <code>read</code>, <code>write</code> y <code>close</code> trabajan con él. Todo
+proceso nace con tres: 0 la entrada estándar, 1 la salida estándar y 2 la salida de error.</p>
+<p><code>ft_display_file</code> abre el fichero, vuelca su descriptor en el 1 y escribe los
+mensajes de error en el 2.</p>
+</details>
+<details id="g-syscall">
+<summary>Llamada al sistema</summary>
+<p>Una función que pide el trabajo al núcleo del sistema operativo en lugar de hacerlo ella:
+<code>open</code>, <code>read</code>, <code>write</code> y <code>close</code> lo son. Cada llamada
+tiene un coste fijo, así que conviene mover datos en bloques.</p>
+<p>Por eso <code>ft_cat_fd</code> lee y escribe de 4096 en 4096 bytes en lugar de byte a byte.</p>
+</details>
+<details id="g-norma">
+<summary>Norma y norminette</summary>
+<p>La Norma es el estilo obligatorio de 42 (funciones de 25 líneas como mucho, sin
+<code>for</code>, sin ternarios ni macros con parámetros, cabecera de 42…) y
+<code>norminette</code> es el programa que la comprueba.</p>
+<p>Todos los <code>.c</code> del proyecto la pasan. <code>ft_abs.h</code> no:
+norminette da <code>MACRO_FUNC_FORBIDDEN</code>, <code>PREPROC_CONSTANT</code> y
+<code>TERNARY_FBIDDEN</code>, porque el ex22 pide justo eso y el enunciado lo autoriza solo esa
+vez.</p>
+</details>
+<details id="g-moulinette">
+<summary>Moulinette</summary>
+<p>El corrector automático de 42: compila con <code>cc -Wall -Wextra -Werror</code>, pasa la
+norminette y ejecuta sus propias pruebas. No hay discusión posible.</p>
+<p>La Piscine Reloaded la corrige solo la Moulinette, en orden: un ejercicio no cuenta si falla uno
+anterior.</p>
+</details>
+</div>
+
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>Dame más... — exo.tar</h2>
 <div class="meta"><span>Entrega: <b>exo.tar</b></span><span>Autorizado: <b>ninguna</b></span></div>
-<p>Reproducir un <code>ls -l</code> exacto de siete entradas (permisos, tamaños, fechas y un
-enlace simbólico) y empaquetarlo con <code>tar -cf exo.tar *</code>. Es el
+<p>Reproducir un <code>ls -l</code> exacto de siete entradas (<a href="#g-permisos">permisos</a>, tamaños, fechas y un
+<a href="#g-enlace-simbolico">enlace simbólico</a>) y <a href="#g-tar">empaquetarlo</a> con <code>tar -cf exo.tar *</code>. Es el
 <a href="../../piscine/000_shell00.html#ex01">testShell00</a> de la piscine, pero con siete ficheros en
 vez de uno. Lo que hay de verdad dentro del tar entregado:</p>
 <pre><code>$ tar -tvf exo.tar
@@ -72,12 +340,12 @@ lrwxrwxrwx xavilara/xavilara 0 2026-06-01 22:20 test6 -&gt; test0</code></pre>
 <p>La parte nueva respecto a la piscine está en <code>test3</code> y <code>test5</code>. En el
 <code>ls -l</code> del enunciado los dos tienen un <b>2</b> en la columna de enlaces, los mismos
 permisos, el mismo tamaño y la misma fecha: no son dos ficheros, son <em>dos nombres para el mismo
-fichero</em>, un <strong>enlace duro</strong> (<code>ln test3 test5</code>). El tar lo sabe y no
+fichero</em>, un <a href="#g-enlace-duro"><strong>enlace duro</strong></a> (<code>ln test3 test5</code>). El tar lo sabe y no
 guarda dos copias: <code>test5</code> aparece con tipo <code>h</code> y "link to test3". En
 cambio <code>test6</code> es un enlace <em>simbólico</em> (<code>l</code>): un fichero aparte cuyo
 contenido es la ruta <code>test0</code> (5 bytes, de ahí su tamaño en el <code>ls -l</code>).</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre nombre y fichero. En
-Unix el fichero de verdad es el <em>inodo</em> (datos + permisos + fechas); los nombres de los
+Unix el fichero de verdad es el <a href="#g-inodo"><em>inodo</em></a> (datos + permisos + fechas); los nombres de los
 directorios son solo entradas que apuntan a un inodo, y el contador de enlaces dice cuántas hay. Un
 enlace duro es otra entrada al mismo inodo (por eso comparte permisos y fecha: son literalmente los
 mismos); uno simbólico es un inodo distinto que contiene una ruta y que se rompe si la ruta
@@ -114,9 +382,9 @@ en el mismo comando, que es justo lo que pide la regla de "nada de <code>;</code
 <code>ether xx:xx:...</code>; awk filtra esas líneas e imprime el segundo campo.</li>
 <li><strong>"\?$*'MaRViN'*$?\"</strong> (ex05, <a href="../../piscine/001_shell01.html#ex05">Shell 01 ·
 ¿Puedes crearlo?</a>): el fichero contiene <code>42</code> sin salto de línea (2 bytes). La
-dificultad era solo crear un nombre lleno de caracteres especiales de la shell.</li>
+dificultad era solo crear un nombre lleno de <a href="#g-quoting">caracteres especiales de la shell</a>.</li>
 </ul>
-<p>Ojo: en el repositorio los tres scripts están con permisos <code>644</code> (git los guarda
+<p>Ojo: en el repositorio los tres scripts están con <a href="#g-permisos">permisos</a> <code>644</code> (git los guarda
 como <code>100644</code>), sin bit de ejecución. El ejemplo del enunciado los lanza como
 <code>./find_sh.sh</code>, que así daría "Permission denied"; con <code>sh find_sh.sh</code>
 funcionan igual.</p>
@@ -149,17 +417,17 @@ void	ft_is_negative(int n)
 <code>while (a &lt;= '9')</code> sobre un <code>char</code>. En <code>ft_is_negative</code> el
 <code>if</code> solo elige la letra y hay una única llamada de salida al final.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La separación entre
-<em>declaración</em> y <em>definición</em>. El prototipo le dice al compilador cómo se llama la
-función y qué recibe, suficiente para generar la llamada; el cuerpo lo pondrá el enlazador al juntar
-tu <code>.o</code> con el ft_putchar.c de la Moulinette. Es la misma mecánica con la que, en unos
-días, tus programas usarán las funciones de <code>libft.a</code> a través de
+<a href="#g-prototipo"><em>declaración</em></a> y <em>definición</em>. El prototipo le dice al compilador cómo se llama la
+función y qué recibe, suficiente para generar la llamada; el cuerpo lo pondrá <a href="#g-enlazador">el enlazador</a> al juntar
+tu <code>.o</code> con el ft_putchar.c de la <a href="#g-moulinette">Moulinette</a>. Es la misma mecánica con la que, en unos
+días, tus programas usarán las funciones de <a href="#g-libreria-estatica"><code>libft.a</code></a> a través de
 <code>libft.h</code>.</div>
 </div>
 
 <div class="card" id="ex09">
 <h2><span class="ex">ex09–ex11</span>ft_ft, ft_swap, ft_div_mod</h2>
 <div class="meta"><span>Entrega: <b>ft_ft.c</b>, <b>ft_swap.c</b>, <b>ft_div_mod.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
-<p>Punteros como parámetros de salida, exactamente como en
+<p><a href="#g-puntero">Punteros</a> como parámetros de salida, exactamente como en
 <a href="../../piscine/003_c01.html#ex00">C 01 · ft_ft</a>,
 <a href="../../piscine/003_c01.html#ex02">ft_swap</a> y
 <a href="../../piscine/003_c01.html#ex03">ft_div_mod</a>:</p>
@@ -172,7 +440,7 @@ t = *a;                    /* ft_swap */
 *div = a / b;              /* ft_div_mod */
 *mod = a % b;</code></pre>
 <p>Ojo: <code>ft_div_mod</code> no comprueba <code>b == 0</code>; dividir entre cero es
-comportamiento indefinido (en la práctica, el programa muere con SIGFPE). El enunciado no dice qué
+<a href="#g-indefinido">comportamiento indefinido</a> (en la práctica, el programa muere con SIGFPE). El enunciado no dice qué
 hacer en ese caso, así que es una decisión aceptable, pero conviene saberlo.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en C todo se pasa por copia y que la
 única forma de que una función cambie una variable del llamante es recibir su dirección. Es también
@@ -208,8 +476,8 @@ else
 	return (nb * ft_recursive_factorial(nb - 1));</code></pre>
 <p>La recursiva tiene un detalle interesante: <code>nb &gt; 12</code> devuelve 0, porque 13! ya no
 cabe en un <code>int</code> de 32 bits (12! = 479 001 600, 13! ≈ 6 200 millones). Ojo: la iterativa
-no tiene ese límite, así que con <code>nb &gt;= 13</code> el producto desborda (comportamiento
-indefinido en enteros con signo) y devuelve un valor sin sentido. Las dos funciones del mismo
+no tiene ese límite, así que con <code>nb &gt;= 13</code> el producto <a href="#g-desbordamiento">desborda</a> (<a href="#g-indefinido">comportamiento
+indefinido</a> en enteros con signo) y devuelve un valor sin sentido. Las dos funciones del mismo
 proyecto se comportan distinto para la misma entrada.</p>
 <pre><code>int	ft_sqrt(int nb)
 {
@@ -225,14 +493,14 @@ proyecto se comportan distinto para la misma entrada.</p>
 	else
 		return (i);
 }</code></pre>
-<p>Búsqueda lineal: sube <code>i</code> hasta que su cuadrado coincide o hasta llegar a
+<p><a href="#g-busqueda-lineal">Búsqueda lineal</a>: sube <code>i</code> hasta que su cuadrado coincide o hasta llegar a
 <code>nb</code>. El caso <code>nb == 1</code> se trata aparte porque ahí <code>i</code> termina
 valiendo <code>nb</code> y la comprobación siguiente lo confundiría con "no hay raíz". Ojo: para
 números grandes que no son cuadrados perfectos, el bucle sigue hasta <code>i = nb</code>; a partir de
 <code>i = 46341</code> el producto <code>i * i</code> se sale del <code>int</code> (desbordamiento,
 comportamiento indefinido) y para <code>nb</code> cercanos a 2 147 483 647 son unos dos mil millones
 de vueltas, al límite de los dos segundos que pide el enunciado.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Recursión frente a iteración sobre el mismo
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <a href="#g-recursion">Recursión</a> frente a iteración sobre el mismo
 problema, y sobre todo que los enteros de la máquina tienen techo. El factorial crece tan deprisa que
 el rango útil de un <code>int</code> acaba en 12; la raíz deja de poder calcularse con
 <code>i * i</code> en 46 340. Saber dónde está ese techo es parte del ejercicio.</div>
@@ -257,7 +525,7 @@ carácter, la otra solo cuenta. La que tiene miga es strcmp:</p>
 	return ((unsigned char) s1[i] - (unsigned char) s2[i]);
 }</code></pre>
 <p>Avanza mientras las dos cadenas sigan y coincidan, y devuelve la diferencia del primer carácter
-distinto (o del <code>'\0'</code> de la más corta). La conversión a <code>unsigned char</code> es lo
+distinto (o del <a href="#g-terminador"><code>'\0'</code></a> de la más corta). La conversión a <a href="#g-signo-char"><code>unsigned char</code></a> es lo
 que hace la libc real: así un carácter como <code>'é'</code> en UTF-8 (bytes ≥ 128) se ordena
 <em>después</em> de los ASCII y no antes, como pasaría restando <code>char</code> con signo, que es lo habitual en x86.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una cadena en C no es un tipo sino un
@@ -271,7 +539,7 @@ hasta ese cero. Son además tres de las cinco que compilará el Makefile del ex2
 <p>Los dos primeros <em>programas</em> (con <code>main</code>) del proyecto, como en
 <a href="../../piscine/008_c06.html#ex01">C 06 · ft_print_params</a> y
 <a href="../../piscine/008_c06.html#ex03">C 06 · ft_sort_params</a>. El código llama
-<code>argn</code> a lo que suele llamarse <code>argc</code>; el nombre da igual, lo que cuenta es la
+<a href="#g-argv"><code>argn</code></a> a lo que suele llamarse <code>argc</code>; el nombre da igual, lo que cuenta es la
 posición del parámetro. La ordenación de ex19:</p>
 <pre><code>i = 1;
 while (i &lt; (argn))
@@ -290,7 +558,7 @@ while (i &lt; (argn))
 	i++;
 }
 ft_putarraystr(argn, argv);</code></pre>
-<p>Es una ordenación por intercambio: para cada posición <code>i</code>, compara con todas las
+<p>Es una <a href="#g-ordenacion">ordenación por intercambio</a>: para cada posición <code>i</code>, compara con todas las
 siguientes y se queda con la menor. Empieza en 1 para no tocar <code>argv[0]</code> (el nombre del
 programa). Lo que se intercambia son los <em>punteros</em> de <code>argv</code>, no las letras: mover
 una dirección cuesta lo mismo sea la cadena larga o corta. <code>ft_strcmp</code> se copia dentro del
@@ -304,7 +572,7 @@ grande se hace siempre así.</div>
 <div class="card" id="ex20">
 <h2><span class="ex">ex20–ex21</span>ft_strdup y ft_range</h2>
 <div class="meta"><span>Entrega: <b>ft_strdup.c</b>, <b>ft_range.c</b></span><span>Autorizado: <b>malloc</b></span></div>
-<p>Memoria dinámica, como en <a href="../../piscine/009_c07.html#ex00">C 07 · ft_strdup</a> y
+<p><a href="#g-malloc">Memoria dinámica</a>, como en <a href="../../piscine/009_c07.html#ex00">C 07 · ft_strdup</a> y
 <a href="../../piscine/009_c07.html#ex01">C 07 · ft_range</a>.</p>
 <pre><code>char	*ft_strdup(char *src)
 {
@@ -316,9 +584,9 @@ grande se hace siempre así.</div>
 	return (ft_strcopy(dest, src));
 }</code></pre>
 <p>Ojo, aquí hay un fallo de verdad: <code>ft_strlen</code> cuenta los caracteres <em>sin</em> el
-<code>'\0'</code>, pero <code>ft_strcopy</code> copia también el terminador
+<a href="#g-terminador"><code>'\0'</code></a>, pero <code>ft_strcopy</code> copia también el terminador
 (<code>dest[i] = src[i]</code> tras el bucle). Se reservan <code>n</code> bytes y se escriben
-<code>n + 1</code>: un byte fuera del bloque (desbordamiento de heap). Muchas veces no se nota porque
+<code>n + 1</code>: un byte fuera del bloque (<a href="#g-heap-overflow">desbordamiento de heap</a>). Muchas veces no se nota porque
 <code>malloc</code> redondea el tamaño hacia arriba, pero <code>valgrind</code> o
 <code>-fsanitize=address</code> lo señalan, y una Moulinette que lo compruebe lo cuenta como error.
 Tampoco se comprueba si <code>malloc</code> devuelve <code>NULL</code> antes de copiar.</p>
@@ -335,7 +603,7 @@ return (r);</code></pre>
 <p><code>ft_range</code> calcula el tamaño como <code>max - min</code> y rellena con
 <code>min + i</code>, lo que da el intervalo [min, max) que pide el enunciado. Igual que strdup, no
 comprueba el <code>NULL</code> de malloc; y con extremos muy separados (por ejemplo
-<code>INT_MIN</code> e <code>INT_MAX</code>) la resta <code>max - min</code> desborda el
+<code>INT_MIN</code> e <code>INT_MAX</code>) la resta <code>max - min</code> <a href="#g-desbordamiento">desborda</a> el
 <code>int</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A contar bytes. Toda reserva de memoria es
 un contrato de tamaño, y en las cadenas siempre hay un byte más que los caracteres visibles: el
@@ -349,14 +617,14 @@ tenerlo interiorizado.</div>
 <div class="meta"><span>Entrega: <b>ft_abs.h</b>, <b>ft_point.h</b></span><span>Autorizado: <b>ninguna</b></span></div>
 <p>Dos cabeceras, como en <a href="../../piscine/010_c08.html#ex02">C 08 · ft_abs.h</a> y
 <a href="../../piscine/010_c08.html#ex03">C 08 · ft_point.h</a>. Ninguna contiene código que se
-ejecute: una define una macro y la otra un tipo.</p>
+ejecute: una define <a href="#g-macro">una macro</a> y la otra un tipo.</p>
 <pre><code>#ifndef FT_ABS_H
 # define FT_ABS_H
 
 # define ABS(Value) ((Value) &lt; 0 ? -(Value) : (Value))
 
 #endif</code></pre>
-<p>La macro usa el operador ternario y una macro con parámetros, dos cosas que la Norma prohíbe; el
+<p>La macro usa el operador ternario y una macro con parámetros, dos cosas que la <a href="#g-norma">Norma</a> prohíbe; el
 propio enunciado avisa de que es "la única vez que lo autoricemos". Los paréntesis alrededor de cada
 <code>(Value)</code> no son decoración: sin ellos, <code>ABS(a - b)</code> se expandiría a
 <code>-a - b</code> en vez de <code>-(a - b)</code>. Lo que no pueden evitar es que
@@ -373,7 +641,7 @@ typedef struct s_point
 
 #endif</code></pre>
 <p>Basta con esto para que compile el <code>main</code> del enunciado
-(<code>point-&gt;x = 42; point-&gt;y = 21;</code>). El <code>struct s_point</code> agrupa dos enteros
+(<code>point-&gt;x = 42; point-&gt;y = 21;</code>). El <a href="#g-struct"><code>struct s_point</code></a> agrupa dos enteros
 bajo un nombre, y el <code>typedef</code> le pone el alias <code>t_point</code> para no tener que
 escribir <code>struct s_point</code> cada vez. Los prefijos <code>s_</code> y <code>t_</code> son
 convención de la Norma: <code>s_</code> para la etiqueta del struct, <code>t_</code> para el tipo.</p>
@@ -382,7 +650,7 @@ tipos. La macro enseña que <code>#define</code> es <em>sustitución de texto</e
 sin saber nada de C: por eso hay que proteger los argumentos con paréntesis y por eso se evalúan
 tantas veces como aparecen. El struct es la otra mitad: crear tipos propios que agrupan datos. Con
 <code>-&gt;</code> se accede a un campo a través de un puntero (<code>p-&gt;x</code> es
-<code>(*p).x</code>). Y los <em>include guards</em> (<code>#ifndef ... #endif</code>) evitan que, si
+<code>(*p).x</code>). Y los <a href="#g-include-guard"><em>include guards</em></a> (<code>#ifndef ... #endif</code>) evitan que, si
 la cabecera se incluye dos veces, el tipo se defina dos veces y falle la compilación. Es exactamente
 el esqueleto que tendrá <code>libft.h</code> con su <code>t_list</code>.</div>
 </div>
@@ -390,7 +658,7 @@ el esqueleto que tendrá <code>libft.h</code> con su <code>t_list</code>.</div>
 <div class="card" id="ex24">
 <h2><span class="ex">ex24</span>Makefile</h2>
 <div class="meta"><span>Entrega: <b>Makefile</b></span><span>Reglas: <b>all, clean, fclean, re</b></span></div>
-<p>Un <code>Makefile</code> que compile <code>libft.a</code> con cinco funciones de los ejercicios
+<p>Un <a href="#g-makefile"><code>Makefile</code></a> que compile <code>libft.a</code> con cinco funciones de los ejercicios
 anteriores (<code>ft_putchar</code>, <code>ft_putstr</code>, <code>ft_strcmp</code>,
 <code>ft_strlen</code>, <code>ft_swap</code>), con las fuentes en <code>srcs/</code>, las cabeceras
 en <code>includes/</code> y la librería en la raíz. Solo se entrega el Makefile; la Moulinette pone
@@ -439,7 +707,7 @@ en cada compilación.</li>
 <li><strong><code>$(NAME): $(OBJS)</code></strong>: la librería depende de los objetos, y se
 construye con <code>ar rcs</code>: <code>r</code> inserta (o reemplaza) los <code>.o</code> en el
 archivo, <code>c</code> lo crea sin avisar si no existe, <code>s</code> escribe el índice de símbolos
-que el enlazador usa para encontrar cada función.</li>
+que <a href="#g-enlazador">el enlazador</a> usa para encontrar cada función.</li>
 <li><strong><code>%.o: %.c</code></strong>: regla patrón. Cualquier <code>X.o</code> se hace a
 partir de su <code>X.c</code>. <code>$&lt;</code> es el primer prerequisito (el <code>.c</code>) y
 <code>$@</code> el objetivo (el <code>.o</code>).</li>
@@ -453,8 +721,8 @@ y no borraría nada.</li>
 <p>Una limitación (que el enunciado no pide resolver): los <code>.o</code> dependen solo de su
 <code>.c</code>, no de las cabeceras de <code>includes/</code>. Si cambia un <code>.h</code>,
 <code>make</code> no recompila nada hasta un <code>make re</code>.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es una <strong>librería
-estática</strong> y cómo se construye. <code>libft.a</code> no es más que un archivo
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Qué es una <a href="#g-libreria-estatica"><strong>librería
+estática</strong></a> y cómo se construye. <code>libft.a</code> no es más que un archivo
 (<code>ar</code> = archiver, el antepasado de <code>tar</code>) con varios <code>.o</code> dentro y un
 índice. Al enlazar un programa con <code>cc main.c libft.a</code>, el enlazador saca de ahí solo los
 objetos que necesita y los copia en el ejecutable. Y <code>make</code> decide qué rehacer comparando
@@ -466,7 +734,7 @@ mismas reglas, y la evaluación comprueba que no recompile de más.</div>
 <div class="card" id="ex25">
 <h2><span class="ex">ex25–ex26</span>ft_foreach y ft_count_if</h2>
 <div class="meta"><span>Entrega: <b>ft_foreach.c</b>, <b>ft_count_if.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
-<p>Punteros a función, como en <a href="../../piscine/013_c11.html#ex00">C 11 · ft_foreach</a> y
+<p><a href="#g-puntero-funcion">Punteros a función</a>, como en <a href="../../piscine/013_c11.html#ex00">C 11 · ft_foreach</a> y
 <a href="../../piscine/013_c11.html#ex03">C 11 · ft_count_if</a>:</p>
 <pre><code>void	ft_foreach(int *tab, int length, void (*f)(int))
 {
@@ -508,7 +776,7 @@ Libft, en <code>qsort</code> de la libc o en los callbacks de cualquier bibliote
 <div class="meta"><span>Entrega: <b>Makefile</b>, <b>ft_display_file.c</b></span><span>Autorizado: <b>open, read, write, close</b></span></div>
 <p>Un programa <code>ft_display_file</code> que muestra el contenido del fichero que recibe como
 argumento, sin <code>malloc</code> (solo un array de tamaño fijo) y con tres mensajes de error
-concretos por la salida de error. Es el <a href="../../piscine/012_c10.html#ex00">display_file de
+concretos por la <a href="#g-fd">salida de error</a>. Es el <a href="../../piscine/012_c10.html#ex00">display_file de
 C 10</a>, el último ejercicio del proyecto y el único que lee de disco.</p>
 <pre><code>void	ft_cat_fd(int fd)
 {
@@ -578,13 +846,115 @@ hay regla <code>re</code> porque el enunciado solo pide <code>all</code>, <code>
 <code>fclean</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A hablar con el sistema operativo sin
 intermediarios. <code>open</code>, <code>read</code>, <code>write</code> y <code>close</code> son
-llamadas al sistema: un fichero abierto es solo un número (el descriptor) y leer es pedirle al kernel
+<a href="#g-syscall">llamadas al sistema</a>: un fichero abierto es solo un número (el descriptor) y leer es pedirle al kernel
 "dame hasta N bytes". El bucle <code>read</code> + <code>write</code> con un buffer fijo es,
 literalmente, el corazón de <code>cat</code>. Y es la antesala directa de get_next_line, donde ese
 mismo <code>read</code> por trozos tendrá que cortarse en líneas y recordar lo que sobró entre
 llamada y llamada. Separar la salida normal (fd 1) de los errores (fd 2) es lo que permite
 <code>./ft_display_file f &gt; copia</code> sin que los mensajes de error acaben dentro de la
 copia.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>La Piscine Reloaded la corrige solo la Moulinette, pero son preguntas que salen en cuanto
+alguien revisa este código, y en las defensas de Libft y de los proyectos siguientes. Cada una tiene
+una respuesta corta y el enlace a la sección donde está explicado a fondo. Están agrupadas en:
+shell, C, Makefile y entrega, y puntos débiles. Antes de mirar la respuesta, intenta contestar
+tú.</p>
+
+<h3>Shell</h3>
+<details id="q-enlaces">
+<summary>¿Qué diferencia hay entre <code>test5</code> y <code>test6</code> en el ex00?</summary>
+<p><code>test5</code> es un enlace duro a <code>test3</code>: otro nombre del mismo inodo, con sus
+mismos permisos, tamaño y fecha, y un 2 en la columna de enlaces. <code>test6</code> es un enlace
+simbólico a <code>test0</code>: un fichero aparte que guarda la ruta, de ahí sus 5 bytes. Si se
+borra <code>test0</code>, <code>test6</code> queda roto. → <a href="#ex00">ex00</a></p>
+</details>
+<details id="q-ejecutar">
+<summary>¿Por qué <code>./find_sh.sh</code> da «Permission denied»?</summary>
+<p>Porque en el repositorio los scripts tienen permisos <code>644</code>, sin el bit de ejecución.
+Se arregla con <code>chmod +x find_sh.sh</code>, o se lanza con <code>sh find_sh.sh</code>, que solo
+necesita leerlo. → <a href="#ex01">ex01–ex05</a></p>
+</details>
+
+<h3>C</h3>
+<details id="q-putchar">
+<summary>¿Dónde está definido <code>ft_putchar</code>? ¿Por qué solo lo declaras?</summary>
+<p>Lo pone la Moulinette, que compila con su propio ft_putchar.c. El fichero solo lleva el
+prototipo, suficiente para que el compilador genere la llamada; el enlazador junta después los dos
+objetos. Si también lo definiera, habría dos definiciones y el enlace fallaría. → <a href="#ex06">ex06–ex08</a></p>
+</details>
+<details id="q-factorial">
+<summary>¿Qué devuelven tus factoriales con 13?</summary>
+<p>La recursiva, 0, porque corta en <code>nb &gt; 12</code>: 13! no cabe en un <code>int</code>. La
+iterativa no corta y el producto desborda: devuelve 1932053504. Las dos funciones se comportan
+distinto con la misma entrada. → <a href="#ex12">ex12–ex14</a></p>
+</details>
+<details id="q-strcmp">
+<summary>¿Por qué conviertes a <code>unsigned char</code> en <code>ft_strcmp</code>?</summary>
+<p>Para comparar como la libc. En x86 el <code>char</code> tiene signo y los bytes de 128 en
+adelante valdrían negativo; así <code>"é"</code> frente a <code>"a"</code> da 98, positivo, y la
+<code>é</code> se ordena después de los ASCII. → <a href="#ex15">ex15–ex17</a></p>
+</details>
+<details id="q-sort">
+<summary>En <code>ft_sort_params</code>, ¿qué intercambias exactamente?</summary>
+<p>Los punteros de <code>argv</code>, no las letras: cuesta lo mismo sea la cadena larga o corta.
+Es una ordenación por intercambio que empieza en <code>i = 1</code> para no mover el nombre del
+programa. → <a href="#ex18">ex18–ex19</a></p>
+</details>
+<details id="q-abs">
+<summary>¿Por qué <code>ft_abs.h</code> no pasa la norminette? ¿Para qué tantos paréntesis?</summary>
+<p>Porque el ejercicio pide justo una macro con parámetros y un ternario, que la Norma prohíbe; el
+enunciado lo autoriza solo esa vez. Los paréntesis evitan que <code>ABS(a - b)</code> se expanda a
+<code>-a - b</code>. Lo que no evitan es que <code>ABS(i++)</code> incremente dos veces.
+→ <a href="#ex22">ex22–ex23</a></p>
+</details>
+<details id="q-foreach">
+<summary>¿Qué es <code>void (*f)(int)</code>?</summary>
+<p>Un parámetro que es un puntero a una función que recibe un <code>int</code> y no devuelve nada.
+<code>ft_foreach</code> lo llama con cada elemento sin saber qué hace; lo decide quien llama. Es la
+idea de <code>ft_lstiter</code> y <code>ft_lstmap</code> en Libft. → <a href="#ex25">ex25–ex26</a></p>
+</details>
+
+<h3>Makefile y entrega</h3>
+<details id="q-relink">
+<summary>¿El Makefile del ex24 hace relink? ¿Qué hace <code>ar rcs</code>?</summary>
+<p>No: un segundo <code>make</code> responde <code>Nothing to be done for 'all'</code>, porque
+<code>libft.a</code> es más nueva que sus objetos. <code>ar rcs</code> mete o reemplaza los
+<code>.o</code> en el archivo (<code>r</code>), lo crea si no existe (<code>c</code>) y escribe el
+índice de símbolos (<code>s</code>). Ojo: si cambia una cabecera no recompila nada.
+→ <a href="#ex24">ex24</a></p>
+</details>
+<details id="q-display">
+<summary>¿Qué hace <code>ft_display_file</code> sin argumentos, con dos o con un fichero que no existe?</summary>
+<p>Escribe por la salida de error <code>File name missing.</code>, <code>Too many arguments.</code> o
+<code>Cannot read file.</code>, cada uno con su salto de línea. Los dos primeros salen con código 0 y
+el tercero con 1. → <a href="#ex27">ex27</a></p>
+</details>
+
+<h3>Puntos débiles (mejor tener la respuesta preparada)</h3>
+<details id="q-strdup">
+<summary>¿Ves algún fallo en <code>ft_strdup</code>?</summary>
+<p>Sí: reserva <code>ft_strlen(src)</code> bytes y copia también el <code>'\0'</code>, así que
+escribe uno de más. Valgrind lo marca como <code>Invalid write of size 1</code>. Falta el
+<code>+ 1</code> en el <code>malloc</code>, y comprobar si devuelve <code>NULL</code>.
+→ <a href="#ex20">ex20–ex21</a></p>
+</details>
+<details id="q-div">
+<summary>¿Qué pasa con <code>ft_div_mod</code> si <code>b</code> es 0? ¿Y <code>ft_sqrt</code> con números enormes?</summary>
+<p><code>ft_div_mod</code> divide entre cero: comportamiento indefinido, y en la práctica el programa
+muere con <code>SIGFPE</code>. <code>ft_sqrt</code> sigue subiendo <code>i</code> hasta
+<code>nb</code> aunque <code>i * i</code> ya se haya pasado, así que desborda y da miles de millones
+de vueltas; parar cuando <code>i * i &gt; nb</code> lo arreglaría. → <a href="#ex09">ex09–ex11</a>,
+<a href="#ex12">ex12–ex14</a></p>
+</details>
+<details id="q-directorio">
+<summary>¿Y si a <code>ft_display_file</code> le pasas un directorio?</summary>
+<p><code>open</code> lo abre, pero <code>read</code> devuelve -1: el bucle no entra y el programa
+acaba sin escribir nada, con código 0 y sin <code>Cannot read file.</code>. El enunciado garantiza
+ficheros válidos, así que no debería salir en la corrección. → <a href="#ex27">ex27</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C-piscine-reloaded · <a href="../M0/001_Libft.html">continuar con Libft →</a></footer>

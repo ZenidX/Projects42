@@ -14,6 +14,8 @@
       <a href="../../index.html">Inicio</a>
       <a href="../../index.html#piscine">Piscine</a>
       <a href="../../index.html#cursus" class="active">Cursus</a>
+      <a href="../../galaxia.html">Galaxia</a>
+      <a href="../../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ globales y leyendo de <code>BUFFER_SIZE</code> en <code>BUFFER_SIZE</code> bytes
 enseña las variables <code>static</code> y que castiga cualquier descuido con la memoria.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#static">La variable static</a></li>
   <li><a href="#buffer">BUFFER_SIZE y -D</a></li>
   <li><a href="#ciclo">Leer, acumular, cortar, guardar</a></li>
@@ -33,6 +36,7 @@ enseña las variables <code>static</code> y que castiga cualquier descuido con l
   <li><a href="#utils">Las utilidades</a></li>
   <li><a href="#memoria">Memoria y leaks</a></li>
   <li><a href="#bonus">Bonus: varios fd</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>El problema de fondo</b> — <code>read(fd, buf, n)</code> no sabe
@@ -45,6 +49,241 @@ comienzo sería saber qué es una variable estática». Además pide leer lo men
 cargar el fichero entero y luego trocearlo. Es la versión hecha a mano de lo que hacen
 <code>fgets</code> o <code>getline</code> en la libc, y la usarás en casi todos los proyectos
 que lean ficheros.</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>La página usa palabras que vienen de cómo el sistema da los datos de un fichero, de dónde vive
+cada variable en memoria y de cómo trabaja el preprocesador. Aquí está cada una explicada desde
+cero y con un ejemplo sacado del propio get_next_line. En el resto de la página, la primera vez que
+sale uno de estos términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Ficheros y lectura</h3>
+<details id="g-fd">
+<summary>Descriptor de fichero</summary>
+<p>El número entero con el que un proceso se refiere a algo abierto: un fichero, una tubería, la
+terminal. Todo proceso empieza con tres: 0 (entrada estándar), 1 (salida estándar) y 2 (salida de
+errores). <code>open</code> devuelve el menor número libre, normalmente el 3, y −1 si falla.</p>
+<p>get_next_line usa el número tal cual como índice de su array: <code>buf[fd]</code>. Por eso
+rechaza los negativos y los que no caben en el array (<code>fd &gt;= MAX_FD</code>, con
+<code>MAX_FD</code> a 1024). <code>get_next_line(-1)</code> y <code>get_next_line(4242)</code> sin
+abrir devuelven <code>NULL</code>.</p>
+</details>
+<details id="g-read">
+<summary><code>read</code> y lo que devuelve</summary>
+<p><code>read(fd, buf, n)</code> pide <em>hasta</em> n bytes y devuelve cuántos ha leído de
+verdad: puede ser menos de n aunque no se haya acabado nada (una tubería o la terminal dan lo que
+haya en ese momento). Devuelve 0 en fin de fichero y −1 si hay un error. No añade
+<code>'\0'</code>: lo que deja en <code>buf</code> son bytes, no una cadena.</p>
+<p>Con el fichero <code>"hola\nmundo\nfin"</code> (14 bytes) y <code>BUFFER_SIZE=8</code>, el
+primer <code>read</code> devuelve 8 (<code>"hola\nmun"</code>), el segundo 6
+(<code>"do\nfin"</code>) y el tercero 0. Por eso el código escribe a mano
+<code>buf[bytes_read] = '\0'</code>.</p>
+</details>
+<details id="g-eof">
+<summary>Fin de fichero (EOF)</summary>
+<p>EOF (<em>end of file</em>) no es un carácter guardado al final del fichero: es la situación de
+no quedar nada que leer, y <code>read</code> la indica devolviendo 0. En la terminal se provoca con
+Ctrl-D al principio de una línea.</p>
+<p>En get_next_line, si al llegar a EOF hay algo acumulado se devuelve como última línea, sin
+<code>'\n'</code> (<code>"fin"</code>). Si no queda nada, se libera el buffer del fd y se
+devuelve <code>NULL</code>.</p>
+</details>
+<details id="g-stdin">
+<summary>Entrada estándar y tuberías</summary>
+<p>La entrada estándar es el descriptor 0. Por defecto es el teclado, pero la shell la puede
+conectar a un fichero (<code>./prog &lt; f.txt</code>) o a la salida de otro programa con una
+tubería (<code>cat f.txt | ./prog</code>). Para el programa es lo mismo: lee del 0.</p>
+<p><code>get_next_line(0)</code> funciona igual que con un fichero. El tester del repo lo prueba
+con stdin y con una tubería que escribe a trozos, que es justo cuando <code>read</code> devuelve
+menos de lo pedido.</p>
+</details>
+<details id="g-flujo">
+<summary>Flujo (stream)</summary>
+<p>Una fuente de datos que se lee en orden, por trozos, sin saber de antemano cuánto mide y, en
+general, sin poder volver atrás. Un fichero se puede rebobinar con <code>lseek</code>; una tubería o
+la terminal, no.</p>
+<p>El enunciado prohíbe <code>lseek</code>, así que get_next_line tiene que tratar todo como un
+flujo: lo que lee de más después del <code>'\n'</code> no se puede «devolver» al fichero y hay que
+guardarlo para la siguiente llamada.</p>
+</details>
+<details id="g-buffer">
+<summary>Buffer</summary>
+<p>Una zona de memoria donde se dejan los datos entre quien los produce y quien los usa. Leer de
+uno en uno sería una llamada al sistema por byte; con un buffer se pide un bloque de una vez.</p>
+<p>Aquí hay uno por fd, <code>buf[fd]</code>, de <code>BUFFER_SIZE + 1</code> bytes: el + 1 deja
+sitio para el <code>'\0'</code>. Entre llamadas guarda el resto que sobró detrás del último
+<code>'\n'</code>.</p>
+</details>
+<details id="g-binario">
+<summary>Fichero de texto y fichero binario</summary>
+<p>Un fichero de texto es una secuencia de caracteres separada en líneas por <code>'\n'</code>. Un
+binario (una imagen, un ejecutable) puede contener cualquier byte, incluido el 0, que en C es el
+fin de una cadena.</p>
+<p>El enunciado declara indeterminado leer un binario, y se ve por qué: las funciones
+<code>gnl_</code> miden con <code>gnl_strlen</code>, que se para en el primer
+<code>'\0'</code>. Con el contenido <code>ab\0cd\nef\n</code> el resultado depende del
+<code>BUFFER_SIZE</code>: con 1 salen <code>"abcd\n"</code> y <code>"ef\n"</code> (el 0 se pierde);
+con 8 solo <code>"ab\n"</code>; con 42 solo <code>"ab"</code>.</p>
+</details>
+
+<h3>Memoria y variables</h3>
+<details id="g-static">
+<summary>Variable <code>static</code> local</summary>
+<p>Una variable declarada con <code>static</code> dentro de una función. Solo se ve desde esa
+función, como una local, pero existe durante todo el programa, como una global: se inicializa una
+vez (a cero si no se le da valor) y conserva su contenido entre llamadas.</p>
+<p><code>static char *buf[MAX_FD]</code> es la única de get_next_line. Empieza con los 1024
+punteros a <code>NULL</code> y cada <code>buf[fd]</code> guarda el resto de ese fd de una llamada a
+la siguiente. En <code>nm</code> aparece como <code>b buf.0</code>: la <code>b</code> minúscula es
+«en <code>.bss</code> y local al fichero».</p>
+</details>
+<details id="g-ambito">
+<summary>Ámbito y duración</summary>
+<p>El <em>ámbito</em> de una variable es desde dónde se puede nombrar; la <em>duración</em>, cuánto
+tiempo existe. Son cosas independientes:</p>
+<table>
+<tr><th>Variable</th><th>Ámbito</th><th>Duración</th></tr>
+<tr><td>local</td><td>la función</td><td>una llamada</td></tr>
+<tr><td>global</td><td>todo el programa</td><td>todo el programa</td></tr>
+<tr><td><code>static</code> local</td><td>la función</td><td>todo el programa</td></tr>
+</table>
+<p>get_next_line necesita la tercera fila: duración larga para recordar el resto y ámbito corto
+para no ser una global.</p>
+</details>
+<details id="g-global">
+<summary>Variable global</summary>
+<p>Una variable declarada fuera de toda función. Cualquier fichero del programa puede leerla y
+cambiarla, y por eso es fácil que alguien la toque sin querer. En 42 están prohibidas casi
+siempre, y este enunciado lo dice expresamente.</p>
+<p>El tester del repo lo comprueba con <code>nm</code>: una global sale con letra mayúscula
+(<code>B</code>, <code>D</code>), y la static de get_next_line sale con <code>b</code>
+minúscula, que no cuenta.</p>
+</details>
+<details id="g-segmentos">
+<summary>Pila, heap y <code>.bss</code></summary>
+<p>Tres zonas de la memoria de un proceso. La <em>pila</em> guarda las variables locales y se
+recoge sola al salir de cada función; en Linux suele medir 8 MB (<code>ulimit -s</code> da 8192
+KB). El <em>heap</em> es la memoria de <code>malloc</code>, que vive hasta el <code>free</code>.
+<code>.bss</code> es la zona de las globales y static que empiezan a cero, y dura todo el
+programa.</p>
+<p>En get_next_line, el array <code>buf</code> está en <code>.bss</code> (1024 punteros, 8 KB) y
+los buffers a los que apunta, en el heap. Un <code>char buf[BUFFER_SIZE]</code> local con
+<code>BUFFER_SIZE=10000000</code> pediría 10 MB de pila y el programa reventaría.</p>
+</details>
+<details id="g-heap">
+<summary><code>malloc</code> y <code>free</code></summary>
+<p><code>malloc(n)</code> reserva n bytes en el heap y devuelve su dirección, o
+<code>NULL</code> si no puede. <code>free(p)</code> los devuelve. Cada bloque reservado tiene que
+liberarse una vez, ni cero ni dos.</p>
+<p>Las únicas funciones autorizadas son <code>read</code>, <code>malloc</code> y
+<code>free</code>. Cada línea devuelta sale de un <code>malloc</code>, y cada vuelta de
+<code>gnl_strncat</code> reserva una copia nueva y libera la anterior; con
+<code>BUFFER_SIZE=1</code> eso es una reserva por byte de la línea.</p>
+</details>
+<details id="g-terminador">
+<summary>Terminador nulo</summary>
+<p>En C una cadena es una fila de <code>char</code> que acaba en el byte <code>'\0'</code>. No se
+guarda la longitud: el final está donde está el cero, y <code>strlen</code> lo busca contando.</p>
+<p><code>read</code> no lo pone, así que <code>gnl_read_loop</code> hace
+<code>buf[bytes_read] = '\0'</code> tras cada lectura. Por eso el buffer mide
+<code>BUFFER_SIZE + 1</code>: con <code>BUFFER_SIZE</code> bytes leídos, el cero va en la posición
+<code>BUFFER_SIZE</code>.</p>
+</details>
+<details id="g-null">
+<summary><code>NULL</code> frente a cadena vacía</summary>
+<p><code>NULL</code> es un puntero que no apunta a nada; <code>""</code> es una cadena de verdad,
+un bloque de memoria con un solo byte, el <code>'\0'</code>. A la primera no se le puede leer nada;
+la segunda tiene longitud 0 y hay que liberarla si salió de <code>malloc</code>.</p>
+<p>get_next_line usa las dos: dentro, <code>r[0] == '\0'</code> significa «no queda nada»; fuera,
+lo que ve quien llama es <code>NULL</code>. Una línea vacía del fichero no es ninguna de las dos:
+es <code>"\n"</code>.</p>
+</details>
+<details id="g-aritmetica">
+<summary>Aritmética de punteros</summary>
+<p>Sumar un entero a un puntero lo avanza ese número de elementos, y restar dos punteros del mismo
+bloque da cuántos elementos hay entre ellos. Con <code>char</code>, un elemento es un byte.</p>
+<p>En <code>gnl_split</code>, <code>p</code> apunta al <code>'\n'</code> dentro de
+<code>buf</code>: <code>p - buf</code> es su posición y <code>p - buf + 1</code> la longitud de la
+línea con su salto. <code>p + 1</code> es donde empieza el resto. Con <code>buf = "hola\nmun"</code>,
+<code>p - buf</code> vale 4.</p>
+</details>
+<details id="g-propiedad">
+<summary>Propiedad de la memoria</summary>
+<p>Quién es responsable de liberar cada bloque. No lo comprueba C; es un contrato que hay que
+respetar de memoria: quien recibe la propiedad libera, y quien la cede no vuelve a tocar el
+puntero.</p>
+<p>La línea devuelta pasa a ser de quien llama. <code>gnl_strncat</code> se queda con su primer
+argumento y lo libera, por eso siempre se usa como <code>r = gnl_strncat(r, …)</code>. El buffer
+de cada fd es de get_next_line.</p>
+</details>
+<details id="g-realloc">
+<summary><code>realloc</code></summary>
+<p>La función de la libc que agranda (o encoge) un bloque del heap: reserva uno nuevo del tamaño
+pedido, copia el contenido, libera el viejo y devuelve el nuevo. Si falla, devuelve
+<code>NULL</code> y el viejo sigue vivo.</p>
+<p>No está autorizada, y <code>gnl_strncat</code> hace su papel a mano, con una diferencia: si la
+reserva falla, el original ya está liberado. Eso simplifica los caminos de error, porque nunca
+queda nada que liberar después.</p>
+</details>
+<details id="g-fuga">
+<summary>Fuga de memoria, «definitely lost» y «still reachable»</summary>
+<p>Una fuga es memoria reservada que no se libera. Valgrind distingue dos casos al final:
+<em>definitely lost</em>, bloques a los que ya no apunta nada (una fuga de verdad), y <em>still
+reachable</em>, bloques a los que todavía apunta algo, por ejemplo una static, pero que nadie
+liberó.</p>
+<p>Si se lee un fd hasta <code>NULL</code>, get_next_line lo deja todo liberado: «in use at exit:
+0 bytes». Si se deja un fd a medias, su buffer queda como <em>still reachable</em>.</p>
+</details>
+
+<h3>Compilación y coste</h3>
+<details id="g-preprocesador">
+<summary>Preprocesador, macros y <code>-D</code></summary>
+<p>El preprocesador trabaja sobre el texto del código antes de que el compilador lo vea: copia los
+<code>#include</code> y sustituye las <em>macros</em> (<code>#define NOMBRE valor</code>) por su
+valor. <code>-D NOMBRE=valor</code> en la línea de órdenes define una macro como si estuviera
+escrita al principio del fichero.</p>
+<p><code>cc -D BUFFER_SIZE=42 …</code> hace que cada <code>BUFFER_SIZE</code> del código se
+convierta en <code>42</code>. El header da un valor por defecto con <code>#ifndef</code>, así que
+compila también sin la flag; el tester lo comprueba («sin -D BUFFER_SIZE vale 42»).</p>
+</details>
+<details id="g-guarda">
+<summary>Guarda de inclusión</summary>
+<p>El trío <code>#ifndef X_H</code> / <code>#define X_H</code> / <code>#endif</code> que rodea un
+header. La primera vez que se incluye, <code>X_H</code> no existe, se define y se copia el
+contenido; si se vuelve a incluir en el mismo <code>.c</code>, ya existe y se salta todo.</p>
+<p><code>get_next_line.h</code> usa <code>GET_NEXT_LINE_H</code>. El mismo
+<code>#ifndef</code>, sin el <code>#define</code> de guarda, es el que pone los valores por defecto
+de <code>BUFFER_SIZE</code>, <code>MAX_FD</code> y <code>CHAR_SEP</code>.</p>
+</details>
+<details id="g-enlace">
+<summary>Funciones <code>static</code> y visibilidad</summary>
+<p>Una función normal tiene <em>enlace externo</em>: cualquier otro <code>.c</code> del programa
+puede llamarla y su nombre ocupa sitio en el espacio común. Con <code>static</code> delante solo
+existe dentro de su fichero.</p>
+<p>Las auxiliares de <code>get_next_line.c</code> no son <code>static</code>: en <code>nm</code>
+salen con <code>T</code> mayúscula (<code>T gnl_split</code>, <code>T gnl_read</code>…). Funciona,
+pero si el programa que la usa tuviera otra función <code>gnl_read</code>, el enlazado
+fallaría.</p>
+</details>
+<details id="g-cuadratico">
+<summary>Coste cuadrático</summary>
+<p>Un coste es cuadrático cuando crece con el cuadrado del tamaño: el doble de datos, cuatro veces
+el trabajo. Suele salir de repetir, para cada elemento nuevo, un trabajo proporcional a todo lo
+anterior.</p>
+<p>Le pasa a get_next_line con líneas largas: cada <code>gnl_strncat</code> copia la línea
+acumulada entera para añadir <code>BUFFER_SIZE</code> bytes. Con <code>BUFFER_SIZE=1</code> y una
+línea de 20 000 bytes son unas 20 000²/2 = 200 millones de bytes copiados. El tester incluye ese
+caso y pasa, pero se nota.</p>
+</details>
+<details id="g-indeterminado">
+<summary>Comportamiento indeterminado</summary>
+<p>Lo que el enunciado declara fuera de contrato: puedes hacer cualquier cosa y no se evalúa.
+Equivale al comportamiento indefinido del estándar de C, pero decidido por el enunciado.</p>
+<p>Aquí son dos casos: que el fichero cambie entre llamadas antes de llegar a EOF, y que sea
+binario. Fuera de ellos, la función no puede terminar de forma inesperada: ni segfault ni doble
+<code>free</code>.</p>
+</details>
+</div>
 
 <div class="card" id="static">
 <h2><span class="ex">static</span>La memoria entre llamadas</h2>
@@ -72,14 +311,14 @@ que lean ficheros.</div>
 	}
 	return (r);
 }</code></pre>
-<p>Una variable local normal vive en la pila y muere al salir de la función. Una
-<code>static</code> declarada dentro de la función vive lo que dura el programa: se inicializa
+<p>Una variable local normal vive en <a href="#g-segmentos">la pila</a> y muere al salir de la función. Una
+<a href="#g-static"><code>static</code></a> declarada dentro de la función vive lo que dura el programa: se inicializa
 una sola vez (a cero, si no le das valor) y conserva su contenido de una llamada a la siguiente.
-Pero solo es visible dentro de <code>get_next_line</code>, así que no es una variable global y
+Pero solo es visible dentro de <code>get_next_line</code>, así que no es una variable <a href="#g-global">global</a> y
 cumple la prohibición del enunciado.</p>
-<p>Aquí la static es un <em>array de punteros</em>, uno por descriptor: <code>buf[fd]</code> es
-el «resto» pendiente de ese fd. Empiezan todos a <code>NULL</code>, y el primer uso de cada fd
-reserva su buffer:</p>
+<p>Aquí la static es un <em>array de punteros</em>, uno por <a href="#g-fd">descriptor</a>: <code>buf[fd]</code> es
+el «resto» pendiente de ese fd. Empiezan todos a <a href="#g-null"><code>NULL</code></a>, y el primer uso de cada fd
+reserva su <a href="#g-buffer">buffer</a>:</p>
 <pre><code>void	*gnl_set_buffer(char **buf, int fd)
 {
 	if (!buf[fd])
@@ -97,9 +336,9 @@ un salto de línea, no hace falta leer nada — basta con cortar (<code>gnl_spli
 hay que leer más (<code>gnl_read</code>).</p>
 <p>Ojo: las funciones auxiliares de <code>get_next_line.c</code> (<code>gnl_split</code>,
 <code>gnl_read_loop</code>, <code>gnl_read</code>, <code>gnl_set_buffer</code>) no están
-declaradas <code>static</code> ni en el header, así que son visibles desde fuera del fichero.
+declaradas <code>static</code> ni en el header, así que son <a href="#g-enlace">visibles</a> desde fuera del fichero.
 Funciona igual; solo significa que ocupan esos nombres en el programa que enlace con ellas.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre <em>ámbito</em>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre <em><a href="#g-ambito">ámbito</a></em>
 (quién puede ver una variable) y <em>duración</em> (cuánto tiempo existe). Una local tiene ámbito
 de función y duración de una llamada; una global, ámbito de todo el programa y duración de todo
 el programa; una <code>static</code> local combina ámbito de función con duración de programa.
@@ -127,20 +366,20 @@ de cada fichero compilado. El evaluador y la Moulinette lo cambian para probar t
 con 9999, con 10000000. El <code>#ifndef</code> da un valor por defecto para que el proyecto
 compile también sin la flag, como exige el enunciado, sin pisar el valor si viene de fuera.</p>
 <p>El usuario usa el mismo patrón para dos macros más: <code>MAX_FD</code>, el tamaño del array
-de buffers, y <code>CHAR_SEP</code>, el carácter que corta las líneas. Esta última es una rareza
+de <a href="#g-buffer">buffers</a>, y <code>CHAR_SEP</code>, el carácter que corta las líneas. Esta última es una rareza
 simpática: compilando con <code>-D CHAR_SEP="' '"</code> la función devolvería palabras en vez de
-líneas. Ojo con <code>MAX_FD</code>: un fd mayor o igual que 1024 devuelve <code>NULL</code>
-aunque esté abierto; en Linux el límite de descriptores por proceso puede ser mayor
+líneas. Ojo con <code>MAX_FD</code>: un fd mayor o igual que 1024 devuelve <a href="#g-null"><code>NULL</code></a>
+aunque esté abierto; en Linux el límite de <a href="#g-fd">descriptores</a> por proceso puede ser mayor
 (<code>ulimit -n</code>).</p>
 <p>La comprobación <code>BUFFER_SIZE &lt;= 0</code> al principio de <code>get_next_line</code>
 cubre a quien compile con <code>-D BUFFER_SIZE=0</code> o negativo: se devuelve
-<code>NULL</code> antes de reservar nada. Y como el buffer se reserva con <code>malloc</code> en
-el heap, un <code>BUFFER_SIZE</code> de 10000000 no revienta la pila, que es lo que pasaría con un
+<code>NULL</code> antes de reservar nada. Y como el buffer se reserva con <a href="#g-heap"><code>malloc</code></a> en
+el heap, un <code>BUFFER_SIZE</code> de 10000000 no revienta <a href="#g-segmentos">la pila</a>, que es lo que pasaría con un
 <code>char buf[BUFFER_SIZE]</code> local.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el preprocesador actúa antes que
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el <a href="#g-preprocesador">preprocesador</a> actúa antes que
 el compilador y que se le puede hablar desde la línea de órdenes. Y responde a la pregunta del
 enunciado («¿funciona si es 1? ¿y 10000000? ¿sabes por qué?»): con 1, la función tiene que ser
-correcta cuando cada <code>read</code> trae un solo byte, y será lenta; con 10000000, tiene que
+correcta cuando cada <a href="#g-read"><code>read</code></a> trae un solo byte, y será lenta; con 10000000, tiene que
 tolerar un buffer enorme, que en la pila no cabría. El tamaño del buffer no debe cambiar el
 <em>resultado</em>, solo el número de lecturas.</div>
 </div>
@@ -149,7 +388,7 @@ tolerar un buffer enorme, que en la pila no cabría. El tamaño del buffer no de
 <h2><span class="ex">read</span>Leer, acumular, cortar, guardar</h2>
 <div class="meta"><span>Entrega: <b>get_next_line.c</b></span><span>Autorizado: <b>read, malloc, free</b></span></div>
 <p>Cuando el resto no tiene <code>'\n'</code>, <code>gnl_read</code> lo copia a la línea en
-construcción <code>r</code>, vacía el buffer y empieza a leer:</p>
+construcción <code>r</code>, vacía el <a href="#g-buffer">buffer</a> y empieza a leer:</p>
 <pre><code>char	*gnl_read(char *buf, int fd)
 {
 	char	*r;
@@ -189,7 +428,7 @@ char	*gnl_read_loop(char *buf, int fd, char *r, ssize_t bytes_read)
 	}
 	return (r);
 }</code></pre>
-<p>Cada vuelta: <code>read</code> no pone <code>'\0'</code>, así que se añade a mano en
+<p>Cada vuelta: <a href="#g-read"><code>read</code></a> no pone <a href="#g-terminador"><code>'\0'</code></a>, así que se añade a mano en
 <code>buf[bytes_read]</code> (para eso el buffer mide <code>BUFFER_SIZE + 1</code>). Si en lo
 leído no hay salto, todo se <em>acumula</em> en <code>r</code> y se lee otra vez. Si lo hay, se
 <em>corta</em>:</p>
@@ -240,19 +479,19 @@ buffer sobre sí mismo.</p>
                                           ┌───┬───┬───┬────┬─────────┐
                                           │ m │ u │ n │ \0 │ ...     │
                                           └───┴───┴───┴────┴─────────┘</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — A pensar en <em>flujos</em> en lugar
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A pensar en <em><a href="#g-flujo">flujos</a></em> en lugar
 de en ficheros completos: los datos llegan a trozos de tamaño arbitrario y la frontera lógica (el
 <code>'\n'</code>) casi nunca coincide con la física (el final del <code>read</code>). La
 solución es siempre la misma tríada — un buffer de lectura, un acumulador y un resto — y la
 volverás a ver en cualquier código que lea de un socket, de una tubería o de un parser. También
-obliga a manejar aritmética de punteros con soltura: <code>p - buf</code> es una distancia en
+obliga a manejar <a href="#g-aritmetica">aritmética de punteros</a> con soltura: <code>p - buf</code> es una distancia en
 bytes, no una dirección.</div>
 </div>
 
 <div class="card" id="eof">
 <h2><span class="ex">EOF</span>El final del fichero y la última línea</h2>
 <div class="meta"><span>Entrega: <b>get_next_line.c</b></span><span>Valor devuelto: <b>la línea leída, o NULL al terminar o si hay error</b></span></div>
-<p><code>read</code> devuelve <code>0</code> en fin de fichero y <code>-1</code> en error. El
+<p><a href="#g-read"><code>read</code></a> devuelve <code>0</code> en <a href="#g-eof">fin de fichero</a> y <code>-1</code> en error. El
 bucle de lectura para con cualquiera de los dos (<code>bytes_read &gt; 0</code>), pero los
 distingue después:</p>
 <ul>
@@ -260,9 +499,9 @@ distingue después:</p>
   <code>r</code> tal cual, sin <code>'\n'</code>. Es lo que pide el enunciado: la línea termina
   en <code>\n</code> «excepto si se ha llegado al final del archivo y éste no termina con un
   \n».</li>
-  <li><strong>EOF sin nada</strong> (llamada 4): <code>r</code> es la cadena vacía
+  <li><strong>EOF sin nada</strong> (llamada 4): <code>r</code> es la <a href="#g-null">cadena vacía</a>
   <code>""</code>. <code>get_next_line</code> lo detecta con <code>r[0] == '\0'</code>, libera
-  la cadena y también el buffer del fd, pone <code>buf[fd] = NULL</code> y devuelve
+  la cadena y también el <a href="#g-buffer">buffer</a> del fd, pone <code>buf[fd] = NULL</code> y devuelve
   <code>NULL</code>.</li>
   <li><strong>Error de lectura</strong>: <code>gnl_read_loop</code> libera <code>r</code> y
   devuelve <code>NULL</code>, y <code>get_next_line</code> libera el buffer por el mismo camino.
@@ -285,8 +524,8 @@ ese momento: la última llamada es la que libera.</div>
 cinco funciones de cadena que necesita, con prefijo <code>gnl_</code>: <code>gnl_strlen</code>,
 <code>gnl_strchr</code>, <code>gnl_strdup</code>, <code>gnl_strncpy</code> y
 <code>gnl_strncat</code>. No son clones de las de la libc: están adaptadas al proyecto. Por
-ejemplo, <code>gnl_strlen</code> acepta <code>NULL</code> y devuelve 0, y
-<code>gnl_strdup</code> recibe una longitud máxima y rellena con <code>'\0'</code> hasta el final.
+ejemplo, <code>gnl_strlen</code> acepta <a href="#g-null"><code>NULL</code></a> y devuelve 0, y
+<code>gnl_strdup</code> recibe una longitud máxima y rellena con <a href="#g-terminador"><code>'\0'</code></a> hasta el final.
 La más importante es <code>gnl_strncat</code>, porque no concatena en el sitio sino que
 <em>reserva una cadena nueva</em>:</p>
 <pre><code>char	*gnl_strncat(char *dst, char *src, size_t n)
@@ -315,12 +554,12 @@ La más importante es <code>gnl_strncat</code>, porque no concatena en el sitio 
 <code>gnl_strlen(r) + bytes_read</code> o <code>gnl_strlen(r) + (p - buf + 1)</code>. La función
 copia <code>dst</code> en un bloque de <code>n + 1</code> bytes, <strong>libera
 <code>dst</code></strong> y añade <code>src</code> detrás.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — A diseñar el <em>contrato de
-propiedad</em> de cada función: <code>gnl_strncat</code> «se come» su primer argumento, y quien
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A diseñar el <em><a href="#g-propiedad">contrato de
+propiedad</a></em> de cada función: <code>gnl_strncat</code> «se come» su primer argumento, y quien
 la llama tiene que sustituir su puntero por el devuelto (<code>r = gnl_strncat(r, ...)</code>) y
 no volver a tocar el antiguo. Si la reserva falla, el original ya está liberado y se devuelve
 <code>NULL</code>, de modo que el error sube sin dejar nada colgando. Es la misma idea que
-<code>realloc</code>, escrita a mano.</div>
+<a href="#g-realloc"><code>realloc</code></a>, escrita a mano.</div>
 </div>
 
 <div class="card" id="memoria">
@@ -329,19 +568,19 @@ no volver a tocar el antiguo. Si la reserva falla, el original ya está liberado
 <p>El reparto de responsabilidades es este:</p>
 <ul>
   <li>La línea devuelta es de quien llama: él hace el <code>free</code>.</li>
-  <li>El buffer de cada fd es de <code>get_next_line</code>: se reserva en el primer uso y se
-  libera al llegar a EOF o al fallar.</li>
-  <li>Cada <code>malloc</code> intermedio (<code>q</code> en <code>gnl_split</code>, las copias
-  de <code>gnl_strncat</code>) se libera en la misma función o pasa la propiedad a quien la
+  <li>El <a href="#g-buffer">buffer</a> de cada fd es de <code>get_next_line</code>: se reserva en el primer uso y se
+  libera al llegar a <a href="#g-eof">EOF</a> o al fallar.</li>
+  <li>Cada <a href="#g-heap"><code>malloc</code></a> intermedio (<code>q</code> en <code>gnl_split</code>, las copias
+  de <code>gnl_strncat</code>) se libera en la misma función o pasa la <a href="#g-propiedad">propiedad</a> a quien la
   llama.</li>
 </ul>
 <p>Leyendo dos ficheros alternados hasta el final, con <code>BUFFER_SIZE</code> de 1, 3, 42 y
-10000000, valgrind no informa de ningún leak.</p>
+10000000, valgrind no informa de ningún <a href="#g-fuga">leak</a>.</p>
 <p>Dos cosas que conviene saber explicar en la evaluación. Primera: si el programa deja de leer
 un fd antes de llegar a EOF, su buffer sigue reservado en el array static al terminar el
 programa. Valgrind lo muestra como <em>still reachable</em> (sigue habiendo un puntero a él), no
 como <em>definitely lost</em>; con la interfaz que fija el enunciado no hay forma de avisar a la
-función de que ya no vas a leer más. Segunda: ojo con el coste. Cada vuelta sin salto de línea
+función de que ya no vas a leer más. Segunda: ojo con <a href="#g-cuadratico">el coste</a>. Cada vuelta sin salto de línea
 hace un <code>gnl_strncat</code> que vuelve a copiar toda la línea acumulada, así que una línea de
 <em>L</em> bytes cuesta del orden de <em>L² / BUFFER_SIZE</em> copias. Con
 <code>BUFFER_SIZE=1</code> y líneas muy largas se nota.</p>
@@ -355,25 +594,135 @@ deja la static a un fd sin terminar.</div>
 <div class="card" id="bonus">
 <h2><span class="ex">bonus</span>Varios descriptores a la vez</h2>
 <div class="meta"><span>Entrega: <b>get_next_line_bonus.c</b>, <b>get_next_line_bonus.h</b>, <b>get_next_line_utils_bonus.c</b></span><span>Requisito: <b>una sola variable static</b>, <b>varios fd alternados</b></span></div>
-<p>El bonus pide dos cosas: usar una sola variable estática, y poder alternar llamadas sobre
-fd 3, 4 y 5 sin que se mezclen las líneas de uno con las de otro. Con un único buffer static
+<p>El bonus pide dos cosas: usar una sola variable <a href="#g-static">estática</a>, y poder alternar llamadas sobre
+fd 3, 4 y 5 sin que se mezclen las líneas de uno con las de otro. Con un único <a href="#g-buffer">buffer</a> static
 compartido, leer del fd 4 machacaría el resto pendiente del fd 3.</p>
 <pre><code>	static char	*buf[MAX_FD];
 	...
 	p = gnl_strchr(buf[fd], CHAR_SEP);</code></pre>
-<p>La solución del usuario es indexar por fd: cada descriptor tiene su propio resto en
+<p>La solución del usuario es indexar por fd: cada <a href="#g-fd">descriptor</a> tiene su propio resto en
 <code>buf[fd]</code>, y todos viven dentro de <em>una</em> variable static, el array. Lo
 curioso es que el usuario ya lo hizo así en la parte obligatoria, de modo que los ficheros
 <code>_bonus</code> son copias idénticas de los normales; la única diferencia es el
 <code>#include "get_next_line_bonus.h"</code>. Leyendo dos ficheros alternados se obtiene:</p>
 <pre><code>[hola\n] [uno\n] [mundo\n] [dos\n] [\n] [NULL] ... [sin salto]</code></pre>
-<p>El precio del array es fijo: 1024 punteros (8 KB en 64 bits) en <code>.bss</code>,
+<p>El precio del array es fijo: 1024 punteros (8 KB en 64 bits) en <a href="#g-segmentos"><code>.bss</code></a>,
 aunque solo se use uno. Los buffers en sí solo se reservan para los fd que se leen.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el estado de una función con
 memoria tiene que estar indexado por aquello que identifica a cada «cliente» — aquí, el número
 de fd. Es la misma idea que una tabla de sesiones en un servidor. Y que el número de descriptor
 no es más que un índice pequeño que el kernel asigna (empezando por el menor libre, normalmente
 el 3), lo que permite usarlo directamente como posición de un array.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: la static y el buffer, casos límite, memoria, y
+bonus y Norma. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>La static y el buffer</h3>
+<details id="q-static">
+<summary>¿Qué es una variable static y por qué la necesitas aquí?</summary>
+<p>Una variable que solo se ve dentro de la función pero existe todo el programa, así que
+conserva su valor entre llamadas. La necesitas porque un <code>read</code> casi nunca acaba justo
+en el <code>'\n'</code>: lo que sobra detrás hay que guardarlo para la siguiente llamada, y una
+local normal desaparecería. No es una global porque nadie fuera de <code>get_next_line</code>
+puede nombrarla. → <a href="#static">static</a></p>
+</details>
+<details id="q-buffer-size">
+<summary>¿Funciona con <code>BUFFER_SIZE=1</code>? ¿Y con 10000000?</summary>
+<p>Sí con los dos; el tester lo prueba con 1, 42 y 10000000. Con 1 es correcto pero lento: un
+<code>read</code> y una copia de la línea por byte. Con 10000000 funciona porque el buffer se
+reserva con <code>malloc</code> en el heap; un array local de 10 MB no cabría en una pila de 8 MB.
+→ <a href="#buffer">-D</a></p>
+</details>
+<details id="q-cero">
+<summary>¿Y con <code>BUFFER_SIZE=0</code> o sin <code>-D</code>?</summary>
+<p>Con 0 o negativo, <code>get_next_line</code> devuelve <code>NULL</code> antes de reservar nada
+(<code>BUFFER_SIZE &lt;= 0</code>). Sin <code>-D</code>, el <code>#ifndef</code> del header pone 42.
+→ <a href="#buffer">-D</a></p>
+</details>
+<details id="q-poco">
+<summary>¿Lees lo menos posible, como pide el enunciado?</summary>
+<p>Sí. Si el resto guardado ya tiene un <code>'\n'</code>, se corta sin llamar a <code>read</code>.
+Si no, se lee de <code>BUFFER_SIZE</code> en <code>BUFFER_SIZE</code> y se para en el primer
+bloque que trae un salto. Nunca se lee el fichero entero. → <a href="#ciclo">read</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-ultima">
+<summary>¿Qué devuelves si el fichero no acaba en <code>'\n'</code>? ¿Y un fichero vacío?</summary>
+<p>La última línea sin salto (<code>"fin"</code>) y, en la llamada siguiente, <code>NULL</code>.
+Un fichero vacío da <code>NULL</code> a la primera. Una línea vacía en medio del fichero sale como
+<code>"\n"</code>, no como <code>NULL</code>. → <a href="#eof">EOF</a></p>
+</details>
+<details id="q-fd-malo">
+<summary>¿Qué pasa con un fd inválido, cerrado o con un directorio?</summary>
+<p><code>NULL</code> en todos. El −1 se rechaza antes de nada; con uno cerrado o un directorio,
+<code>read</code> devuelve −1, se libera lo acumulado y el buffer del fd, y se devuelve
+<code>NULL</code>. El tester prueba los cuatro casos (−1, 4242 sin abrir, ya cerrado y un
+directorio). → <a href="#eof">EOF</a></p>
+</details>
+<details id="q-stdin">
+<summary>¿Funciona leyendo de la entrada estándar?</summary>
+<p>Sí: <code>get_next_line(0)</code> es un fd más. Con la terminal, cada línea llega cuando se pulsa
+Intro, y Ctrl-D al principio de una línea da EOF. El tester lo prueba con stdin y con una tubería
+que escribe a trozos. → <a href="#g-stdin">entrada estándar</a></p>
+</details>
+<details id="q-binario">
+<summary>¿Y si lees un fichero binario?</summary>
+<p>El enunciado lo declara indeterminado. Con esta implementación, un <code>'\0'</code> dentro de
+los datos corta la cadena, porque todo se mide con <code>gnl_strlen</code>, y el resultado depende
+de <code>BUFFER_SIZE</code>. No revienta, pero pierde datos. → <a href="#g-binario">texto y binario</a></p>
+</details>
+
+<h3>Memoria</h3>
+<details id="q-leaks">
+<summary>¿Hay leaks? ¿Quién libera cada cosa?</summary>
+<p>La línea devuelta la libera quien llama. El buffer de cada fd lo libera
+<code>get_next_line</code> al llegar a EOF o al fallar. Los bloques intermedios
+(<code>q</code> en <code>gnl_split</code>, las copias de <code>gnl_strncat</code>) se liberan en
+la misma función. Leyendo hasta <code>NULL</code>, valgrind termina con 0 bytes en uso.
+→ <a href="#memoria">valgrind</a></p>
+</details>
+<details id="q-amedias">
+<summary>¿Y si el programa deja de leer antes del final?</summary>
+<p>El buffer de ese fd se queda reservado en la static. Valgrind lo marca como <em>still
+reachable</em>, no como <em>definitely lost</em>, porque la static sigue apuntando a él. Con la
+firma <code>char *get_next_line(int fd)</code> no hay forma de decirle a la función que ya no vas
+a leer más. → <a href="#memoria">valgrind</a></p>
+</details>
+<details id="q-malloc">
+<summary>¿Qué pasa si falla un <code>malloc</code> a mitad de línea?</summary>
+<p>La función que falla libera lo que tenía y devuelve <code>NULL</code>; el <code>NULL</code> sube
+hasta <code>get_next_line</code>, que libera el buffer del fd y devuelve <code>NULL</code>.
+<code>gnl_strncat</code> libera su entrada aunque la reserva falle, así que no queda nada colgando.
+El tester hace fallar, en pruebas separadas, distintos <code>malloc</code> de una lectura (el 1.º, el 2.º, el 4.º… de 21) y no encuentra leaks.
+→ <a href="#utils">utils</a></p>
+</details>
+
+<h3>Bonus y Norma</h3>
+<details id="q-bonus">
+<summary>¿Cómo lees de varios fd a la vez con una sola static?</summary>
+<p>La static es un array, <code>buf[MAX_FD]</code>: una sola variable con un resto por fd. Cada
+llamada usa <code>buf[fd]</code> y no toca los demás. La parte obligatoria ya estaba hecha así, y
+los ficheros <code>_bonus</code> solo cambian el <code>#include</code>. → <a href="#bonus">bonus</a></p>
+</details>
+<details id="q-maxfd">
+<summary>¿Qué pasa con un fd mayor que 1023?</summary>
+<p>Devuelve <code>NULL</code> aunque esté abierto, porque no cabe en el array. En el ordenador
+donde se probó, <code>ulimit -n</code> da 1048576, así que un proceso podría tener fd mucho más
+altos. Se puede cambiar compilando con <code>-D MAX_FD=…</code>, a costa de 8 bytes de
+<code>.bss</code> por cada fd de más. → <a href="#buffer">-D</a></p>
+</details>
+<details id="q-norma">
+<summary>¿Por qué <code>gnl_read_loop</code> es una función aparte?</summary>
+<p>Lo más probable, por la Norma: 25 líneas por función como mucho, y el bucle de lectura junto al
+resto de <code>gnl_read</code> pasaría de ahí. Se parte en dos y el primer <code>read</code> se pasa como
+argumento. Las auxiliares no son <code>static</code>, y el evaluador puede preguntarlo: funcionan
+igual, pero son visibles desde otros ficheros. → <a href="#static">static</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — get_next_line · <a href="../../index.html#cursus">← volver al índice</a></footer>

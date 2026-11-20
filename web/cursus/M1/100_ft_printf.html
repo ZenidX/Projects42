@@ -14,6 +14,8 @@
       <a href="../../index.html">Inicio</a>
       <a href="../../index.html#piscine">Piscine</a>
       <a href="../../index.html#cursus" class="active">Cursus</a>
+      <a href="../../galaxia.html">Galaxia</a>
+      <a href="../../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ enseña de verdad es cómo una función de C puede recibir un número de argumen
 — y cómo construir una librería encima de otra.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#variadicas">Funciones variádicas</a></li>
   <li><a href="#despacho">El despacho por conversión</a></li>
   <li><a href="#retorno">El valor de retorno</a></li>
@@ -33,6 +36,7 @@ enseña de verdad es cómo una función de C puede recibir un número de argumen
   <li><a href="#numeros">%d, %i y %u</a></li>
   <li><a href="#hex">%x, %X y %p</a></li>
   <li><a href="#makefile">El Makefile y libft</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>Por qué printf</b> — En la piscine todo salía por pantalla con
@@ -44,6 +48,284 @@ va directo con <code>write</code>) y solo autoriza <code>malloc</code>, <code>fr
 <code>write</code> y la familia <code>va_*</code>; la libft sí está permitida. El resultado se
 compara byte a byte con el printf de verdad, valor de retorno incluido. Y una vez aprobado,
 <code>ft_printf</code> entra en tu caja de herramientas para todos los proyectos siguientes.</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>La página usa palabras que vienen de cómo C pasa los argumentos, de cómo guarda los números y
+de cómo se monta una librería. Aquí está cada una explicada desde cero y con un ejemplo sacado del
+propio ft_printf. En el resto de la página, la primera vez que sale uno de estos términos en cada
+tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Argumentos y formato</h3>
+<details id="g-variadica">
+<summary>Función variádica</summary>
+<p>Una función que acepta un número variable de argumentos. Se declara con <code>...</code> al
+final de la lista de parámetros, detrás de al menos uno con nombre. Ni la función ni el compilador
+saben cuántos argumentos llegarán ni de qué tipo: eso lo tiene que deducir la propia función a
+partir de los que sí tienen nombre.</p>
+<p>En ft_printf, <code>int ft_printf(const char *format, ...)</code>. En
+<code>ft_printf("%d|%c|%s", INT_MIN, 'A', NULL)</code> llegan tres argumentos sin nombre, y es el
+formato, con sus tres conversiones, el que dice que hay tres y cómo leer cada uno. Imprime
+<code>-2147483648|A|(null)</code> y devuelve 20.</p>
+<p><b>De dónde viene:</b> <code>&lt;stdarg.h&gt;</code> llegó con el estándar ANSI C de 1989.
+Antes cada sistema tenía su versión, la más extendida <code>&lt;varargs.h&gt;</code>, que no
+exigía ningún parámetro con nombre.</p>
+</details>
+<details id="g-va">
+<summary><code>va_list</code>, <code>va_start</code>, <code>va_arg</code> y <code>va_end</code></summary>
+<p>Las piezas de <code>&lt;stdarg.h&gt;</code> para recorrer los argumentos sin nombre.
+<code>va_list</code> es el tipo del «cursor»; <code>va_start(ap, ultimo)</code> lo coloca detrás
+del último parámetro con nombre; <code>va_arg(ap, tipo)</code> devuelve el siguiente argumento
+leído como <code>tipo</code> y avanza; <code>va_end(ap)</code> cierra el recorrido. Hay una quinta,
+<code>va_copy</code>, que duplica el cursor para recorrer la lista dos veces.</p>
+<p>ft_printf usa las cuatro primeras: <code>va_start(ap, format)</code> al empezar, un
+<code>va_arg</code> en cada rama de <code>ft_conv</code> y <code>va_end</code> en las dos salidas
+(la normal y la de error). <code>va_copy</code> está autorizada pero no hace falta, porque los
+argumentos se leen una sola vez.</p>
+</details>
+<details id="g-promocion">
+<summary>Promoción de argumentos por defecto</summary>
+<p>Cuando un argumento cae en la parte <code>...</code> de una llamada, C lo convierte antes de
+pasarlo: <code>char</code> y <code>short</code> se convierten en <code>int</code>, y
+<code>float</code> en <code>double</code>. La función nunca recibe un <code>char</code>, así que
+pedirlo con <code>va_arg(ap, char)</code> es incorrecto; gcc incluso avisa de que «<code>char</code>
+is promoted to <code>int</code>».</p>
+<p>Por eso <code>%c</code> se lee con <code>va_arg(*ap, int)</code> y
+<code>ft_print_char</code> recibe un <code>int</code> que luego convierte a <code>unsigned
+char</code>. Con <code>ft_printf("%c", 'B' + 256)</code> llega el <code>int</code> 322, la
+conversión se queda con el byte de abajo (322 − 256 = 66) y sale <code>B</code>.</p>
+</details>
+<details id="g-formato">
+<summary>Cadena de formato y conversión</summary>
+<p>La cadena de formato es el primer argumento de printf: texto que se copia tal cual con
+<em>conversiones</em> intercaladas, cada una un <code>%</code> seguido de una letra que dice
+qué tipo de argumento viene y cómo escribirlo. En el printf completo, entre el <code>%</code> y la
+letra puede haber más cosas: flags (<code>-0#+ </code>), anchura (<code>%5d</code>), precisión
+(<code>%.3s</code>) y tamaño (<code>%ld</code>).</p>
+<p>ft_printf solo entiende la letra: las nueve de <code>cspdiuxX%</code>. <code>%%</code> es la
+única que no consume argumento: <code>ft_printf("%d%%", 42)</code> escribe <code>42%</code> y
+devuelve 3, igual que printf.</p>
+</details>
+<details id="g-despachador">
+<summary>Despachador</summary>
+<p>Un trozo de código que, según un valor, decide a qué función llamar. Se puede escribir con una
+cadena de <code>if</code>, con un <code>switch</code> o con una <em>tabla de dispatch</em>: un
+array de punteros a función indexado por ese valor.</p>
+<p><code>ft_conv</code> es un despachador con <code>if</code> (la Norma prohíbe
+<code>switch</code>): mira la letra, saca el argumento con el tipo correcto y llama a la función
+que lo imprime. Añadir una conversión es añadir un <code>if</code> y una función.</p>
+</details>
+<details id="g-indefinido">
+<summary>Comportamiento indefinido</summary>
+<p>Situaciones en las que el estándar de C no dice qué debe pasar: el programa puede dar el
+resultado esperado, otro distinto o colgarse, y puede cambiar con el compilador o las
+optimizaciones. No es un error que se detecte al compilar.</p>
+<p>Con printf hay muchos: una conversión desconocida (<code>%k</code>), un <code>%</code> suelto al
+final, pasar un <code>double</code> a <code>%d</code> o <code>NULL</code> a <code>%s</code>.
+Cada libc hace lo que quiere y ft_printf también: <code>ft_printf("abc%")</code> escribe
+<code>abc%</code> y devuelve 4, mientras que el printf de glibc escribe <code>abc</code> y devuelve
+−1. El tester del repo no prueba ninguno de estos casos.</p>
+</details>
+
+<h3>Números y bases</h3>
+<details id="g-base">
+<summary>Base de numeración</summary>
+<p>Escribir un número en base b es expresarlo con b símbolos, donde cada posición vale b veces la
+de su derecha. En base 10, 255 es 2·100 + 5·10 + 5. En base 16, 255 = 15·16 + 15, y como el 15
+se escribe <code>f</code>, sale <code>ff</code>.</p>
+<p>Para sacar las cifras se divide por la base una y otra vez: el resto (<code>n % b</code>) es
+la cifra de la derecha y el cociente (<code>n / b</code>) es lo que queda por escribir.
+<code>ft_itoa_base</code> recibe la base como una cadena de símbolos, así que la misma función
+sirve para <code>"0123456789"</code>, <code>"0123456789abcdef"</code> y
+<code>"0123456789ABCDEF"</code>.</p>
+</details>
+<details id="g-hex">
+<summary>Hexadecimal</summary>
+<p>La base 16, con las cifras <code>0</code>–<code>9</code> y <code>a</code>–<code>f</code> (de
+10 a 15). Se usa tanto porque cada cifra hexadecimal equivale exactamente a 4 bits: un byte son
+dos cifras y un <code>int</code> de 32 bits, ocho. El prefijo <code>0x</code> es como C marca un
+número escrito en hexadecimal.</p>
+<p>En ft_printf, <code>%x</code> de −1 da <code>ffffffff</code>: los 32 bits a 1, ocho efes.
+<code>%X</code> de 255 da <code>FF</code>, y <code>%p</code> de <code>(void *)255</code>,
+<code>0xff</code>.</p>
+</details>
+<details id="g-signo">
+<summary>Con signo y sin signo</summary>
+<p>Un <code>int</code> y un <code>unsigned int</code> ocupan los mismos 32 bits, pero se leen
+distinto. El <code>unsigned</code> va de 0 a 4 294 967 295. El <code>int</code> usa el
+<em>complemento a dos</em>: el bit de más peso cuenta como negativo, y el rango queda de
+−2 147 483 648 (<code>INT_MIN</code>) a 2 147 483 647 (<code>INT_MAX</code>).</p>
+<p>Los mismos bits dan cosas distintas según la conversión: −1 con <code>%d</code> sale
+<code>-1</code>, con <code>%u</code> sale <code>4294967295</code> y con <code>%x</code>,
+<code>ffffffff</code>. Y <code>INT_MIN</code> no tiene opuesto dentro del <code>int</code>
+(2 147 483 648 no cabe), por eso la <code>ft_itoa</code> de esta libft no hace nunca
+<code>-n</code>: escribe cada cifra como <code>-(n % 10)</code>.</p>
+</details>
+<details id="g-tamanos">
+<summary>Tamaño de los tipos</summary>
+<p>C no fija cuántos bytes ocupa cada tipo; solo pone mínimos. En Linux de 64 bits (el modelo
+llamado LP64) son: <code>int</code> y <code>unsigned int</code>, 4 bytes; <code>long</code>,
+<code>unsigned long</code> y cualquier puntero, 8. En Windows de 64 bits <code>long</code> se
+queda en 4.</p>
+<p>Medido con <code>sizeof</code> en el ordenador donde se probó este ft_printf: 4, 4, 8 y 8. Es
+la razón de que <code>ft_print_hex</code> reciba un <code>unsigned long</code>: una dirección de 8
+bytes no cabe en un <code>unsigned int</code>.</p>
+</details>
+<details id="g-cast">
+<summary>Conversión de tipo (cast)</summary>
+<p>Pasar un valor de un tipo a otro. Puede ser <em>explícita</em>, escribiendo el tipo entre
+paréntesis (<code>(unsigned char)c</code>), o <em>implícita</em>, cuando C la hace solo, por
+ejemplo al pasar un argumento a una función que espera otro tipo.</p>
+<p>ft_printf tiene de las dos. Explícitas: <code>(unsigned char)c</code> en
+<code>ft_print_char</code> y <code>(unsigned long)p</code> en <code>ft_print_ptr</code>.
+Implícita: en <code>ft_print_hex(va_arg(*ap, unsigned int), 0)</code> el <code>unsigned
+int</code> se amplía a <code>unsigned long</code> rellenando con ceros por la izquierda, sin
+cambiar el valor.</p>
+</details>
+<details id="g-recursion">
+<summary>Recursión</summary>
+<p>Una función es recursiva si se llama a sí misma con un problema más pequeño, hasta llegar a un
+<em>caso base</em> que se resuelve sin volver a llamarse. Cada llamada pendiente ocupa sitio en la
+pila de llamadas hasta que vuelve.</p>
+<p><code>ft_itoa_base</code> lo es. Con 255 en base 16: la primera llamada (d = 0) ve que
+255 / 16 = 15 no es 0 y se llama con 15 (d = 1). Ahí 15 / 16 = 0: es el caso base, que ya sabe
+que hay d + 1 = 2 cifras, reserva 3 bytes y los deja en <code>"00"</code>. Escribe su cifra,
+<code>f</code>, en la posición 0, vuelve, y la primera escribe la suya (255 % 16 = 15, otra
+<code>f</code>) en la posición 1: <code>"ff"</code>.</p>
+</details>
+
+<h3>Memoria y salida</h3>
+<details id="g-puntero">
+<summary>Puntero y dirección</summary>
+<p>Un puntero guarda una <em>dirección</em>: el número de la posición de memoria donde está un
+dato. Imprimirlo con <code>%p</code> es escribir ese número en hexadecimal con
+<code>0x</code> delante.</p>
+<p>La dirección de una variable local sale algo como <code>0x7ffcb2d749d0</code>, y cambia en cada
+ejecución porque Linux coloca la pila en un sitio distinto cada vez (ASLR). Para ver un valor fijo
+se puede convertir un número en puntero: <code>ft_printf("%p", (void *)255)</code> da
+<code>0xff</code>.</p>
+</details>
+<details id="g-null">
+<summary><code>NULL</code></summary>
+<p>El puntero que no apunta a nada; vale 0. Leer a través de él es comportamiento indefinido y
+casi siempre un segfault.</p>
+<p>ft_printf no lo lee nunca: lo comprueba antes. <code>%s</code> con <code>NULL</code> imprime
+<code>(null)</code> y <code>%p</code> con <code>NULL</code> imprime <code>(nil)</code>, que es lo
+que hace glibc. El printf de macOS escribe <code>0x0</code> para el puntero nulo.</p>
+</details>
+<details id="g-heap">
+<summary><code>malloc</code>, <code>free</code> y el heap</summary>
+<p><code>malloc(n)</code> reserva n bytes en el <em>heap</em>, una zona de memoria que no se
+libera sola al salir de la función, y devuelve su dirección, o <code>NULL</code> si no hay sitio.
+<code>free</code> devuelve esa memoria. Cada <code>malloc</code> necesita exactamente un
+<code>free</code>.</p>
+<p>En ft_printf cada número impreso cuesta un <code>malloc</code>: <code>ft_itoa</code> y
+<code>ft_itoa_base</code> devuelven la cadena reservada y <code>ft_print_free</code> la imprime y la
+libera. Es el único <code>free</code> del proyecto.</p>
+</details>
+<details id="g-fuga">
+<summary>Fuga de memoria y valgrind</summary>
+<p>Una fuga (<em>leak</em>) es memoria reservada que ya no se puede liberar porque no queda ningún
+puntero hacia ella. Valgrind ejecuta el programa vigilando cada <code>malloc</code> y cada
+<code>free</code> y al final dice lo que quedó sin liberar.</p>
+<p>Un programa que llama a ft_printf con <code>%d</code>, <code>%u</code>, <code>%x</code>,
+<code>%p</code> y <code>%s</code> termina en valgrind con «in use at exit: 0 bytes in 0 blocks».
+El tester del repo además hace fallar el <code>malloc</code> número k de una llamada, para cada k,
+y comprueba que no revienta ni pierde memoria.</p>
+</details>
+<details id="g-write">
+<summary><code>write</code>, descriptores y stdout</summary>
+<p><code>write(fd, buf, n)</code> manda n bytes al descriptor <code>fd</code> y devuelve cuántos
+escribió, o −1 si falla. Devuelve un <code>ssize_t</code>, un entero con signo del tamaño de
+<code>size_t</code>, precisamente para poder devolver −1. El descriptor 1 es la salida estándar
+(stdout), la terminal salvo que se redirija.</p>
+<p>ft_printf escribe todo con <code>write(1, …)</code> y devuelve −1 en cuanto uno falla. Se
+puede provocar cerrando stdout al lanzar el programa: con <code>./a.out &gt;&amp;-</code>, un
+<code>ft_printf("hola %d\n", 42)</code> que normalmente devuelve 8 devuelve −1.</p>
+</details>
+<details id="g-buffer">
+<summary>Buffer de salida</summary>
+<p>Un buffer es una zona de memoria donde se acumulan datos antes de mandarlos de golpe. El printf
+de la libc no llama a <code>write</code> en cada carácter: guarda la salida y la vacía al llegar
+un <code>'\n'</code> (si stdout es una terminal), cuando se llena (si es un fichero o una tubería)
+o al terminar el programa. Así hace muchas menos llamadas al sistema.</p>
+<p>El enunciado prohíbe implementarlo, y ft_printf escribe cada trozo en el momento. Una
+consecuencia práctica: si en un mismo programa se mezclan <code>printf</code> y
+<code>ft_printf</code>, la salida de <code>printf</code> puede aparecer más tarde de lo esperado si
+no se hace <code>fflush(stdout)</code>.</p>
+</details>
+<details id="g-glibc">
+<summary>glibc y «la implementación»</summary>
+<p>El estándar de C dice qué debe hacer printf, pero quien lo programa de verdad es cada
+biblioteca de C (libc). En Linux es casi siempre glibc, la de GNU; macOS usa la suya, que viene de
+BSD. En lo que el estándar deja abierto, cada una decide.</p>
+<p>ft_printf imita a glibc, que es lo que comparan los testers en Linux: <code>(null)</code> para
+<code>%s</code> de <code>NULL</code> y <code>(nil)</code> para <code>%p</code> de
+<code>NULL</code>. El tester del repo compara cada caso con el <code>snprintf</code> de glibc.</p>
+</details>
+
+<h3>Compilación y librerías</h3>
+<details id="g-objeto">
+<summary>Fichero objeto, símbolos y enlazado</summary>
+<p>Compilar con <code>cc -c</code> convierte cada <code>.c</code> en un <code>.o</code>: código
+máquina con una lista de <em>símbolos</em>, los que define (sus funciones) y los que usa sin
+definir. El <em>enlazador</em> junta los <code>.o</code> y las librerías y une cada uso con su
+definición; si falta una, da «undefined reference».</p>
+<p><code>nm libftprintf.a</code> enseña esa lista. Los símbolos marcados <code>U</code> (usados y
+no definidos en ese objeto) que vienen de fuera de la librería son <code>malloc</code>,
+<code>free</code> y <code>write</code>, más <code>__stack_chk_fail</code>, que no lo llama el
+código sino la protección de pila que añade el compilador.</p>
+</details>
+<details id="g-libreria">
+<summary>Librería estática y <code>ar</code></summary>
+<p>Una librería estática (<code>.a</code>) es un archivo que contiene varios <code>.o</code>,
+como un zip sin comprimir. Al enlazar, el enlazador saca de ella solo los objetos que el programa
+necesita y los copia dentro del ejecutable. <code>ar</code> es la herramienta que crea y modifica
+esos archivos.</p>
+<p><code>ar rcs</code>: <code>r</code> mete los <code>.o</code> (sustituyendo los que tengan el
+mismo nombre), <code>c</code> crea el archivo sin avisar si no existe y <code>s</code> escribe el
+índice de símbolos. El Makefile copia <code>libft.a</code> como <code>libftprintf.a</code> y le
+añade los cuatro objetos de ft_printf.</p>
+</details>
+<details id="g-makefile">
+<summary>Makefile: objetivo, dependencias y receta</summary>
+<p>Una regla de Makefile dice <code>objetivo: dependencias</code> y, debajo, con un tabulador
+delante, la receta: los comandos que lo construyen. <code>make</code> rehace el objetivo solo si
+no existe o si alguna dependencia es más nueva. En las reglas de patrón como
+<code>%.o: %.c</code>, <code>$&lt;</code> es la primera dependencia y <code>$@</code> el
+objetivo.</p>
+<p>Aquí cada <code>.o</code> depende de su <code>.c</code>, de <code>ft_printf.h</code> y de
+<code>libft/libft.h</code>, así que tocar un header recompila los objetos que lo usan.</p>
+</details>
+<details id="g-phony">
+<summary><code>.PHONY</code></summary>
+<p>Marca objetivos que no son ficheros, como <code>all</code> o <code>clean</code>. Sin ella, si
+alguien crea un fichero llamado <code>clean</code>, <code>make clean</code> diría que ya está
+hecho y no borraría nada.</p>
+<p>El Makefile marca también <code>libft</code>: es un objetivo falso que siempre ejecuta
+<code>$(MAKE) -C libft</code>, y es el Makefile de la libft el que decide si tiene algo que
+recompilar.</p>
+</details>
+<details id="g-relink">
+<summary>Relink</summary>
+<p>Volver a enlazar (o a reconstruir la librería) cuando no ha cambiado nada. En 42 se comprueba
+lanzando <code>make</code> dos veces: la segunda no debe recompilar ni rehacer el
+<code>.a</code>.</p>
+<p>Con este Makefile la segunda vez solo entra en <code>libft/</code>, que contesta «Nothing to
+be done for 'all'», y <code>libftprintf.a</code> no se toca. El tester del repo lo comprueba
+(«make otra vez no recompila nada»).</p>
+</details>
+<details id="g-norma">
+<summary>La Norma y norminette</summary>
+<p>La Norma es el estilo obligatorio del C de 42: como mucho 25 líneas por función, 5 funciones
+por fichero, 4 parámetros y 5 variables por función, sin <code>for</code>, <code>switch</code> ni
+<code>do while</code>, tabuladores para sangrar y la cabecera de 42 en cada fichero.
+<code>norminette</code> es el programa que la comprueba.</p>
+<p>En ft_printf pasan los 50 ficheros, libft incluida. La Norma explica parte del diseño: el
+reparto en cuatro <code>.c</code> y que <code>ft_conv</code> sea una cadena de
+<code>if</code>.</p>
+</details>
+</div>
 
 <div class="card" id="variadicas">
 <h2><span class="ex">va_*</span>Funciones variádicas</h2>
@@ -82,21 +364,21 @@ quieras». El bucle principal del usuario:</p>
 <ul>
   <li><code>va_list ap</code> — el «cursor» sobre los argumentos sin nombre.</li>
   <li><code>va_start(ap, format)</code> — lo coloca justo después del último parámetro con
-  nombre. Por eso una función variádica necesita al menos uno.</li>
+  nombre. Por eso una función <a href="#g-variadica">variádica</a> necesita al menos uno.</li>
   <li><code>va_arg(ap, tipo)</code> — devuelve el siguiente argumento interpretándolo como
-  <code>tipo</code> y avanza. Nadie comprueba que el tipo sea el correcto: lo dice el formato.</li>
+  <code>tipo</code> y avanza. Nadie comprueba que el tipo sea el correcto: lo dice el <a href="#g-formato">formato</a>.</li>
   <li><code>va_end(ap)</code> — cierra el recorrido. Aquí se llama en las dos salidas: la normal
   y la de error.</li>
 </ul>
 <p>Un detalle fino: <code>ap</code> se pasa a <code>ft_conv</code> como <code>&amp;ap</code>
-(un <code>va_list *</code>). Así cada <code>va_arg</code> que hace la función auxiliar avanza el
+(un <code>va_list *</code>). Así cada <a href="#g-va"><code>va_arg</code></a> que hace la función auxiliar avanza el
 mismo cursor que ve <code>ft_printf</code>. Pasar el <code>va_list</code> por valor y seguir
 usándolo después en la función que llama no es portable.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en C los argumentos no llevan
 etiqueta de tipo: en la llamada solo viajan bytes, y es el formato el que dice cómo leerlos.
 Si escribes <code>%d</code> y pasas un <code>double</code>, <code>va_arg</code> leerá basura sin
 quejarse — por eso el compilador avisa con <code>-Wformat</code> en el printf real, pero
-no con el tuyo (salvo que lo marques con <code>__attribute__((format))</code>). También aparece la <em>promoción de argumentos por defecto</em>: en la parte
+no con el tuyo (salvo que lo marques con <code>__attribute__((format))</code>). También aparece la <em><a href="#g-promocion">promoción de argumentos por defecto</a></em>: en la parte
 variádica de una llamada, todo <code>char</code> y <code>short</code> se convierte en
 <code>int</code>, y todo <code>float</code> en <code>double</code>. Es la razón de que
 <code>%c</code> se lea con <code>va_arg(*ap, int)</code> y no con <code>char</code>: el
@@ -138,19 +420,19 @@ función</em> lo imprime.</p>
   <tr><td><code>%x</code> <code>%X</code></td><td><code>unsigned int</code></td><td><code>ft_print_hex</code> (minúsculas / mayúsculas)</td></tr>
   <tr><td><code>%%</code></td><td>— (no consume argumento)</td><td><code>ft_print_char('%')</code></td></tr>
 </table>
-<p>Fíjate en que <code>%%</code> no llama a <code>va_arg</code>: si lo hiciera, desplazaría todos
+<p>Fíjate en que <code>%%</code> no llama a <a href="#g-va"><code>va_arg</code></a>: si lo hiciera, desplazaría todos
 los argumentos siguientes una posición.</p>
 <p>Ojo con dos casos fuera del enunciado. Una letra desconocida (<code>%k</code>) hace que
 <code>ft_conv</code> devuelva <code>-1</code> y <code>ft_printf</code> se corta ahí devolviendo
 <code>-1</code>, con lo anterior ya escrito. Y un <code>%</code> suelto al final de la cadena no
 entra en la rama de conversión (por la comprobación <code>*(format + 1)</code>) y se imprime tal
-cual: <code>ft_printf("abc%")</code> escribe <code>abc%</code> y devuelve 4, mientras que glibc
-devuelve <code>-1</code>. Las dos situaciones son comportamiento indefinido en el estándar, así
+cual: <code>ft_printf("abc%")</code> escribe <code>abc%</code> y devuelve 4, mientras que <a href="#g-glibc">glibc</a>
+devuelve <code>-1</code>. Las dos situaciones son <a href="#g-indefinido">comportamiento indefinido</a> en el estándar, así
 que no hay una respuesta «correcta», pero conviene saber qué hace tu versión por si sale en la
 evaluación.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A separar el <em>análisis</em> del
-formato de la <em>impresión</em>: el bucle principal no sabe nada de números ni de cadenas, solo
-reparte trabajo. Es la «estructura extensible» que pide el enunciado: añadir una conversión es
+<a href="#g-formato">formato</a> de la <em>impresión</em>: el bucle principal no sabe nada de números ni de cadenas, solo
+<a href="#g-despachador">reparte trabajo</a>. Es la «estructura extensible» que pide el enunciado: añadir una conversión es
 añadir una línea aquí y una función. También deja claro que el tipo de cada argumento es un
 contrato entre quien escribe el formato y quien lo lee, sin red de seguridad.</div>
 </div>
@@ -160,7 +442,7 @@ contrato entre quien escribe el formato y quien lo lee, sin red de seguridad.</d
 <div class="meta"><span>Entrega: <b>ft_printf.c</b></span><span>Autorizado: <b>write</b></span></div>
 <p><code>printf</code> devuelve el número de caracteres escritos, o un negativo si algo falla.
 El usuario lo resuelve con una regla única para todas las funciones de impresión: <em>cada una
-devuelve cuántos caracteres ha escrito, o <code>-1</code> si <code>write</code> ha fallado</em>.
+devuelve cuántos caracteres ha escrito, o <code>-1</code> si <a href="#g-write"><code>write</code></a> ha fallado</em>.
 El bucle solo suma:</p>
 <pre><code>		if (ret &lt; 0)
 		{
@@ -197,15 +479,15 @@ ssize_t	ft_print_str(char *str)
 		str = "(null)";
 	return (write(1, str, ft_strlen(str)));
 }</code></pre>
-<p><code>ft_print_char</code> recibe un <code>int</code> (por la promoción) y lo convierte a
+<p><code>ft_print_char</code> recibe un <code>int</code> (por la <a href="#g-promocion">promoción</a>) y lo <a href="#g-cast">convierte a</a>
 <code>unsigned char</code> antes de escribir, que es exactamente lo que hace el printf real con
 <code>%c</code>. La cadena se escribe de una sola vez con su longitud, no carácter a carácter.</p>
-<p><code>printf("%s", NULL)</code> es comportamiento indefinido según el estándar, pero glibc
+<p><code>printf("%s", NULL)</code> es <a href="#g-indefinido">comportamiento indefinido</a> según el estándar, pero <a href="#g-glibc">glibc</a>
 imprime <code>(null)</code> y los testers lo comparan; el usuario reproduce ese resultado.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que «imitar printf» significa imitar
 una implementación concreta (aquí, glibc en Linux) incluso en casos que el estándar deja
 abiertos. Y que la conversión a <code>unsigned char</code> no es decorativa: así se pasa a
-<code>write</code> exactamente un byte con el valor que pidió quien llamó.</div>
+<a href="#g-write"><code>write</code></a> exactamente un byte con el valor que pidió quien llamó.</div>
 </div>
 
 <div class="card" id="numeros">
@@ -221,7 +503,7 @@ int	ft_print_unsigned(unsigned int n)
 	return (ft_print_free(ft_itoa_base(n, "0123456789", 10, 0)));
 }</code></pre>
 <p>En vez de reescribir <code>putnbr</code>, el usuario reutiliza su libft: convierte el número
-en una cadena reservada con <code>malloc</code> y la imprime. Para no repetir el
+en una cadena reservada con <a href="#g-heap"><code>malloc</code></a> y la imprime. Para no repetir el
 «imprimir y liberar» en cada sitio, todo pasa por un único helper:</p>
 <pre><code>int	ft_print_free(char *str)
 {
@@ -233,11 +515,11 @@ en una cadena reservada con <code>malloc</code> y la imprime. Para no repetir el
 	free(str);
 	return (ret);
 }</code></pre>
-<p>Si <code>malloc</code> falló, la cadena es <code>NULL</code> y se devuelve <code>-1</code>.
-Si no, se imprime y se libera <em>siempre</em>, haya ido bien el <code>write</code> o no. Es el
-único <code>free</code> del proyecto, y por eso no hay forma de dejar un leak por un camino de
+<p>Si <code>malloc</code> falló, la cadena es <a href="#g-null"><code>NULL</code></a> y se devuelve <code>-1</code>.
+Si no, se imprime y se libera <em>siempre</em>, haya ido bien el <a href="#g-write"><code>write</code></a> o no. Es el
+único <code>free</code> del proyecto, y por eso no hay forma de dejar un <a href="#g-fuga">leak</a> por un camino de
 error.</p>
-<p><code>%d</code> e <code>%i</code> usan <code>ft_itoa</code>, que ya gestiona el signo y
+<p><code>%d</code> e <code>%i</code> usan <code>ft_itoa</code>, que ya gestiona <a href="#g-signo">el signo</a> y
 <code>INT_MIN</code>. <code>%u</code> usa <code>ft_itoa_base</code>, una función de la piscine
 (C07) adaptada a <code>unsigned long</code> y añadida a la libft de este repo:</p>
 <pre><code>char	*ft_itoa_base(unsigned long n, char *base, int b, int d)
@@ -261,14 +543,14 @@ error.</p>
 <p>El parámetro <code>d</code> cuenta la profundidad. La llamada más profunda (la de la cifra más
 significativa) ya sabe cuántas cifras hay en total, <code>d + 1</code>, y reserva la cadena una
 sola vez, rellena de <code>'0'</code> por <code>ft_char_init</code>. Luego, a la vuelta de la
-recursión, cada nivel escribe su cifra (<code>n % b</code>) en la posición que le toca, contando
+<a href="#g-recursion">recursión</a>, cada nivel escribe su cifra (<code>n % b</code>) en la posición que le toca, contando
 desde el final.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A reutilizar en lugar de reescribir:
 la libft existe para esto. A cambio aparece una responsabilidad nueva, porque cada número
 impreso cuesta un <code>malloc</code> y alguien tiene que liberarlo; centralizar el
 <code>free</code> en un solo punto es la manera de no tener que pensar en ello en cada
 conversión. Y repasa la descomposición en cifras de C 00: la recursión vuelve a invertir el
-orden «de la última cifra a la primera» gratis, esta vez en cualquier base.</div>
+orden «de la última cifra a la primera» gratis, esta vez en cualquier <a href="#g-base">base</a>.</div>
 </div>
 
 <div class="card" id="hex">
@@ -299,23 +581,23 @@ int	ft_print_ptr(void *p)
 		return (-1);
 	return (ret + 2);
 }</code></pre>
-<p>La base no es un número sino una <em>cadena de símbolos</em>: la cifra <code>k</code> se
+<p>La <a href="#g-base">base</a> no es un número sino una <em>cadena de símbolos</em>: la cifra <code>k</code> se
 escribe como <code>base[k]</code>. Cambiar de minúsculas a mayúsculas es cambiar de cadena; la
 misma <code>ft_itoa_base</code> sirve para base 10 y base 16.</p>
 <p><code>ft_print_hex</code> recibe un <code>unsigned long</code> aunque <code>%x</code> saque un
-<code>unsigned int</code>: es para que <code>%p</code> pueda reutilizarla. En Linux de 64 bits
+<code>unsigned int</code>: es para que <code>%p</code> pueda reutilizarla. En Linux de <a href="#g-tamanos">64 bits</a>
 una dirección ocupa 8 bytes y no cabe en un <code>unsigned int</code> de 4; el
-<code>unsigned int</code> de <code>%x</code> se amplía sin pérdida al pasar. Así, con
+<code>unsigned int</code> de <code>%x</code> <a href="#g-cast">se amplía</a> sin pérdida al pasar. Así, con
 <code>-1</code> sale <code>ffffffff</code> (el <code>int</code> reinterpretado como
 <code>unsigned int</code>), no <code>ffffffffffffffff</code>.</p>
-<p>Para el puntero <code>NULL</code> el usuario imprime <code>(nil)</code>, que es lo que hace
-glibc. Ojo: es un comportamiento propio de glibc; el printf de macOS imprime
+<p>Para el <a href="#g-puntero">puntero</a> <a href="#g-null"><code>NULL</code></a> el usuario imprime <code>(nil)</code>, que es lo que hace
+<a href="#g-glibc">glibc</a>. Ojo: es un comportamiento propio de glibc; el printf de macOS imprime
 <code>0x0</code>. Si el corrector prueba en otro sistema, el resultado esperado cambia.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un puntero es, al final, un número
 — una dirección — y que imprimirlo es imprimir ese número en base 16. De paso obliga a pensar
 en tamaños: <code>int</code>, <code>unsigned int</code> y <code>unsigned long</code> no son
 intercambiables, y elegir el tipo del parámetro (aquí, el más ancho) es lo que permite que una
-sola función sirva para dos conversiones. Y que «hexadecimal» no es nada especial: cualquier
+sola función sirva para dos conversiones. Y que «<a href="#g-hex">hexadecimal</a>» no es nada especial: cualquier
 base es una tabla de símbolos más divisiones sucesivas.</div>
 </div>
 
@@ -344,25 +626,135 @@ $(NAME): $(OBJS) $(LIBFT)
 %.o: %.c ft_printf.h $(LIBFT_DIR)/libft.h
 	$(CC) $(CFLAGS) -c $&lt; -o $@</code></pre>
 <p>El enunciado pide que, si usas la libft, la copies en un directorio <code>libft/</code> con
-su propio Makefile, y que el Makefile del proyecto la compile primero. Eso hace la regla falsa
-(<code>.PHONY</code>) <code>libft</code>: delega con <code>$(MAKE) -C libft</code>, y es la libft
+su propio <a href="#g-makefile">Makefile</a>, y que el Makefile del proyecto la compile primero. Eso hace la regla falsa
+(<a href="#g-phony"><code>.PHONY</code></a>) <code>libft</code>: delega con <code>$(MAKE) -C libft</code>, y es la libft
 la que decide si tiene algo que recompilar.</p>
 <p>El truco está en la regla de <code>$(NAME)</code>: copia <code>libft.a</code> con el nombre
-<code>libftprintf.a</code> y luego <code>ar rcs</code> le <em>añade</em> los objetos de
+<code>libftprintf.a</code> y luego <code>ar rcs</code> le <em>añade</em> los <a href="#g-objeto">objetos</a> de
 ft_printf. Como un <code>.a</code> no es más que un archivo de <code>.o</code>, el resultado es
-una sola librería con todo dentro, y quien la use enlaza solo con <code>-lftprintf</code>. Sin
+una sola <a href="#g-libreria">librería</a> con todo dentro, y quien la use enlaza solo con <code>-lftprintf</code>. Sin
 esto, <code>ft_print_str</code> llamaría a un <code>ft_strlen</code> que no está en
 <code>libftprintf.a</code> y el enlazado fallaría.</p>
 <p>Los <code>.o</code> dependen también de los dos headers, así que tocar
 <code>ft_printf.h</code> o <code>libft.h</code> recompila lo necesario. Ejecutar
 <code>make</code> dos veces seguidas solo vuelve a entrar en <code>libft/</code> (que responde
-«Nothing to be done») y no relinka. <code>clean</code> y <code>fclean</code> también delegan en
+«Nothing to be done») y no <a href="#g-relink">relinka</a>. <code>clean</code> y <code>fclean</code> también delegan en
 la libft.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una librería estática es un
 contenedor de objetos que se puede ampliar, y que las dependencias entre proyectos se resuelven
 con Makefiles que se llaman unos a otros (<code>make -C</code>), cada uno responsable de lo suyo.
 Es la primera vez que la libft deja de ser un proyecto aislado y pasa a ser una pieza que otro
 proyecto consume, que es para lo que existe.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: argumentos variables, casos límite, memoria y
+errores, y Makefile y Norma. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Argumentos variables</h3>
+<details id="q-cuantos">
+<summary>¿Cómo sabe <code>ft_printf</code> cuántos argumentos le pasan?</summary>
+<p>No lo sabe: lo dice el formato. Cada conversión, menos <code>%%</code>, consume un argumento
+con <code>va_arg</code>. Si el formato pide más de los que se pasaron, se lee basura, y nadie lo
+comprueba. → <a href="#variadicas">va_*</a></p>
+</details>
+<details id="q-char-int">
+<summary>¿Por qué <code>%c</code> se lee con <code>va_arg(*ap, int)</code> y no con <code>char</code>?</summary>
+<p>Por la promoción por defecto: en la parte <code>...</code> de una llamada, un
+<code>char</code> llega convertido en <code>int</code>. Pedir un <code>char</code> sería leer un
+tipo que no está ahí. Luego <code>ft_print_char</code> lo pasa a <code>unsigned char</code> y
+escribe ese byte. → <a href="#variadicas">va_*</a>, <a href="#chars">%c %s %%</a></p>
+</details>
+<details id="q-ap">
+<summary>¿Por qué pasas <code>&amp;ap</code> a <code>ft_conv</code> en vez de <code>ap</code>?</summary>
+<p>Para que el <code>va_arg</code> que hace <code>ft_conv</code> avance el mismo cursor que usa
+<code>ft_printf</code>. Si se pasa por valor, el estándar no garantiza en qué estado queda
+<code>ap</code> en la función que llama después de que la otra lo use. → <a href="#variadicas">va_*</a></p>
+</details>
+<details id="q-hex-long">
+<summary>¿Por qué <code>ft_print_hex</code> recibe un <code>unsigned long</code> si <code>%x</code> es <code>unsigned int</code>?</summary>
+<p>Para reutilizarla en <code>%p</code>: una dirección ocupa 8 bytes en Linux de 64 bits y no
+cabe en un <code>unsigned int</code> de 4. El <code>unsigned int</code> de <code>%x</code> se
+amplía sin cambiar de valor, así que <code>%x</code> de −1 sigue dando <code>ffffffff</code>.
+→ <a href="#hex">%x %X %p</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-null">
+<summary>¿Qué imprimes con <code>%s</code> y <code>%p</code> de <code>NULL</code>?</summary>
+<p><code>(null)</code> y <code>(nil)</code>, como glibc. El estándar no lo define: en macOS el
+puntero nulo sale <code>0x0</code>, así que si el evaluador compara en un Mac verá otra cosa.
+→ <a href="#chars">%c %s %%</a>, <a href="#hex">%x %X %p</a></p>
+</details>
+<details id="q-limites">
+<summary>¿Qué sale con <code>INT_MIN</code>, y con −1 en <code>%u</code> y <code>%x</code>?</summary>
+<p><code>-2147483648</code>, <code>4294967295</code> y <code>ffffffff</code>. Con
+<code>INT_MIN</code> el peligro es hacer <code>-n</code>, que desborda; la <code>ft_itoa</code> de
+esta libft no lo hace nunca: escribe cada cifra como <code>-(n % 10)</code>.
+→ <a href="#numeros">%d %i %u</a></p>
+</details>
+<details id="q-raros">
+<summary>¿Qué pasa con <code>ft_printf("abc%")</code> o con <code>%k</code>?</summary>
+<p>Son comportamiento indefinido en printf. Con <code>"abc%"</code> se imprime
+<code>abc%</code> y se devuelve 4 (glibc escribe <code>abc</code> y devuelve −1). Con
+<code>%k</code>, <code>ft_conv</code> devuelve −1 y <code>ft_printf</code> se para ahí devolviendo
+−1, con lo anterior ya escrito. → <a href="#despacho">despacho</a></p>
+</details>
+<details id="q-bonus">
+<summary>¿Hiciste el bonus? ¿Qué hace con <code>%-5d</code>?</summary>
+<p>No: no hay regla <code>bonus</code> ni flags. El <code>-</code> se toma como una conversión
+desconocida: <code>ft_printf("[%-5d]", 42)</code> escribe <code>[</code> y devuelve −1. El tester
+del repo pasa los 113 casos del bonus para información y fallan todos, sin contar como fallo.
+→ <a href="#despacho">despacho</a></p>
+</details>
+
+<h3>Memoria y errores</h3>
+<details id="q-retorno">
+<summary>¿Qué devuelve <code>ft_printf</code> y cuándo devuelve −1?</summary>
+<p>El número de caracteres escritos. −1 si el formato es <code>NULL</code>, si un
+<code>write</code> falla (por ejemplo con stdout cerrado, <code>./a.out &gt;&amp;-</code>), si falla
+un <code>malloc</code> al convertir un número o con una conversión desconocida. Cada función de
+impresión devuelve lo que escribió o −1, y el bucle solo suma. → <a href="#retorno">return</a></p>
+</details>
+<details id="q-leaks">
+<summary>¿Hay leaks? ¿Qué pasa si falla un <code>malloc</code>?</summary>
+<p>No. Cada número se convierte en una cadena reservada y <code>ft_print_free</code> la libera
+siempre después de imprimirla, haya ido bien el <code>write</code> o no. Si el
+<code>malloc</code> falla, la cadena es <code>NULL</code>, no se imprime nada y se devuelve −1.
+El tester hace fallar un <code>malloc</code> en cada punto posible (6 casos, todos OK) y valgrind
+termina con 0 bytes en uso. → <a href="#numeros">%d %i %u</a></p>
+</details>
+<details id="q-buffer">
+<summary>¿Por qué no usas un buffer, como el printf de verdad?</summary>
+<p>Porque el enunciado prohíbe gestionar el buffer del printf original: cada trozo va directo con
+<code>write</code>. Es más lento (más llamadas al sistema) pero más simple, y la salida nunca se
+queda retenida. → <a href="#g-buffer">buffer de salida</a></p>
+</details>
+
+<h3>Makefile y Norma</h3>
+<details id="q-libft">
+<summary>¿Cómo entra la libft en <code>libftprintf.a</code>?</summary>
+<p>La regla de <code>$(NAME)</code> copia <code>libft/libft.a</code> con el nombre
+<code>libftprintf.a</code> y luego <code>ar rcs</code> le añade los objetos de ft_printf. Queda
+una sola librería con todo, y quien la use solo enlaza con <code>-lftprintf</code>. Sin eso,
+<code>ft_strlen</code> o <code>ft_itoa</code> faltarían al enlazar. → <a href="#makefile">make</a></p>
+</details>
+<details id="q-relink">
+<summary>¿Relinka? Haz <code>make</code> dos veces.</summary>
+<p>No. La segunda vez solo se ejecuta <code>make -C libft</code> (la regla <code>libft</code> es
+<code>.PHONY</code>), que responde «Nothing to be done for 'all'», y la librería no se rehace.
+Tocar <code>ft_printf.h</code> sí recompila los objetos, porque son dependencias de la regla
+<code>%.o</code>. → <a href="#makefile">make</a></p>
+</details>
+<details id="q-extender">
+<summary>Si te piden añadir una conversión nueva, ¿qué tocas?</summary>
+<p>Un <code>if</code> más en <code>ft_conv</code>, con su <code>va_arg</code> del tipo correcto, y
+una función de impresión que devuelva lo escrito o −1. El bucle de <code>ft_printf</code> y el
+cálculo del retorno no cambian. Ojo con la Norma: <code>ft_conv</code> no puede pasar de 25
+líneas. → <a href="#despacho">despacho</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — ft_printf · <a href="../M1/101_get_next_line.html">continuar con get_next_line →</a></footer>

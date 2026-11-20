@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -27,20 +29,222 @@
 <div class="trasfondo"><b>El contrato de <code>strcmp</code></b> — El hilo conductor del módulo.
 Comparar dos cadenas no es «¿son iguales?» sino «¿cuál va antes?». El contrato de la libc es preciso:
 se recorren ambas <strong>byte a byte</strong> hasta el primer par que difiere, y se devuelve la
-<em>resta</em> de esos dos bytes (interpretados como <code>unsigned char</code>). El signo del
+<em>resta</em> de esos dos bytes (interpretados como <a href="#g-signo-char"><code>unsigned char</code></a>). El signo del
 resultado es lo único que importa: negativo si <code>s1</code> va antes, positivo si va después, 0 si
-son idénticas. De ahí sale el <strong>orden lexicográfico</strong> —el del diccionario, pero según
-ASCII— sobre el que se construyen <code>sort</code>, los índices y media informática. Todo el módulo
-gira en torno a leer dos punteros en paralelo y decidir con el primer byte que no coincide.</p></div>
+son idénticas. De ahí sale el <strong><a href="#g-lexicografico">orden lexicográfico</a></strong> —el del diccionario, pero según
+<a href="#g-ascii">ASCII</a>— sobre el que se construyen <code>sort</code>, los índices y media informática. Todo el módulo
+gira en torno a leer dos <a href="#g-puntero">punteros</a> en paralelo y decidir con el primer byte que no coincide.</p></div>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_strcmp</a></li>
   <li><a href="#ex01">ex01 — ft_strncmp</a></li>
   <li><a href="#ex02">ex02 — ft_strcat</a></li>
   <li><a href="#ex03">ex03 — ft_strncat</a></li>
   <li><a href="#ex04">ex04 — ft_strstr</a></li>
   <li><a href="#ex05">ex05 — ft_strlcat</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 03 es el primer módulo en el que se leen dos cadenas a la vez, y para defenderlo hacen falta
+unas cuantas ideas de cómo C guarda el texto y los números. Aquí está cada una explicada desde cero
+y con un ejemplo sacado del propio módulo. En el resto de la página, la primera vez que sale uno de
+estos términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Cadenas y memoria</h3>
+<details id="g-cadena">
+<summary>Cadena de C y terminador nulo (<code>\0</code>)</summary>
+<p>En C no existe un tipo «cadena»: una cadena es una fila de <code>char</code> seguidos en
+memoria que acaba en un byte con valor 0, el <em>terminador nulo</em>, que se escribe
+<code>'\0'</code>. La cadena no guarda su longitud en ningún sitio; la única forma de saber dónde
+acaba es avanzar hasta encontrar ese 0. <code>"Hola"</code> ocupa 5 bytes: <code>H o l a \0</code>.</p>
+<p>Por eso todos los bucles del módulo tienen la forma <code>while (s[i])</code>: un
+<code>char</code> que vale 0 es «falso» y el bucle para. Y por eso <code>ft_strcat</code> tiene que
+volver a escribir el <code>\0</code> al final: el de <code>dest</code> lo ha pisado el primer
+carácter de <code>src</code>, y sin terminador nadie sabría dónde acaba el resultado.</p>
+</details>
+<details id="g-puntero">
+<summary>Puntero y dirección</summary>
+<p>Cada byte de la memoria tiene un número, su <em>dirección</em>. Un puntero es una variable que
+guarda una dirección. <code>char *s1</code> no es la cadena: es la dirección de su primer carácter.
+Cuando <code>ft_strcmp(s1, s2)</code> recibe dos cadenas, en realidad recibe dos direcciones y lee
+lo que hay a partir de ellas.</p>
+<p>Las funciones que modifican (<code>ft_strcat</code>, <code>ft_strncat</code>,
+<code>ft_strlcat</code>) pueden cambiar el texto de quien las llama justamente porque reciben la
+dirección del original, no una copia. Y <code>ft_strstr</code> no devuelve un trozo nuevo de
+cadena, sino una dirección que apunta <em>dentro</em> de <code>str</code>.</p>
+</details>
+<details id="g-indice">
+<summary>Índice y aritmética de punteros</summary>
+<p>Sumar un entero a un puntero lo avanza ese número de elementos: si <code>str</code> apunta a la
+<code>H</code> de <code>"Hola mundo"</code>, <code>str + 5</code> apunta a la <code>m</code>. La
+notación de corchetes es la misma cosa escrita de otra forma: <code>str[i]</code> significa
+exactamente <code>*(str + i)</code>, «lo que hay i posiciones más allá».</p>
+<p>De ahí que en <code>ft_strstr</code> sea igual devolver <code>str + i</code> (como en la página)
+que <code>&amp;str[i]</code> (como en el repo): las dos expresiones dan la dirección del carácter
+i. Y <code>dest[i + j]</code> en <code>ft_strcat</code> es «j posiciones después del final de
+<code>dest</code>».</p>
+</details>
+<details id="g-null">
+<summary><code>NULL</code>: el puntero que no apunta a nada</summary>
+<p><code>NULL</code> es un valor especial de puntero que significa «ninguna dirección». Vale 0, y
+se puede escribir <code>NULL</code> (necesita <code>&lt;stddef.h&gt;</code> o
+<code>&lt;stdlib.h&gt;</code>), <code>0</code> o <code>(void *)0</code>. Leer a través de él
+(<code>*NULL</code>) hace que el programa muera con <em>segmentation fault</em>.</p>
+<p>En C 03 lo usa <code>ft_strstr</code> para decir «no está»: la página devuelve <code>0</code> y
+el repo <code>(void *)0</code>, que es lo mismo, sin incluir ninguna cabecera. Quien llama tiene que
+comprobarlo antes de imprimir el resultado.</p>
+</details>
+<details id="g-bufer">
+<summary>Búfer y desbordamiento de búfer</summary>
+<p>Un búfer es un trozo de memoria reservado para guardar datos, por ejemplo
+<code>char dest[100]</code>. Su tamaño es fijo: si escribes más de lo que cabe, los bytes de más
+caen encima de lo que haya al lado (otras variables, la dirección de vuelta de la función…). Eso es
+un <em>desbordamiento de búfer</em> (<em>buffer overflow</em>), y ha sido durante décadas la puerta
+de entrada de muchísimos ataques.</p>
+<p><code>ft_strcat</code> y <code>ft_strncat</code> no saben cuánto mide <code>dest</code>: si no
+cabe, desbordan sin enterarse. <code>ft_strlcat</code> recibe ese tamaño en <code>size</code> y no
+escribe nunca más allá.</p>
+</details>
+
+<h3>Bytes y números</h3>
+<details id="g-ascii">
+<summary>ASCII</summary>
+<p>Para el ordenador un carácter es un número. ASCII es la tabla que dice qué número va con cada
+letra: <code>'0'</code> es 48, <code>'A'</code> es 65, <code>'a'</code> es 97, el espacio es 32.
+Solo define los valores 0–127; lo que hay de 128 a 255 depende de la codificación (en UTF-8, una
+<code>é</code> son dos bytes por encima de 127).</p>
+<p>Como las mayúsculas van antes que las minúsculas, <code>ft_strcmp("Zorro", "abeja")</code> dice
+que «Zorro» va antes: 90 es menor que 97. <code>ft_strcmp("Saludos", "Salux")</code> se decide en
+la cuarta letra: <code>'d'</code> (100) menos <code>'x'</code> (120) da <code>-20</code>.</p>
+</details>
+<details id="g-signo-char">
+<summary><code>char</code> con signo y <code>unsigned char</code></summary>
+<p>Un byte tiene 8 bits y puede guardar 256 valores. Si el tipo es <code>unsigned char</code>, se
+leen como 0..255. Si es <code>signed char</code>, como −128..127: el mismo byte
+<code>0x80</code> vale 128 en un caso y −128 en el otro. El <code>char</code> a secas es uno u otro
+según la plataforma (con signo en x86, sin signo en ARM Linux).</p>
+<p>El <code>man strcmp</code> dice que se comparan como <code>unsigned char</code>. Con el cast,
+<code>ft_strcmp("test\200", "test\177")</code> da positivo (128 − 127 = 1), igual que la de la
+libc; sin el cast, en x86 el <code>\200</code> valdría −128 y daría negativo. Es uno de los casos que
+prueba el test del pack.</p>
+</details>
+<details id="g-unsigned">
+<summary><code>unsigned int</code> y la vuelta por abajo</summary>
+<p>Un <code>unsigned int</code> no tiene negativos: con 32 bits va de 0 a 4294967295. Las cuentas
+se hacen «en círculo» (módulo 2³²): pasarse por arriba vuelve a 0 y bajar de 0 da el máximo. A
+diferencia de los <code>int</code> con signo, esto está definido por el estándar, no es un error
+del compilador, pero casi siempre es un error <em>tuyo</em>.</p>
+<p>En <code>ft_strncmp</code>, con <code>n = 0</code>, la expresión <code>n - 1</code> vale
+4294967295 (medido con un <code>printf("%u")</code>). Sin el <code>if (n == 0)</code> del principio,
+el bucle tendría permiso para seguir comparando casi sin límite.</p>
+</details>
+<details id="g-ub">
+<summary>Comportamiento indefinido</summary>
+<p>Es lo que el estándar de C llama a las situaciones para las que no promete nada: leer fuera de un
+array, leer a través de <code>NULL</code>, desbordar un <code>int</code> con signo… El programa
+puede funcionar, dar basura, morir con un <em>segfault</em> o comportarse distinto con otro
+compilador. «A mí me funciona» no demuestra nada.</p>
+<p>En C 03 aparece cada vez que una función escribe o lee más allá de lo que tiene: un
+<code>ft_strcat</code> sobre un <code>dest</code> sin sitio, o una cadena sin <code>\0</code> que
+los bucles recorrerían hasta encontrar un cero por casualidad.</p>
+</details>
+
+<h3>Comparar y buscar</h3>
+<details id="g-lexicografico">
+<summary>Orden lexicográfico</summary>
+<p>Es el orden del diccionario generalizado: se comparan las dos palabras letra a letra y decide la
+primera letra distinta. Si una se acaba antes y hasta ahí eran iguales, la más corta va primero
+(«ab» antes que «abc»). La única diferencia con un diccionario es que el valor de cada letra lo da la
+tabla <a href="#g-ascii">ASCII</a>, así que «Zorro» va antes que «abeja».</p>
+<p><code>ft_strcmp</code> implementa exactamente esto: el bucle busca la primera posición distinta, y
+el «se acaba antes» sale solo porque el <code>\0</code> vale 0 y es menor que cualquier letra.
+<code>ft_strcmp("ab", "abc")</code> compara <code>'\0'</code> con <code>'c'</code> y da negativo.</p>
+</details>
+<details id="g-contrato">
+<summary>Contrato de una función y el <code>man</code></summary>
+<p>El contrato es lo que una función promete a quien la llama: qué recibe, qué devuelve y qué
+garantiza. El de <code>strcmp</code> promete solo el <em>signo</em> del resultado (negativo, cero o
+positivo), no un valor concreto. El de <code>strncat</code> promete poner siempre el
+<code>\0</code>; el de <code>strncpy</code>, no. Todo eso está en el manual: <code>man 3 strcmp</code>
+(la sección 3 es la de las funciones de biblioteca).</p>
+<p>Cada ejercicio de C 03 dice «reproduce el comportamiento de la función X (man X)»: lo que la
+Moulinette compara es el contrato, así que el <code>man</code> es el enunciado de verdad.</p>
+</details>
+<details id="g-cortocircuito">
+<summary>Evaluación en cortocircuito</summary>
+<p>En <code>A &amp;&amp; B</code>, C evalúa primero <code>A</code>, y si es falso ya no evalúa
+<code>B</code>: el resultado va a ser falso de todas formas. Con <code>||</code> igual, pero parando
+en el primer verdadero. El orden de las condiciones importa.</p>
+<p>En <code>while (s1[i] &amp;&amp; s1[i] == s2[i])</code>, si <code>s1</code> ya se acabó no se
+llega a comparar. Y en <code>ft_strncmp</code> la guarda <code>i &lt; n - 1</code> va la primera para
+que, al llegar al límite, no se lea ni un carácter más de lo permitido.</p>
+</details>
+<details id="g-subcadena">
+<summary>Subcadena y búsqueda de patrones</summary>
+<p>Una subcadena es un trozo <em>seguido</em> de otra cadena: «mundo» es subcadena de «Hola mundo
+mundial», «Hmo» no (sus letras están, pero no juntas). Buscar dónde aparece una cadena dentro de otra
+es la búsqueda de patrones (<em>pattern matching</em>); al texto donde se busca se le suele llamar
+pajar y a lo buscado, aguja.</p>
+<p><code>ft_strstr(str, to_find)</code> es la versión más directa: probar cada posición de
+<code>str</code> como posible comienzo. Con <code>"aaab"</code> y <code>"aab"</code>, el intento en la
+posición 0 casa dos letras y falla en la tercera; el de la posición 1 casa entero, y se devuelve
+<code>"aab"</code>.</p>
+</details>
+<details id="g-complejidad">
+<summary>Complejidad: O(n) y O(n·m)</summary>
+<p>La complejidad dice cómo crece el trabajo cuando crece la entrada. O(n) significa «proporcional a
+n»: <code>ft_strcmp</code> y <code>ft_strcat</code> miran cada carácter una vez, así que una cadena
+el doble de larga cuesta el doble.</p>
+<p><code>ft_strstr</code> tiene dos bucles anidados: para cada una de las n posiciones de
+<code>str</code>, hasta m comparaciones con <code>to_find</code>. En el peor caso son unas n·m, de
+ahí O(n·m). Algoritmos como KMP o Boyer–Moore bajan a O(n + m) recordando lo que ya casó, pero aquí
+no hacen falta.</p>
+</details>
+<details id="g-truncamiento">
+<summary>Truncamiento y longitud ideal</summary>
+<p>Truncar es cortar: si el resultado no cabe en el búfer, se guarda solo el principio. El problema
+de truncar en silencio es que quien llama no se entera de que le falta un trozo.</p>
+<p><code>ft_strlcat</code> lo resuelve devolviendo la longitud que habría tenido el resultado
+completo. <code>strlcat</code> con <code>"Hola"</code>, <code>" mundo"</code> y
+<code>size = 8</code> deja <code>"Hola mu"</code> (7 caracteres y el <code>\0</code>) y devuelve 10.
+Como 10 ≥ 8, quien llama sabe que se ha truncado y que necesitaría un búfer de 11.</p>
+</details>
+<details id="g-bsd">
+<summary>BSD, glibc y por qué <code>strlcat</code> es «rara»</summary>
+<p><code>strcmp</code>, <code>strcat</code> o <code>strstr</code> son del C estándar y están en
+cualquier sistema. <code>strlcat</code> y <code>strlcpy</code> las inventaron en OpenBSD (1998)
+como alternativa segura, y durante años la biblioteca de C de Linux (glibc) se negó a incluirlas;
+llegaron en la versión 2.38 (2023). En macOS, que viene de BSD, siempre han estado.</p>
+<p>Por eso, para comparar con la de verdad en un Linux con glibc antigua hay que enlazar
+<code>libbsd</code> (<code>#include &lt;bsd/string.h&gt;</code> y <code>-lbsd</code>), y por eso el
+test del pack trae su propia <code>ref_strlcat</code> en lugar de llamar a la del sistema.</p>
+</details>
+
+<h3>La entrega</h3>
+<details id="g-moulinette">
+<summary>Moulinette</summary>
+<p>Es el corrector automático de 42. Compila cada ejercicio con <code>cc -Wall -Wextra
+-Werror</code> junto a su propio <code>main</code>, lo ejecuta con sus casos y compara el resultado
+con el esperado. Es muy estricta y no se discute con ella: un warning, una salida distinta, un
+<em>segfault</em> o un cuelgue y el ejercicio cuenta como fallado. Según el enunciado, la evaluación
+tiene dos fases: primero te corrigen compañeros de la piscine y después la Moulinette.</p>
+<p>Como pone su propio <code>main</code>, si tu archivo también define uno el enlazado falla
+(«duplicate symbol <code>_main</code>»). El enunciado permite dejar el <code>main</code> de pruebas,
+pero <em>comentado</em>.</p>
+</details>
+<details id="g-norminette">
+<summary>Norma y norminette</summary>
+<p>La Norma es el estilo de código obligatorio en 42: funciones de 25 líneas como mucho, 5 funciones
+por archivo, declaraciones al principio separadas por una línea en blanco, tabulaciones, nada de
+<code>for</code>, de <code>do…while</code> ni de <code>switch</code>… <code>norminette</code> es el
+programa que la comprueba. Si falla la Norma, la nota es 0 aunque el código funcione.</p>
+<p>El enunciado de C 03 pide pasarla con <code>-R CheckForbiddenSourceHeader</code>, y la Moulinette
+hace lo mismo. Los seis archivos del repo dan <code>OK!</code> con esa opción.</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_strcmp</h2>
@@ -55,16 +259,16 @@ gira en torno a leer dos punteros en paralelo y decidir con el primer byte que n
 		i++;
 	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
 }</code></pre>
-<p>El bucle avanza mientras no se acabe <code>s1</code> <em>y</em> los caracteres coincidan. Se para
+<p>El bucle avanza mientras no se acabe <code>s1</code> <a href="#g-cortocircuito"><em>y</em></a> los caracteres coincidan. Se para
 en dos casos: se encontró una diferencia, o se llegó al final de <code>s1</code>. En ambos, la resta
-<code>s1[i] - s2[i]</code> da la respuesta correcta: si son iguales hasta el <code>\0</code> de las
-dos, esa resta es 0. El casting a <code>unsigned char</code> es parte del contrato: garantiza que la
+<code>s1[i] - s2[i]</code> da la respuesta correcta: si son iguales hasta el <a href="#g-cadena"><code>\0</code></a> de las
+dos, esa resta es 0. El <a href="#g-signo-char">casting a <code>unsigned char</code></a> es parte del <a href="#g-contrato">contrato</a>: garantiza que la
 comparación trate los bytes como 0–255, igual que la <code>strcmp</code> real.</p>
 <div class="trasfondo"><b>Concepto — ¿por qué <code>unsigned char</code>?</b>. En muchos sistemas
 <code>char</code> es <em>con signo</em>, así que un byte &gt; 127 valdría negativo. Sin el cast,
 comparar un carácter «normal» con uno acentuado o binario daría un signo equivocado y el orden
 saldría del revés. Es un detalle diminuto que separa una <code>strcmp</code> «que parece funcionar»
-de una correcta: la Moulinette prueba exactamente estos bordes.</div>
+de una correcta: la <a href="#g-moulinette">Moulinette</a> prueba exactamente estos bordes.</div>
 </div>
 
 <div class="card" id="ex01">
@@ -83,8 +287,8 @@ de una correcta: la Moulinette prueba exactamente estos bordes.</div>
 	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
 }</code></pre>
 <p>La guarda <code>n == 0</code> al principio no es opcional: como <code>n</code> es
-<code>unsigned</code>, escribir <code>n - 1</code> con <code>n = 0</code> no da −1, sino
-<strong>4294967295</strong> (envuelve por abajo), y el bucle recorrería memoria hasta petar. Con esa
+<a href="#g-unsigned"><code>unsigned</code></a>, escribir <code>n - 1</code> con <code>n = 0</code> no da −1, sino
+<strong>4294967295</strong> (envuelve por abajo), y el bucle recorrería memoria <a href="#g-ub">hasta petar</a>. Con esa
 comparación cubierta, el bucle avanza hasta <code>n − 1</code> y compara ahí el último par.</p>
 <div class="trasfondo"><b>Concepto — el <em>underflow</em> de los sin signo</b>. Los
 <code>unsigned</code> no tienen números negativos: al bajar de 0 dan la vuelta al valor máximo. Es la
@@ -114,12 +318,12 @@ duraderas de este ejercicio.</div>
 	dest[i + j] = '\0';
 	return (dest);
 }</code></pre>
-<p>Dos fases: primero <code>i</code> se planta en el <code>\0</code> de <code>dest</code> (su
+<p>Dos fases: primero <code>i</code> se planta en el <a href="#g-cadena"><code>\0</code></a> de <code>dest</code> (su
 longitud), y luego se copia <code>src</code> a partir de ahí, en <code>dest[i + j]</code>. Al acabar
 hay que volver a poner el terminador, porque hemos sobrescrito el que tenía <code>dest</code>.</p>
 <div class="trasfondo"><b>Concepto — quien concatena, confía</b>. <code>strcat</code> asume que
 <code>dest</code> tiene sitio de sobra para lo que le pegas. No hay comprobación de tamaño: si no
-cabe, escribes fuera del búfer. Es el mismo pecado original que <code>strcpy</code>, y la razón de
+cabe, escribes fuera del <a href="#g-bufer">búfer</a>. Es el mismo pecado original que <code>strcpy</code>, y la razón de
 que exista <code>strlcat</code> (ex05). Verlo aquí en su versión «ingenua» hace que la «segura» del
 final del módulo tenga sentido.</div>
 </div>
@@ -147,18 +351,18 @@ final del módulo tenga sentido.</div>
 }</code></pre>
 <p>Idéntico a <code>strcat</code> salvo la guarda extra <code>j &lt; nb</code> en el segundo bucle.
 A diferencia de <code>strncpy</code>, aquí <code>strncat</code> <strong>sí</strong> añade siempre el
-<code>\0</code> final: es un detalle de la especificación que conviene recordar de memoria.</p>
+<a href="#g-cadena"><code>\0</code></a> final: es un detalle de la especificación que conviene recordar de memoria.</p>
 <div class="trasfondo"><b>Concepto — familias <code>n</code></b>. Las variantes con <code>n</code>
 (<code>strncpy</code>, <code>strncmp</code>, <code>strncat</code>) acotan cuántos bytes tocan, pero
 cada una decide de forma distinta qué hacer con el terminador. No hay una regla uniforme: hay que
-leer el <code>man</code> de cada una. Descubrir esas asimetrías es parte del oficio.</div>
+leer el <a href="#g-contrato"><code>man</code></a> de cada una. Descubrir esas asimetrías es parte del oficio.</div>
 </div>
 
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>ft_strstr</h2>
 <div class="meta"><span>Prototipo: <b>char *ft_strstr(char *str, char *to_find)</b></span></div>
 <p>Buscar la primera aparición de <code>to_find</code> dentro de <code>str</code> y devolver un
-puntero a ella (o <code>NULL</code> si no está). Si <code>to_find</code> es vacío, devolver
+<a href="#g-puntero">puntero</a> a ella (o <a href="#g-null"><code>NULL</code></a> si no está). Si <code>to_find</code> es vacío, devolver
 <code>str</code>.</p>
 <pre><code>char	*ft_strstr(char *str, char *to_find)
 {
@@ -181,11 +385,11 @@ puntero a ella (o <code>NULL</code> si no está). Si <code>to_find</code> es vac
 }</code></pre>
 <p>Es una búsqueda de doble bucle: por cada posición <code>i</code> de <code>str</code>, el bucle
 interno intenta casar <code>to_find</code> carácter a carácter. Si el interno llega al
-<code>\0</code> de <code>to_find</code> (<code>!to_find[j]</code>), significa que casó entero, y se
-devuelve el puntero al inicio de la coincidencia, <code>str + i</code>.</p>
+<a href="#g-cadena"><code>\0</code></a> de <code>to_find</code> (<code>!to_find[j]</code>), significa que casó entero, y se
+devuelve el puntero al inicio de la coincidencia, <a href="#g-indice"><code>str + i</code></a>.</p>
 <div class="trasfondo"><b>Concepto — el primer algoritmo «de verdad»</b>. Hasta aquí todo eran
-recorridos lineales; <code>strstr</code> es coincidencia de patrones (<em>pattern matching</em>) en
-su forma más directa, O(n·m). Los algoritmos serios de búsqueda (KMP, Boyer–Moore) optimizan
+recorridos lineales; <code>strstr</code> es <a href="#g-subcadena">coincidencia de patrones</a> (<em>pattern matching</em>) en
+su forma más directa, <a href="#g-complejidad">O(n·m)</a>. Los algoritmos serios de búsqueda (KMP, Boyer–Moore) optimizan
 justamente este doble bucle. Antes de mejorar algo, hay que saber escribir la versión honesta: eso
 es este ejercicio.</div>
 </div>
@@ -193,9 +397,9 @@ es este ejercicio.</div>
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>ft_strlcat</h2>
 <div class="meta"><span>Prototipo: <b>unsigned int ft_strlcat(char *dest, char *src, unsigned int size)</b></span></div>
-<p>La concatenación «segura» de BSD. Añade <code>src</code> a <code>dest</code> sin pasarse de
-<code>size</code>, termina siempre en <code>\0</code>, y devuelve la longitud que habría tenido el
-resultado (útil para detectar truncamiento).</p>
+<p>La concatenación «segura» de <a href="#g-bsd">BSD</a>. Añade <code>src</code> a <code>dest</code> sin pasarse de
+<code>size</code>, termina siempre en <a href="#g-cadena"><code>\0</code></a>, y devuelve la longitud que habría tenido el
+resultado (útil para detectar <a href="#g-truncamiento">truncamiento</a>).</p>
 <pre><code>unsigned int	ft_strlcat(char *dest, char *src, unsigned int size)
 {
 	unsigned int	dlen;
@@ -229,6 +433,100 @@ sobre <code>strncat</code> es su valor de retorno: comparándolo con <code>size<
 sabe si se perdieron datos y puede reservar un búfer mayor y reintentar. Es un patrón de diseño de
 API —«di siempre cuánto habrías necesitado»— que reaparece en muchas funciones de sistema
 (<code>snprintf</code>, <code>read</code>…).</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: defender el código, casos límite, y Moulinette y
+Norma. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Defender el código</h3>
+<details id="q-cast">
+<summary>¿Por qué el cast a <code>unsigned char</code> en la resta de <code>ft_strcmp</code>?</summary>
+<p>Porque el <code>man</code> dice que los bytes se comparan como <code>unsigned char</code>, y el
+<code>char</code> de x86 tiene signo. Sin el cast, un byte por encima de 127 sería negativo:
+<code>"test\200"</code> frente a <code>"test\177"</code> daría negativo, y la de la libc da positivo.
+→ <a href="#g-signo-char">char con signo</a>, <a href="#ex00">ex00</a></p>
+</details>
+<details id="q-valor">
+<summary>Tu <code>ft_strcmp("Saludos", "Salux")</code> da -20. ¿No debería dar -1?</summary>
+<p>No hay un «debería»: el contrato solo garantiza el signo. Las dos respuestas son correctas. De
+hecho, la <code>strcmp</code> de glibc dio -20 con esas cadenas leídas de <code>argv</code> y -1
+cuando se le pasaron como literales (ahí gcc calcula el resultado al compilar). Por eso los tests
+comparan signos y no valores. → <a href="#g-contrato">contrato</a>, <a href="#ex00">ex00</a></p>
+</details>
+<details id="q-bucle">
+<summary>¿Por qué el bucle de <code>ft_strcmp</code> no comprueba también que no se acabe <code>s2</code>?</summary>
+<p>Porque no hace falta: si <code>s2</code> se acaba antes, <code>s2[i]</code> vale 0, y como
+<code>s1[i]</code> no es 0 (lo comprueba la primera condición), <code>s1[i] == s2[i]</code> es falso
+y el bucle para ahí. Añadir <code>s2[i]</code>, como hace el repo, es redundante pero no está mal.
+→ <a href="#g-cortocircuito">cortocircuito</a>, <a href="#ex00">ex00</a></p>
+</details>
+<details id="q-strncat">
+<summary>¿<code>ft_strncat</code> pone siempre el <code>\0</code>? ¿Y <code>strncpy</code>?</summary>
+<p><code>strncat</code> sí, siempre: copia como mucho <code>nb</code> caracteres y después escribe
+el terminador, así que <code>dest</code> necesita sitio para <code>nb + 1</code>. Con
+<code>"Hola"</code>, <code>"abcdef"</code> y 2 deja <code>"Holaab"</code>. <code>strncpy</code> (C 02)
+no: si <code>src</code> es igual de largo o más que <code>n</code>, no deja <code>\0</code>.
+→ <a href="#ex03">ex03</a></p>
+</details>
+<details id="q-strlcat">
+<summary>¿Qué devuelve <code>ft_strlcat</code> y para qué sirve?</summary>
+<p>La longitud que habría tenido la cadena completa: la de <code>dest</code> (contada como mucho hasta
+<code>size</code>) más la de <code>src</code>. Si el valor devuelto es mayor o igual que
+<code>size</code>, el resultado se ha truncado. Con <code>"Hola"</code>, <code>" mundo"</code> y 8
+deja <code>"Hola mu"</code> y devuelve 10. → <a href="#g-truncamiento">truncamiento</a>,
+<a href="#ex05">ex05</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-n0">
+<summary>¿Qué pasa con <code>ft_strncmp(s1, s2, 0)</code>?</summary>
+<p>Devuelve 0 sin leer nada, por el <code>if (n == 0)</code>. Sin esa guarda, <code>n - 1</code>
+con <code>n</code> sin signo daría 4294967295 y el límite del bucle no serviría de nada.
+→ <a href="#g-unsigned">unsigned</a>, <a href="#ex01">ex01</a></p>
+</details>
+<details id="q-vacio">
+<summary>¿Y si <code>to_find</code> es la cadena vacía? ¿Y si no está?</summary>
+<p>Vacía: se devuelve <code>str</code>, lo dice el <code>man</code> y es lo primero que mira
+<code>ft_strstr</code>; vale también para <code>ft_strstr("", "")</code>. Si no está: se devuelve
+<code>NULL</code>, también con <code>ft_strstr("", "a")</code>. → <a href="#g-null">NULL</a>,
+<a href="#ex04">ex04</a></p>
+</details>
+<details id="q-lleno">
+<summary>¿Qué hace <code>ft_strlcat</code> si <code>size</code> es menor que la longitud de <code>dest</code>?</summary>
+<p>No toca <code>dest</code> y devuelve <code>size + strlen(src)</code>. Al medir <code>dest</code>
+sin pasar de <code>size</code>, la cuenta para en <code>size</code> y se considera que no hay sitio.
+Con <code>size = 0</code> pasa lo mismo: devuelve la longitud de <code>src</code>. → <a href="#ex05">ex05</a></p>
+</details>
+<details id="q-sitio">
+<summary>¿Qué pasa si <code>dest</code> no tiene sitio en <code>ft_strcat</code>?</summary>
+<p>Se escribe fuera del búfer: comportamiento indefinido. <code>ft_strcat</code> no puede evitarlo
+porque no sabe cuánto mide <code>dest</code>; asegurarlo es cosa de quien llama. Es justo lo que
+arregla <code>strlcat</code>. → <a href="#g-bufer">búfer</a>, <a href="#ex02">ex02</a></p>
+</details>
+
+<h3>Moulinette y Norma</h3>
+<details id="q-main">
+<summary>¿Puedo dejar un <code>main</code> en el archivo?</summary>
+<p>Solo comentado. La Moulinette compila tu archivo con su propio <code>main</code>, y si hay dos el
+enlazado falla. El test del pack avisa si el fuente todavía define <code>main</code>.
+→ <a href="#g-moulinette">Moulinette</a></p>
+</details>
+<details id="q-prohibidas">
+<summary>¿Podías usar <code>strlen</code> o <code>write</code>?</summary>
+<p>No: en los seis ejercicios las funciones autorizadas son «ninguna». Por eso cada función mide sus
+longitudes con su propio bucle (<code>dlen</code> y <code>slen</code> en <code>ft_strlcat</code>).
+Escribir tus propias funciones de ayuda en el mismo archivo sí está permitido, y cuentan para la
+Norma. → <a href="#ex05">ex05</a></p>
+</details>
+<details id="q-norma">
+<summary>¿Cómo has pasado la norminette?</summary>
+<p>Con <code>norminette -R CheckForbiddenSourceHeader</code>, como pide el enunciado. Recuerda que
+no lo detecta todo: la Norma la comprueba también quien te evalúa, y si no se cumple la nota es 0.
+→ <a href="#g-norminette">norminette</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 03 · <a href="006_c04.html">continuar con C 04 →</a></footer>

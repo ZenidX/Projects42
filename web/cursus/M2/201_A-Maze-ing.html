@@ -14,6 +14,8 @@
       <a href="../../index.html">Inicio</a>
       <a href="../../index.html#piscine">Piscine</a>
       <a href="../../index.html#cursus" class="active">Cursus</a>
+      <a href="../../galaxia.html">Galaxia</a>
+      <a href="../../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -23,11 +25,12 @@
 <p class="sub">Un generador de laberintos en Python: lee una configuración, genera un
 laberinto (perfecto o tablero tipo Pac-Man) con un «42» en el centro, lo guarda en
 hexadecimal, lo dibuja en la terminal con un menú y empaqueta la generación como módulo
-<code>pip</code> reutilizable. Todo el repo pasa <code>flake8</code> y
-<code>mypy --strict</code>, y cientos de laberintos generados pasan el
+<code>pip</code> reutilizable. El repo pasa <code>mypy --strict</code> y, en su versión con
+espacios, <code>flake8</code>; y cientos de laberintos generados pasan el
 <code>maze_analyzer.py</code> del enunciado, incluido el bonus de cero callejones.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#pide">01 — Qué pide</a></li>
   <li><a href="#repo">02 — El repositorio</a></li>
   <li><a href="#config">03 — El fichero de configuración</a></li>
@@ -41,6 +44,7 @@ hexadecimal, lo dibuja en la terminal con un menú y empaqueta la generación co
   <li><a href="#pruebas">11 — Cómo se ha comprobado</a></li>
   <li><a href="#delicados">12 — Puntos delicados</a></li>
   <li><a href="#fuente">13 — Fuente</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>De qué va el proyecto</b> — Generar laberintos es un clásico de la
@@ -57,28 +61,280 @@ proyecto posterior, y el modo «no perfecto» tiene que producir un tablero dire
 usable en un juego tipo Pac-Man (que en 42next es un proyecto del rank 04). Es el primer
 proyecto del cursus que piensa en quien va a usar tu código después.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>La página usa palabras de la teoría de grafos, de los algoritmos de búsqueda y de las
+herramientas de Python. Aquí está cada una explicada desde cero y con un ejemplo sacado del propio
+A-Maze-ing. En el resto de la página, la primera vez que sale uno de estos términos en cada tarjeta
+lleva un enlace a su entrada.</p>
+
+<h3>Grafos</h3>
+<details id="g-grafo">
+<summary>Grafo, nodo y arista</summary>
+<p>Un grafo es un conjunto de <em>nodos</em> (o vértices) unidos por <em>aristas</em>. Solo
+importa qué está conectado con qué, no dónde está dibujado. Sirve para modelar mapas, redes,
+dependencias… y laberintos.</p>
+<p>En A-Maze-ing cada celda libre es un nodo y cada pared abierta entre dos celdas es una arista.
+El laberinto del <code>config.txt</code> por defecto tiene 300 celdas, de las que 20 son del «42»,
+así que el grafo tiene 280 nodos.</p>
+</details>
+<details id="g-grado">
+<summary>Grado de un nodo</summary>
+<p>El número de aristas que salen de un nodo. En un laberinto, el número de paredes abiertas de
+una celda: de 0 a 4.</p>
+<p><code>_degree(cell)</code> es <code>len(self.neighbours(cell))</code>. Grado 1 es un callejón
+sin salida, grado 2 un pasillo y grado 3 o 4 un cruce. Las celdas del «42» tienen grado 0.</p>
+</details>
+<details id="g-conexo">
+<summary>Grafo conexo</summary>
+<p>Un grafo es <em>conexo</em> si desde cualquier nodo se puede llegar a cualquier otro siguiendo
+aristas. Si no, está partido en trozos aislados (componentes).</p>
+<p>Es lo primero que mira <code>maze_analyzer.py</code>: «Reachable region: 280 cells (0
+corridor(s) unreachable)». El borde libre alrededor del «42» está para que el dibujo no corte el
+laberinto en dos.</p>
+</details>
+<details id="g-ciclo">
+<summary>Ciclo y bucles independientes</summary>
+<p>Un <em>ciclo</em> es un camino que vuelve a su punto de partida sin repetir aristas. En un
+laberinto, un circuito por el que se puede dar la vuelta. Los <em>bucles independientes</em> de un
+grafo conexo son <code>aristas − nodos + 1</code>: cuántas aristas sobran respecto a lo mínimo
+para tenerlo todo conectado, y por tanto cuántos ciclos «nuevos» hay.</p>
+<p><code>_loops</code> hace exactamente esa cuenta. Con la configuración por defecto, el laberinto
+perfecto da 0 y el tablero Pac-Man 29, las «29 independent routes» del analizador. 29 bucles con 280
+nodos son 308 aristas: 279 del árbol y 29 de más.</p>
+</details>
+<details id="g-arbol">
+<summary>Árbol y árbol generador</summary>
+<p>Un <em>árbol</em> es un grafo conexo sin ciclos. Con N nodos tiene siempre N − 1 aristas: si
+tuviera menos estaría partido, y si tuviera más habría un ciclo. Un <em>árbol generador</em> de un
+grafo es un árbol que usa todos sus nodos y solo aristas de ese grafo.</p>
+<p>La cuadrícula con todas las paredes abiertas es el grafo; un laberinto perfecto es uno de sus
+árboles generadores. Con 280 celdas libres el backtracker abre exactamente 279 paredes.</p>
+</details>
+<details id="g-perfecto">
+<summary>Laberinto perfecto</summary>
+<p>Un laberinto con un único camino entre dos celdas cualesquiera: ni bucles ni zonas aisladas. Es
+lo mismo que decir que su grafo es un árbol.</p>
+<p>Con <code>PERFECT=True</code> y la semilla 42, el analizador da 0 bucles y 29 callejones reales
+(más 3 encerrados por el «42»). Todo árbol con más de un nodo tiene callejones: sus hojas, los
+nodos de grado 1.</p>
+</details>
+<details id="g-callejon">
+<summary>Callejón sin salida y trenzado (braiding)</summary>
+<p>Un callejón sin salida es una celda con una sola abertura (grado 1). <em>Trenzar</em> un
+laberinto es abrirle paredes en los callejones hasta que no quede ninguno; el resultado tiene
+bucles y se parece a un tablero de Pac-Man, donde el jugador nunca queda acorralado sin
+escapatoria.</p>
+<p><code>_braid</code> recorre los callejones en orden aleatorio y abre una pared en cada uno,
+mejor hacia otro callejón, porque así una sola pared arregla dos. Con el <code>config.txt</code>
+por defecto quedan 0 callejones reales.</p>
+</details>
+
+<h3>Algoritmos</h3>
+<details id="g-dfs">
+<summary>Búsqueda en profundidad (DFS) y backtracking</summary>
+<p>La búsqueda en profundidad (<em>depth-first search</em>) recorre un grafo avanzando siempre
+desde el último nodo alcanzado mientras pueda, y retrocediendo (<em>backtracking</em>) solo cuando
+se queda sin salidas. Es como recorrer un laberinto con la mano en la pared.</p>
+<p>El «recursive backtracker» es un DFS que elige al azar la siguiente vecina y abre la pared que
+cruza. Como cada paso avanza todo lo que puede antes de volver, salen pasillos largos y
+retorcidos.</p>
+</details>
+<details id="g-bfs">
+<summary>Búsqueda en anchura (BFS)</summary>
+<p>La búsqueda en anchura (<em>breadth-first search</em>) explora un grafo por capas: primero los
+vecinos del origen, luego los vecinos de esos, y así. Como llega a cada nodo por orden de
+distancia, la primera vez que lo alcanza es por un camino de longitud mínima. Vale para grafos sin
+pesos, donde todas las aristas cuestan lo mismo.</p>
+<p><code>solution</code> es un BFS desde la entrada. Con la configuración por defecto, el camino
+tiene 39 pasos: 19 al este, 17 al sur y 3 al norte que obligan a bajar 3 más.</p>
+</details>
+<details id="g-pila">
+<summary>Pila (LIFO)</summary>
+<p>Una estructura en la que solo se mete y se saca por arriba: el último en entrar es el primero en
+salir (<em>last in, first out</em>). En Python basta una lista con <code>append</code> y
+<code>pop</code>.</p>
+<p><code>_carve_backtracker</code> guarda en <code>stack</code> el camino desde la entrada hasta
+la celda actual. Avanzar es <code>stack.append(nxt)</code> y retroceder,
+<code>stack.pop()</code>. Termina cuando la pila se vacía.</p>
+</details>
+<details id="g-cola">
+<summary>Cola (FIFO) y <code>deque</code></summary>
+<p>Una cola es lo contrario de una pila: se mete por un lado y se saca por el otro, como en la
+cola de un supermercado (<em>first in, first out</em>). <code>collections.deque</code> es la cola
+de Python, con <code>append</code> y <code>popleft</code> en tiempo constante.</p>
+<p>El BFS de <code>solution</code> la necesita para explorar por capas. Con una lista normal,
+<code>pop(0)</code> movería todos los elementos una posición en cada paso.</p>
+</details>
+<details id="g-recursion">
+<summary>Recursión y límite de recursión</summary>
+<p>Una función recursiva se llama a sí misma con un problema más pequeño. Cada llamada pendiente
+ocupa un marco en la pila de llamadas, y Python corta cuando hay demasiadas: el límite por defecto
+es 1000 (<code>sys.getrecursionlimit()</code>) y pasarlo lanza <code>RecursionError</code>.</p>
+<p>Un backtracker recursivo bajaría un nivel por cada celda del pasillo actual, y en un laberinto
+de 200×200 hay 40 000 celdas. Por eso el código usa una pila explícita en vez de recursión.</p>
+</details>
+<details id="g-prim">
+<summary>Algoritmo de Prim</summary>
+<p>Un algoritmo clásico para construir un árbol generador: se empieza en un nodo y en cada paso
+se añade una arista que conecte lo ya construido con un nodo nuevo. El original elige la arista
+más barata; la versión para laberintos elige una al azar.</p>
+<p><code>_carve_prim</code> guarda la <em>frontera</em> (las paredes entre lo construido y lo que
+falta) y saca una al azar en cada paso. Da muchos pasillos cortos y ramificados.</p>
+<p><b>De dónde viene:</b> lo publicó Robert Prim en 1957; Vojtěch Jarník lo había descrito ya en
+1930.</p>
+</details>
+<details id="g-semilla">
+<summary>Pseudoaleatorio y semilla</summary>
+<p>Un ordenador no genera azar de verdad: un generador <em>pseudoaleatorio</em> calcula una
+secuencia de números que parece aleatoria a partir de un valor inicial, la <em>semilla</em>. Con
+la misma semilla, la misma secuencia. El de Python es el Mersenne Twister.</p>
+<p><code>random.Random(42).random()</code> da siempre 0.6394267984578837. Por eso
+<code>SEED=42</code> da siempre el mismo laberinto: todas las elecciones salen de un único
+<code>random.Random(self.seed)</code>. Sin <code>SEED</code>, se elige una al azar y se muestra
+para poder repetirla.</p>
+</details>
+
+<h3>Bits y formato</h3>
+<details id="g-mascara">
+<summary>Máscara de bits</summary>
+<p>Un entero usado como conjunto de interruptores: cada bit dice sí o no a una cosa. Se consulta con
+<code>&amp;</code> (AND), se enciende con <code>|=</code> (OR) y se apaga con <code>&amp;= ~</code>
+(AND con el complemento, que tiene todos los bits a 1 menos ese).</p>
+<p>Cada celda guarda sus paredes cerradas en 4 bits: norte 1, este 2, sur 4, oeste 8. Una celda
+con norte y oeste cerradas vale 1 + 8 = 9. Abrir el este de una celda a 15 es
+<code>15 &amp; ~2</code> = 13.</p>
+</details>
+<details id="g-hex">
+<summary>Hexadecimal</summary>
+<p>La base 16, con las cifras <code>0</code>–<code>9</code> y <code>A</code>–<code>F</code>. Cada
+cifra equivale exactamente a 4 bits, así que un número de 4 bits cabe en una sola cifra.</p>
+<p>Por eso el fichero de salida usa una cifra hexadecimal por celda: <code>F</code> son las cuatro
+paredes (una celda del «42»), <code>9</code> norte y oeste, <code>0</code> ninguna.
+<code>to_hex</code> la escribe con <code>f"{walls:X}"</code>.</p>
+</details>
+<details id="g-ansi">
+<summary>Códigos de escape ANSI</summary>
+<p>Secuencias que empiezan por el carácter ESC (<code>\033</code>) y que la terminal interpreta
+como órdenes en vez de imprimirlas: cambiar colores, mover el cursor, borrar. Se llaman así por el
+estándar ANSI X3.64.</p>
+<p><code>_paint</code> escribe <code>\033[48;5;Nm</code> (fondo del color N de la paleta de 256)
+seguido de dos espacios y <code>\033[0m</code> (volver al color normal). Un bloque de pared blanca
+es el color 255.</p>
+</details>
+
+<h3>Python</h3>
+<details id="g-excepcion">
+<summary>Excepción y traceback</summary>
+<p>Una excepción es la forma de Python de señalar un error: se <em>lanza</em> con
+<code>raise</code>, sube por las llamadas y se <em>captura</em> con <code>try</code>/<code>except</code>.
+Si nadie la captura, el programa se para y escribe el <em>traceback</em>: la lista de llamadas por
+las que pasó. En la evaluación, un traceback cuenta como «no funcional».</p>
+<p>El proyecto define dos: <code>ConfigError</code> para la configuración y <code>MazeError</code>
+para parámetros imposibles. <code>main</code> captura esas dos y <code>OSError</code>, imprime un
+mensaje y devuelve 1: «Impossible maze: exit 10,7 falls inside the '42' pattern».</p>
+</details>
+<details id="g-with">
+<summary>Context manager y <code>with</code></summary>
+<p>Un objeto que sabe prepararse y recogerse: <code>with</code> lo abre al entrar en el bloque y
+lo cierra al salir, también si dentro se lanza una excepción. El caso típico son los
+ficheros.</p>
+<p><code>read_config</code> y <code>write_maze</code> abren con
+<code>with open(...) as stream:</code>, que es lo que pide el enunciado. Sin <code>with</code>,
+una excepción entre el <code>open</code> y el <code>close</code> dejaría el fichero abierto.</p>
+</details>
+<details id="g-dataclass">
+<summary>dataclass</summary>
+<p>Un decorador de la biblioteca estándar que genera solo el <code>__init__</code> (y la
+representación y la comparación) de una clase a partir de sus campos anotados. Sirve para clases que
+son sobre todo datos.</p>
+<p><code>MazeConfig</code> y <code>DisplayState</code> son dataclasses: <code>MazeConfig</code>
+tiene ocho campos, los dos últimos con valor por defecto (<code>seed=None</code>,
+<code>algorithm="backtracker"</code>).</p>
+</details>
+<details id="g-tipos">
+<summary>Anotaciones de tipo y mypy</summary>
+<p>Las anotaciones (<code>def _loops(self) -&gt; int:</code>, <code>visited: Set[Cell]</code>)
+dicen qué tipo se espera. Python no las comprueba al ejecutar; <code>mypy</code> las lee antes y
+avisa de las incoherencias, como haría un compilador. <code>--strict</code> activa todas sus
+comprobaciones.</p>
+<p>El enunciado fija los flags de <code>make lint</code>; el repo pasa también
+<code>mypy --strict</code> sin un aviso. <code>Cell = Tuple[int, int]</code> es un <em>alias</em>:
+un nombre corto para un tipo largo.</p>
+</details>
+<details id="g-flake8">
+<summary>flake8 y PEP 8</summary>
+<p>PEP 8 es la guía de estilo oficial de Python: sangría de 4 espacios, líneas de 79 caracteres
+como mucho, dos líneas en blanco entre funciones… <code>flake8</code> es la herramienta que la
+comprueba, con códigos como <code>W191</code> («indentation contains tabs») o <code>E101</code>
+(mezcla de tabuladores y espacios).</p>
+<p>Los <code>.py</code> de este repo en <code>packs/</code> llevan tabuladores a propósito, así que
+<code>flake8</code> da 1120 avisos, casi todos <code>W191</code> y <code>E101</code>. La versión con
+espacios, la que se entrega, pasa sin ninguno.</p>
+</details>
+<details id="g-docstring">
+<summary>Docstring y PEP 257</summary>
+<p>Un docstring es la cadena entre triples comillas que va como primera línea de un módulo, una
+clase o una función: su documentación, accesible en tiempo de ejecución con <code>help()</code>.
+PEP 257 fija cómo se escriben: una primera línea que resume, una línea en blanco y luego el
+detalle.</p>
+<p>El docstring de <code>MazeGenerator</code> sigue el estilo Google, con secciones
+<code>Args:</code>, <code>Raises:</code> y <code>Attributes:</code>. Algunos fragmentos de la página
+lo omiten para ir al grano.</p>
+</details>
+<details id="g-paquete">
+<summary>Módulo, paquete y wheel</summary>
+<p>Un <em>módulo</em> es un fichero <code>.py</code>; un <em>paquete</em>, una carpeta de módulos
+con un <code>__init__.py</code>. Un <em>wheel</em> (<code>.whl</code>) es un zip con el paquete
+listo para instalar con <code>pip</code>, sin compilar nada; un <em>sdist</em>
+(<code>.tar.gz</code>) son las fuentes para construirlo.</p>
+<p><code>mazegen/</code> es el paquete, y su <code>__init__.py</code> decide qué se exporta
+(<code>__all__</code>): <code>MazeGenerator</code>, <code>MazeError</code>, las direcciones,
+<code>Cell</code> y <code>ALGORITHMS</code>. El wheel es
+<code>mazegen-1.0.0-py3-none-any.whl</code>.</p>
+</details>
+<details id="g-venv">
+<summary>Entorno virtual</summary>
+<p>Una carpeta con su propio Python y sus propios paquetes, separada del sistema. Se crea con
+<code>python3 -m venv .venv</code> y se activa con <code>. .venv/bin/activate</code>; desde ahí,
+<code>pip install</code> instala solo dentro.</p>
+<p>Es la forma de probar que el wheel funciona en limpio: instalarlo en un entorno nuevo e
+importarlo desde fuera del repo. El Makefile excluye <code>.venv</code> de <code>flake8</code> y
+<code>mypy</code>.</p>
+</details>
+<details id="g-licencia">
+<summary>Licencia de software</summary>
+<p>El texto que dice qué pueden hacer otros con tu código. Sin licencia, el autor conserva todos
+los derechos y nadie puede reutilizarlo legalmente. Las <em>permisivas</em> (MIT, BSD, Apache)
+dejan hacer casi todo; las <em>copyleft</em> (GPL) obligan a que lo derivado se distribuya con la
+misma licencia.</p>
+<p><code>LICENSE.md</code> es MIT, y <code>pyproject.toml</code> lo declara con
+<code>license = "MIT"</code> y <code>license-files</code>.</p>
+</details>
+</div>
+
 <div class="card" id="pide">
 <h2><span class="ex">01</span>Qué pide</h2>
 <div class="meta"><span>Rank: <b>02</b></span><span>Lenguaje: <b>Python 3.10+</b></span><span>Grupo: <b>en equipo (el README pide los roles de cada miembro; tamaño no indicado)</b></span><span>Entrega: <b>repositorio Git</b></span></div>
 <ul>
   <li>Un programa <code>a_maze_ing.py</code> que se ejecuta con
   <code>python3 a_maze_ing.py config.txt</code>.</li>
-  <li>Generar un laberinto aleatorio pero <b>reproducible con semilla</b>, perfecto o no
+  <li>Generar un laberinto aleatorio pero <b>reproducible con <a href="#g-semilla">semilla</a></b>, <a href="#g-perfecto">perfecto</a> o no
   según la configuración, con un <b>«42»</b> dibujado con celdas cerradas.</li>
-  <li>Escribirlo en un fichero con una cifra hexadecimal por celda, más la entrada, la salida
+  <li>Escribirlo en un fichero con una cifra <a href="#g-hex">hexadecimal</a> por celda, más la entrada, la salida
   y el camino más corto.</li>
   <li>Mostrarlo en terminal (ASCII) o con la MiniLibX, con interacciones mínimas.</li>
   <li>Encapsular la generación en <b>una clase</b> dentro de un módulo independiente,
   empaquetada como <code>mazegen-*</code> (<code>.whl</code> o <code>.tar.gz</code>) en la
   raíz del repositorio, con su <code>LICENSE.md</code>.</li>
-  <li>Las reglas comunes de Python: <b>flake8</b>, anotaciones de tipo y <b>mypy</b>,
-  docstrings PEP 257, excepciones controladas (un <em>traceback</em> en la evaluación es
-  «no funcional») y <em>context managers</em> para los ficheros.</li>
+  <li>Las reglas comunes de Python: <b><a href="#g-flake8">flake8</a></b>, <a href="#g-tipos">anotaciones de tipo</a> y <b>mypy</b>,
+  <a href="#g-docstring">docstrings</a> PEP 257, <a href="#g-excepcion">excepciones</a> controladas (un <em>traceback</em> en la evaluación es
+  «no funcional») y <em><a href="#g-with">context managers</a></em> para los ficheros.</li>
   <li>Un Makefile con <code>install</code>, <code>run</code>, <code>debug</code>,
   <code>clean</code> y <code>lint</code> (flags de mypy fijados por el enunciado;
   <code>lint-strict</code> opcional), y un README con secciones específicas.</li>
 </ul>
-<p>Bonus propuestos: un tablero no perfecto <b>sin ningún callejón sin salida</b>, varios
+<p>Bonus propuestos: un tablero no perfecto <b>sin ningún <a href="#g-callejon">callejón</a> sin salida</b>, varios
 algoritmos de generación y animación durante la generación. Esta solución hace los dos
 primeros.</p>
 </div>
@@ -91,8 +347,8 @@ primeros.</p>
   <tr><th>Fichero</th><th>Papel</th></tr>
   <tr><td><code>a_maze_ing.py</code></td><td>programa principal: config → generación → fichero → menú</td></tr>
   <tr><td><code>maze_config.py</code></td><td>lee y valida el fichero de configuración</td></tr>
-  <tr><td><code>maze_output.py</code></td><td>escribe el fichero hexadecimal</td></tr>
-  <tr><td><code>maze_display.py</code></td><td>dibujo en terminal con colores ANSI</td></tr>
+  <tr><td><code>maze_output.py</code></td><td>escribe el fichero <a href="#g-hex">hexadecimal</a></td></tr>
+  <tr><td><code>maze_display.py</code></td><td>dibujo en terminal con colores <a href="#g-ansi">ANSI</a></td></tr>
   <tr><td><code>mazegen/generator.py</code></td><td>la clase <code>MazeGenerator</code> (lo reutilizable)</td></tr>
   <tr><td><code>pyproject.toml</code></td><td>metadatos para reconstruir el <code>.whl</code></td></tr>
 </table>
@@ -115,8 +371,13 @@ lint:
 	flake8 . --exclude $(VENV)
 	mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports \
 		--disallow-untyped-defs --check-untyped-defs --exclude $(VENV)</code></pre>
-<p>Además de las reglas del enunciado hay <code>build</code> (regenera el wheel) y
+<p>Además de las reglas del enunciado hay <code>build</code> (regenera el <a href="#g-paquete">wheel</a>) y
 <code>lint-strict</code> (<code>mypy --strict</code>), que también pasa.</p>
+<p>Los <code>.py</code> de <code>packs/</code> están sangrados con tabuladores a propósito, y los
+fragmentos de esta página los muestran tal cual. Por eso, sobre esa copia, <a href="#g-flake8"><code>flake8</code></a> da
+1120 avisos, casi todos <code>W191</code> y <code>E101</code>. Si se cambia cada tabulador del
+principio de línea por 4 espacios sale exactamente la versión que se entrega, y esa pasa
+<code>flake8</code> sin ninguno.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A separar el modelo (el laberinto
 como datos) de todo lo demás. Como <code>MazeGenerator</code> no sabe nada de ficheros de
 configuración ni de colores, se puede cambiar el dibujo ASCII por la MiniLibX — o llevarse
@@ -135,7 +396,7 @@ comentarios. Las seis primeras claves son obligatorias; <code>SEED</code> y
   <tr><td><code>ENTRY</code>, <code>EXIT</code></td><td>celdas <code>x,y</code> (columna, fila), distintas</td><td>obligatoria</td></tr>
   <tr><td><code>OUTPUT_FILE</code></td><td>ruta del fichero de salida</td><td>obligatoria</td></tr>
   <tr><td><code>PERFECT</code></td><td><code>True</code>/<code>False</code> (también <code>1</code>/<code>0</code>, <code>yes</code>/<code>no</code>)</td><td>obligatoria</td></tr>
-  <tr><td><code>SEED</code></td><td>entero ≥ 0; misma semilla, mismo laberinto</td><td>aleatoria</td></tr>
+  <tr><td><code>SEED</code></td><td>entero ≥ 0; misma <a href="#g-semilla">semilla</a>, mismo laberinto</td><td>aleatoria</td></tr>
   <tr><td><code>ALGORITHM</code></td><td><code>backtracker</code> o <code>prim</code></td><td><code>backtracker</code></td></tr>
 </table>
 <pre><code># A-Maze-ing default configuration
@@ -152,46 +413,46 @@ ALGORITHM=backtracker</code></pre>
 <p>La lectura va en dos pasos. Primero <code>parse_lines</code> convierte las líneas en un
 diccionario y rechaza lo que no tiene forma de configuración:</p>
 <pre><code>def parse_lines(lines: list[str]) -&gt; Dict[str, str]:
-    values: Dict[str, str] = {}
-    for number, raw in enumerate(lines, start=1):
-        line = raw.strip()
-        if not line or line.startswith("#"):
-            continue
-        if "=" not in line:
-            raise ConfigError(
-                f"line {number}: expected KEY=VALUE, got '{line}'"
-            )
-        key, value = (part.strip() for part in line.split("=", 1))
-        key = key.upper()
-        if key not in MANDATORY_KEYS + OPTIONAL_KEYS:
-            raise ConfigError(f"line {number}: unknown key '{key}'")
-        if key in values:
-            raise ConfigError(f"line {number}: key '{key}' is repeated")
-        if not value:
-            raise ConfigError(f"line {number}: '{key}' has no value")
-        values[key] = value
-    missing = [key for key in MANDATORY_KEYS if key not in values]
-    if missing:
-        raise ConfigError(f"missing mandatory key(s): {', '.join(missing)}")
-    return values</code></pre>
+	values: Dict[str, str] = {}
+	for number, raw in enumerate(lines, start=1):
+		line = raw.strip()
+		if not line or line.startswith("#"):
+			continue
+		if "=" not in line:
+			raise ConfigError(
+				f"line {number}: expected KEY=VALUE, got '{line}'"
+			)
+		key, value = (part.strip() for part in line.split("=", 1))
+		key = key.upper()
+		if key not in MANDATORY_KEYS + OPTIONAL_KEYS:
+			raise ConfigError(f"line {number}: unknown key '{key}'")
+		if key in values:
+			raise ConfigError(f"line {number}: key '{key}' is repeated")
+		if not value:
+			raise ConfigError(f"line {number}: '{key}' has no value")
+		values[key] = value
+	missing = [key for key in MANDATORY_KEYS if key not in values]
+	if missing:
+		raise ConfigError(f"missing mandatory key(s): {', '.join(missing)}")
+	return values</code></pre>
 <p>Una clave desconocida o repetida es un error a propósito: así un <code>WIDHT=20</code>
 con una errata no se ignora en silencio. Después <code>build_config</code> convierte cada
 valor y comprueba rangos y coherencia (la entrada dentro del laberinto, distinta de la
 salida…). Todo fallo se convierte en una <code>ConfigError</code> con un mensaje legible,
 incluido el de abrir el fichero:</p>
 <pre><code>def read_config(path: str) -&gt; MazeConfig:
-    try:
-        with open(path, encoding="utf-8") as stream:
-            lines = stream.readlines()
-    except FileNotFoundError:
-        raise ConfigError(f"configuration file not found: {path}")
-    except IsADirectoryError:
-        raise ConfigError(f"{path} is a directory, not a file")
-    except (OSError, UnicodeDecodeError) as error:
-        raise ConfigError(f"cannot read {path}: {error}")
-    return build_config(parse_lines(lines))</code></pre>
-<p>El <code>with</code> es el <em>context manager</em> que pide el enunciado: el fichero se
-cierra aunque haya una excepción dentro.</p>
+	try:
+		with open(path, encoding="utf-8") as stream:
+			lines = stream.readlines()
+	except FileNotFoundError:
+		raise ConfigError(f"configuration file not found: {path}")
+	except IsADirectoryError:
+		raise ConfigError(f"{path} is a directory, not a file")
+	except (OSError, UnicodeDecodeError) as error:
+		raise ConfigError(f"cannot read {path}: {error}")
+	return build_config(parse_lines(lines))</code></pre>
+<p>El <code>with</code> es el <em><a href="#g-with">context manager</a></em> que pide el enunciado: el fichero se
+cierra aunque haya una <a href="#g-excepcion">excepción</a> dentro.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A escribir un parser defensivo:
 validar antes de trabajar y convertir cada fallo en un mensaje útil en vez de un
 <em>traceback</em>. El truco es tener <em>una</em> excepción propia
@@ -203,7 +464,7 @@ llenar el código de <code>print</code> y <code>sys.exit</code>.</div>
 <h2><span class="ex">04</span>La cuadrícula y las paredes</h2>
 <div class="meta"><span>Fichero: <b>mazegen/generator.py</b></span></div>
 <p>El laberinto es una lista de listas, <code>grid[y][x]</code>, y cada celda guarda sus
-paredes <b>cerradas</b> en 4 bits, los mismos del fichero de salida:</p>
+paredes <b>cerradas</b> en <a href="#g-mascara">4 bits</a>, los mismos del fichero de salida:</p>
 <pre><code>NORTH = 1
 EAST = 2
 SOUTH = 4
@@ -212,11 +473,11 @@ ALL_WALLS = NORTH | EAST | SOUTH | WEST</code></pre>
 <p>Se empieza con todas las celdas a <code>ALL_WALLS</code> (15, <code>F</code>) y generar
 consiste solo en <em>abrir</em> paredes. Abrir una pared es tocar dos celdas: la propia y
 la vecina, con la dirección contraria. Por eso todo pasa por un único método:</p>
-<pre><code>def _open(self, cell: Cell, direction: int) -&gt; None:
-    """Open a wall on both sides, so the encoding stays coherent."""
-    other = self._step(cell, direction)
-    self.grid[cell[1]][cell[0]] &amp;= ~direction
-    self.grid[other[1]][other[0]] &amp;= ~OPPOSITE[direction]</code></pre>
+<pre><code>	def _open(self, cell: Cell, direction: int) -&gt; None:
+		"""Open a wall on both sides, so the encoding stays coherent."""
+		other = self._step(cell, direction)
+		self.grid[cell[1]][cell[0]] &amp;= ~direction
+		self.grid[other[1]][other[0]] &amp;= ~OPPOSITE[direction]</code></pre>
 <p><code>&amp;= ~direction</code> apaga ese bit y deja los otros tres como estaban. Como
 ninguna otra parte del código toca <code>grid</code> directamente, es imposible que dos
 vecinas no coincidan: la coherencia que comprueba <code>maze_analyzer.py</code> está
@@ -235,37 +496,37 @@ de orden ocurre solo al indexar.</div>
 <div class="meta"><span>Fichero: <b>mazegen/generator.py</b></span></div>
 <p>El dibujo es una plantilla de 7×5 donde <code>#</code> es una celda cerrada del todo:</p>
 <pre><code>PATTERN_42: Tuple[str, ...] = (
-    "#.#.###",
-    "#.#...#",
-    "###.###",
-    "..#.#..",
-    "..#.###",
+	"#.#.###",
+	"#.#...#",
+	"###.###",
+	"..#.#..",
+	"..#.###",
 )</code></pre>
-<pre><code>def _place_pattern(self) -&gt; None:
-    """Close the "42" cells, centred, keeping a free border around."""
-    self.pattern_cells = set()
-    self.pattern_omitted = False
-    if not self.want_pattern:
-        return
-    if (self.width &lt; PATTERN_WIDTH + 2
-            or self.height &lt; PATTERN_HEIGHT + 2):
-        self.pattern_omitted = True
-        return
-    ox = (self.width - PATTERN_WIDTH) // 2
-    oy = (self.height - PATTERN_HEIGHT) // 2
-    cells = {
-        (ox + col, oy + row)
-        for row, line in enumerate(PATTERN_42)
-        for col, char in enumerate(line)
-        if char == "#"
-    }
-    for name, cell in (("entry", self.entry), ("exit", self.exit)):
-        if cell in cells:
-            raise MazeError(
-                f"{name} {cell[0]},{cell[1]} falls inside the '42' "
-                f"pattern"
-            )
-    self.pattern_cells = cells</code></pre>
+<pre><code>	def _place_pattern(self) -&gt; None:
+		"""Close the "42" cells, centred, keeping a free border around."""
+		self.pattern_cells = set()
+		self.pattern_omitted = False
+		if not self.want_pattern:
+			return
+		if (self.width &lt; PATTERN_WIDTH + 2
+				or self.height &lt; PATTERN_HEIGHT + 2):
+			self.pattern_omitted = True
+			return
+		ox = (self.width - PATTERN_WIDTH) // 2
+		oy = (self.height - PATTERN_HEIGHT) // 2
+		cells = {
+			(ox + col, oy + row)
+			for row, line in enumerate(PATTERN_42)
+			for col, char in enumerate(line)
+			if char == "#"
+		}
+		for name, cell in (("entry", self.entry), ("exit", self.exit)):
+			if cell in cells:
+				raise MazeError(
+					f"{name} {cell[0]},{cell[1]} falls inside the '42' "
+					f"pattern"
+				)
+		self.pattern_cells = cells</code></pre>
 <ul>
   <li>Necesita <b>9×7</b> celdas como mínimo: la plantilla más un borde libre alrededor,
   para que el resto del laberinto pueda rodearla sin quedar partido. Si no cabe, se marca
@@ -286,68 +547,68 @@ por los cuatro lados.</p>
 <div class="card" id="perfecto">
 <h2><span class="ex">06</span>Laberinto perfecto: backtracker</h2>
 <div class="meta"><span>Fichero: <b>mazegen/generator.py</b></span><span>Configuración: <b>PERFECT=True</b></span></div>
-<pre><code>def _carve_backtracker(self) -&gt; None:
-    """Recursive backtracker (randomized depth-first search).
+<pre><code>	def _carve_backtracker(self) -&gt; None:
+		"""Recursive backtracker (randomized depth-first search).
 
-    Implemented with an explicit stack instead of recursion, so big
-    mazes never hit Python's recursion limit.
-    """
-    start = self.entry
-    visited: Set[Cell] = {start}
-    stack: List[Cell] = [start]
-    while stack:
-        cell = stack[-1]
-        options = [
-            d for d in DIRECTIONS
-            if self._free(self._step(cell, d))
-            and self._step(cell, d) not in visited
-        ]
-        if not options:
-            stack.pop()
-            continue
-        direction = self._rng.choice(options)
-        nxt = self._step(cell, direction)
-        self._open(cell, direction)
-        visited.add(nxt)
-        stack.append(nxt)</code></pre>
-<p>Se parte de la entrada. En cada paso se mira la celda de arriba de la pila: si tiene
+        Implemented with an explicit stack instead of recursion, so big
+        mazes never hit Python's recursion limit.
+        """
+		start = self.entry
+		visited: Set[Cell] = {start}
+		stack: List[Cell] = [start]
+		while stack:
+			cell = stack[-1]
+			options = [
+				d for d in DIRECTIONS
+				if self._free(self._step(cell, d))
+				and self._step(cell, d) not in visited
+			]
+			if not options:
+				stack.pop()
+				continue
+			direction = self._rng.choice(options)
+			nxt = self._step(cell, direction)
+			self._open(cell, direction)
+			visited.add(nxt)
+			stack.append(nxt)</code></pre>
+<p>Se parte de la entrada. En cada paso se mira la celda de arriba de la <a href="#g-pila">pila</a>: si tiene
 vecinas libres sin visitar, se elige una al azar, se abre la pared entre las dos y se
 avanza; si no le queda ninguna, se retrocede (<code>pop</code>). Termina cuando la pila se
 vacía, es decir, cuando ha vuelto al principio habiendo visitado todo.</p>
-<p>Por qué sale perfecto: cada pared que se abre conecta una celda <em>nueva</em> con el
+<p>Por qué sale <a href="#g-perfecto">perfecto</a>: cada pared que se abre conecta una celda <em>nueva</em> con el
 laberinto ya hecho. Con N celdas libres se abren exactamente N−1 paredes y todas quedan
-conectadas: eso es un árbol, sin ningún bucle, con un único camino entre dos celdas
+<a href="#g-conexo">conectadas</a>: eso es un <a href="#g-arbol">árbol</a>, sin ningún <a href="#g-ciclo">bucle</a>, con un único camino entre dos celdas
 cualesquiera. Una sala abierta de 3×3 es imposible, porque contendría un bucle.</p>
-<p>La recursión clásica (<code>visitar(celda)</code> que se llama a sí misma) se ha
+<p>La <a href="#g-recursion">recursión</a> clásica (<code>visitar(celda)</code> que se llama a sí misma) se ha
 cambiado por una pila explícita: en un laberinto de 200×200 el camino puede tener decenas de
 miles de pasos, y Python corta la recursión hacia los 1000 niveles.</p>
 <details id="prim">
 <summary>El segundo algoritmo: Prim aleatorio (<code>ALGORITHM=prim</code>, bonus)</summary>
-<pre><code>def _carve_prim(self) -&gt; None:
-    """Randomized Prim: grow the maze from a random frontier wall."""
-    start = self.entry
-    visited: Set[Cell] = {start}
-    frontier: List[Tuple[Cell, int]] = [(start, d) for d in DIRECTIONS]
-    while frontier:
-        index = self._rng.randrange(len(frontier))
-        frontier[index], frontier[-1] = frontier[-1], frontier[index]
-        cell, direction = frontier.pop()
-        nxt = self._step(cell, direction)
-        if not self._free(nxt) or nxt in visited:
-            continue
-        self._open(cell, direction)
-        visited.add(nxt)
-        frontier.extend((nxt, d) for d in DIRECTIONS)</code></pre>
-<p>En vez de avanzar por un único pasillo, Prim guarda la «frontera»: todas las paredes que
+<pre><code>	def _carve_prim(self) -&gt; None:
+		"""Randomized Prim: grow the maze from a random frontier wall."""
+		start = self.entry
+		visited: Set[Cell] = {start}
+		frontier: List[Tuple[Cell, int]] = [(start, d) for d in DIRECTIONS]
+		while frontier:
+			index = self._rng.randrange(len(frontier))
+			frontier[index], frontier[-1] = frontier[-1], frontier[index]
+			cell, direction = frontier.pop()
+			nxt = self._step(cell, direction)
+			if not self._free(nxt) or nxt in visited:
+				continue
+			self._open(cell, direction)
+			visited.add(nxt)
+			frontier.extend((nxt, d) for d in DIRECTIONS)</code></pre>
+<p>En vez de avanzar por un único pasillo, <a href="#g-prim">Prim</a> guarda la «frontera»: todas las paredes que
 separan lo ya construido de lo que falta. En cada paso saca una al azar (el intercambio con
 el último elemento hace que el <code>pop</code> sea O(1)) y, si al otro lado hay una celda
 libre sin visitar, la abre. También da un árbol, pero con otra textura: muchos pasillos
 cortos y ramificados en lugar de los largos y sinuosos del backtracker.</p>
 </details>
 <div class="trasfondo"><b>Por qué el backtracker</b> — Es el algoritmo más sencillo que
-garantiza un laberinto perfecto, se explica en dos frases (DFS con retroceso) y da los
+garantiza un laberinto perfecto, se explica en dos frases (<a href="#g-dfs">DFS</a> con retroceso) y da los
 pasillos largos y retorcidos que hacen bonito y difícil un laberinto. Toda la aleatoriedad
-sale de un único <code>random.Random(seed)</code>: con la misma semilla y los mismos
+sale de un único <code>random.Random(seed)</code>: con la misma <a href="#g-semilla">semilla</a> y los mismos
 parámetros, las elecciones son idénticas y el laberinto también. Lo «aleatorio» de un
 ordenador es pseudoaleatorio.</div>
 </div>
@@ -355,74 +616,74 @@ ordenador es pseudoaleatorio.</div>
 <div class="card" id="pacman">
 <h2><span class="ex">07</span>Tablero Pac-Man: trenzado</h2>
 <div class="meta"><span>Fichero: <b>mazegen/generator.py</b></span><span>Configuración: <b>PERFECT=False</b> (por defecto)</span></div>
-<p>Con <code>PERFECT=False</code> se genera primero un laberinto perfecto y luego se le
-quitan los callejones sin salida («trenzar», <em>braiding</em>):</p>
-<pre><code>def generate(self, seed: Optional[int] = None) -&gt; List[List[int]]:
-    if seed is not None:
-        self.seed = seed
-    self._rng = random.Random(self.seed)
-    self.grid = [[ALL_WALLS] * self.width for _ in range(self.height)]
-    self._place_pattern()
-    if self.algorithm == "prim":
-        self._carve_prim()
-    else:
-        self._carve_backtracker()
-    if not self.perfect:
-        self._braid()
-        self._add_loops(2)
-    return self.grid</code></pre>
-<p>Partir del laberinto perfecto da la conectividad total gratis: solo se <em>añaden</em>
+<p>Con <code>PERFECT=False</code> se genera primero un <a href="#g-perfecto">laberinto perfecto</a> y luego se le
+quitan los <a href="#g-callejon">callejones sin salida</a> («trenzar», <em>braiding</em>):</p>
+<pre><code>	def generate(self, seed: Optional[int] = None) -&gt; List[List[int]]:
+		if seed is not None:
+			self.seed = seed
+		self._rng = random.Random(self.seed)
+		self.grid = [[ALL_WALLS] * self.width for _ in range(self.height)]
+		self._place_pattern()
+		if self.algorithm == "prim":
+			self._carve_prim()
+		else:
+			self._carve_backtracker()
+		if not self.perfect:
+			self._braid()
+			self._add_loops(2)
+		return self.grid</code></pre>
+<p>Partir del laberinto perfecto da la <a href="#g-conexo">conectividad</a> total gratis: solo se <em>añaden</em>
 aberturas, nunca se quitan, así que todo lo que estaba conectado lo sigue estando.</p>
-<pre><code>def _braid(self) -&gt; None:
-    """Remove dead-ends by opening one extra wall in each of them.
+<pre><code>	def _braid(self) -&gt; None:
+		"""Remove dead-ends by opening one extra wall in each of them.
 
-    Opening towards another dead-end is preferred: it fixes two
-    dead-ends with a single wall.
-    """
-    dead_ends = [c for c in self._free_cells() if self._degree(c) == 1]
-    self._rng.shuffle(dead_ends)
-    for cell in dead_ends:
-        if self._degree(cell) != 1:
-            continue
-        options = self._closed_inner_walls(cell)
-        self._rng.shuffle(options)
-        options.sort(
-            key=lambda d: self._degree(self._step(cell, d)) != 1
-        )
-        for direction in options:
-            if self._try_open(cell, direction):
-                break</code></pre>
-<p>Un callejón es una celda con una sola salida (grado 1). A cada uno se le abre una pared
+        Opening towards another dead-end is preferred: it fixes two
+        dead-ends with a single wall.
+        """
+		dead_ends = [c for c in self._free_cells() if self._degree(c) == 1]
+		self._rng.shuffle(dead_ends)
+		for cell in dead_ends:
+			if self._degree(cell) != 1:
+				continue
+			options = self._closed_inner_walls(cell)
+			self._rng.shuffle(options)
+			options.sort(
+				key=lambda d: self._degree(self._step(cell, d)) != 1
+			)
+			for direction in options:
+				if self._try_open(cell, direction):
+					break</code></pre>
+<p>Un callejón es una celda con una sola salida (<a href="#g-grado">grado</a> 1). A cada uno se le abre una pared
 más, preferentemente hacia otro callejón (el <code>sort</code> pone primero las direcciones
 cuya vecina tiene grado 1), porque así una sola pared arregla dos. Cada pared abierta en un
-árbol crea exactamente un bucle nuevo.</p>
+<a href="#g-arbol">árbol</a> crea exactamente un <a href="#g-ciclo">bucle</a> nuevo.</p>
 <p>Lo que no se puede hacer es abrir salas: los pasillos son de 2 celdas de ancho como
 mucho. <code>_try_open</code> abre la pared, mira si ha aparecido un bloque de 3×3 abierto
 del todo que la contenga y, si es así, la vuelve a cerrar:</p>
-<pre><code>def _try_open(self, cell: Cell, direction: int) -&gt; bool:
-    self._open(cell, direction)
-    if self._creates_open_area(cell, direction):
-        self._close(cell, direction)
-        return False
-    return True
+<pre><code>	def _try_open(self, cell: Cell, direction: int) -&gt; bool:
+		self._open(cell, direction)
+		if self._creates_open_area(cell, direction):
+			self._close(cell, direction)
+			return False
+		return True
 
-def _block_open(self, x0: int, y0: int) -&gt; bool:
-    if not (self._inside((x0, y0)) and self._inside((x0 + 2, y0 + 2))):
-        return False
-    for y in range(y0, y0 + 3):
-        for x in range(x0, x0 + 3):
-            if x &lt; x0 + 2 and not self.is_open((x, y), EAST):
-                return False
-            if y &lt; y0 + 2 and not self.is_open((x, y), SOUTH):
-                return False
-    return True</code></pre>
+	def _block_open(self, x0: int, y0: int) -&gt; bool:
+		if not (self._inside((x0, y0)) and self._inside((x0 + 2, y0 + 2))):
+			return False
+		for y in range(y0, y0 + 3):
+			for x in range(x0, x0 + 3):
+				if x &lt; x0 + 2 and not self.is_open((x, y), EAST):
+					return False
+				if y &lt; y0 + 2 and not self.is_open((x, y), SOUTH):
+					return False
+		return True</code></pre>
 <p>Por último, <code>_add_loops(2)</code> garantiza las «dos rutas independientes» del
 enunciado en tableros pequeños donde el trenzado no basta. El número de bucles
-independientes de un grafo conexo es <code>aristas − nodos + 1</code>:</p>
-<pre><code>def _loops(self) -&gt; int:
-    cells = self._free_cells()
-    edges = sum(self._degree(c) for c in cells) // 2
-    return edges - len(cells) + 1</code></pre>
+independientes de un <a href="#g-grafo">grafo</a> conexo es <code>aristas − nodos + 1</code>:</p>
+<pre><code>	def _loops(self) -&gt; int:
+		cells = self._free_cells()
+		edges = sum(self._degree(c) for c in cells) // 2
+		return edges - len(cells) + 1</code></pre>
 <p>Las esquinas y el centro son pasillo siempre: el «42» deja un borde libre y su columna
 central abierta. Y si el tablero es tan pequeño que no caben dos bucles (un 2×2 tiene
 como mucho uno), el constructor lo rechaza con un <code>MazeError</code> en vez de entregar
@@ -438,41 +699,41 @@ rutas independientes — el bonus de <code>--max-dead-ends 0</code>.</div>
 <div class="card" id="camino">
 <h2><span class="ex">08</span>Camino más corto y fichero de salida</h2>
 <div class="meta"><span>Ficheros: <b>mazegen/generator.py</b>, <b>maze_output.py</b></span></div>
-<p>El camino más corto en un grafo sin pesos es una <b>búsqueda en anchura</b> (BFS): se
+<p>El camino más corto en un <a href="#g-grafo">grafo</a> sin pesos es una <b><a href="#g-bfs">búsqueda en anchura</a></b> (BFS): se
 exploran las celdas por orden de distancia a la entrada, y la primera vez que se llega a
 una es por el camino más corto. Basta guardar de dónde se vino para reconstruirlo al
 revés:</p>
-<pre><code>def solution(self) -&gt; List[Cell]:
-    self._require_grid()
-    previous: Dict[Cell, Optional[Cell]] = {self.entry: None}
-    queue: deque[Cell] = deque([self.entry])
-    while queue:
-        cell = queue.popleft()
-        if cell == self.exit:
-            break
-        for nxt in self.neighbours(cell):
-            if nxt not in previous:
-                previous[nxt] = cell
-                queue.append(nxt)
-    if self.exit not in previous:
-        return []
-    path: List[Cell] = []
-    step: Optional[Cell] = self.exit
-    while step is not None:
-        path.append(step)
-        step = previous[step]
-    path.reverse()
-    return path</code></pre>
+<pre><code>	def solution(self) -&gt; List[Cell]:
+		self._require_grid()
+		previous: Dict[Cell, Optional[Cell]] = {self.entry: None}
+		queue: deque[Cell] = deque([self.entry])
+		while queue:
+			cell = queue.popleft()
+			if cell == self.exit:
+				break
+			for nxt in self.neighbours(cell):
+				if nxt not in previous:
+					previous[nxt] = cell
+					queue.append(nxt)
+		if self.exit not in previous:
+			return []
+		path: List[Cell] = []
+		step: Optional[Cell] = self.exit
+		while step is not None:
+			path.append(step)
+			step = previous[step]
+		path.reverse()
+		return path</code></pre>
 <p><code>solution_directions</code> lo convierte en letras comparando cada par de celdas
-consecutivas, y <code>maze_output.py</code> monta el fichero: una cifra hexadecimal por
+consecutivas, y <code>maze_output.py</code> monta el fichero: una cifra <a href="#g-hex">hexadecimal</a> por
 celda, fila a fila, una línea vacía, la entrada, la salida y el camino.</p>
 <pre><code>def format_maze(gen: MazeGenerator) -&gt; str:
-    lines = gen.to_hex()
-    lines.append("")
-    lines.append(f"{gen.entry[0]},{gen.entry[1]}")
-    lines.append(f"{gen.exit[0]},{gen.exit[1]}")
-    lines.append(gen.solution_directions())
-    return "\n".join(lines) + "\n"</code></pre>
+	lines = gen.to_hex()
+	lines.append("")
+	lines.append(f"{gen.entry[0]},{gen.entry[1]}")
+	lines.append(f"{gen.exit[0]},{gen.exit[1]}")
+	lines.append(gen.solution_directions())
+	return "\n".join(lines) + "\n"</code></pre>
 <p>Salida real del <code>config.txt</code> por defecto (filas del medio recortadas):</p>
 <pre><code>95395539555515513913
 ...
@@ -483,7 +744,7 @@ C4545456C54546C54446
 SSESSESSSSEEESENESSSSEEENNEEESEESSESEEE</code></pre>
 <p>Lectura de una cifra: <code>9</code> = <code>1001</code> = norte y oeste cerradas (la
 esquina de arriba a la izquierda); <code>F</code> = las cuatro, una celda del «42».</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — BFS con una cola
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — BFS con una <a href="#g-cola">cola</a>
 (<code>collections.deque</code>, que saca por la izquierda en O(1); con una lista,
 <code>pop(0)</code> sería O(n)). Es el mismo algoritmo que usará un fantasma de Pac-Man para
 perseguir al jugador.</div>
@@ -528,30 +789,30 @@ esquinas entre paredes:</p>
 ██████████████████████████████████████████████████████████████████████████████████</code></pre>
 <p>El laberinto del <code>config.txt</code> por defecto con el camino visible, en versión sin colores: <code>█</code> paredes, <code>▒</code> el «42», <code>·</code> el camino, <code>EE</code> la entrada y <code>XX</code> la salida.</p>
 <pre><code>def _block_colour(gen: MazeGenerator, state: DisplayState, bx: int,
-                  by: int, path_cells: Set[Cell],
-                  path_links: Set[Tuple[Cell, Cell]]) -&gt; int:
-    x, y = bx // 2, by // 2
-    if bx % 2 and by % 2:                       # a cell
-        cell = (x, y)
-        if cell in gen.pattern_cells:
-            return state.pattern_colour
-        if cell == gen.entry:
-            return ENTRY_COLOUR
-        if cell == gen.exit:
-            return EXIT_COLOUR
-        return PATH_COLOUR if cell in path_cells else OPEN
-    if bx % 2:                                  # horizontal wall
-        above, below = (x, y - 1), (x, y)
-        if 0 &lt; by &lt; 2 * gen.height and gen.is_open(above, SOUTH):
-            return PATH_COLOUR if (above, below) in path_links else OPEN
-        return _wall_colour(gen, state, [above, below])
-    if by % 2:                                  # vertical wall
-        left, right = (x - 1, y), (x, y)
-        if 0 &lt; bx &lt; 2 * gen.width and gen.is_open(left, EAST):
-            return PATH_COLOUR if (left, right) in path_links else OPEN
-        return _wall_colour(gen, state, [left, right])
-    corners = [(x - 1, y - 1), (x, y - 1), (x - 1, y), (x, y)]
-    return _wall_colour(gen, state, corners)</code></pre>
+				  by: int, path_cells: Set[Cell],
+				  path_links: Set[Tuple[Cell, Cell]]) -&gt; int:
+	x, y = bx // 2, by // 2
+	if bx % 2 and by % 2:                       # a cell
+		cell = (x, y)
+		if cell in gen.pattern_cells:
+			return state.pattern_colour
+		if cell == gen.entry:
+			return ENTRY_COLOUR
+		if cell == gen.exit:
+			return EXIT_COLOUR
+		return PATH_COLOUR if cell in path_cells else OPEN
+	if bx % 2:                                  # horizontal wall
+		above, below = (x, y - 1), (x, y)
+		if 0 &lt; by &lt; 2 * gen.height and gen.is_open(above, SOUTH):
+			return PATH_COLOUR if (above, below) in path_links else OPEN
+		return _wall_colour(gen, state, [above, below])
+	if by % 2:                                  # vertical wall
+		left, right = (x - 1, y), (x, y)
+		if 0 &lt; bx &lt; 2 * gen.width and gen.is_open(left, EAST):
+			return PATH_COLOUR if (left, right) in path_links else OPEN
+		return _wall_colour(gen, state, [left, right])
+	corners = [(x - 1, y - 1), (x, y - 1), (x - 1, y), (x, y)]
+	return _wall_colour(gen, state, corners)</code></pre>
 <p>Las paredes que separan dos celdas del «42» toman el color del «42», así el número se
 ve relleno y no como un montón de cuadraditos. Después del dibujo sale el menú:</p>
 <pre><code>MENU = """
@@ -562,7 +823,7 @@ ve relleno y no como un montón de cuadraditos. Después del dibujo sale el men�
 4. Change '42' colour
 5. Quit"""</code></pre>
 <ul>
-  <li><b>1</b> genera otro laberinto con una semilla nueva (que se muestra, para poder
+  <li><b>1</b> genera otro laberinto con una <a href="#g-semilla">semilla</a> nueva (que se muestra, para poder
   repetirlo) y reescribe el fichero de salida;</li>
   <li><b>2</b> muestra u oculta el camino más corto;</li>
   <li><b>3</b> rota el color de las paredes (blanco, azul, verde, magenta, naranja, gris);</li>
@@ -570,7 +831,7 @@ ve relleno y no como un montón de cuadraditos. Después del dibujo sale el men�
   paredes) — el opcional del enunciado.</li>
 </ul>
 <p>Ctrl-D (<code>EOFError</code>) sale limpiamente y Ctrl-C se captura en el
-<code>main</code>: ni siquiera cortar el programa da un <em>traceback</em>.</p>
+<code>main</code>: ni siquiera cortar el programa da un <em><a href="#g-excepcion">traceback</a></em>.</p>
 </div>
 
 <div class="card" id="paquete">
@@ -607,11 +868,11 @@ gen.solution()                   # camino más corto: [(0, 0), (1, 0), ...]
 gen.solution_directions()        # el mismo camino: "EESE..."
 gen.pattern_cells                # las celdas del «42»
 gen.generate(seed=7)             # otro laberinto</code></pre>
-<p>La documentación va dentro del propio paquete (<code>mazegen/README.md</code>, que es
+<p>La documentación va dentro del propio <a href="#g-paquete">paquete</a> (<code>mazegen/README.md</code>, que es
 además la descripción del wheel) y repetida en el README del repo. Lleva
-<code>py.typed</code>, así que <code>mypy</code> comprueba los tipos también en el proyecto
+<code>py.typed</code>, así que <a href="#g-tipos"><code>mypy</code></a> comprueba los tipos también en el proyecto
 que lo importe.</p>
-<p>Licencia: <b>MIT</b>. Permite reutilizar, modificar y redistribuir el generador — que es
+<p><a href="#g-licencia">Licencia</a>: <b>MIT</b>. Permite reutilizar, modificar y redistribuir el generador — que es
 lo que exige el enunciado para el proyecto posterior — con la única condición de conservar
 el aviso de copyright.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Cómo se distribuye el código
@@ -626,22 +887,24 @@ puede reutilizarlo; las permisivas (MIT, BSD, Apache) dejan hacer casi todo; las
 <h2><span class="ex">11</span>Cómo se ha comprobado</h2>
 <div class="meta"><span>Test: <b>packs/cursus/M2/201_A-Maze-ing/test/runner.py</b> (<code>zentest</code>)</span></div>
 <ul>
-  <li><b>Lint</b>: <code>flake8</code>, <code>mypy</code> con los flags del enunciado y
-  <code>mypy --strict</code>, sin un aviso.</li>
+  <li><b>Lint</b>: <a href="#g-tipos"><code>mypy</code></a> con los flags del enunciado y <code>mypy --strict</code>,
+  sin un aviso. <a href="#g-flake8"><code>flake8</code></a> pasa limpio en la versión con espacios; en la de
+  <code>packs/</code>, con tabuladores, da 1120 avisos de sangría.</li>
   <li><b>768 laberintos</b> (tamaños de 2×2 a 40×30, los dos modos, los dos algoritmos,
-  varias semillas) pasados por <code>maze_analyzer.py</code>, más una comprobación propia
+  varias <a href="#g-semilla">semillas</a>) pasados por <code>maze_analyzer.py</code>, más una comprobación propia
   de que no hay ningún bloque 3×3 abierto. Lo único que fallaba era el 2×2 en modo Pac-Man,
   que es imposible y ahora da error.</li>
   <li><b>12 errores de configuración</b> (sin argumentos, fichero inexistente, línea sin
   <code>=</code>, clave que falta, números raros, entrada fuera, entrada igual a salida,
   entrada dentro del «42», salida no escribible…): todos con mensaje claro, código de
-  salida 1 y sin <em>traceback</em>.</li>
+  salida 1 y sin <em><a href="#g-excepcion">traceback</a></em>.</li>
   <li><b>Reproducibilidad</b>: dos ejecuciones con la misma <code>SEED</code> dan
   ficheros idénticos.</li>
-  <li><b>El paquete</b>: el wheel se instala en un entorno virtual limpio y se importa
+  <li><b>El <a href="#g-paquete">paquete</a></b>: el wheel se instala en un <a href="#g-venv">entorno virtual</a> limpio y se importa
   desde fuera del repo.</li>
 </ul>
-<p>El runner de <code>test/</code> repite todo esto (36 casos) con <code>zentest</code>.</p>
+<p>El runner de <code>test/</code> repite todo esto (36 casos) con <code>zentest</code>. Sobre la
+copia con tabuladores da 35 OK y 1 KO, el de <code>flake8</code>.</p>
 </div>
 
 <div class="card" id="delicados">
@@ -649,18 +912,18 @@ puede reutilizarlo; las permisivas (MIT, BSD, Apache) dejan hacer casi todo; las
 <ul>
   <li><b>Coherencia de paredes.</b> Abrir una pared es tocar <em>dos</em> celdas: resuelto
   con un único <code>_open</code> por el que pasa todo.</li>
-  <li><b>El «42» y la conectividad.</b> Borde libre alrededor y columna central abierta;
-  los callejones que deja dentro del 4 y del 2 son los «enclosed» que tolera el
+  <li><b>El «42» y la <a href="#g-conexo">conectividad</a>.</b> Borde libre alrededor y columna central abierta;
+  los <a href="#g-callejon">callejones</a> que deja dentro del 4 y del 2 son los «enclosed» que tolera el
   analizador.</li>
-  <li><b>Perfecto de verdad.</b> El backtracker abre N−1 paredes, ni una más. En modo
-  Pac-Man, quitar una sola pared no basta: hacen falta al menos dos bucles.</li>
+  <li><b><a href="#g-perfecto">Perfecto</a> de verdad.</b> El backtracker abre N−1 paredes, ni una más. En modo
+  Pac-Man, quitar una sola pared no basta: hacen falta al menos dos <a href="#g-ciclo">bucles</a>.</li>
   <li><b>Zonas de 3×3.</b> Al trenzar es fácil abrir una sala sin querer: cada pared nueva
   se comprueba y se deshace si la crea.</li>
   <li><b>Coordenadas.</b> <code>(x, y)</code> en todo el código; <code>grid[y][x]</code>
   solo al indexar.</li>
-  <li><b>Recursión.</b> Un DFS recursivo revienta en laberintos grandes; aquí es una
-  pila.</li>
-  <li><b>Nunca un traceback.</b> <code>ConfigError</code>, <code>MazeError</code> y
+  <li><b><a href="#g-recursion">Recursión</a>.</b> Un <a href="#g-dfs">DFS</a> recursivo revienta en laberintos grandes; aquí es una
+  <a href="#g-pila">pila</a>.</li>
+  <li><b>Nunca un <a href="#g-excepcion">traceback</a>.</b> <code>ConfigError</code>, <code>MazeError</code> y
   <code>OSError</code> se capturan en <code>main</code>; Ctrl-C y Ctrl-D también.</li>
   <li><b>Modificación en directo.</b> El enunciado avisa de que puede pedirse un cambio
   pequeño en la evaluación: cambiar el dibujo del «42» es tocar
@@ -675,8 +938,114 @@ puede reutilizarlo; las permisivas (MIT, BSD, Apache) dejan hacer casi todo; las
 <code>a-maze-ing</code>), en inglés: <code>packs/cursus/M2/201_A-Maze-ing/en.subject.pdf</code>
 y <code>subject.txt</code>, más los adjuntos de <code>extra/</code>
 (<code>maze_analyzer.py</code> y <code>mlx-2.2.tgz</code>). El código de esta ficha es el de
-<code>packs/cursus/M2/201_A-Maze-ing/repo/</code>. El trasfondo sobre grafos, empaquetado y
-licencias es conocimiento general, no del enunciado.</p>
+<code>packs/cursus/M2/201_A-Maze-ing/repo/</code>. El trasfondo sobre <a href="#g-grafo">grafos</a>, empaquetado y
+<a href="#g-licencia">licencias</a> es conocimiento general, no del enunciado.</p>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: generación, salida y camino, errores y entrada,
+y lint, paquete y cambios en directo. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Generación</h3>
+<details id="q-perfecto">
+<summary>¿Por qué el backtracker da siempre un laberinto perfecto?</summary>
+<p>Porque cada pared que abre une la celda actual con una celda <em>no visitada</em>. Con N celdas
+libres se abren N − 1 paredes y todo queda conectado: eso es un árbol, sin bucles, con un único
+camino entre dos celdas. Con la configuración por defecto, 280 celdas y 279 paredes abiertas.
+→ <a href="#perfecto">06</a></p>
+</details>
+<details id="q-pila">
+<summary>¿Por qué una pila explícita y no recursión?</summary>
+<p>Porque Python corta la recursión hacia los 1000 niveles y un DFS recursivo baja un nivel por
+celda del pasillo actual. En un laberinto de 200×200 (40 000 celdas) se pasaría de largo. Con una
+lista como pila el límite es la memoria. → <a href="#perfecto">06</a></p>
+</details>
+<details id="q-pacman">
+<summary>¿Cómo haces el tablero no perfecto sin romper la conectividad?</summary>
+<p>Se parte de un laberinto perfecto, que ya está conectado, y solo se <em>abren</em> paredes,
+nunca se cierran: lo conectado sigue conectado. <code>_braid</code> abre una pared en cada callejón
+y <code>_add_loops(2)</code> garantiza al menos dos bucles. Cada pared nueva que crearía un bloque
+3×3 abierto se vuelve a cerrar. → <a href="#pacman">07</a></p>
+</details>
+<details id="q-semilla">
+<summary>¿Cómo es reproducible si es aleatorio?</summary>
+<p>Toda elección sale de un único <code>random.Random(self.seed)</code>, que es pseudoaleatorio:
+misma semilla y mismos parámetros, mismas elecciones, mismo laberinto. El tester lo comprueba con
+dos ejecuciones. Sin <code>SEED</code> se elige una al azar, y la leyenda la muestra para poder
+repetirla. → <a href="#perfecto">06</a></p>
+</details>
+<details id="q-42">
+<summary>¿Qué pasa con el «42» si el laberinto es pequeño?</summary>
+<p>Necesita 9×7 celdas (la plantilla de 7×5 más un borde libre). Si no cabe, se omite y se
+imprime «Error: the maze is too small to draw the '42' pattern (it needs at least 9x7 cells); it
+was omitted.», pero el laberinto se genera y se guarda igual. Si la entrada o la salida caen dentro
+del «42», es un <code>MazeError</code>. → <a href="#cuarenta">05</a></p>
+</details>
+
+<h3>Salida y camino</h3>
+<details id="q-hex">
+<summary>Lee esta cifra del fichero: <code>9</code>. ¿Y <code>F</code>?</summary>
+<p>Cada cifra son 4 bits de paredes <em>cerradas</em>: norte 1, este 2, sur 4, oeste 8.
+<code>9</code> = 8 + 1, oeste y norte cerradas: la esquina de arriba a la izquierda.
+<code>F</code> = 15, las cuatro: una celda del «42». → <a href="#paredes">04</a>,
+<a href="#camino">08</a></p>
+</details>
+<details id="q-bfs">
+<summary>¿Cómo sabes que el camino es el más corto?</summary>
+<p>Porque es un BFS: explora por orden de distancia a la entrada, así que la primera vez que llega
+a una celda lo hace por un camino mínimo, y se guarda de dónde vino para reconstruirlo. Va con un
+<code>deque</code> para sacar por la izquierda en tiempo constante. → <a href="#camino">08</a></p>
+</details>
+<details id="q-coherencia">
+<summary>¿Cómo garantizas que dos celdas vecinas no se contradicen?</summary>
+<p>Abrir una pared toca siempre las dos celdas a la vez, en <code>_open</code> (y cerrarla, en
+<code>_close</code>), y ninguna otra parte del código escribe en <code>grid</code>. El analizador da
+«Wall coherence: OK». → <a href="#paredes">04</a></p>
+</details>
+
+<h3>Errores y entrada</h3>
+<details id="q-errores">
+<summary>¿Qué pasa con una configuración mala? ¿Puede salir un traceback?</summary>
+<p>No. Todo fallo de lectura o de valor se convierte en <code>ConfigError</code> con un mensaje
+(«line 1: unknown key 'WIDHT'», «configuration file not found: …») y parámetros imposibles en
+<code>MazeError</code>. <code>main</code> los captura, igual que <code>OSError</code> al escribir, y
+devuelve 1. Ctrl-C sale con «Bye!» y Ctrl-D cierra el menú. El tester prueba 12 errores.
+→ <a href="#config">03</a>, <a href="#visual">09</a></p>
+</details>
+<details id="q-2x2">
+<summary>¿Por qué un 2×2 con <code>PERFECT=False</code> da error?</summary>
+<p>Porque el enunciado pide al menos dos rutas independientes y un 2×2 solo admite un bucle. El
+constructor calcula <code>(width - 1) * (height - 1)</code> (los bloques 2×2 posibles) y si es
+menor que 2 lanza «a non-perfect (Pac-Man) board needs room for at least two loops». Mejor un error
+claro que un tablero que no cumple. → <a href="#pacman">07</a></p>
+</details>
+
+<h3>Lint, paquete y cambios en directo</h3>
+<details id="q-lint">
+<summary>Pasa <code>make lint</code> delante de mí.</summary>
+<p><code>mypy</code> pasa con los flags del enunciado y con <code>--strict</code>. <code>flake8</code>
+depende de la copia: la de <code>packs/</code> lleva tabuladores a propósito y da 1120 avisos
+(<code>W191</code>, <code>E101</code>); la que se entrega, con 4 espacios, no da ninguno. Antes de
+la evaluación, comprueba que el repo de la entrega es la versión con espacios.
+→ <a href="#pruebas">11</a></p>
+</details>
+<details id="q-wheel">
+<summary>Reconstruye el paquete y úsalo desde otro sitio.</summary>
+<p>En un entorno virtual limpio: <code>pip install build</code>, <code>python3 -m build --wheel
+--outdir .</code> y <code>pip install mazegen-1.0.0-py3-none-any.whl</code>. Luego, desde fuera del
+repo, <code>from mazegen import MazeGenerator</code>. <code>pyproject.toml</code> declara el
+paquete, el README y la licencia. → <a href="#paquete">10</a></p>
+</details>
+<details id="q-cambio">
+<summary>Cambia el dibujo del «42» o añade un color.</summary>
+<p>El dibujo es <code>PATTERN_42</code> en <code>generator.py</code>: cambiar los <code>#</code>
+basta, y el tamaño mínimo se recalcula con <code>PATTERN_WIDTH</code> y
+<code>PATTERN_HEIGHT</code>. Ojo con la columna central, que conviene dejar libre. Un color es una
+tupla más en <code>WALL_COLOURS</code> o <code>PATTERN_COLOURS</code> de
+<code>maze_display.py</code>. → <a href="#delicados">12</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — A-Maze-ing · <a href="../../index.html#cursus">← volver al cursus</a></footer>

@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,17 +28,18 @@ predicados y transformaciones sobre texto. 13 ejercicios (ex00–ex12); todos co
 <em>funciones autorizadas: ninguna</em>, salvo ex11 y ex12 que pueden usar <code>write</code>.</p>
 
 <div class="trasfondo"><b>¿Qué es un <code>char</code>?</b> — El tema de fondo de todo el módulo.
-Un <code>char</code> no es «una letra»: es un entero de 8 bits (un byte). Cuando escribes
+Un <code>char</code> no es «una letra»: es un <a href="#g-char">entero de 8 bits (un byte)</a>. Cuando escribes
 <code>'A'</code>, el compilador guarda el número <strong>65</strong>; <code>'a'</code> es
 <strong>97</strong>, <code>'0'</code> es <strong>48</strong>. Esa correspondencia es la tabla
-<strong>ASCII</strong>, y explica los trucos que se repiten aquí: pasar de mayúscula a minúscula
+<strong><a href="#g-ascii">ASCII</a></strong>, y explica los trucos que se repiten aquí: pasar de mayúscula a minúscula
 es sumar 32 (la distancia entre <code>'A'</code> y <code>'a'</code>), y comprobar «¿es una letra?»
-es preguntar «¿el número cae en el rango 65–90 o 97–122?». Reimplementar la libc no es reinventar
+es preguntar «¿el número cae en el rango 65–90 o 97–122?». Reimplementar la <a href="#g-libc">libc</a> no es reinventar
 la rueda por gusto: es dejar de tratar <code>strcpy</code> como magia y entender que por dentro
-solo hay un bucle que copia bytes hasta el <code>\0</code>. En el examen no hay <code>#include
+solo hay un bucle que copia bytes hasta el <a href="#g-cadena"><code>\0</code></a>. En el examen no hay <code>#include
 &lt;string.h&gt;</code> que te salve.</p></div>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_strcpy</a></li>
   <li><a href="#ex01">ex01 — ft_strncpy</a></li>
   <li><a href="#ex02">ex02 — ft_str_is_alpha</a></li>
@@ -50,12 +53,237 @@ solo hay un bucle que copia bytes hasta el <code>\0</code>. En el examen no hay 
   <li><a href="#ex10">ex10 — ft_strlcpy</a></li>
   <li><a href="#ex11">ex11 — ft_putstr_non_printable</a></li>
   <li><a href="#ex12">ex12 — ft_print_memory</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C02 va de cadenas, y las cadenas en C son bytes con un poco de convención encima. Aquí está cada
+palabra que usa la página explicada desde cero y con un ejemplo sacado de los propios ejercicios.
+En el resto de la página, la primera vez que sale uno de estos términos en cada tarjeta lleva un
+enlace a su entrada.</p>
+
+<h3>Caracteres y bytes</h3>
+<details id="g-char">
+<summary><code>char</code>: un número pequeño</summary>
+<p>Un <code>char</code> ocupa un byte (8 bits) y guarda un número entero. Lo que hace que «sea una
+letra» es solo cómo se interpreta al imprimirlo. <code>'A'</code> entre comillas simples no es un
+texto: es otra forma de escribir el número 65.</p>
+<p>Por eso se puede comparar y operar con caracteres como con cualquier entero:
+<code>str[i] &gt;= 'a'</code> es <code>str[i] &gt;= 97</code>, y <code>'a' - 'A'</code> vale 32.</p>
+</details>
+<details id="g-ascii">
+<summary>ASCII</summary>
+<p>La tabla que asigna un número del 0 al 127 a cada carácter básico: letras sin tilde, dígitos,
+signos de puntuación y caracteres de control. Es de 1963 y sigue siendo la base de todo, porque
+UTF-8 (lo que se usa hoy) coincide con ASCII en esos 128 primeros.</p>
+<p>Los tramos que usa el módulo:</p>
+<table>
+<tr><th>Qué</th><th>Caracteres</th><th>Códigos</th></tr>
+<tr><td>Control</td><td>tabulador, salto de línea…</td><td>0–31 y 127</td></tr>
+<tr><td>Espacio</td><td><code>' '</code></td><td>32</td></tr>
+<tr><td>Dígitos</td><td><code>'0'</code>–<code>'9'</code></td><td>48–57</td></tr>
+<tr><td>Mayúsculas</td><td><code>'A'</code>–<code>'Z'</code></td><td>65–90</td></tr>
+<tr><td>Minúsculas</td><td><code>'a'</code>–<code>'z'</code></td><td>97–122</td></tr>
+<tr><td>Último imprimible</td><td><code>'~'</code></td><td>126</td></tr>
+</table>
+<p>Entre <code>'Z'</code> y <code>'a'</code> hay seis signos (<code>[ \ ] ^ _ `</code>); por eso
+<code>ft_str_is_alpha</code> no puede usar un solo rango de <code>'A'</code> a <code>'z'</code>.</p>
+</details>
+<details id="g-imprimible">
+<summary>Carácter imprimible y carácter de control</summary>
+<p>Un carácter <em>imprimible</em> es el que se ve en pantalla: en ASCII, del espacio (32) a la
+tilde <code>~</code> (126). Los de <em>control</em> (0–31 y el 127, DEL) no se dibujan, sino que
+dan órdenes a la terminal: el 10 (<code>'\n'</code>) baja de línea, el 9 (<code>'\t'</code>)
+tabula, el 7 hace sonar un pitido.</p>
+<p>ex06 comprueba ese rango; ex11 y ex12 sustituyen los no imprimibles por una representación
+visible (<code>\0a</code> o <code>.</code>).</p>
+</details>
+<details id="g-caja">
+<summary>Mayúsculas y minúsculas: la distancia de 32</summary>
+<p>En ASCII cada minúscula está exactamente 32 posiciones por encima de su mayúscula:
+<code>'A'</code> es 65 y <code>'a'</code> 97. Pasar de una a otra es sumar o restar 32, o lo que es
+lo mismo, <code>'a' - 'A'</code>. Como 32 es 2<sup>5</sup>, las dos formas solo se diferencian en un
+bit: <code>'A' ^ 32</code> da <code>'a'</code>.</p>
+<p>Solo vale para letras: hay que comprobar el rango antes. Restar 32 a <code>'1'</code> (49) daría
+el 17, un carácter de control. ex07, ex08 y ex09 hacen siempre las dos cosas.</p>
+</details>
+<details id="g-signo">
+<summary><code>char</code> con signo y <code>unsigned char</code></summary>
+<p>Si <code>char</code> tiene signo o no depende del compilador y la máquina. En los PC de 42
+(x86-64 con gcc o clang) tiene signo: va de -128 a 127. Un byte por encima de 127 se ve como
+negativo: <code>(char)200</code> vale -56, y <code>(unsigned char)200</code>, 200.</p>
+<p>Importa en cuanto aparece un byte que no es ASCII, como las letras con tilde. En ex11, sin el
+<code>(unsigned char)</code>, <code>str[i] / 16</code> sería negativo y se leería fuera de la
+tabla <code>"0123456789abcdef"</code>.</p>
+</details>
+<details id="g-utf8">
+<summary>UTF-8: caracteres de más de un byte</summary>
+<p>La codificación de casi todo el texto actual. Los caracteres ASCII ocupan un byte, igual que
+antes; el resto (tildes, eñes, emojis) ocupan de dos a cuatro, todos por encima de 127.</p>
+<p>Las funciones de C02 trabajan byte a byte y no saben nada de UTF-8. Con el código de la página,
+<code>ft_putstr_non_printable("café")</code> imprime <code>caf\c3\a9</code>: la é son dos bytes,
+<code>0xc3</code> y <code>0xa9</code>, y ninguno cae en 32–126.</p>
+</details>
+<details id="g-hex">
+<summary>Hexadecimal y nibble</summary>
+<p>Base 16: los dígitos son <code>0</code>–<code>9</code> y <code>a</code>–<code>f</code> (10 a 15).
+Un dígito hex son exactamente 4 bits (un <em>nibble</em>, medio byte), así que un byte se escribe
+siempre con dos dígitos, de <code>00</code> a <code>ff</code>. <code>0x</code> delante indica hex
+en C: <code>0x0a</code> es 10.</p>
+<p>Para sacar los dos dígitos de un byte: el alto es <code>byte / 16</code> y el bajo
+<code>byte % 16</code>, y cada uno se usa como índice en <code>"0123456789abcdef"</code>. Con el
+salto de línea (10): 10 / 16 = 0 y 10 % 16 = 10, que es <code>a</code>. De ahí el
+<code>\0a</code> de ex11.</p>
+</details>
+
+<h3>Cadenas</h3>
+<details id="g-cadena">
+<summary>Cadena en C y terminador <code>'\0'</code></summary>
+<p>C no tiene tipo cadena: una cadena es una fila de <code>char</code> que acaba en un byte de valor
+0, el <em>terminador nulo</em>, y se maneja con un <code>char *</code> a su primer carácter.
+<code>"Hola"</code> ocupa 5 bytes. El terminador no es el carácter <code>'0'</code> (48), sino el
+número 0.</p>
+<p>Nada guarda la longitud: se sabe dónde acaba una cadena porque se encuentra el 0. Por eso todos
+los bucles del módulo son <code>while (str[i])</code>, y por eso copiar una cadena sin copiar el
+terminador da algo que no es una cadena.</p>
+</details>
+<details id="g-literal">
+<summary>Literal de cadena (solo lectura)</summary>
+<p>Una cadena escrita en el código entre comillas dobles. El compilador la guarda en una zona de
+memoria de solo lectura, así que <code>char *s = "hola"; ft_strupcase(s);</code> compila pero
+acaba en segfault al escribir.</p>
+<p>Para probar ex07, ex08 y ex09 hay que darles memoria propia: <code>char s[] = "hola";</code>
+crea un array y copia el literal dentro, y ese sí se puede modificar.</p>
+</details>
+<details id="g-predicado">
+<summary>Predicado y la cadena vacía (verdad vacía)</summary>
+<p>Un <em>predicado</em> es una función que responde sí o no: aquí, 1 o 0. ex02 a ex06 son
+predicados sobre una cadena entera: «¿todos los caracteres cumplen X?».</p>
+<p>Para la cadena vacía responden 1, y no es un capricho del enunciado: «todos los elementos de un
+conjunto vacío cumplen X» es verdad en lógica, porque no hay ninguno que lo incumpla. Se llama
+<em>verdad vacía</em>. En el código sale sola: con <code>""</code> no se entra en el bucle y se
+llega al <code>return (1)</code>.</p>
+</details>
+<details id="g-in-place">
+<summary>Modificar en el sitio (in place)</summary>
+<p>Cambiar los datos donde están, en vez de crear una copia con el resultado. ex07, ex08 y ex09
+escriben sobre el mismo <code>str</code> que reciben y lo devuelven; quien llama ve su cadena
+cambiada.</p>
+<p>Devolver <code>str</code> no es necesario (el que llama ya lo tiene), pero permite encadenar
+llamadas: <code>ft_putstr(ft_strupcase(s))</code>. Es lo que hacen también <code>strcpy</code> y
+<code>strncpy</code> con <code>dest</code>.</p>
+</details>
+<details id="g-buffer-overflow">
+<summary>Desbordamiento de búfer (buffer overflow)</summary>
+<p>Un <em>búfer</em> es una zona de memoria reservada para guardar datos, como
+<code>char dest[10]</code>. Se desborda cuando se escribe más allá de su final: C no lo impide, y
+lo que hay al lado (otras variables, la dirección de vuelta de la función) queda pisado. Es
+comportamiento indefinido y, durante décadas, la fuente número uno de agujeros de seguridad.</p>
+<p><code>ft_strcpy</code> no conoce el tamaño de <code>dest</code>: si <code>src</code> no cabe,
+desborda. <code>ft_strncpy</code> y <code>ft_strlcpy</code> reciben un tamaño para no pasarse.</p>
+</details>
+<details id="g-truncar">
+<summary>Truncar y detectar el truncamiento</summary>
+<p>Truncar es cortar: copiar solo lo que cabe. <code>strlcpy</code> lo hace siempre bien (copia
+como mucho <code>size - 1</code> caracteres y pone el terminador), y además devuelve la longitud de
+<code>src</code> completa, no lo copiado.</p>
+<p>Así, quien llama sabe si se ha cortado: si el valor devuelto es <code>&gt;= size</code>, no
+cabía. Ejecutado con el código de ex10: <code>ft_strlcpy(d, "Hola mundo", 6)</code> deja
+<code>"Hola "</code> en <code>d</code> (5 caracteres y el 0) y devuelve 10.</p>
+</details>
+<details id="g-libc">
+<summary>libc y <code>man</code></summary>
+<p>La biblioteca estándar de C: <code>strcpy</code>, <code>strlen</code>, <code>isalpha</code>,
+<code>printf</code>… Está en todo sistema con C, y sus funciones de cadenas están declaradas en
+<code>&lt;string.h&gt;</code>. En la piscine se reescriben (con <code>ft_</code> delante) para
+saber qué hacen por dentro, y luego se reúnen en la libft.</p>
+<p>El comportamiento exacto está en el manual: <code>man 3 strncpy</code>, <code>man strlcpy</code>.
+El enunciado de ex10 solo dice «reproduce el comportamiento de strlcpy (man strlcpy)», así que el
+manual <em>es</em> la especificación. La sección 3 es la de funciones de biblioteca; sin número,
+<code>man</code> puede abrir antes un comando con el mismo nombre.</p>
+</details>
+
+<h3>Tipos y lenguaje</h3>
+<details id="g-unsigned">
+<summary><code>unsigned int</code> y mezclar con y sin signo</summary>
+<p>Un <code>unsigned int</code> no tiene signo: va de 0 a 4 294 967 295 en vez de -2 147 483 648 a
+2 147 483 647. Al comparar un <code>int</code> con un <code>unsigned int</code>, C convierte el
+<code>int</code> a sin signo, y un negativo pasa a ser un número enorme: <code>-1 &lt; 1u</code> da
+0 (falso).</p>
+<p>Por eso <code>-Wextra</code> avisa en cuanto se mezclan (<code>comparison of integer expressions
+of different signedness</code>), y con <code>-Werror</code> no compila. En ex01 y ex10
+<code>n</code> y <code>size</code> son <code>unsigned int</code>, y los contadores también lo
+son.</p>
+</details>
+<details id="g-cortocircuito">
+<summary>Evaluación en cortocircuito (<code>&amp;&amp;</code> y <code>||</code>)</summary>
+<p><code>a &amp;&amp; b</code> evalúa primero <code>a</code>, y si es falso ya no mira
+<code>b</code>: el resultado será falso igualmente. <code>a || b</code> se para si <code>a</code> es
+verdadero. El orden de las condiciones, por tanto, importa.</p>
+<p>En ex01, <code>while (i &lt; n &amp;&amp; src[i])</code> comprueba el límite antes de leer: con
+<code>n</code> = 0 no se toca <code>src</code>. En ex09, <code>i != 0 &amp;&amp;
+ft_is_alnum(str[i - 1])</code> evita leer <code>str[-1]</code>, que está fuera de la cadena.</p>
+</details>
+<details id="g-cast">
+<summary>Cast (conversión de tipo)</summary>
+<p>Poner un tipo entre paréntesis delante de una expresión la convierte a ese tipo:
+<code>(unsigned char)str[i]</code> toma el mismo byte y lo interpreta sin signo. No cambia la memoria,
+solo cómo se lee el valor.</p>
+<p>Con punteros cambia qué se ve en la dirección: en ex12, <code>addr</code> es un
+<code>void *</code>, y tratarlo como <code>unsigned char *</code> permite recorrerlo byte a
+byte.</p>
+</details>
+<details id="g-void-ptr">
+<summary><code>void *</code>: dirección sin tipo</summary>
+<p>Un puntero que guarda una dirección pero no dice qué hay allí. No se puede desreferenciar ni
+sumarle nada en C estándar, porque el compilador no sabe cuántos bytes ocupa lo apuntado; antes hay
+que convertirlo a un puntero con tipo.</p>
+<p>Lo usan las funciones que trabajan con «memoria cualquiera»: <code>malloc</code> devuelve un
+<code>void *</code>, y <code>ft_print_memory</code> recibe uno porque tiene que poder volcar una
+cadena, un array de <code>int</code> o una <code>struct</code>.</p>
+</details>
+<details id="g-static">
+<summary>Función <code>static</code></summary>
+<p>Una función declarada <code>static</code> solo existe dentro de su archivo: otros archivos no la
+ven, y su nombre no choca con otra función igual en otro sitio.</p>
+<p>En ex09, <code>ft_is_alnum</code> es <code>static</code> porque es una ayudante interna: si la
+Moulinette o la libft tienen otra <code>ft_is_alnum</code>, no hay conflicto al enlazar. ex12 hace
+lo mismo con sus tres ayudantes.</p>
+</details>
+<details id="g-estado">
+<summary>Estado y máquina de estados</summary>
+<p>Una <em>máquina de estados</em> es un programa que, además del dato que lee, recuerda en qué
+situación está, y actúa según las dos cosas. El <em>estado</em> es esa situación.</p>
+<p>ex09 tiene dos estados, «al principio de una palabra» y «dentro de una palabra», y no los guarda
+en una variable: los deduce mirando el carácter anterior. Con la frase del enunciado, el código de
+la página da <code>Salut, Comment Tu Vas ? 42mots Quarante-Deux; Cinquante+Et+Un</code>, igual que
+el ejemplo.</p>
+</details>
+
+<h3>La piscine</h3>
+<details id="g-norma">
+<summary>La Norma y norminette</summary>
+<p>Las reglas de estilo obligatorias en 42: funciones de 25 líneas como mucho, 5 funciones por
+archivo como mucho, declaraciones al principio y una por línea, nada de <code>for</code>,
+<code>do…while</code>, <code>switch</code> ni ternario. <code>norminette</code> las comprueba (y la
+cabecera de 42), aunque el enunciado avisa de que no lo ve todo.</p>
+<p>Es la razón de que ex12 se parta en tres ayudantes: en una sola función no cabría en 25
+líneas.</p>
+</details>
+<details id="g-moulinette">
+<summary>Moulinette</summary>
+<p>El corrector automático de 42. Compila cada ejercicio con <code>cc -Wall -Wextra -Werror</code> y
+su propio <code>main</code>, y compara los resultados con los de referencia. Un aviso del
+compilador, un archivo con otro nombre o un <code>main</code> olvidado en el archivo, y el
+ejercicio cuenta como suspendido.</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_strcpy</h2>
 <div class="meta"><span>Prototipo: <b>char *ft_strcpy(char *dest, char *src)</b></span></div>
-<p>Copiar la cadena <code>src</code> dentro de <code>dest</code>, incluido el <code>\0</code> final,
+<p>Copiar la cadena <code>src</code> dentro de <code>dest</code>, incluido el <a href="#g-cadena"><code>\0</code></a> final,
 y devolver <code>dest</code>.</p>
 <pre><code>char	*ft_strcpy(char *dest, char *src)
 {
@@ -105,10 +333,10 @@ el resto de <code>dest</code> se rellena con <code>\0</code> hasta completar <co
 }</code></pre>
 <p>Son dos bucles: el primero copia hasta que se acaba <code>src</code> o se llega a <code>n</code>;
 el segundo rellena con ceros lo que falte. La sutileza de <code>strncpy</code> —y la razón por la
-que es una función traicionera en la vida real— es que <strong>no garantiza terminador</strong>: si
+que es una función traicionera en la vida real— es que <strong>no garantiza <a href="#g-cadena">terminador</a></strong>: si
 <code>src</code> tiene <code>n</code> caracteres o más, <code>dest</code> queda sin <code>\0</code>.</p>
 <div class="trasfondo"><b>Concepto — el tipo importa</b>. Aquí <code>n</code> es
-<code>unsigned int</code>, así que <code>i</code> también lo es. Mezclar <code>int</code> y
+<a href="#g-unsigned"><code>unsigned int</code></a>, así que <code>i</code> también lo es. Mezclar <code>int</code> y
 <code>unsigned</code> en la condición <code>i &lt; n</code> dispara avisos con <code>-Wextra</code>
 (y <code>-Werror</code> los convierte en error). Empezar a leer los prototipos y respetar los tipos
 exactos es parte del ejercicio.</div>
@@ -116,7 +344,7 @@ exactos es parte del ejercicio.</div>
 
 <div class="card" id="ex02">
 <h2><span class="ex">ex02</span>ft_str_is_alpha</h2>
-<div class="meta"><span>Prototipo: <b>int ft_str_is_alpha(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_alpha(char *str)</b></span><span><a href="#g-predicado">Cadena vacía → 1</a></span></div>
 <p>Devolver 1 si <code>str</code> contiene solo caracteres alfabéticos (y también para la cadena
 vacía), 0 si aparece cualquier otra cosa.</p>
 <pre><code>int	ft_str_is_alpha(char *str)
@@ -132,13 +360,13 @@ vacía), 0 si aparece cualquier otra cosa.</p>
 	}
 	return (1);
 }</code></pre>
-<p>La condición niega la pertenencia a los dos rangos de letras: <code>A</code>–<code>Z</code>
+<p>La condición niega la pertenencia a los dos <a href="#g-ascii">rangos de letras</a>: <code>A</code>–<code>Z</code>
 (65–90) y <code>a</code>–<code>z</code> (97–122). Un carácter <em>no</em> es alfabético si está por
 debajo de <code>'A'</code>, en el hueco entre <code>'Z'</code> y <code>'a'</code> (donde viven
 <code>[</code>, <code>\</code>, <code>]</code>...), o por encima de <code>'z'</code>. La cadena
 vacía nunca entra al bucle, así que devuelve 1 «gratis».</p>
 <div class="trasfondo"><b>Concepto — comparar caracteres es comparar números</b>. Escribir
-<code>str[i] &gt;= 'a'</code> funciona porque <code>'a'</code> <em>es</em> 97 para el compilador.
+<code>str[i] &gt;= 'a'</code> funciona porque <a href="#g-char"><code>'a'</code> <em>es</em> 97</a> para el compilador.
 Este ejercicio (y los cinco siguientes) son la versión casera de las funciones
 <code>isalpha</code>, <code>isdigit</code>… de <code>&lt;ctype.h&gt;</code>: predicados que
 responden sí/no mirando en qué tramo de ASCII cae cada byte.</div>
@@ -146,7 +374,7 @@ responden sí/no mirando en qué tramo de ASCII cae cada byte.</div>
 
 <div class="card" id="ex03">
 <h2><span class="ex">ex03</span>ft_str_is_numeric</h2>
-<div class="meta"><span>Prototipo: <b>int ft_str_is_numeric(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_numeric(char *str)</b></span><span><a href="#g-predicado">Cadena vacía → 1</a></span></div>
 <p>Igual que el anterior pero con dígitos: 1 si todo son cifras <code>0</code>–<code>9</code>.</p>
 <pre><code>int	ft_str_is_numeric(char *str)
 {
@@ -161,7 +389,7 @@ responden sí/no mirando en qué tramo de ASCII cae cada byte.</div>
 	}
 	return (1);
 }</code></pre>
-<p>Los dígitos ocupan un tramo contiguo de ASCII (<code>'0'</code>=48 … <code>'9'</code>=57), así
+<p>Los dígitos ocupan un tramo contiguo de <a href="#g-ascii">ASCII</a> (<code>'0'</code>=48 … <code>'9'</code>=57), así
 que basta un único rango. Ojo: comprueba <em>caracteres</em> dígito, no el valor numérico; el signo
 <code>-</code> o un punto decimal harían devolver 0.</p>
 <div class="trasfondo"><b>Concepto — el carácter <code>'0'</code> no vale 0</b>. Es 48. Esa
@@ -171,7 +399,7 @@ número (<code>str[i] - '0'</code>). Aquí solo se valida; allí se aprovechará
 
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>ft_str_is_lowercase</h2>
-<div class="meta"><span>Prototipo: <b>int ft_str_is_lowercase(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_lowercase(char *str)</b></span><span><a href="#g-predicado">Cadena vacía → 1</a></span></div>
 <p>1 si todos los caracteres son minúsculas <code>a</code>–<code>z</code>.</p>
 <pre><code>int	ft_str_is_lowercase(char *str)
 {
@@ -195,7 +423,7 @@ un problema a resolver cada vez.</div>
 
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>ft_str_is_uppercase</h2>
-<div class="meta"><span>Prototipo: <b>int ft_str_is_uppercase(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_uppercase(char *str)</b></span><span><a href="#g-predicado">Cadena vacía → 1</a></span></div>
 <p>1 si todos los caracteres son mayúsculas <code>A</code>–<code>Z</code>.</p>
 <pre><code>int	ft_str_is_uppercase(char *str)
 {
@@ -211,7 +439,7 @@ un problema a resolver cada vez.</div>
 	return (1);
 }</code></pre>
 <p>Simétrico a <code>is_lowercase</code>, con el rango de mayúsculas.</p>
-<div class="trasfondo"><b>Concepto — mayúsculas antes que minúsculas</b>. En ASCII las mayúsculas
+<div class="trasfondo"><b>Concepto — mayúsculas antes que minúsculas</b>. En <a href="#g-ascii">ASCII</a> las mayúsculas
 (65–90) van <em>antes</em> que las minúsculas (97–122). Por eso al ordenar cadenas byte a byte
 <code>"Zoo"</code> queda antes que <code>"abeja"</code>: es la lógica que gobernará
 <code>ft_strcmp</code> en C03.</div>
@@ -219,7 +447,7 @@ un problema a resolver cada vez.</div>
 
 <div class="card" id="ex06">
 <h2><span class="ex">ex06</span>ft_str_is_printable</h2>
-<div class="meta"><span>Prototipo: <b>int ft_str_is_printable(char *str)</b></span><span>Cadena vacía → 1</span></div>
+<div class="meta"><span>Prototipo: <b>int ft_str_is_printable(char *str)</b></span><span><a href="#g-predicado">Cadena vacía → 1</a></span></div>
 <p>1 si todos los caracteres son imprimibles.</p>
 <pre><code>int	ft_str_is_printable(char *str)
 {
@@ -234,7 +462,7 @@ un problema a resolver cada vez.</div>
 	}
 	return (1);
 }</code></pre>
-<p>El rango imprimible de ASCII va del espacio (32) a la tilde <code>~</code> (126). Por debajo de 32
+<p>El rango <a href="#g-imprimible">imprimible</a> de <a href="#g-ascii">ASCII</a> va del espacio (32) a la tilde <code>~</code> (126). Por debajo de 32
 están los caracteres de control (tabulador = 9, salto de línea = 10…), que existen pero no «se ven».</p>
 <div class="trasfondo"><b>Concepto — hay bytes que no se ven</b>. Esta frontera 32–126 es la clave
 de los dos últimos ejercicios del módulo: en <code>ft_putstr_non_printable</code> y
@@ -259,12 +487,12 @@ ella, porque enviarlos crudos a la terminal la ensuciaría o la haría pitar.</d
 	}
 	return (str);
 }</code></pre>
-<p>La aritmética ASCII en acción: una minúscula está exactamente 32 posiciones por encima de su
+<p>La aritmética <a href="#g-ascii">ASCII</a> en acción: una minúscula está exactamente <a href="#g-caja">32 posiciones</a> por encima de su
 mayúscula (<code>'a'</code>−<code>'A'</code> = 97−65 = 32), así que restar 32 la convierte. Los
 caracteres que no son minúsculas se dejan intactos.</p>
-<div class="trasfondo"><b>Concepto — modificar «en el sitio»</b>. La función no crea una copia:
+<div class="trasfondo"><b>Concepto — modificar «<a href="#g-in-place">en el sitio</a>»</b>. La función no crea una copia:
 escribe sobre el mismo <code>str</code> que recibió. Esto solo es legal si quien llama pasó memoria
-escribible (un array, no un literal <code>"..."</code>, que es de solo lectura). Entender la
+escribible (un array, no un <a href="#g-literal">literal</a> <code>"..."</code>, que es de solo lectura). Entender la
 diferencia evita el <em>segfault</em> más habitual del módulo.</div>
 </div>
 
@@ -285,9 +513,9 @@ diferencia evita el <em>segfault</em> más habitual del módulo.</div>
 	}
 	return (str);
 }</code></pre>
-<p>Ahora se suma 32 a las mayúsculas. Misma idea, signo opuesto.</p>
+<p>Ahora se suma <a href="#g-caja">32</a> a las mayúsculas. Misma idea, signo opuesto.</p>
 <div class="trasfondo"><b>Concepto — ¿por qué +32 y no una tabla?</b>. Se podría mapear cada letra
-con una tabla de traducción, pero el <code>+32</code> demuestra que la codificación ASCII no es
+con una tabla de traducción, pero el <code>+32</code> demuestra que la codificación <a href="#g-ascii">ASCII</a> no es
 arbitraria: mayúsculas y minúsculas se diseñaron separadas por una potencia de dos (32 = bit 5),
 justo para que cambiar la caja fuera una operación de un solo bit.</div>
 </div>
@@ -331,10 +559,10 @@ primero de la cadena o si el <em>anterior</em> no es alfanumérico. En ese caso 
 en cualquier otro, a minúscula. Con la entrada <code>42mots</code>, el <code>4</code> abre palabra
 pero no es letra (queda igual), y la <code>m</code> ya no es inicio (el <code>2</code> anterior es
 alfanumérico), así que se queda minúscula: <code>42mots</code>. El helper <code>ft_is_alnum</code> se
-declara <code>static</code> porque no forma parte de la entrega.</p>
+declara <a href="#g-static"><code>static</code></a> porque no forma parte de la entrega.</p>
 <div class="trasfondo"><b>Concepto — el estado está en el vecino</b>. Aquí ya no basta con mirar el
 carácter actual: la decisión depende del <em>contexto</em> (qué había justo antes). Es el primer
-ejercicio del módulo con una pizca de máquina de estados, y anticipa parsers más serios donde «dónde
+ejercicio del módulo con una pizca de <a href="#g-estado">máquina de estados</a>, y anticipa parsers más serios donde «dónde
 estoy» importa tanto como «qué leo».</div>
 </div>
 
@@ -342,7 +570,7 @@ estoy» importa tanto como «qué leo».</div>
 <h2><span class="ex">ex10</span>ft_strlcpy</h2>
 <div class="meta"><span>Prototipo: <b>unsigned int ft_strlcpy(char *dest, char *src, unsigned int size)</b></span></div>
 <p>La copia «segura» de BSD: copia como mucho <code>size − 1</code> caracteres, <strong>siempre</strong>
-pone <code>\0</code> (si <code>size &gt; 0</code>) y devuelve la longitud de <code>src</code>.</p>
+pone <a href="#g-cadena"><code>\0</code></a> (si <code>size &gt; 0</code>) y devuelve la longitud de <code>src</code>.</p>
 <pre><code>unsigned int	ft_strlcpy(char *dest, char *src, unsigned int size)
 {
 	unsigned int	i;
@@ -364,9 +592,9 @@ pone <code>\0</code> (si <code>size &gt; 0</code>) y devuelve la longitud de <co
 <p>Primero se mide <code>src</code> completo (ese es el valor a devolver, pase lo que pase con la
 copia). Luego se copia dejando siempre un hueco para el terminador: la guarda <code>i + 1 &lt;
 size</code> reserva la última posición. Devolver la longitud <em>real</em> de <code>src</code>
-—aunque no quepa— es lo que permite a quien llama detectar que hubo truncamiento
+—aunque no quepa— es lo que permite a quien llama detectar que hubo <a href="#g-truncar">truncamiento</a>
 (<code>retorno &gt;= size</code>).</p>
-<div class="trasfondo"><b>Concepto — desbordamientos de búfer</b>. <code>strcpy</code> no conoce el
+<div class="trasfondo"><b>Concepto — <a href="#g-buffer-overflow">desbordamientos de búfer</a></b>. <code>strcpy</code> no conoce el
 tamaño del destino: si <code>src</code> es más largo, escribe fuera y corrompe memoria (la base de
 incontables vulnerabilidades). <code>strlcpy</code> nació para eso: recibe <code>size</code> y nunca
 lo excede. Reimplementarla es tomar contacto con la seguridad de memoria, tema que atraviesa todo C.</div>
@@ -375,8 +603,8 @@ lo excede. Reimplementarla es tomar contacto con la seguridad de memoria, tema q
 <div class="card" id="ex11">
 <h2><span class="ex">ex11</span>ft_putstr_non_printable</h2>
 <div class="meta"><span>Prototipo: <b>void ft_putstr_non_printable(char *str)</b></span><span>Autorizada: write</span></div>
-<p>Imprimir la cadena, pero mostrando los caracteres no imprimibles como <code>\</code> seguido de su
-código hexadecimal en minúsculas y dos dígitos. Así, un salto de línea (<code>0x0a</code>) se ve como
+<p>Imprimir la cadena, pero mostrando los caracteres <a href="#g-imprimible">no imprimibles</a> como <code>\</code> seguido de su
+código <a href="#g-hex">hexadecimal</a> en minúsculas y dos dígitos. Así, un salto de línea (<code>0x0a</code>) se ve como
 <code>\0a</code>.</p>
 <pre><code>void	ft_putstr_non_printable(char *str)
 {
@@ -400,7 +628,7 @@ código hexadecimal en minúsculas y dos dígitos. Así, un salto de línea (<co
 }</code></pre>
 <p>Para convertir un byte a hexadecimal se parte en dos «nibbles» de 4 bits: la cifra alta es
 <code>byte / 16</code> y la baja <code>byte % 16</code>, y cada una indexa la tabla
-<code>"0123456789abcdef"</code>. El <code>(unsigned char)</code> es crucial: sin él, un byte con el
+<code>"0123456789abcdef"</code>. El <a href="#g-signo"><code>(unsigned char)</code></a> es crucial: sin él, un byte con el
 bit alto puesto (valor &gt; 127) se interpretaría como <code>char</code> negativo y las divisiones
 darían índices negativos.</p>
 <div class="trasfondo"><b>Concepto — hexadecimal como lenguaje de bytes</b>. Un byte son 8 bits =
@@ -413,14 +641,14 @@ ejercicio es el ensayo general del siguiente.</div>
 <h2><span class="ex">ex12</span>ft_print_memory</h2>
 <div class="meta"><span>Prototipo: <b>void *ft_print_memory(void *addr, unsigned int size)</b></span><span>Autorizada: write</span></div>
 <p>Volcar una región de memoria en tres columnas, al estilo de un editor hexadecimal: la dirección en
-hex, el contenido en hex (agrupado de dos en dos bytes, relleno con espacios si la línea queda a
-medias) y el contenido como texto (los no imprimibles se sustituyen por <code>.</code>). Dieciséis
+<a href="#g-hex">hex</a>, el contenido en hex (agrupado de dos en dos bytes, relleno con espacios si la línea queda a
+medias) y el contenido como texto (los <a href="#g-imprimible">no imprimibles</a> se sustituyen por <code>.</code>). Dieciséis
 bytes por línea; si <code>size</code> es 0 no se imprime nada. Devuelve <code>addr</code>.</p>
 <pre><code>$&gt; ./ft_print_memory
 000000010a161f40: 426f 6e6a 6f75 7220 6c65 7320 616d 696e Bonjour les amin
 000000010a161f50: 6368 6573 090a 0963 0720 6573 7420 666f ches...c. est fo
 ...</code></pre>
-<p>La función se reparte en tres ayudantes <code>static</code> (dirección, columna hex, columna
+<p>La función se reparte en tres ayudantes <a href="#g-static"><code>static</code></a> (dirección, columna hex, columna
 texto) más el bucle principal, que avanza de 16 en 16 bytes. El núcleo es la columna hex, que decide
 en cada posición si hay byte que imprimir o hay que rellenar con espacios para que la columna de
 texto quede siempre alineada:</p>
@@ -451,11 +679,101 @@ incompleta, la columna de texto arranca siempre en la misma columna. La direcci�
 bucle que extrae los 16 dígitos hex de un <code>unsigned long</code>, y la columna de texto reusa la
 frontera 32–126 de <code>ft_str_is_printable</code>.</p>
 <div class="trasfondo"><b>Concepto — la memoria es un array de bytes, y punto</b>. Un
-<code>void *</code> es «una dirección, sin tipo». Al castearlo a <code>unsigned char *</code> le
+<a href="#g-void-ptr"><code>void *</code></a> es «una dirección, sin tipo». Al <a href="#g-cast">castearlo</a> a <code>unsigned char *</code> le
 decimos al compilador «trátalo como bytes crudos» y podemos recorrerlo como cualquier array. Esto es
 literalmente lo que hacen <code>gdb</code>, <code>xxd</code> o un depurador: no hay variables ni
 tipos ahí abajo, solo bytes en direcciones consecutivas. Ver una <code>struct</code> o un
 <code>int</code> «desnudos» en hex es el momento en que la memoria deja de ser abstracta.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe en C02, con una respuesta corta y el enlace a donde
+está explicado. Están agrupadas en: copias, caracteres, y pruebas y entrega. Antes de mirar la
+respuesta, intenta contestar tú.</p>
+
+<h3>Copias</h3>
+<details id="q-terminador">
+<summary>En <code>ft_strcpy</code>, ¿por qué copias el <code>'\0'</code> fuera del bucle?</summary>
+<p>Porque el bucle se para justo al llegar a él: <code>while (src[i])</code> es falso cuando
+<code>src[i]</code> es 0. Sin <code>dest[i] = '\0'</code>, <code>dest</code> no acabaría y quien la
+leyera seguiría hasta encontrar un 0 por casualidad. → <a href="#g-cadena">terminador</a>,
+<a href="#ex00">ex00</a></p>
+</details>
+<details id="q-strncpy">
+<summary>¿<code>ft_strncpy</code> deja siempre una cadena terminada?</summary>
+<p>No, y la de verdad tampoco. Si <code>src</code> tiene <code>n</code> caracteres o más, copia
+<code>n</code> y no pone terminador: <code>ft_strncpy(e, "Hola mundo", 4)</code> deja
+<code>Hola</code> sin 0 detrás. Si <code>src</code> es más corto, rellena con ceros hasta
+<code>n</code>. → <a href="#ex01">ex01</a></p>
+</details>
+<details id="q-strlcpy-ret">
+<summary>¿Qué devuelve <code>ft_strlcpy</code> y para qué sirve?</summary>
+<p>La longitud de <code>src</code>, haya cabido o no. Si es <code>&gt;= size</code>, la copia se ha
+cortado. <code>ft_strlcpy(d, "Hola mundo", 6)</code> deja <code>"Hola "</code> y devuelve 10.
+→ <a href="#g-truncar">truncar</a>, <a href="#ex10">ex10</a></p>
+</details>
+<details id="q-strlcpy0">
+<summary>¿Y si <code>size</code> es 0?</summary>
+<p>No se escribe nada en <code>dest</code>, ni siquiera el terminador (no hay sitio), y se devuelve
+la longitud de <code>src</code>. La guarda <code>i + 1 &lt; size</code> impide copiar y el
+<code>if (size &gt; 0)</code> impide escribir el 0. → <a href="#ex10">ex10</a></p>
+</details>
+<details id="q-orden-cond">
+<summary>¿Importa el orden en <code>i &lt; n &amp;&amp; src[i]</code>?</summary>
+<p>Sí. <code>&amp;&amp;</code> se para en la primera condición falsa, así que comprobar el límite
+primero evita leer <code>src[n]</code>, que puede no existir. Con <code>n</code> = 0 no se lee
+<code>src</code> en absoluto. → <a href="#g-cortocircuito">cortocircuito</a></p>
+</details>
+
+<h3>Caracteres</h3>
+<details id="q-vacia">
+<summary>¿Por qué <code>ft_str_is_alpha("")</code> devuelve 1?</summary>
+<p>Porque lo pide el enunciado, y tiene sentido: «todos los caracteres son letras» es cierto si no
+hay ninguno que no lo sea. En el código sale sin un caso especial: no se entra en el bucle y se
+llega al <code>return (1)</code>. → <a href="#g-predicado">verdad vacía</a></p>
+</details>
+<details id="q-32">
+<summary>¿Por qué sumas o restas 32?</summary>
+<p>Porque en ASCII cada minúscula está 32 posiciones por encima de su mayúscula
+(<code>'a'</code> 97, <code>'A'</code> 65). Antes se comprueba que es una letra; si no, se deja como
+está. Escribir <code>'a' - 'A'</code> en vez de 32 es lo mismo. → <a href="#g-caja">distancia de
+32</a>, <a href="#ex07">ex07</a></p>
+</details>
+<details id="q-capitalize">
+<summary>¿Qué hace tu <code>ft_strcapitalize</code> con <code>42mots</code> y con <code>quarante-deux</code>?</summary>
+<p>Empieza palabra el carácter cuyo anterior no es alfanumérico. <code>42mots</code> se queda igual:
+la <code>m</code> va detrás de un <code>2</code>. <code>quarante-deux</code> da
+<code>Quarante-Deux</code>, porque el guion corta la palabra. Y lo que no empieza palabra se pasa a
+minúscula: <code>HOLA</code> da <code>Hola</code>. → <a href="#ex09">ex09</a></p>
+</details>
+<details id="q-unsigned-char">
+<summary>¿Para qué sirve el <code>(unsigned char)</code> de <code>ft_putstr_non_printable</code>?</summary>
+<p>En los PC de 42 <code>char</code> tiene signo, y un byte por encima de 127 es negativo: la é de
+<code>café</code> son los bytes <code>0xc3</code> y <code>0xa9</code>, que como <code>char</code>
+valen -61 y -87. Sin el cast, <code>/ 16</code> y <code>% 16</code> darían índices negativos en la
+tabla hex. Con él sale <code>caf\c3\a9</code>. → <a href="#g-signo">char con signo</a>,
+<a href="#ex11">ex11</a></p>
+</details>
+<details id="q-print-memory">
+<summary>En <code>ft_print_memory</code>, ¿por qué rellenas con espacios la última línea?</summary>
+<p>Para que la columna de texto empiece siempre en la misma columna. Cada byte que falta ocupa dos
+espacios, y se sigue metiendo el espacio cada dos bytes. → <a href="#ex12">ex12</a></p>
+</details>
+
+<h3>Pruebas y entrega</h3>
+<details id="q-literal">
+<summary>Tu <code>main</code> de prueba de <code>ft_strupcase</code> da segfault. ¿Por qué?</summary>
+<p>Casi seguro le estás pasando un literal: <code>ft_strupcase("hola")</code> o
+<code>char *s = "hola"</code>. Los literales son de solo lectura. Hay que usar un array,
+<code>char s[] = "hola";</code>. → <a href="#g-literal">literal</a></p>
+</details>
+<details id="q-static">
+<summary>¿Por qué <code>ft_is_alnum</code> es <code>static</code>? ¿Puedes añadir funciones?</summary>
+<p>Sí, se pueden añadir funciones al archivo, siempre que cumplan la Norma. Se declaran
+<code>static</code> para que no salgan del archivo: si la Moulinette enlaza con otra función del
+mismo nombre, no hay choque. → <a href="#g-static">static</a>, <a href="#g-norma">la Norma</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 02 · <a href="005_c03.html">continuar con C 03 →</a></footer>

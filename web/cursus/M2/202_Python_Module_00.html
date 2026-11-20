@@ -14,6 +14,8 @@
       <a href="../../index.html">Inicio</a>
       <a href="../../index.html#piscine">Piscine</a>
       <a href="../../index.html#cursus" class="active">Cursus</a>
+      <a href="../../galaxia.html">Galaxia</a>
+      <a href="../../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ ejercicios ambientados en un huerto comunitario que recorren lo básico — <cod
 final, anotaciones de tipo.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex0">ex0 — ft_hello_garden</a></li>
   <li><a href="#ex1">ex1 — ft_garden_name</a></li>
   <li><a href="#ex2">ex2 — ft_plot_area</a></li>
@@ -34,6 +37,7 @@ final, anotaciones de tipo.</p>
   <li><a href="#ex5">ex5 — ft_water_reminder</a></li>
   <li><a href="#ex6">ex6 — ft_count_harvest</a></li>
   <li><a href="#ex7">ex7 — ft_seed_inventory</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>De C a Python</b> — Después de la piscine, Libft, printf y
@@ -50,13 +54,197 @@ módulo: cada fichero debe contener <em>solo la función</em>, sin código suelt
 el enunciado, que las importa y las llama. Todo el repo pasa <code>flake8</code> y
 <code>mypy</code> sin avisos.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>La página usa palabras básicas de Python y algunas que vienen de comparar Python con C. Aquí está
+cada una explicada desde cero y con un ejemplo sacado de los propios ejercicios. En el resto de la
+página, la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su
+entrada.</p>
+
+<h3>El lenguaje</h3>
+<details id="g-interprete">
+<summary>Intérprete frente a compilador</summary>
+<p>Un compilador traduce todo el programa a código máquina antes de ejecutarlo (<code>cc</code>
+produce un ejecutable). Un intérprete lee el programa y lo va ejecutando él mismo. Python está en
+medio: <code>python3</code> traduce cada fichero a un código intermedio (<em>bytecode</em>) y lo
+ejecuta en su máquina virtual, sin ejecutable aparte.</p>
+<p>Por eso los errores de un ejercicio salen al ejecutarlo, no antes: un nombre mal escrito dentro
+de <code>ft_plot_area</code> no da ningún aviso hasta que <code>main.py</code> llama a la
+función.</p>
+</details>
+<details id="g-tipado">
+<summary>Tipado dinámico</summary>
+<p>En Python las variables no tienen tipo; lo tienen los valores. Una variable es solo un nombre
+que apunta a un valor, y puede apuntar después a otro de otro tipo. El tipo se comprueba al
+ejecutar cada operación, no al escribir el código.</p>
+<p>En ex3, <code>a = input(...)</code> guarda una cadena, y <code>int(a)</code> crea un valor
+nuevo de tipo entero sin cambiar <code>a</code>. Si se suma sin convertir, <code>a + b + c</code>
+con 5, 8 y 3 da <code>"583"</code>.</p>
+</details>
+<details id="g-sangria">
+<summary>Sangría como sintaxis</summary>
+<p>En Python la sangría (los espacios al principio de la línea) no es estética: marca qué líneas
+forman un bloque. Lo que en C va entre llaves aquí va sangrado debajo de una línea que acaba en dos
+puntos (<code>def</code>, <code>if</code>, <code>for</code>…). Si no cuadra, el programa no arranca:
+<code>IndentationError</code>.</p>
+<p>En ex4, las dos llamadas a <code>print</code> van sangradas 8 espacios porque están dentro del
+<code>if</code> y del <code>else</code>, que a su vez están dentro de la función.</p>
+</details>
+<details id="g-funcion">
+<summary>Función, parámetro y <code>return</code></summary>
+<p><code>def nombre(parametros):</code> define una función; su cuerpo es el bloque sangrado de
+debajo. Los parámetros son los nombres que reciben los valores de la llamada. <code>return</code>
+termina la función y devuelve un valor; sin <code>return</code>, o con un <code>return</code> vacío,
+devuelve <code>None</code>.</p>
+<p>Los ejercicios 0 a 6 no reciben parámetros (leen con <code>input</code>) y el 7 recibe tres. En
+ex7, el <code>return</code> vacío de la rama <code>else</code> sale de la función antes de llegar
+al <code>print</code> final.</p>
+</details>
+<details id="g-modulo">
+<summary>Módulo e <code>import</code></summary>
+<p>Cada fichero <code>.py</code> es un <em>módulo</em>. <code>import</code> lo carga y ejecuta su
+código de arriba abajo; las <code>def</code> solo definen funciones, no las llaman. Si el fichero
+tuviera código suelto, se ejecutaría al importarlo.</p>
+<p>Por eso el enunciado exige que cada fichero contenga solo la función: <code>main.py</code> hace
+<code>__import__("ft_plot_area")</code> y luego llama a <code>ft_plot_area()</code>. Un
+<code>print</code> suelto en el fichero se ejecutaría al importarlo, antes de que <code>main.py</code>
+llame a la función.</p>
+</details>
+<details id="g-main">
+<summary><code>if __name__ == "__main__":</code></summary>
+<p>Cada módulo tiene una variable <code>__name__</code>: vale <code>"__main__"</code> si el fichero
+se ejecuta directamente (<code>python3 fichero.py</code>) y el nombre del módulo si se importa. El
+bloque <code>if __name__ == "__main__":</code> sirve para poner código que solo se ejecute en el
+primer caso.</p>
+<p>El enunciado lo prohíbe en este módulo: los ficheros solo definen la función, y la prueba la
+hace <code>main.py</code>.</p>
+</details>
+<details id="g-none">
+<summary><code>None</code></summary>
+<p>El valor que significa «nada»: lo devuelve una función sin <code>return</code> y se usa como
+valor por defecto cuando falta un dato. Hay un único <code>None</code> en todo el programa, por eso
+se compara con <code>is</code> (¿es el mismo objeto?) y no con <code>==</code>.</p>
+<p>En ex6 recursivo, <code>days=None</code> marca la primera llamada: <code>if days is None:</code>
+solo es cierto cuando <code>main.py</code> llama sin argumentos.</p>
+</details>
+<details id="g-defecto">
+<summary>Parámetro con valor por defecto</summary>
+<p>Un parámetro escrito como <code>nombre=valor</code> en la <code>def</code> se puede omitir al
+llamar, y entonces toma ese valor. Así una misma función admite llamadas con y sin ese
+argumento.</p>
+<p><code>ft_count_harvest_recursive(days=None)</code> se llama sin nada desde <code>main.py</code>
+y con un número desde sí misma: <code>ft_count_harvest_recursive(day - 1)</code>. Es una de las
+tres opciones que propone el enunciado.</p>
+</details>
+
+<h3>Entrada, salida y texto</h3>
+<details id="g-input">
+<summary><code>input</code> y la entrada estándar</summary>
+<p><code>input(texto)</code> escribe <code>texto</code>, espera a que el usuario escriba una línea
+y pulse Intro, y la devuelve como cadena, sin el salto de línea. Lee de la entrada estándar, así
+que también funciona con una tubería: <code>printf "5\n" | python3 …</code>. Si la entrada se
+acaba antes, lanza <code>EOFError</code>.</p>
+<p>En ex2 hay dos <code>input</code>. Con una sola línea en la tubería, el primero lee el número
+y el segundo se encuentra el final: <code>EOFError: EOF when reading a line</code>.</p>
+</details>
+<details id="g-str">
+<summary>Cadena (<code>str</code>) y método</summary>
+<p>Una cadena es un texto, entre comillas simples o dobles. En Python es un objeto con sus propias
+funciones, los <em>métodos</em>, que se llaman con un punto: <code>texto.upper()</code>. Las cadenas
+no se modifican: cada método devuelve una cadena nueva.</p>
+<p>En ex7, <code>seed_type.capitalize()</code> devuelve <code>"Tomato"</code> a partir de
+<code>"tomato"</code>. Si se pasa un número, <code>ft_seed_inventory(42, 1, "grams")</code> falla
+con <code>AttributeError: 'int' object has no attribute 'capitalize'</code>.</p>
+</details>
+<details id="g-fstring">
+<summary>f-string</summary>
+<p>Una cadena con una <code>f</code> delante de las comillas, en la que lo que va entre llaves se
+evalúa y se inserta como texto: <code>f"Day {day}"</code>. Es la forma moderna de componer texto
+en Python, desde la versión 3.6.</p>
+<p>Casi todos los ejercicios la usan. En ex7, una sola f-string junta cuatro piezas:
+<code>f"{seed_type.capitalize()} seeds: {covers}{quantity} {unit}"</code>.</p>
+</details>
+<details id="g-conversion">
+<summary>Conversión de tipo: <code>int()</code></summary>
+<p><code>int(x)</code> crea un entero a partir de otro valor. Con una cadena, acepta dígitos con
+un signo opcional y espacios alrededor (<code>int(" 7 ")</code> da 7), y para todo lo demás lanza
+<code>ValueError</code>. Los enteros de Python no tienen tope: no hay <code>INT_MAX</code>.</p>
+<p>ex2 convierte nada más leer (<code>int(input(...))</code>); ex3 lee las tres cadenas y convierte
+al sumar; ex5 convierte dentro de la condición.</p>
+</details>
+
+<h3>Control y errores</h3>
+<details id="g-condicional">
+<summary><code>if</code>, <code>elif</code> y <code>else</code></summary>
+<p><code>if</code> ejecuta su bloque si la condición es cierta; <code>elif</code> («else if»)
+prueba otra condición si las anteriores fallaron; <code>else</code> recoge el resto. Solo se
+ejecuta un bloque de la cadena, el primero que se cumpla.</p>
+<p>ex7 tiene tres <code>elif</code>/<code>if</code> para las unidades conocidas y un
+<code>else</code> para la desconocida. En ex4, con 60 días exactos <code>age &gt; 60</code> es falso
+y sale «Plant needs more time to grow.».</p>
+</details>
+<details id="g-for">
+<summary><code>for</code> y <code>range</code></summary>
+<p>El <code>for</code> de Python recorre los elementos de algo: <code>for x in coleccion:</code>.
+<code>range(a, b)</code> da los enteros de a hasta b <em>sin incluir b</em>. No hay inicialización,
+condición ni incremento como en C.</p>
+<p>En ex6, <code>range(1, days + 1)</code> con 5 da 1, 2, 3, 4, 5. Con 0 o un negativo,
+<code>range</code> sale vacío y solo se imprime «Harvest time!».</p>
+</details>
+<details id="g-recursion">
+<summary>Recursión y caso base</summary>
+<p>Una función recursiva se llama a sí misma con un problema más pequeño. Tiene que haber un
+<em>caso base</em> que no se llame otra vez, o no terminaría nunca.</p>
+<p>En ex6 el caso base es <code>day</code> igual a 0: <code>if day &gt; 0</code> es falso y no hay
+más llamadas. Con 5 se anidan llamadas con 5, 4, 3, 2, 1 y 0, y cada una imprime su día
+<em>al volver</em>, por eso salen en orden creciente.</p>
+</details>
+<details id="g-pila-llamadas">
+<summary>Pila de llamadas y <code>RecursionError</code></summary>
+<p>Cada llamada a función que no ha terminado ocupa un marco en la pila de llamadas, con sus
+variables locales. En C, si se llena, segfault; Python pone un límite (1000 por defecto,
+<code>sys.getrecursionlimit()</code>) y lanza <code>RecursionError</code> antes.</p>
+<p>Probado llamando directamente a <code>ft_count_harvest_recursive</code>: con 998 días funciona y
+con 999 da <code>RecursionError: maximum recursion depth exceeded</code>. La iterativa no tiene
+límite.</p>
+</details>
+<details id="g-excepcion">
+<summary>Excepción y traceback</summary>
+<p>Una excepción es la forma de Python de avisar de un error al ejecutar: <code>ValueError</code>
+(valor no válido), <code>TypeError</code> (tipo equivocado), <code>AttributeError</code> (el objeto
+no tiene ese método)… Si nadie la captura con <code>try</code>/<code>except</code>, el programa se
+para y escribe el <em>traceback</em>, la lista de llamadas por las que pasó.</p>
+<p>En ex2, escribir <code>a</code> da <code>ValueError: invalid literal for int() with base 10:
+'a'</code>. El enunciado no pide validar, así que no hay <code>try</code> en ningún ejercicio.</p>
+</details>
+
+<h3>Herramientas</h3>
+<details id="g-flake8">
+<summary>flake8 y PEP 8</summary>
+<p>PEP 8 es la guía de estilo oficial de Python: sangría de 4 espacios, líneas de 79 caracteres
+como mucho, dos líneas en blanco entre definiciones, sin espacios al final. <code>flake8</code> es
+la herramienta que la comprueba; es lo que el enunciado exige en lugar de la norminette.</p>
+<p>Los nueve ficheros del repo pasan sin un aviso. Están sangrados con 4 espacios, como pide
+PEP 8.</p>
+</details>
+<details id="g-tipos">
+<summary>Anotaciones de tipo y mypy</summary>
+<p>Una anotación dice qué tipo se espera: <code>quantity: int</code> para un parámetro,
+<code>-&gt; None</code> para lo que devuelve. Python no las comprueba al ejecutar; <code>mypy</code>
+las lee sin ejecutar nada y avisa de las incoherencias.</p>
+<p>ex7 es el único con anotaciones obligatorias, y pasa <code>mypy</code>. Con
+<code>mypy --strict</code>, que exige anotar todo, el repo da 9 errores, todos en ex0–ex6, que no
+tienen anotaciones (el enunciado las deja como opcionales).</p>
+</details>
+</div>
+
 <div class="card" id="ex0">
 <h2><span class="ex">ex0</span>ft_hello_garden</h2>
 <div class="meta"><span>Entrega: <b>ft_hello_garden.py</b></span><span>Autorizado: <b>print()</b></span></div>
 <pre><code>def ft_hello_garden():
     print("Hello, Garden Community!")</code></pre>
-<p>Dos líneas. <code>def</code> define la función, los dos puntos abren el bloque y la
-sangría marca qué hay dentro: no hay llaves ni punto y coma. <code>print</code> añade el
+<p>Dos líneas. <code>def</code> define la <a href="#g-funcion">función</a>, los dos puntos abren el bloque y la
+<a href="#g-sangria">sangría</a> marca qué hay dentro: no hay llaves ni punto y coma. <code>print</code> añade el
 salto de línea por su cuenta.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en Python <em>la sangría es
 sintaxis</em>. En C la Norma te exigía tabular bien por estética; aquí, si la línea del
@@ -72,8 +260,8 @@ Y que <code>print</code> no es <code>write</code>: ni descriptor, ni longitud, n
     garden_name = input("Enter garden name: ")
     print(f"Garden: {garden_name}")
     print("Status: Growing well!")</code></pre>
-<p><code>input</code> muestra el texto que se le pasa, espera a que el usuario pulse Intro y
-devuelve lo escrito como cadena (sin el salto de línea). Luego una <em>f-string</em>: la
+<p><a href="#g-input"><code>input</code></a> muestra el texto que se le pasa, espera a que el usuario pulse Intro y
+devuelve lo escrito como <a href="#g-str">cadena</a> (sin el salto de línea). Luego una <em><a href="#g-fstring">f-string</a></em>: la
 <code>f</code> delante de las comillas permite meter variables entre llaves.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Leer de la entrada estándar sin
 <code>read</code>, sin buffer de tamaño fijo y sin preocuparte de cuánto escribirá el
@@ -89,14 +277,14 @@ C pedía <code>printf("%s", ...)</code> — o tu propio ft_printf entero.</div>
     width = int(input("Enter width: "))
     area = length * width
     print(f"Plot area: {area}")</code></pre>
-<p><code>input</code> siempre devuelve texto; para multiplicar hay que convertirlo con
+<p><a href="#g-input"><code>input</code></a> siempre devuelve texto; para multiplicar hay que <a href="#g-conversion">convertirlo</a> con
 <code>int()</code>. Si el usuario escribe algo que no es un número, Python lanza una
-excepción y se para:</p>
+<a href="#g-excepcion">excepción</a> y se para:</p>
 <pre><code>Enter length: a
 ValueError: invalid literal for int() with base 10: 'a'</code></pre>
 <p>El enunciado dice explícitamente que no hace falta validar la entrada, así que es el
 comportamiento esperado.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que tipado dinámico no significa
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <a href="#g-tipado">tipado dinámico</a> no significa
 «sin tipos». <code>"5" * "3"</code> es un error y <code>"5" * 3</code> da
 <code>"555"</code>: los valores tienen tipo y Python lo respeta con rigor. <code>int()</code>
 es tu <code>ft_atoi</code>, pero en vez de devolver basura ante una entrada rara, protesta. Y
@@ -112,10 +300,10 @@ los enteros de Python no desbordan: crecen sin límite, adiós a <code>INT_MAX</
     c = input("Day 3 harvest: ")
     total_harvest = int(a) + int(b) + int(c)
     print(f"Total harvest: {total_harvest}")</code></pre>
-<p>Aquí la conversión se hace al final, en la suma, en lugar de al leer como en ex2. Las dos
+<p>Aquí la <a href="#g-conversion">conversión</a> se hace al final, en la suma, en lugar de al leer como en ex2. Las dos
 formas valen; la diferencia es cuándo existe la variable como texto y cuándo como número.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que una misma variable no tiene un
-tipo fijo declarado: <code>a</code> guarda una cadena, y es <code>int(a)</code> quien produce
+tipo fijo declarado: <code>a</code> guarda una <a href="#g-str">cadena</a>, y es <code>int(a)</code> quien produce
 un valor nuevo de tipo entero. Fíjate también en que <code>+</code> entre cadenas
 <em>concatena</em>: <code>a + b + c</code> sin los <code>int</code> daría
 <code>"583"</code>, no 16.</div>
@@ -130,8 +318,8 @@ un valor nuevo de tipo entero. Fíjate también en que <code>+</code> entre cade
         print("Plant is ready to harvest!")
     else:
         print("Plant needs more time to grow.")</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — El <code>if</code>/<code>else</code>
-de Python: sin paréntesis obligatorios, con dos puntos y sangría. Y leer el enunciado con
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El <a href="#g-condicional"><code>if</code></a>/<code>else</code>
+de Python: sin paréntesis obligatorios, con dos puntos y <a href="#g-sangria">sangría</a>. Y leer el enunciado con
 lupa, como en C00 con el cero de <code>ft_is_negative</code>: «estrictamente más de 60 días»
 es <code>&gt;</code>, no <code>&gt;=</code>. Con 60 exactos la planta todavía no está
 lista.</div>
@@ -146,7 +334,7 @@ lista.</div>
         print("Water the plants!")
     else:
         print("Plants are fine")</code></pre>
-<p>El mismo esquema que ex4, con la conversión hecha dentro de la condición.</p>
+<p>El mismo esquema que ex4, con la <a href="#g-conversion">conversión</a> hecha dentro de la condición.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que comparar sin convertir no
 funciona: <code>"4" &gt; 2</code> lanza un <code>TypeError</code> porque Python no compara
 texto con números. En C, comparar un <code>char *</code> con un <code>int</code> compilaba
@@ -158,14 +346,14 @@ alta.</div>
 <h2><span class="ex">ex6</span>ft_count_harvest</h2>
 <div class="meta"><span>Entrega: <b>ft_count_harvest_iterative.py</b>, <b>ft_count_harvest_recursive.py</b></span><span>Autorizado: <b>input(), int(), print(), range()</b>, funciones auxiliares para la recursión</span></div>
 <p>Contar de 1 a n y terminar con «Harvest time!», dos veces: con un bucle y con
-recursión.</p>
+<a href="#g-recursion">recursión</a>.</p>
 <h3>Versión iterativa</h3>
 <pre><code>def ft_count_harvest_iterative():
     days = int(input("Days until harvest: "))
     for day in range(1, days + 1):
         print(f"Day {day}")
     print("Harvest time!")</code></pre>
-<p>El <code>for</code> de Python no es el de C: no tiene inicialización, condición y
+<p>El <a href="#g-for"><code>for</code></a> de Python no es el de C: no tiene inicialización, condición y
 avance, sino que recorre los valores que le da <code>range(1, days + 1)</code>, que va de 1
 a <code>days</code> (el final no se incluye, de ahí el <code>+ 1</code>).</p>
 <h3>Versión recursiva</h3>
@@ -181,12 +369,12 @@ a <code>days</code> (el final no se incluye, de ahí el <code>+ 1</code>).</p>
         print(f"Day {day}")
     if is_first_call:
         print("Harvest time!")</code></pre>
-<p>Usa una de las opciones que propone el enunciado: un parámetro con valor por defecto.
+<p>Usa una de las opciones que propone el enunciado: un parámetro con <a href="#g-defecto">valor por defecto</a>.
 La llamada desde <code>main.py</code> no pasa argumentos, así que <code>days</code> vale
-<code>None</code>: es la primera llamada, la única que pide el número y la única que imprime
+<a href="#g-none"><code>None</code></a>: es la primera llamada, la única que pide el número y la única que imprime
 «Harvest time!» al final. Las llamadas recursivas reciben ya el número.</p>
-<p>El truco del orden es el mismo de <code>ft_putnbr</code> en C00: la función baja primero
-hasta 0 y <em>luego</em>, al volver, imprime. Así la pila de llamadas da la vuelta al orden
+<p>El truco del orden es el mismo de <code>ft_putnbr</code> en C00: la <a href="#g-funcion">función</a> baja primero
+hasta 0 y <em>luego</em>, al volver, imprime. Así la <a href="#g-pila-llamadas">pila de llamadas</a> da la vuelta al orden
 y sale <code>Day 1</code>, <code>Day 2</code>… aunque se empiece por n.</p>
 <pre><code>Days until harvest: 5
 Day 1
@@ -198,12 +386,12 @@ Harvest time!</code></pre>
 <p>Ojo: Python limita la profundidad de recursión (por defecto, unas 1000 llamadas). Con
 990 días funciona; con 1000 la versión recursiva se para con
 <code>RecursionError: maximum recursion depth exceeded</code>, mientras la iterativa sigue
-sin problema. Para el enunciado no importa, pero es una diferencia real entre las dos
+sin problema. Para el enunciado no <a href="#g-modulo">importa</a>, pero es una diferencia real entre las dos
 versiones.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La comparación directa entre
 iteración y recursión, ahora en un lenguaje que las trata distinto que C. En C la recursión
 solo está limitada por el tamaño de la pila y, si te pasas, segfault; Python pone un tope
-explícito y lanza una excepción legible. También introduce dos piezas propias de Python:
+explícito y lanza una <a href="#g-excepcion">excepción</a> legible. También introduce dos piezas propias de Python:
 los parámetros por defecto y <code>None</code>, el «no hay valor» que sustituye a
 <code>NULL</code> (y que se compara con <code>is</code>, no con <code>==</code>).</div>
 </div>
@@ -211,7 +399,7 @@ los parámetros por defecto y <code>None</code>, el «no hay valor» que sustitu
 <div class="card" id="ex7">
 <h2><span class="ex">ex7</span>ft_seed_inventory</h2>
 <div class="meta"><span>Entrega: <b>ft_seed_inventory.py</b></span><span>Autorizado: <b>print()</b>, métodos de cadena</span></div>
-<p>El único ejercicio que recibe parámetros en lugar de leerlos, y el único con anotaciones
+<p>El único ejercicio que recibe parámetros en lugar de leerlos, y el único con <a href="#g-tipos">anotaciones</a>
 de tipo obligatorias (la firma la da el enunciado).</p>
 <pre><code>def ft_seed_inventory(seed_type: str, quantity: int, unit: str) -&gt; None:
     if unit == "packets":
@@ -227,7 +415,7 @@ de tipo obligatorias (la firma la da el enunciado).</p>
         print("Unknown unit type")
         return
     print(f"{seed_type.capitalize()} seeds: {covers}{quantity} {unit}")</code></pre>
-<p>La cadena <code>if</code>/<code>elif</code>/<code>else</code> prepara dos trozos de texto
+<p>La <a href="#g-str">cadena</a> <a href="#g-condicional"><code>if</code></a>/<code>elif</code>/<code>else</code> prepara dos trozos de texto
 — el sufijo y un posible prefijo «covers » — y un único <code>print</code> final los
 compone. La unidad desconocida sale antes con <code>return</code>. Comparar cadenas con
 <code>==</code> funciona directamente: nada de <code>ft_strcmp</code>.
@@ -248,9 +436,94 @@ Funciona porque es una variable local; mypy no protesta porque sigue siendo un
 vuelta de los tipos de C, pero <em>opcionales y sin efecto en tiempo de ejecución</em>.
 Python ignora <code>: int</code> al ejecutar — puedes pasar una cadena y nadie se queja —; es
 <code>mypy</code> quien las lee y avisa antes de ejecutar, como haría un compilador. Y los
-métodos: en Python todo es un objeto, y una cadena trae sus propias funciones
+métodos: en Python todo es un objeto, y una cadena trae sus propias <a href="#g-funcion">funciones</a>
 (<code>"lettuce".capitalize()</code>), un anticipo de la orientación a objetos del módulo
 siguiente.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace al ejercicio
+donde está explicado. Están agrupadas en: reglas del módulo, tipos y conversiones, y recursión y
+anotaciones. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Reglas del módulo</h3>
+<details id="q-solo-funcion">
+<summary>¿Por qué los ficheros no llaman a su función ni tienen <code>if __name__ == "__main__":</code>?</summary>
+<p>Porque lo prohíbe el enunciado: cada fichero contiene solo la función pedida. La prueba la hace
+<code>main.py</code>, que importa el módulo y llama a la función; si el fichero tuviera código
+suelto, se ejecutaría al importarlo. → <a href="#g-modulo">módulo e import</a></p>
+</details>
+<details id="q-flake8">
+<summary>Pasa <code>flake8</code> delante de mí. ¿Qué comprueba?</summary>
+<p>El estilo PEP 8: sangría de 4 espacios, líneas de 79 caracteres como mucho, dos líneas en
+blanco entre definiciones, nada de espacios al final… Los nueve ficheros pasan sin avisos. Es el
+equivalente de la norminette para Python. → <a href="#g-flake8">flake8</a></p>
+</details>
+<details id="q-validar">
+<summary>¿Qué pasa si escribo <code>abc</code> cuando pide un número?</summary>
+<p><code>int("abc")</code> lanza <code>ValueError</code> y el programa se para con un traceback.
+Es lo esperado: el enunciado dice que no hace falta validar la entrada y que con entradas inválidas
+o negativas el comportamiento no está definido. → <a href="#ex2">ex2</a></p>
+</details>
+
+<h3>Tipos y conversiones</h3>
+<details id="q-int">
+<summary>¿Por qué hace falta <code>int()</code> si el usuario escribe un número?</summary>
+<p>Porque <code>input</code> siempre devuelve una cadena. Sin convertir, <code>*</code> entre dos
+cadenas da <code>TypeError</code>, <code>+</code> las concatena (<code>"5" + "8" + "3"</code> es
+<code>"583"</code>) y <code>&gt;</code> entre cadena y entero da <code>TypeError</code>.
+→ <a href="#ex2">ex2</a>, <a href="#ex3">ex3</a></p>
+</details>
+<details id="q-cuando">
+<summary>En ex2 conviertes al leer y en ex3 al sumar. ¿Hay diferencia?</summary>
+<p>En el resultado, no. Cambia cuándo existe el número: en ex2 <code>length</code> ya es un entero;
+en ex3 <code>a</code> sigue siendo una cadena y <code>int(a)</code> crea un entero nuevo en la suma.
+Un dato no válido falla igual en los dos, solo que en ex3 después de leer los tres.
+→ <a href="#ex3">ex3</a></p>
+</details>
+<details id="q-60">
+<summary>En ex4, ¿qué sale con 60 días?</summary>
+<p>«Plant needs more time to grow.». El enunciado dice <em>más de</em> 60 días, así que la
+condición es <code>age &gt; 60</code>, no <code>&gt;=</code>. Lo mismo en ex5 con los 2 días.
+→ <a href="#ex4">ex4</a></p>
+</details>
+
+<h3>Recursión y anotaciones</h3>
+<details id="q-recursiva">
+<summary>Explícame la versión recursiva de ex6. ¿Por qué sale en orden creciente?</summary>
+<p>La primera llamada no recibe argumento (<code>days</code> es <code>None</code>): pide el
+número y se marca como primera. Cada llamada con <code>day &gt; 0</code> llama con
+<code>day - 1</code> y <em>después</em> imprime su día, así que primero se baja hasta 0 y luego, al
+volver, salen 1, 2, 3… Solo la primera imprime «Harvest time!». → <a href="#ex6">ex6</a></p>
+</details>
+<details id="q-limite">
+<summary>¿Hay algún caso en que la recursiva falle y la iterativa no?</summary>
+<p>Sí, con números grandes. Python limita la recursión a unas 1000 llamadas: probado llamando a la
+función directamente, con 998 días funciona y con 999 da <code>RecursionError</code>. La iterativa
+cuenta lo que haga falta. → <a href="#ex6">ex6</a></p>
+</details>
+<details id="q-none">
+<summary>¿Por qué <code>days is None</code> y no <code>days == None</code>?</summary>
+<p>Porque <code>None</code> es un único objeto y lo que se quiere saber es si <code>days</code> es
+ese objeto. <code>is</code> compara identidad y no se puede redefinir; <code>==</code> compara
+valor y una clase podría cambiar lo que significa. PEP 8 pide <code>is</code> para
+<code>None</code>. → <a href="#g-none">None</a></p>
+</details>
+<details id="q-tipos">
+<summary>¿Qué hace <code>: int</code> en ex7 si llamo con una cadena?</summary>
+<p>Nada al ejecutar: Python ignora las anotaciones. Si <code>seed_type</code> fuera un número,
+fallaría <code>.capitalize()</code> con <code>AttributeError</code>. Quien las usa es
+<code>mypy</code>, que avisaría antes de ejecutar si el código llamara a la función con un tipo
+equivocado. → <a href="#ex7">ex7</a></p>
+</details>
+<details id="q-strict">
+<summary>¿Pasa <code>mypy --strict</code>?</summary>
+<p>ex7 sí. El repo entero no: da 9 errores en ex0–ex6, porque no tienen anotaciones, y el
+enunciado las deja como opcionales en esos ejercicios. Con <code>mypy</code> sin flags pasa todo.
+Si te lo piden, basta añadir <code>-&gt; None</code> a cada función y anotar <code>days</code> en
+ex6. → <a href="#g-tipos">anotaciones</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — Python Module 00 · <a href="../M2/203_Python_Module_01.html">continuar con Python Module 01 →</a></footer>

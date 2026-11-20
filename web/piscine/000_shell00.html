@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -25,6 +27,7 @@ raros de Unix. 10 ejercicios (ex00–ex09), todos con <em>funciones autorizadas:
 solo comandos del sistema.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — Z</a></li>
   <li><a href="#ex01">ex01 — testShell00</a></li>
   <li><a href="#ex02">ex02 — Pues toma dos tazas</a></li>
@@ -35,6 +38,7 @@ solo comandos del sistema.</p>
   <li><a href="#ex07">ex07 — diff</a></li>
   <li><a href="#ex08">ex08 — clean</a></li>
   <li><a href="#ex09">ex09 — Son ilusiones, no trucos, Michael</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>El prólogo</b> — El enunciado abre con la letra completa de
@@ -44,15 +48,273 @@ en Francia, una versión de esta canción sonaba en el anime <em>City Hunter</em
 letra, el enunciado remata: "Desafortunadamente, este enunciado no tiene relación con City Hunter".
 Este tipo de introducción absurda es marca de la casa en los subjects de 42.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>Shell 00 es el primer día delante de una terminal Unix, y la página usa palabras que nadie te ha
+explicado todavía: inodo, permisos en octal, enlace simbólico, hash, número mágico… Aquí está cada
+una desde cero, con un ejemplo sacado del propio módulo. En el resto de la página, la primera vez
+que sale uno de estos términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Archivos y sistema de ficheros</h3>
+<details id="g-archivo">
+<summary>Archivo: una secuencia de bytes</summary>
+<p>Para Unix, un archivo es solo una lista de bytes con un nombre. No sabe si es texto, una imagen o
+un programa: eso lo decide quien lo lee. Un <em>byte</em> son 8 bits y puede valer de 0 a 255; los
+caracteres de texto se guardan como un byte cada uno según la tabla ASCII (la <code>Z</code> es el
+90, en hexadecimal 0x5A).</p>
+<p>En ex00, <code>od -c z</code> enseña exactamente lo que hay dentro:</p>
+<pre><code>$ od -c z
+0000000   Z  \n
+0000002</code></pre>
+<p>Dos bytes y nada más. El tamaño que muestra <code>ls -l</code> (el 40 de ex01, el 4 de test1 en
+ex02) es este número de bytes.</p>
+</details>
+<details id="g-salto">
+<summary>Salto de línea (<code>\n</code>) y <code>cat -e</code></summary>
+<p>El final de una línea no es «nada»: es un byte más, el 10 (0x0A), que se escribe
+<code>\n</code>. La terminal lo pinta como un cambio de línea, así que a simple vista no se ve.
+<code>cat -e</code> lo hace visible poniendo un <code>$</code> justo donde está.</p>
+<p><code>printf 'Z\n' &gt; z</code> da un archivo de 2 bytes; <code>printf 'Z' &gt; z</code>, uno de
+1 byte que se ve igual en pantalla pero no es lo que pide ex00. <code>echo Z &gt; z</code> también
+vale, porque <code>echo</code> añade el <code>\n</code> solo. Los ejemplos de ex05 y ex06 del
+enunciado pasan la salida por <code>cat -e</code> para que se vea que cada línea acaba justo después
+del hash, sin espacios.</p>
+</details>
+<details id="g-oculto">
+<summary>Archivo oculto</summary>
+<p>En Unix no hay un atributo «oculto»: es oculto todo archivo cuyo nombre empieza por un punto
+(<code>.gitignore</code>, <code>.ssh</code>, <code>.git</code>). <code>ls</code> no los enseña salvo
+que le pases <code>-a</code>. Cada directorio tiene además dos entradas ocultas especiales:
+<code>.</code> (él mismo) y <code>..</code> (su padre).</p>
+<p>Por eso midLS (ex04) no tiene que hacer nada para excluir los ocultos: basta con no poner
+<code>-a</code>. Y por eso tu clave SSH está en <code>~/.ssh/</code> y no la ves con un
+<code>ls</code> normal.</p>
+</details>
+<details id="g-inodo">
+<summary>Inodo</summary>
+<p>El <em>inodo</em> es la ficha que el sistema guarda de cada archivo: su tamaño, sus permisos, su
+dueño, sus fechas y dónde están sus bytes en el disco. Lo que <em>no</em> guarda es el nombre. Los
+nombres viven en los directorios, que son simples listas de parejas «nombre → número de inodo».</p>
+<p><code>ls -i</code> enseña el número de inodo. Al extraer el <code>exo2.tar</code> de ex02:</p>
+<pre><code>$ ls -li test3 test5
+30410950 -r-----r-- 2 xalara 2026_barcelona 1 Jun  1 23:44 test3
+30410950 -r-----r-- 2 xalara 2026_barcelona 1 Jun  1 23:44 test5</code></pre>
+<p>El mismo número: dos nombres para una sola ficha. El número concreto cambia en cada máquina; lo
+que importa es que coincide.</p>
+</details>
+<details id="g-hardlink">
+<summary>Enlace duro (hard link) y contador de enlaces</summary>
+<p>Un enlace duro es un segundo nombre para un inodo que ya existe. Se crea con <code>ln</code> (sin
+<code>-s</code>). Los dos nombres son iguales de «originales»: no hay uno principal y otro copia.
+La segunda columna de <code>ls -l</code> cuenta cuántos nombres apuntan al inodo, y el archivo solo
+se borra de verdad cuando ese contador llega a 0.</p>
+<p>En ex02, <code>ln test3 test5</code> deja los dos con un <code>2</code>. Un <code>chmod</code> o
+un <code>touch</code> sobre uno se ve en el otro, porque permisos y fechas están en el inodo, que es
+compartido. Los directorios también marcan 2 (test0, test2): su nombre en el padre y su propia
+entrada <code>.</code>. El tar lo guarda como enlace (<code>tar -tvf</code> pone <code>h</code> y
+«test5 link to test3»).</p>
+</details>
+<details id="g-symlink">
+<summary>Enlace simbólico (symlink)</summary>
+<p>Un enlace simbólico es un archivo aparte, con su propio inodo, cuyo contenido es una ruta. Al
+abrirlo, el sistema sigue esa ruta. Se crea con <code>ln -s</code>. Si borras el destino, el
+symlink se queda «colgando», apuntando a algo que no existe; con un enlace duro eso no puede
+pasar.</p>
+<p>En ex02, <code>test6 -&gt; test0</code> marca tamaño 5 porque guarda los 5 caracteres de
+<code>test0</code>, y sus permisos salen siempre <code>lrwxrwxrwx</code> porque en Linux los
+permisos de un symlink no se usan (cuentan los del destino). La <code>l</code> del principio indica
+el tipo. Muchos comandos siguen el enlace por defecto, por eso su fecha se cambia con
+<code>touch -h</code>.</p>
+</details>
+<details id="g-mtime">
+<summary>Fecha de modificación (mtime)</summary>
+<p>Cada inodo guarda varias fechas; la que enseña <code>ls -l</code> es la <em>mtime</em>, la última
+vez que cambió el contenido. <code>touch</code> la pone a la hora actual, y
+<code>touch -t MMDDhhmm</code> a la que tú digas (el año, si no lo pones, es el actual).</p>
+<p>En ex01, <code>touch -t 06012342 testShell00</code> da el «Jun 1 23:42». <code>ls -l</code>
+enseña la hora si la fecha es de los últimos seis meses y el año si es más antigua o está en el
+futuro: por eso el enunciado acepta el año en lugar de la hora. <code>ls -t</code> (ex04) ordena
+por esta fecha.</p>
+</details>
+
+<h3>Permisos</h3>
+<details id="g-permisos">
+<summary>Permisos <code>rwx</code>: propietario, grupo y resto</summary>
+<p>Los diez caracteres del principio de <code>ls -l</code> son el tipo (<code>-</code> archivo,
+<code>d</code> directorio, <code>l</code> symlink) y tres grupos de tres permisos: los del
+propietario, los del grupo y los del resto de usuarios. <code>r</code> es leer, <code>w</code>
+escribir y <code>x</code> ejecutar; un guion es que ese permiso no está.</p>
+<p>En un directorio cambian de sentido: <code>r</code> es poder listar sus nombres, <code>w</code>
+crear o borrar dentro, y <code>x</code> poder entrar y llegar a lo que contiene. test2 de ex02
+(<code>dr-x---r--</code>) se puede listar y recorrer por su dueño, pero no se pueden crear archivos
+dentro.</p>
+</details>
+<details id="g-octal">
+<summary>Notación octal de permisos (<code>chmod 455</code>)</summary>
+<p>Cada grupo de tres permisos se escribe como un número de 0 a 7 sumando <code>r</code>=4,
+<code>w</code>=2 y <code>x</code>=1. Son tres bits, y tres bits dan justo 8 valores: por eso es
+base 8, octal. Tres cifras, una por grupo.</p>
+<p><code>-r--r-xr-x</code> (ex01): <code>r--</code>=4, <code>r-x</code>=4+1=5,
+<code>r-x</code>=5, así que <code>chmod 455</code>. Al revés se comprueba con
+<code>stat -c '%a %A'</code>, que en ex02 da <code>715 drwx--xr-x</code> para test0 y
+<code>641 -rw-r----x</code> para test4.</p>
+</details>
+
+<h3>La terminal</h3>
+<details id="g-shell">
+<summary>Shell, <code>/bin/sh</code> y script</summary>
+<p>La <em>shell</em> es el programa que lee lo que escribes en la terminal y lanza los comandos. Hay
+varias: <code>sh</code> (la clásica, POSIX), <code>bash</code>, <code>zsh</code>… Un
+<em>script</em> es un archivo de texto con comandos, que la shell ejecuta línea a línea como si los
+teclearas.</p>
+<p>El enunciado exige que los ejercicios funcionen con <code>/bin/sh</code>, así que no se pueden
+usar extras propios de bash. <code>git_commit.sh</code> (ex05) es un script de una sola línea, y el
+enunciado lo lanza con <code>bash git_commit.sh</code>: pasando el archivo a la shell no hace falta
+que sea ejecutable.</p>
+</details>
+<details id="g-flags">
+<summary>Opciones (flags) de un comando</summary>
+<p>Las letras con guion que van detrás de un comando cambian lo que hace: <code>ls -l</code> da el
+listado largo, <code>ls -a</code> incluye ocultos. Se pueden juntar: <code>ls -tpm</code> es lo mismo
+que <code>ls -t -p -m</code>. Las largas llevan dos guiones y una palabra
+(<code>--format=%H</code>, <code>--others</code>).</p>
+<p>Casi todo Shell 00 se resuelve encontrando la opción justa: <code>-t</code> en
+<code>touch</code>, <code>-h</code> para que no siga el symlink, <code>-tpm</code> en
+<code>ls</code>, <code>-5</code> en <code>git log</code>.</p>
+</details>
+<details id="g-man">
+<summary><code>man</code> y RTFM</summary>
+<p><code>man comando</code> abre el manual de ese comando: qué hace y todas sus opciones. Se busca
+dentro con <code>/</code> y se sale con <code>q</code>. Las secciones van numeradas:
+<code>man 1 file</code> es el comando, <code>man 5 magic</code> el formato del archivo que lee.
+RTFM (<em>Read The F… Manual</em>) es la manera brusca de decir «está en el manual».</p>
+<p>El enunciado lo pide en ex04, ex05 y ex06, y da como única pista <code>man patch</code>,
+<code>man find</code> y <code>man file</code> en ex07, ex08 y ex09.</p>
+</details>
+<details id="g-stdout">
+<summary>Salida estándar, redirección (<code>&gt;</code>) y tubería (<code>|</code>)</summary>
+<p>Todo programa escribe su resultado en la <em>salida estándar</em> (stdout), que por defecto es
+la pantalla, y sus errores en la <em>salida de error</em> (stderr). <code>&gt; archivo</code>
+manda stdout a un archivo (lo crea o lo vacía antes). <code>&lt; archivo</code> hace lo contrario:
+el programa lee de ese archivo. <code>a | b</code> conecta stdout de <code>a</code> con la entrada
+de <code>b</code>.</p>
+<p>En el módulo: <code>printf 'Z\n' &gt; z</code> (ex00), <code>patch b &lt; sw.diff</code> (ex07),
+<code>bash git_commit.sh | cat -e</code> (ex05). Fuera de un repositorio,
+<code>git_commit.sh</code> no escribe nada en stdout: el «fatal: not a git repository» sale por
+stderr.</p>
+</details>
+<details id="g-glob">
+<summary>Comodines (<code>*</code>) y por qué se escapan</summary>
+<p><code>*</code> significa «cualquier cosa, incluso nada». Si lo escribes suelto, la shell lo
+sustituye <em>antes</em> de lanzar el comando por la lista de nombres que encajan: en ex02,
+<code>tar -cf exo2.tar *</code> recibe en realidad <code>test0 test1 … test6</code>. Esa expansión
+no incluye los ocultos.</p>
+<p>A veces quieres que el patrón le llegue intacto al comando. Por eso en ex08 va entre comillas,
+<code>-name "*~"</code>: es <code>find</code> quien lo compara con cada archivo, en cada
+subdirectorio. Lo mismo con <code>\(</code> y <code>\)</code>: la barra invertida evita que la
+shell trate los paréntesis como suyos y se los pasa a <code>find</code>.</p>
+</details>
+
+<h3>Herramientas</h3>
+<details id="g-tar">
+<summary><code>tar</code>: empaquetar archivos</summary>
+<p><code>tar</code> junta varios archivos en uno solo, guardando delante de cada uno una cabecera
+con su nombre, tamaño, permisos, dueño y fecha. Empaquetar no es comprimir: un <code>.tar</code>
+ocupa lo mismo que la suma de lo que lleva (o algo más). <code>-c</code> crea, <code>-x</code>
+extrae, <code>-t</code> lista, <code>-v</code> da detalle y <code>-f</code> dice qué archivo usar.</p>
+<p>Por eso ex01 y ex02 se entregan como tar: git no guarda permisos completos ni fechas, y el tar
+sí. <code>tar -tvf testShell00.tar</code> da
+<code>-r--r-xr-x … 40 2026-06-01 23:42 testShell00</code> sin extraer nada.</p>
+</details>
+<details id="g-ssh">
+<summary>SSH y clave pública / clave privada</summary>
+<p>SSH es el protocolo para conectarse a otra máquina de forma cifrada. En vez de contraseña puede
+usar un <em>par de claves</em>: la privada se queda en tu ordenador y la pública se reparte. Lo que
+firma la privada lo puede comprobar cualquiera con la pública, pero de la pública no se puede sacar
+la privada. Así el servidor sabe que eres tú sin que tu secreto salga nunca de tu máquina.</p>
+<p><code>ssh-keygen -t ed25519</code> (ex03) crea <code>~/.ssh/id_ed25519</code> (privada) e
+<code>id_ed25519.pub</code> (pública). La pública es una sola línea:
+<code>ssh-ed25519 AAAA… usuario@máquina</code>. Esa es la que se entrega y la que se sube a la intra
+para poder hacer <code>git push</code>. ed25519 es el algoritmo: firmas sobre una curva elíptica,
+con claves cortas.</p>
+</details>
+<details id="g-git">
+<summary>Git, commit y hash</summary>
+<p>Git guarda la historia de un proyecto como una cadena de <em>commits</em>: fotos del estado de
+los archivos con autor, fecha y mensaje. Cada commit se identifica por su <em>hash</em>, un número de
+40 cifras hexadecimales (SHA-1) calculado a partir de su contenido: si cambia algo, cambia el hash.
+<code>git log</code> enseña la historia, del más reciente al más antiguo.</p>
+<p>ex05 pide justo esos identificadores: <code>git log -5 --format=%H</code>, donde <code>%H</code>
+es el hash completo y <code>-5</code> limita a cinco. Por eso cada línea de su salida tiene 40
+caracteres.</p>
+</details>
+<details id="g-gitignore">
+<summary><code>.gitignore</code> y archivos ignorados</summary>
+<p>Un archivo del directorio puede estar <em>rastreado</em> (git lo sigue), <em>no rastreado</em>
+(está pero git no lo sigue) o <em>ignorado</em> (no rastreado y además encaja con una regla para
+no proponerlo nunca). Las reglas son patrones en <code>.gitignore</code>,
+<code>.git/info/exclude</code> o la configuración global: <code>*.o</code>, <code>.DS_Store</code>,
+<code>*~</code>…</p>
+<p>ex06 lista los ignorados con <code>git ls-files --others --ignored --exclude-standard</code>.
+Probado en un repo con <code>*.o</code> en el <code>.gitignore</code>, sale <code>x.o</code>; sin
+<code>--exclude-standard</code>, git se niega: «fatal: ls-files --ignored needs some exclude
+pattern».</p>
+</details>
+<details id="g-diff">
+<summary><code>diff</code> y <code>patch</code></summary>
+<p><code>diff a b</code> compara dos archivos línea a línea y escribe las instrucciones para
+convertir el primero en el segundo: qué líneas borrar y cuáles añadir, y dónde. <code>patch</code>
+lee esas instrucciones y las aplica. Son dos caras de lo mismo: un diff es la receta y patch la
+cocina.</p>
+<p>En ex07: <code>cp a b</code> y <code>patch b &lt; sw.diff</code>. Se comprueba volviendo a hacer el
+diff: el que sale de <code>diff a b</code> con el <code>b</code> entregado es idéntico byte a byte
+al <code>sw.diff</code> del material.</p>
+</details>
+<details id="g-find">
+<summary><code>find</code>: tests, acciones y operadores</summary>
+<p><code>find</code> recorre un directorio y todos sus subdirectorios y, para cada archivo, evalúa de
+izquierda a derecha una expresión. Tiene <em>tests</em> (<code>-type f</code>,
+<code>-name</code>), que dan verdadero o falso, y <em>acciones</em> (<code>-print</code>,
+<code>-delete</code>), que hacen algo. Dos piezas seguidas son un Y; <code>-o</code> es un O. El Y
+se aplica antes que el O, como la multiplicación antes que la suma.</p>
+<p>Por eso en ex08 hacen falta los paréntesis. Sin ellos,
+<code>find . -type f -name "*~" -o -name "#*#" -print -delete</code> se lee como
+«(archivo y acaba en <code>~</code>) o (empieza y acaba en <code>#</code>, imprime, borra)»: probado,
+solo borra los <code>#…#</code> y deja los <code>~</code> sin tocar.</p>
+</details>
+<details id="g-magia">
+<summary>Número mágico y offset</summary>
+<p>Muchos formatos empiezan con unos bytes fijos que los identifican: un PNG con
+<code>\x89PNG</code>, un ELF (los ejecutables de Linux) con <code>\x7fELF</code>, un PDF con
+<code>%PDF</code>. Son los <em>números mágicos</em>. El <em>offset</em> es la posición en bytes
+desde el principio del archivo, contando desde 0. <code>file</code> mira esos bytes, no la
+extensión.</p>
+<p>ex09 inventa un formato: la cadena <code>42</code> en el offset 42. La línea de
+<code>ft_magic</code> va separada por tabuladores: offset, tipo, valor y mensaje. Con
+<code>printf '%042d42' 0 &gt; f42</code> se crean 42 ceros y luego <code>42</code>, y
+<code>file -m ft_magic f42</code> responde <code>f42: 42 file</code>.</p>
+</details>
+<details id="g-moulinette">
+<summary>Moulinette y Vogsphere</summary>
+<p><em>Vogsphere</em> es el servidor git de 42: lo que hay en tu repositorio cuando se cierra la
+entrega es lo único que cuenta. La <em>Moulinette</em> es el programa que lo corrige solo,
+comparando tu salida con la esperada sin ninguna tolerancia: un byte de más o de menos es un
+ejercicio suspendido. Además, si un ejercicio falla, los siguientes ya no cuentan.</p>
+<p>En Shell 00 eso quiere decir: exactamente los archivos pedidos con exactamente esos nombres
+(<code>id_ed25519_pub</code>, no <code>id_ed25519.pub</code>), nada más en el directorio, y el
+<code>\n</code> final de <code>z</code> en su sitio.</p>
+</details>
+</div>
+
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>Z</h2>
 <div class="meta"><span>Entregable: <b>z</b></span><span>«Solo quienes dominan lo básico saben mostrar una Z»</span></div>
-<p>Crear un archivo <code>z</code> tal que <code>cat z</code> muestre <code>Z</code> y un salto de línea.</p>
+<p>Crear un archivo <code>z</code> tal que <code>cat z</code> muestre <code>Z</code> y un <a href="#g-salto">salto de línea</a>.</p>
 <pre><code>$ printf 'Z\n' &gt; z</code></pre>
 <p>El archivo contiene exactamente dos bytes: <code>Z</code> (0x5A) y <code>\n</code> (0x0A).
-Parece una tontería, pero ya obliga a entender qué es un archivo (una secuencia de bytes, sin
-magia), qué hace <code>cat</code> (volcarlos a la salida estándar) y que el salto de línea final
-<em>es un byte más</em> — la Moulinette distingue un archivo de 1 byte de uno de 2.</p>
+Parece una tontería, pero ya obliga a entender qué es un <a href="#g-archivo">archivo</a> (una secuencia de bytes, sin
+magia), qué hace <code>cat</code> (volcarlos a la <a href="#g-stdout">salida estándar</a>) y que el salto de línea final
+<em>es un byte más</em> — la <a href="#g-moulinette">Moulinette</a> distingue un archivo de 1 byte de uno de 2.</p>
 </div>
 
 <div class="card" id="ex01">
@@ -67,20 +329,20 @@ $ touch -t 06012342 testShell00     # Jun 1, 23:42
 $ tar -cf testShell00.tar testShell00</code></pre>
 <ul>
 <li><strong>Tamaño (40)</strong>: cualquier contenido vale mientras ocupe 40 bytes.</li>
-<li><strong>Permisos</strong>: <code>-r--r-xr-x</code> en octal es <code>455</code>
+<li><strong><a href="#g-permisos">Permisos</a></strong>: <code>-r--r-xr-x</code> en <a href="#g-octal">octal</a> es <code>455</code>
 (r=4, w=2, x=1 por cada tercio: propietario <code>r--</code>=4, grupo <code>r-x</code>=5,
 resto <code>r-x</code>=5).</li>
-<li><strong>Fecha</strong>: <code>touch -t MMDDhhmm</code> falsifica la fecha de modificación.
+<li><strong>Fecha</strong>: <code>touch -t MMDDhhmm</code> falsifica la <a href="#g-mtime">fecha de modificación</a>.
 El 23:42 no es casual: en 42 casi todas las horas de ejemplo son las 4:2 o las 23:42.</li>
 </ul>
-<p>El tar conserva permisos y fechas en sus cabeceras, así que el evaluador puede comprobar todo
+<p>El <a href="#g-tar">tar</a> conserva permisos y fechas en sus cabeceras, así que el evaluador puede comprobar todo
 sin extraer siquiera: <code>tar -tvf testShell00.tar</code>.</p>
 </div>
 
 <div class="card" id="ex02">
 <h2><span class="ex">ex02</span>Pues toma dos tazas</h2>
 <div class="meta"><span>Entregable: <b>exo2.tar</b></span></div>
-<p>Reproducir exactamente este listado y empaquetarlo (<code>tar -cf exo2.tar *</code>):</p>
+<p>Reproducir exactamente este listado y <a href="#g-tar">empaquetarlo</a> (<code>tar -cf exo2.tar *</code>):</p>
 <pre><code>drwx--xr-x 2 XX XX XX Jun 1 20:47 test0
 -rwx--xr-- 1 XX XX  4 Jun 1 21:46 test1
 dr-x---r-- 2 XX XX XX Jun 1 22:45 test2
@@ -101,10 +363,10 @@ $ touch -t 06012245 test2; touch -t 06012344 test3 test5
 $ touch -t 06012343 test4; touch -h -t 06012220 test6
 $ tar -cf exo2.tar *</code></pre>
 <p>La trampa del ejercicio está en la <strong>segunda columna</strong>: test3 y test5 marcan
-<code>2</code> enlaces y comparten tamaño, permisos y fecha. No son dos archivos: son
-<strong>el mismo inodo con dos nombres</strong> (<code>ln</code> sin <code>-s</code>). Al hacer
+<code>2</code> <a href="#g-hardlink">enlaces</a> y comparten tamaño, <a href="#g-permisos">permisos</a> y fecha. No son dos archivos: son
+<strong>el mismo <a href="#g-inodo">inodo</a> con dos nombres</strong> (<code>ln</code> sin <code>-s</code>). Al hacer
 <code>chmod</code> o <code>touch</code> sobre uno, el otro "cambia" también — porque no hay otro.
-test6 en cambio es un enlace simbólico: un archivo distinto cuyo contenido es la ruta
+test6 en cambio es un <a href="#g-symlink">enlace simbólico</a>: un archivo distinto cuyo contenido es la ruta
 <code>test0</code> (por eso su tamaño es 5, los 5 caracteres de "test0", y sus permisos son
 siempre <code>rwxrwxrwx</code>). Detalle fino: la fecha del symlink se cambia con
 <code>touch -h</code>, porque <code>touch</code> a secas seguiría el enlace y tocaría test0.</p>
@@ -117,10 +379,10 @@ tazas»: pediste aprender permisos y aquí tienes siete archivos de golpe, con h
 <div class="meta"><span>Entregable: <b>id_ed25519_pub</b></span></div>
 <pre><code>$ ssh-keygen -t ed25519
 $ cp ~/.ssh/id_ed25519.pub ex03/id_ed25519_pub</code></pre>
-<p>Generar un par de claves SSH con el algoritmo <strong>ed25519</strong> (curva elíptica moderna:
+<p>Generar un par de claves <a href="#g-ssh">SSH</a> con el algoritmo <strong>ed25519</strong> (curva elíptica moderna:
 claves cortas, rápidas y sin las dudas históricas de RSA). El ejercicio tiene una función muy
 práctica: la clave pública se sube a la intra y es la que te permite hacer <code>git push</code>
-a Vogsphere el resto de la piscine. Quien no entiende este ejercicio no entrega nada más.</p>
+a <a href="#g-moulinette">Vogsphere</a> el resto de la piscine. Quien no entiende este ejercicio no entrega nada más.</p>
 <p>La lección real está en la advertencia del enunciado: entender la diferencia entre la clave
 <strong>pública</strong> (se comparte, cifra/verifica) y la <strong>privada</strong> (no sale de
 tu máquina jamás). Entregar la privada por error es el clásico suspenso doloroso — de ahí que el
@@ -131,11 +393,11 @@ elegido al azar".</p>
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>midLS</h2>
 <div class="meta"><span>Entregable: <b>midLS</b></span></div>
-<p>Un archivo con <em>el comando</em> que lista el directorio actual: sin ocultos, ordenado por
-fecha de modificación, separado por coma y espacio, y con <code>/</code> al final de los
+<p>Un archivo con <em>el comando</em> que lista el directorio actual: sin <a href="#g-oculto">ocultos</a>, ordenado por
+fecha de <a href="#g-mtime">modificación</a>, separado por coma y espacio, y con <code>/</code> al final de los
 directorios.</p>
 <pre><code>ls -tpm</code></pre>
-<p>Tres flags hacen todo el trabajo — el ejercicio es un RTFM (<em>Read The F… Manual</em>) puro:</p>
+<p>Tres <a href="#g-flags">flags</a> hacen todo el trabajo — el ejercicio es un <a href="#g-man">RTFM</a> (<em>Read The F… Manual</em>) puro:</p>
 <ul>
 <li><code>-t</code> — ordena por fecha de modificación (más reciente primero).</li>
 <li><code>-p</code> — añade <code>/</code> a los directorios.</li>
@@ -149,18 +411,18 @@ hago X?" casi siempre está en <code>man ls</code>, no en escribir un script.</p
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>Git commit</h2>
 <div class="meta"><span>Entregable: <b>git_commit.sh</b></span></div>
-<p>Script que muestra los hashes de los últimos 5 commits del repositorio.</p>
+<p><a href="#g-shell">Script</a> que muestra los hashes de los últimos 5 <a href="#g-git">commits</a> del repositorio.</p>
 <pre><code>git log -5 --format=%H</code></pre>
 <p><code>git log</code> con <code>--format=%H</code> imprime solo el hash completo de cada commit
 (sin autor, fecha ni mensaje), y <code>-5</code> corta en cinco. El enunciado enseña la salida
-pasada por <code>cat -e</code> (que marca los finales de línea con <code>$</code>) para dejar
-claro que no puede haber espacios ni líneas extra: la Moulinette compara la salida literal.</p>
+pasada por <code>cat -e</code> (que marca los <a href="#g-salto">finales de línea</a> con <code>$</code>) para dejar
+claro que no puede haber espacios ni líneas extra: la <a href="#g-moulinette">Moulinette</a> compara la salida literal.</p>
 </div>
 
 <div class="card" id="ex06">
 <h2><span class="ex">ex06</span>gitignore</h2>
 <div class="meta"><span>Entregable: <b>git_ignore.sh</b></span></div>
-<p>Script que lista los archivos ignorados por el repositorio git actual.</p>
+<p><a href="#g-shell">Script</a> que lista los archivos <a href="#g-gitignore">ignorados</a> por el repositorio git actual.</p>
 <pre><code>git ls-files --others --ignored --exclude-standard</code></pre>
 <p>Descomponiendo: <code>ls-files</code> es el comando de "fontanería" (<em>plumbing</em>) de git
 para consultar su índice; <code>--others</code> pide archivos no rastreados;
@@ -175,10 +437,10 @@ git no es solo <code>add/commit/push</code>, tiene una API de consulta enorme.</
 <div class="meta"><span>Entregable: <b>b</b></span><span>Material: <b>a</b>, <b>sw.diff</b></span></div>
 <p>El proyecto da un archivo <code>a</code> — el texto de apertura de <em>Star Wars: Episodio IV</em> —
 y un <code>sw.diff</code>. Hay que crear <code>b</code> tal que <code>diff a b</code> produzca
-exactamente ese <code>sw.diff</code>. La pista del enunciado (<code>man patch</code>) lo dice todo:</p>
+exactamente ese <code>sw.diff</code>. La pista del enunciado (<a href="#g-man"><code>man patch</code></a>) lo dice todo:</p>
 <pre><code>$ cp a b
 $ patch b &lt; sw.diff</code></pre>
-<p>Un diff no es una descripción: es un <strong>programa de edición</strong> que <code>patch</code>
+<p>Un diff no es una descripción: es un <strong><a href="#g-diff">programa de edición</a></strong> que <code>patch</code>
 sabe ejecutar. Aplicado sobre la copia de <code>a</code>, produce el <code>b</code> buscado — y se
 verifica cerrando el círculo: <code>diff a b</code> regenera un diff idéntico al original.
 Así funcionan por dentro los parches de kernel, los <em>pull requests</em> y el propio git.</p>
@@ -195,7 +457,7 @@ restaura "la dictadura". Vándalos.</div>
 o que empiezan y terminan con <code>#</code>, mostrarlos y borrarlos.</p>
 <pre><code>find . -type f \( -name "*~" -o -name "#*#" \) -print -delete</code></pre>
 <ul>
-<li><code>\( … -o … \)</code> — agrupación con OR; los paréntesis se escapan para que no los
+<li><code>\( … -o … \)</code> — agrupación con <a href="#g-find">OR</a>; los paréntesis <a href="#g-glob">se escapan</a> para que no los
 interprete el shell.</li>
 <li><code>-print -delete</code> — las "acciones" de find se encadenan en orden: primero imprime,
 luego borra. Por eso no hace falta <code>;</code> — <em>find ya es un lenguaje en sí mismo</em>,
@@ -212,7 +474,7 @@ y autosaves que va dejando Emacs — el ejercicio es, literalmente, limpiar la b
 que contienen la cadena <code>42</code> en el byte 42.</p>
 <pre><code>42	string	42	42 file</code></pre>
 <p>¿Cómo sabe <code>file</code> que algo es un PNG, un PDF o un ELF sin mirar la extensión?
-Consultando una base de datos de "números mágicos": patrones de bytes en posiciones fijas
+Consultando una base de datos de "<a href="#g-magia">números mágicos</a>": patrones de bytes en posiciones fijas
 (un PNG empieza por <code>\x89PNG</code>, un ELF por <code>\x7fELF</code>…). El formato de esa
 base de datos (<code>man 5 magic</code>) es: <em>offset, tipo, valor, mensaje</em>. Nuestra línea
 dice: en el offset 42, si hay la cadena "42", el archivo es un "42 file".</p>
@@ -222,6 +484,103 @@ f42: 42 file</code></pre>
 <div class="trasfondo"><b>El título</b> — Cita de <em>Arrested Development</em>: GOB Bluth,
 mago fracasado, corrige indignado a su hermano cada vez que llama "trucos" a sus ilusiones.
 Aplica: la detección de tipos de archivo parece magia y es solo mirar bytes en el sitio justo.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a donde está
+explicado. En Shell 00 casi todo se defiende enseñando el comando en la terminal, así que ten a mano
+<code>ls -l</code>, <code>tar -tvf</code> y <code>cat -e</code>. Están agrupadas en: archivos y
+permisos, SSH y git, y comandos de una línea. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Archivos y permisos</h3>
+<details id="q-z">
+<summary>¿Cuántos bytes tiene <code>z</code>? ¿Valdría <code>printf 'Z' &gt; z</code>?</summary>
+<p>Dos: <code>Z</code> y el salto de línea (<code>od -c z</code> lo enseña). Sin el
+<code>\n</code> serían 1 byte, <code>cat z</code> dejaría el prompt pegado a la Z y la Moulinette lo
+daría por malo. <code>echo Z &gt; z</code> sí vale, porque echo añade el <code>\n</code>.
+→ <a href="#ex00">ex00</a>, <a href="#g-salto">salto de línea</a></p>
+</details>
+<details id="q-455">
+<summary>¿De dónde sale el 455 de <code>-r--r-xr-x</code>?</summary>
+<p>Cada grupo de tres letras es una cifra sumando r=4, w=2 y x=1: propietario <code>r--</code>=4,
+grupo <code>r-x</code>=5, resto <code>r-x</code>=5. → <a href="#ex01">ex01</a>,
+<a href="#g-octal">octal</a></p>
+</details>
+<details id="q-fecha">
+<summary>¿Cómo has puesto la fecha? ¿Y si sale el año en lugar de la hora?</summary>
+<p>Con <code>touch -t 06012342</code> (mes, día, hora, minuto). <code>ls -l</code> enseña el año en
+vez de la hora cuando la fecha tiene más de seis meses o está en el futuro; el enunciado lo acepta.
+Lo que cuenta es lo que guarda el tar: <code>tar -tvf testShell00.tar</code> da
+<code>2026-06-01 23:42</code>. → <a href="#ex01">ex01</a>, <a href="#g-mtime">mtime</a></p>
+</details>
+<details id="q-hardlink">
+<summary>¿Por qué test3 y test5 tienen un 2 en la segunda columna?</summary>
+<p>Porque son el mismo archivo con dos nombres: <code>ln test3 test5</code> crea un enlace duro. El
+2 es el número de nombres que apuntan a ese inodo, y <code>ls -i</code> enseña que el número de
+inodo coincide. Por eso comparten permisos, tamaño y fecha sin hacer nada. → <a href="#ex02">ex02</a>,
+<a href="#g-hardlink">enlace duro</a></p>
+</details>
+<details id="q-symlink">
+<summary>¿Por qué test6 mide 5 y cómo le cambias la fecha?</summary>
+<p>Es un enlace simbólico y su contenido es la ruta <code>test0</code>, cinco caracteres. Para la
+fecha, <code>touch -h</code>: sin <code>-h</code>, <code>touch</code> sigue el enlace y cambia la de
+test0. → <a href="#ex02">ex02</a>, <a href="#g-symlink">symlink</a></p>
+</details>
+
+<h3>SSH y git</h3>
+<details id="q-privada">
+<summary>¿Qué clave has entregado? ¿Qué pasa si se te escapa la privada?</summary>
+<p>La pública, <code>id_ed25519.pub</code>, copiada como <code>id_ed25519_pub</code>: una línea que
+empieza por <code>ssh-ed25519</code>. La privada no sale nunca de tu máquina; con ella cualquiera
+podría hacerse pasar por ti ante Vogsphere, así que si se filtra hay que generar otro par y cambiar
+la de la intra. → <a href="#ex03">ex03</a>, <a href="#g-ssh">SSH</a></p>
+</details>
+<details id="q-gitlog">
+<summary>¿Qué hace <code>git_commit.sh</code> fuera de un repositorio?</summary>
+<p>Nada por stdout: git escribe «fatal: not a git repository» por stderr y sale con error. Dentro
+de un repo saca cinco hashes de 40 caracteres, uno por línea y sin nada más, como en el ejemplo con
+<code>cat -e</code>. → <a href="#ex05">ex05</a>, <a href="#g-stdout">stdout y stderr</a></p>
+</details>
+<details id="q-ignored">
+<summary>¿Para qué sirve cada opción de <code>git ls-files</code> en ex06?</summary>
+<p><code>--others</code>: los no rastreados. <code>--ignored</code>: de esos, los que encajan con
+una regla. <code>--exclude-standard</code>: que las reglas sean las de <code>.gitignore</code>,
+<code>.git/info/exclude</code> y la configuración global. Sin esta última git no sabe qué reglas usar
+y responde «fatal: ls-files --ignored needs some exclude pattern». → <a href="#ex06">ex06</a>,
+<a href="#g-gitignore">.gitignore</a></p>
+</details>
+
+<h3>Comandos de una línea</h3>
+<details id="q-midls">
+<summary>En midLS, ¿cómo quitas los ocultos?</summary>
+<p>No hace falta: <code>ls</code> no los enseña salvo con <code>-a</code>, y el enunciado dice
+«haz solo lo que se te pide». <code>-t</code> ordena por fecha, <code>-p</code> pone la
+<code>/</code> a los directorios y <code>-m</code> separa con coma y espacio. → <a href="#ex04">ex04</a>,
+<a href="#g-oculto">oculto</a></p>
+</details>
+<details id="q-parentesis">
+<summary>En <code>clean</code>, ¿qué pasa si quitas los paréntesis?</summary>
+<p>Que el Y de <code>find</code> va antes que el O y la expresión queda como «(archivo y acaba en
+<code>~</code>) o (<code>#…#</code>, imprime, borra)». Los <code>~</code> se encuentran pero no se
+imprimen ni se borran. Los paréntesis llevan <code>\</code> para que la shell no se los quede, y los
+patrones van entre comillas para que no los expanda ella. → <a href="#ex08">ex08</a>,
+<a href="#g-find">find</a></p>
+</details>
+<details id="q-patch">
+<summary>¿Cómo has creado <code>b</code> y cómo sabes que está bien?</summary>
+<p>Con <code>cp a b</code> y <code>patch b &lt; sw.diff</code>. Se comprueba al revés:
+<code>diff a b</code> tiene que dar exactamente el <code>sw.diff</code> del material (se puede
+comparar con <code>diff</code> o <code>cmp</code> y no debe salir nada). → <a href="#ex07">ex07</a>,
+<a href="#g-diff">diff y patch</a></p>
+</details>
+<details id="q-magic">
+<summary>¿Cómo pruebas <code>ft_magic</code>?</summary>
+<p>Creando un archivo con <code>42</code> en el byte 42, <code>printf '%042d42' 0 &gt; f42</code>, y
+pasándole el archivo mágico a <code>file</code> con <code>-m</code>:
+<code>file -m ft_magic f42</code> responde <code>f42: 42 file</code>. Los campos de la línea van
+separados por tabuladores. → <a href="#ex09">ex09</a>, <a href="#g-magia">número mágico</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — Shell 00 · <a href="001_shell01.html">continuar con Shell 01 →</a></footer>

@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -25,6 +27,7 @@ pipes, filtros, variables de entorno y los comandos que convierten la terminal e
 de montaje. 9 ejercicios (ex00–ex08).</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — Exam</a></li>
   <li><a href="#ex01">ex01 — print_groups</a></li>
   <li><a href="#ex02">ex02 — find_sh</a></li>
@@ -34,6 +37,7 @@ de montaje. 9 ejercicios (ex00–ex08).</p>
   <li><a href="#ex06">ex06 — Skip</a></li>
   <li><a href="#ex07">ex07 — r_dwssap</a></li>
   <li><a href="#ex08">ex08 — add_chelou</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>La introducción</b> — Si Shell 00 abría con Mike Oldfield, Shell 01
@@ -42,6 +46,284 @@ su pelaje de dos capas, sus 5–15 kg, sus madrigueras con entrada submarina. Co
 enunciado: «Las nutrias son adorables». Nada de esto se usa en ningún ejercicio. El absurdo
 gratuito en los prólogos es tradición de los subjects de 42 — y un primer filtro de lectura:
 aprender a distinguir lo decorativo de lo evaluable.</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>Shell 01 da por sabidas muchas piezas de Unix: cómo viaja el texto de un comando a otro, qué
+hace el shell con las comillas y los <code>$</code>, y media docena de herramientas de texto. Aquí
+está cada una explicada desde cero, con un ejemplo sacado de los propios ejercicios (las salidas
+están ejecutadas). En el resto de la página, la primera vez que sale uno de estos términos en cada
+tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Flujos y tuberías</h3>
+<details id="g-flujos">
+<summary>Entrada estándar, salida estándar y salida de error</summary>
+<p>Todo programa de Unix arranca con tres canales abiertos: la <em>entrada estándar</em>
+(stdin, descriptor 0), de donde lee; la <em>salida estándar</em> (stdout, descriptor 1), donde
+escribe sus resultados; y la <em>salida de error</em> (stderr, descriptor 2), para los mensajes de
+error. Por defecto stdin es el teclado y las dos salidas son la pantalla, pero el shell puede
+conectarlos a archivos (<code>&gt;</code>, <code>&lt;</code>) o a otros programas
+(<code>|</code>).</p>
+<p>Casi todos los comandos del módulo leen de stdin si no les das un archivo: <code>tr</code>,
+<code>sed</code>, <code>awk</code>, <code>sort</code>, <code>rev</code>, <code>wc</code>. Por eso
+se pueden encadenar. La Moulinette compara lo que tu script deja en stdout.</p>
+</details>
+<details id="g-pipe">
+<summary>Tubería (pipe, <code>|</code>)</summary>
+<p><code>a | b</code> ejecuta los dos comandos a la vez y conecta la salida estándar de
+<code>a</code> con la entrada estándar de <code>b</code>: lo que <code>a</code> imprime no sale
+por pantalla, lo lee <code>b</code>. Se pueden encadenar tantos como quieras, y a la cadena entera
+se la llama <em>pipeline</em>.</p>
+<pre><code>$ printf 'b\na\nc\n' | sort -r
+c
+b
+a</code></pre>
+<p>Es la pieza central del módulo: ex01 tiene tres etapas y ex07, ocho. stderr no pasa por la
+tubería; solo stdout.</p>
+<p><b>De dónde viene:</b> la idea es de Doug McIlroy, en Bell Labs; Ken Thompson la añadió a Unix
+en 1973, junto con la barra vertical para escribirla.</p>
+</details>
+<details id="g-filtro">
+<summary>Filtro</summary>
+<p>Un programa que lee texto por stdin, lo transforma y escribe el resultado por stdout, sin
+preguntar nada ni guardar nada. <code>grep</code> quita líneas, <code>cut</code> se queda con
+columnas, <code>tr</code> cambia caracteres, <code>sort</code> ordena, <code>rev</code> invierte.
+Cada uno hace una sola cosa, y los problemas grandes se resuelven poniendo varios en fila con
+tuberías. Es la llamada <em>filosofía Unix</em>: «escribe programas que hagan una cosa y la hagan
+bien, y que trabajen juntos».</p>
+</details>
+<details id="g-salto">
+<summary>Salto de línea (<code>\n</code>) y <code>cat -e</code></summary>
+<p>El final de una línea no es «nada»: es un byte, el 10 en ASCII, que se escribe
+<code>\n</code>. <code>printf 'hola'</code> produce 4 bytes y <code>printf 'hola\n'</code>, 5.
+Como el salto no se ve, el enunciado pasa las salidas por <code>cat -e</code>, que pinta un
+<code>$</code> en cada final de línea:</p>
+<pre><code>$ printf 'hola\n' | cat -e
+hola$</code></pre>
+<p>Si en un ejemplo el prompt <code>$&gt;</code> aparece pegado a la salida, como en ex01, ex05 y
+ex07, es que no hay salto final. La Moulinette compara byte a byte, así que un <code>\n</code> de
+más o de menos es un fallo.</p>
+</details>
+
+<h3>El shell</h3>
+<details id="g-script">
+<summary>Script de shell, <code>/bin/sh</code> y permiso de ejecución</summary>
+<p>Un script es un archivo de texto con comandos, los mismos que escribirías a mano, que un
+<em>shell</em> (el intérprete de comandos) lee y ejecuta de arriba abajo. Hay varios shells: bash,
+zsh, dash… El enunciado pide que los de este módulo funcionen con <code>/bin/sh</code>, el shell
+POSIX básico (en Ubuntu, <code>/bin/sh</code> es dash), así que no valen extras propios de bash.</p>
+<p>Hay dos maneras de lanzarlo: <code>sh find_sh.sh</code>, que solo necesita poder leerlo, o
+<code>./find_sh.sh</code>, como en los ejemplos del enunciado, que además necesita el permiso de
+ejecución (<code>chmod +x</code>); sin él da <code>Permission denied</code>. Una primera línea
+<code>#!/bin/sh</code> (el <em>shebang</em>) indica con qué intérprete ejecutarlo en ese segundo
+caso; si falta, lo ejecuta el mismo shell desde el que lo lanzas. Los scripts de este repo no
+lo llevan.</p>
+</details>
+<details id="g-variable">
+<summary>Variable de entorno y expansión con <code>$</code></summary>
+<p>Una variable de entorno es un par nombre=valor que un proceso hereda del que lo lanzó. Así se
+le pasan datos a un script sin argumentos: la Moulinette hace algo como
+<code>FT_USER=daemon ./print_groups.sh</code>, y dentro del script <code>$FT_USER</code> vale
+<code>daemon</code>.</p>
+<p>Escribir <code>$NOMBRE</code> (o <code>${NOMBRE}</code>) es una <em>expansión</em>: antes de
+ejecutar la línea, el shell cambia ese trozo por el valor. Las llaves sirven para marcar dónde
+acaba el nombre, como en <code>"${FT_LINE1},${FT_LINE2}p"</code> de ex07, que con
+<code>FT_LINE1=7</code> y <code>FT_LINE2=15</code> se convierte en <code>7,15p</code> antes de
+llegar a <code>sed</code>. En este módulo se usan <code>FT_USER</code>, <code>FT_LINE1</code>,
+<code>FT_LINE2</code>, <code>FT_NBR1</code> y <code>FT_NBR2</code>.</p>
+</details>
+<details id="g-comodin">
+<summary>Comodines (<code>*</code>, <code>?</code>)</summary>
+<p>Antes de ejecutar un comando, el shell busca palabras con <code>*</code> (cualquier secuencia
+de caracteres) o <code>?</code> (un carácter cualquiera) y las cambia por los nombres de archivo
+del directorio que encajan. Es el propio shell quien lo hace, no el comando. Si nada encaja,
+<code>sh</code> deja la palabra tal cual:</p>
+<pre><code>$ echo *.sh       # en un directorio con a.sh
+a.sh
+$ echo *.zzz
+*.zzz</code></pre>
+<p>Por eso en ex02 el patrón va entre comillas, <code>find . -name '*.sh'</code>: tiene que
+llegarle a <code>find</code> el texto <code>*.sh</code>, no la lista de archivos del directorio
+actual. Y por eso el nombre de ex05, lleno de <code>*</code> y <code>?</code>, no se puede escribir
+sin comillas.</p>
+</details>
+<details id="g-comillas">
+<summary>Comillas simples, dobles y barra invertida</summary>
+<p>Son la manera de decirle al shell «esto no lo interpretes». Hay tres niveles:</p>
+<ul>
+<li><b>Comillas simples</b> <code>'…'</code>: nada se interpreta, ni <code>$</code>, ni
+<code>*</code>, ni <code>\</code>. La única limitación es que dentro no puede haber otra comilla
+simple.</li>
+<li><b>Comillas dobles</b> <code>"…"</code>: se siguen expandiendo <code>$</code> y
+<code>$( )</code>, pero no los comodines ni los espacios, y <code>\</code> solo es especial
+delante de <code>$</code>, <code>`</code>, <code>"</code>, <code>\</code> y el salto de
+línea.</li>
+<li><b>Barra invertida</b> <code>\</code> fuera de comillas: protege solo el carácter
+siguiente.</li>
+</ul>
+<pre><code>$ X=42; echo '$X' "$X"
+$X 42</code></pre>
+<p>Las comillas dobles alrededor de una variable (<code>"$FT_USER"</code>) hacen que su valor
+llegue entero como un solo argumento aunque tenga espacios o asteriscos. El nombre de ex05 combina
+todo: va entre simples, y cada comilla simple del nombre se escribe <code>'\''</code> (cerrar,
+comilla protegida, abrir).</p>
+</details>
+<details id="g-sustitucion">
+<summary>Sustitución de comandos <code>$( )</code></summary>
+<p><code>$(comando)</code> ejecuta el comando y pone en su lugar lo que ha impreso (quitando los
+saltos de línea del final). Sirve para guardar un resultado en una variable:</p>
+<pre><code>$ echo "hoy: $(echo uno dos | tr ' ' '-')"
+hoy: uno-dos</code></pre>
+<p>En ex08, <code>n1=$(printf '%s' "$FT_NBR1" | sed …)</code> guarda en <code>n1</code> el número
+ya traducido a dígitos normales, para usarlo después en la línea de <code>bc</code>.</p>
+</details>
+
+<h3>Herramientas de texto</h3>
+<details id="g-regex">
+<summary>Expresión regular y anclas <code>^</code> y <code>$</code></summary>
+<p>Una expresión regular (regex) es un patrón que describe un conjunto de textos. Lo usan
+<code>grep</code>, <code>sed</code> y <code>awk</code>. Las piezas de este módulo: un carácter
+normal se representa a sí mismo; <code>.</code> es cualquier carácter; <code>*</code> repite lo
+anterior cero o más veces (así que <code>.*</code> es «cualquier cosa»); <code>\.</code> es un
+punto de verdad; <code>^</code> ancla al principio de la línea y <code>$</code> al final.</p>
+<p>Ejemplos del módulo: <code>^#</code> son las líneas que empiezan por <code>#</code> (ex07),
+<code>\.sh$</code> es «.sh» justo al final (ex02) y <code>.*/</code> es todo hasta la última
+barra, porque <code>*</code> se come todo lo que puede. Ojo: el <code>*</code> de una regex y el
+<a href="#g-comodin">comodín</a> del shell se parecen pero no son lo mismo.</p>
+</details>
+<details id="g-sed">
+<summary><code>sed</code> y la sustitución <code>s/…/…/</code></summary>
+<p><code>sed</code> (<em>stream editor</em>) aplica órdenes de edición a cada línea que le llega.
+La más usada es <code>s/patrón/reemplazo/</code>: cambia la primera coincidencia del patrón; con
+<code>g</code> al final (<code>s/…/…/g</code>), todas. Varias órdenes se separan con
+<code>;</code>, y el separador <code>/</code> puede ser otro carácter, como <code>|</code>:</p>
+<pre><code>$ echo ./sub/file2.sh | sed 's|.*/||; s|\.sh$||'
+file2</code></pre>
+<p>Con <code>-n</code> no imprime nada salvo lo que se le pida con <code>p</code>:
+<code>sed -n '2,3p'</code> saca solo las líneas 2 y 3, que es lo que hace ex07 con
+<code>FT_LINE1</code> y <code>FT_LINE2</code>.</p>
+</details>
+<details id="g-awk">
+<summary><code>awk</code>: patrón, acción, campos y <code>NR</code></summary>
+<p><code>awk</code> es un pequeño lenguaje para procesar texto línea a línea. Un programa awk es
+una lista de <code>patrón {acción}</code>: para cada línea que cumple el patrón se ejecuta la
+acción. Si falta el patrón, vale para todas; si falta la acción, se imprime la línea. Además awk
+parte cada línea en <em>campos</em> separados por espacios: <code>$1</code>, <code>$2</code>… y
+cuenta las líneas en <code>NR</code> (<em>number of records</em>).</p>
+<pre><code>$ printf '  ether 52:54:00:12:34:56  txqueuelen 1000\n' | awk '/ether/ {print $2}'
+52:54:00:12:34:56
+$ printf 'uno\ndos\ntres\ncuatro\n' | awk 'NR % 2 == 1'
+uno
+tres</code></pre>
+<p>El primero es ex04 (los espacios del principio no cuentan como campo) y el segundo, ex06.</p>
+<p><b>De dónde viene:</b> el nombre son las iniciales de sus autores, Aho, Weinberger y Kernighan,
+que lo escribieron en Bell Labs en 1977.</p>
+</details>
+<details id="g-campo">
+<summary>Campo y delimitador (<code>cut</code>)</summary>
+<p>Muchos archivos de texto son tablas: cada línea es un registro y un carácter fijo, el
+<em>delimitador</em>, separa sus <em>campos</em>. <code>cut -d: -f1</code> parte cada línea por
+<code>:</code> y se queda con el primer campo:</p>
+<pre><code>$ echo 'root:x:0:0:root:/root:/bin/bash' | cut -d: -f1
+root</code></pre>
+<p>A diferencia de awk, cut no agrupa delimitadores: dos <code>:</code> seguidos son un campo
+vacío entre medias. Es lo que hace falta con <a href="#g-passwd"><code>/etc/passwd</code></a>.</p>
+</details>
+<details id="g-tr">
+<summary><code>tr</code>: cambiar o borrar caracteres</summary>
+<p><code>tr</code> (<em>translate</em>) trabaja carácter a carácter, no con palabras ni
+patrones. <code>tr 'abc' 'xyz'</code> cambia cada a por x, cada b por y y cada c por z;
+<code>tr -d 'abc'</code> borra esos caracteres.</p>
+<pre><code>$ echo "a b c" | tr ' ' ','
+a,b,c</code></pre>
+<p>En ex01 hace las dos cosas: cambia espacios por comas y borra el <code>\n</code> final. En ex07
+cambia los saltos de línea por <code>@</code> para tener todo en una línea, y <code>sed</code>
+remata.</p>
+</details>
+<details id="g-find">
+<summary><code>find</code>: condiciones y acciones</summary>
+<p><code>find</code> recorre un directorio y todos sus subdirectorios y, para cada entrada, evalúa
+una expresión. Las <em>condiciones</em> son verdaderas o falsas: <code>-type f</code> (archivo
+regular), <code>-type d</code> (directorio), <code>-name '*.sh'</code> (el nombre encaja con el
+patrón). Puestas una detrás de otra se unen con «y»; <code>-o</code> es «o». Si no se da ninguna
+acción, imprime la ruta de lo que cumple la expresión, una por línea y empezando por el propio
+<code>.</code>.</p>
+<p>Un enlace simbólico no es ni <code>-type f</code> ni <code>-type d</code> (es
+<code>-type l</code>), así que ni ex02 ni ex03 lo cuentan.</p>
+</details>
+
+<h3>Sistema y números</h3>
+<details id="g-grupo">
+<summary>Usuario, grupo e <code>id</code></summary>
+<p>Unix identifica a cada usuario con un número (UID) y un nombre. Los <em>grupos</em> son
+conjuntos de usuarios que comparten permisos: cada usuario tiene un grupo principal y puede estar
+en otros (en Ubuntu, por ejemplo, <code>sudo</code> o <code>adm</code>). <code>id usuario</code>
+enseña todo; <code>id -G</code> solo los números de grupo y <code>id -Gn</code> sus nombres,
+separados por espacios. En ex01, para <code>FT_USER=daemon</code> el enunciado espera
+<code>daemon,bin</code>; la lista depende de cada máquina.</p>
+</details>
+<details id="g-passwd">
+<summary><code>/etc/passwd</code></summary>
+<p>El archivo donde Unix guarda la lista de cuentas, una por línea, con siete campos separados por
+<code>:</code>: nombre, contraseña (hoy siempre <code>x</code>: la de verdad, cifrada, está en
+<code>/etc/shadow</code>), UID, GID, descripción, directorio personal y shell. Puede tener líneas
+de comentario que empiezan por <code>#</code> (en macOS, las primeras). ex07 trabaja solo con el
+primer campo, el nombre.</p>
+</details>
+<details id="g-mac">
+<summary>Dirección MAC e interfaz de red</summary>
+<p>Una <em>interfaz</em> es cada punto por el que la máquina se conecta a una red: la tarjeta
+Ethernet, el wifi, el lazo local <code>lo</code>, las interfaces virtuales que crean las máquinas
+virtuales o Docker. La <em>dirección MAC</em> es el identificador de 48 bits de una interfaz,
+escrito como seis bytes en hexadecimal: <code>52:54:00:12:34:56</code>. Los tres primeros bytes
+identifican al fabricante. <code>ifconfig</code> la muestra en la línea que empieza por
+<code>ether</code>; <code>lo</code> no tiene.</p>
+</details>
+<details id="g-base">
+<summary>Base de numeración</summary>
+<p>Una base es cuántos símbolos se usan para escribir números. En base 10 hay diez (0–9) y cada
+posición vale diez veces más que la de su derecha; en base 5 hay cinco y cada posición vale cinco
+veces más: <code>10</code> en base 5 es 5 y <code>4321</code> en base 5 es
+4·125 + 3·25 + 2·5 + 1 = 586. A partir de base 11 hacen falta símbolos nuevos, y por convención
+se usan letras: A = 10, B = 11, C = 12…</p>
+<p>Los símbolos son una convención: nada impide usar <code>'</code>, <code>\</code>,
+<code>"</code>, <code>?</code>, <code>!</code> en vez de 0–4. Eso es todo lo que tiene de raro
+ex08: el primer ejemplo, traducido, es <code>10321201</code> (88926) más <code>14120222</code>
+(145062) en base 5, que suman 233988, que en base 13 se escribe <code>82671</code> y, con el
+alfabeto de salida, <code>Salut</code>.</p>
+</details>
+<details id="g-bc">
+<summary><code>bc</code>, la calculadora del shell</summary>
+<p><code>bc</code> lee operaciones por stdin y escribe el resultado. Trabaja con enteros de
+cualquier tamaño y tiene dos variables especiales: <code>ibase</code>, la base en la que lee los
+números, y <code>obase</code>, la base en la que los escribe.</p>
+<pre><code>$ echo "obase=16; 255" | bc
+FF
+$ echo "obase=13; ibase=5; 4 + 4" | bc
+8
+$ echo "ibase=5; obase=13; 4 + 4" | bc
+10</code></pre>
+<p>La tercera es la trampa: una vez puesto <code>ibase=5</code>, el <code>13</code> de
+<code>obase=13</code> se lee en base 5 y vale 8, así que el resultado sale en base 8. Por eso
+ex08 fija <code>obase</code> primero. Para bases mayores que 10, bc usa las cifras 0–9 y las
+letras A–F.</p>
+</details>
+<details id="g-modulo">
+<summary>Operador <code>%</code> (resto)</summary>
+<p><code>a % b</code> es el resto de dividir <code>a</code> entre <code>b</code>: 7 % 2 = 1,
+8 % 2 = 0. Con <code>% 2</code> se distingue par (resto 0) de impar (resto 1). En ex06,
+<code>NR % 2 == 1</code> selecciona las líneas 1, 3, 5…, y en ex07, <code>NR % 2 == 0</code>,
+las 2, 4, 6…</p>
+</details>
+<details id="g-moulinette">
+<summary>Moulinette</summary>
+<p>El corrector automático de 42 (en francés, el pasapurés). Tras la evaluación entre pares,
+ejecuta tus scripts con sus propias variables de entorno y compara la salida con la esperada, byte
+a byte, sin margen de discusión. Que funcione «en tu máquina con tu usuario» no basta: tiene que
+dar exactamente la salida pedida con otros datos. Tampoco puede haber en el repositorio archivos
+que el enunciado no pide.</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>Exam</h2>
@@ -56,18 +338,18 @@ es parte del sistema — Vogsphere no perdona.</p>
 <div class="card" id="ex01">
 <h2><span class="ex">ex01</span>print_groups</h2>
 <div class="meta"><span>Entregable: <b>print_groups.sh</b></span></div>
-<p>Mostrar los grupos del usuario indicado en la variable de entorno <code>FT_USER</code>,
+<p>Mostrar los grupos del usuario indicado en la <a href="#g-variable">variable de entorno</a> <code>FT_USER</code>,
 separados por comas, sin espacios.</p>
 <pre><code>id -Gn "$FT_USER" | tr ' ' ',' | tr -d '\n'</code></pre>
 <ul>
-<li><code>id -Gn usuario</code> — imprime los nombres (<code>-n</code>) de todos los grupos
+<li><code><a href="#g-grupo">id -Gn usuario</a></code> — imprime los nombres (<code>-n</code>) de todos los grupos
 (<code>-G</code>) del usuario, separados por espacios.</li>
-<li><code>tr ' ' ','</code> — cambia cada espacio por una coma.</li>
-<li><code>tr -d '\n'</code> — elimina el salto final: en el ejemplo del enunciado el prompt
+<li><a href="#g-tr"><code>tr ' ' ','</code></a> — cambia cada espacio por una coma.</li>
+<li><code>tr -d '\n'</code> — elimina <a href="#g-salto">el salto final</a>: en el ejemplo del enunciado el prompt
 aparece pegado a la salida (<code>…libvirt$&gt;</code>), señal de que no hay <code>\n</code>.</li>
 </ul>
 <p>Primera aparición de dos ideas clave del módulo: los scripts se parametrizan por
-<strong>variables de entorno</strong> (la Moulinette exporta <code>FT_USER</code> antes de ejecutar),
+<strong>variables de entorno</strong> (la <a href="#g-moulinette">Moulinette</a> exporta <code>FT_USER</code> antes de ejecutar),
 y <code>tr</code> es el transformador de caracteres más barato del sistema.</p>
 </div>
 
@@ -77,9 +359,9 @@ y <code>tr</code> es el transformador de caracteres más barato del sistema.</p>
 <p>Buscar todos los <code>.sh</code> del directorio actual y subdirectorios y mostrar solo el
 nombre, sin ruta y sin extensión.</p>
 <pre><code>find . -type f -name '*.sh' | sed 's|.*/||; s|\.sh$||'</code></pre>
-<p><code>find</code> localiza (<code>./sub/file2.sh</code>) y <code>sed</code> recorta con dos
+<p><a href="#g-find"><code>find</code></a> localiza (<code>./sub/file2.sh</code>) y <a href="#g-sed"><code>sed</code></a> recorta con dos
 sustituciones encadenadas: <code>s|.*/||</code> borra todo hasta la última barra (fuera la ruta) y
-<code>s|\.sh$||</code> borra la extensión anclada al final. Detalle de estilo: usar <code>|</code>
+<code>s|\.sh$||</code> borra la extensión <a href="#g-regex">anclada al final</a>. Detalle de estilo: usar <code>|</code>
 como delimitador de sed evita el baile de contrabarras al trabajar con rutas — el clásico
 <code>s/\/ruta\/…//</code> ilegible.</p>
 </div>
@@ -90,7 +372,7 @@ como delimitador de sed evita el baile de contrabarras al trabajar con rutas —
 <p>Contar archivos regulares y directorios (incluido <code>.</code>) del directorio actual hacia
 abajo.</p>
 <pre><code>find . -type f -o -type d | wc -l</code></pre>
-<p><code>find</code> con dos condiciones unidas por <code>-o</code> (OR) emite una línea por
+<p><a href="#g-find"><code>find</code></a> con dos condiciones unidas por <code>-o</code> (OR) emite una línea por
 coincidencia — y <code>.</code> siempre es la primera —, y <code>wc -l</code> las cuenta.
 El patrón <em>generador | contador</em> es el pan de cada día en Unix: no se cuenta "a mano",
 se produce un flujo y se mide. (Guiño del enunciado: la salida de ejemplo es, cómo no,
@@ -100,10 +382,10 @@ se produce un flujo y se mide. (Guiño del enunciado: la salida de ejemplo es, c
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>MAC</h2>
 <div class="meta"><span>Entregable: <b>MAC.sh</b></span></div>
-<p>Mostrar las direcciones MAC de la máquina, una por línea.</p>
+<p>Mostrar las <a href="#g-mac">direcciones MAC</a> de la máquina, una por línea.</p>
 <pre><code>ifconfig | awk '/ether/ {print $2}'</code></pre>
 <p>En la salida de <code>ifconfig</code>, cada interfaz física tiene una línea
-<code>ether xx:xx:xx:xx:xx:xx …</code>. El one-liner de <code>awk</code> hace las dos cosas a la
+<code>ether xx:xx:xx:xx:xx:xx …</code>. El one-liner de <a href="#g-awk"><code>awk</code></a> hace las dos cosas a la
 vez: <code>/ether/</code> filtra esas líneas y <code>{print $2}</code> imprime su segundo campo,
 la MAC. Es el ejercicio-presentación de awk: patrón + acción, campos ya troceados gratis.
 (La alternativa moderna sería <code>ip link | awk '/link\/ether/ {print $2}'</code> —
@@ -113,13 +395,13 @@ pero el enunciado manda: <code>man ifconfig</code>.)</p>
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>¿Puedes crearlo?</h2>
 <div class="meta"><span>Entregable: <b>"\?$*'MaRViN'*$?\"</b></span></div>
-<p>Crear un archivo que contenga exactamente <code>42</code> (2 bytes, sin salto) y cuyo nombre
+<p>Crear un archivo que contenga exactamente <code>42</code> (2 bytes, <a href="#g-salto">sin salto</a>) y cuyo nombre
 sea, literalmente:</p>
 <pre><code>"\?$*'MaRViN'*$?\"</code></pre>
 <pre><code>$ printf '42' &gt; '"\?$*'\''MaRViN'\''*$?\"'</code></pre>
-<p>El nombre es una mina anti-shell: comillas dobles, backslashes, <code>$</code>, <code>*</code>,
+<p>El nombre es una mina anti-shell: comillas dobles, backslashes, <code>$</code>, <a href="#g-comodin"><code>*</code></a>,
 <code>?</code> y comillas simples — todo con significado especial. La solución es entender de una
-vez el <strong>quoting</strong>: entre comillas simples <em>nada</em> se interpreta… excepto la
+vez el <a href="#g-comillas"><strong>quoting</strong></a>: entre comillas simples <em>nada</em> se interpreta… excepto la
 propia comilla simple, que no puede aparecer. El truco <code>'\''</code> cierra la cadena, mete
 una comilla escapada y la reabre. Para Unix el nombre es válido sin más: cualquier byte salvo
 <code>/</code> y NUL puede formar parte de un nombre de archivo. (En Windows/NTFS este archivo
@@ -136,8 +418,8 @@ Douglas Adams de la piscine, y no será la última.</div>
 <p>Ejecutar <code>ls -l</code> pero mostrando solo una de cada dos líneas, empezando por la
 primera.</p>
 <pre><code>ls -l | awk 'NR % 2 == 1'</code></pre>
-<p><code>NR</code> es el número de línea que awk lleva contado. La condición
-<code>NR % 2 == 1</code> (impar) selecciona 1ª, 3ª, 5ª… y, como no hay bloque <code>{…}</code>,
+<p><a href="#g-awk"><code>NR</code></a> es el número de línea que awk lleva contado. La condición
+<code>NR % 2 == 1</code> <a href="#g-modulo">(impar)</a> selecciona 1ª, 3ª, 5ª… y, como no hay bloque <code>{…}</code>,
 awk aplica su acción por defecto: imprimir. Un programa completo en 11 caracteres. La versión
 sed equivalente — <code>sed -n 'p;n'</code> — también cabe en un tuit; elegir herramienta es
 parte del aprendizaje.</p>
@@ -146,7 +428,7 @@ parte del aprendizaje.</p>
 <div class="card" id="ex07">
 <h2><span class="ex">ex07</span>r_dwssap</h2>
 <div class="meta"><span>Entregable: <b>r_dwssap.sh</b></span></div>
-<p>El gran pipeline del módulo. Sobre <code>/etc/passwd</code>: quitar comentarios, quedarse con
+<p>El gran <a href="#g-pipe">pipeline</a> del módulo. Sobre <a href="#g-passwd"><code>/etc/passwd</code></a>: quitar comentarios, quedarse con
 una de cada dos líneas (empezando por la segunda), invertir cada nombre de usuario, ordenarlos en
 alfabético inverso, quedarse con los que caen entre las líneas <code>FT_LINE1</code> y
 <code>FT_LINE2</code>, unirlos con <code>", "</code> y terminar con un punto.</p>
@@ -155,18 +437,18 @@ alfabético inverso, quedarse con los que caen entre las líneas <code>FT_LINE1<
   | tr '\n' '@' | sed 's/@$/./; s/@/, /g'</code></pre>
 <p>Siete etapas, cada una un comando mínimo que hace una sola cosa:</p>
 <ol>
-<li><code>grep -v '^#'</code> — fuera comentarios.</li>
+<li><a href="#g-regex"><code>grep -v '^#'</code></a> — fuera comentarios.</li>
 <li><code>awk 'NR%2==0'</code> — líneas pares (la "una de cada dos, empezando por la segunda").</li>
-<li><code>cut -d: -f1</code> — primer campo de cada línea (el usuario; <code>:</code> separa los
+<li><a href="#g-campo"><code>cut -d: -f1</code></a> — primer campo de cada línea (el usuario; <code>:</code> separa los
 7 campos de passwd).</li>
 <li><code>rev</code> — invierte cada línea carácter a carácter.</li>
 <li><code>sort -r</code> — orden alfabético inverso.</li>
 <li><code>sed -n "${FT_LINE1},${FT_LINE2}p"</code> — imprime solo el rango de líneas pedido
-(sed acepta rangos numéricos directamente).</li>
-<li><code>tr</code> + <code>sed</code> final — sustituye los saltos por un marcador, convierte el
+(<a href="#g-sed">sed</a> acepta rangos numéricos directamente).</li>
+<li><a href="#g-tr"><code>tr</code></a> + <code>sed</code> final — sustituye los saltos por un marcador, convierte el
 último en <code>.</code> y el resto en <code>", "</code>.</li>
 </ol>
-<p>Es la tesis del módulo entero: problemas aparentemente enrevesados se descomponen en filtros
+<p>Es la tesis del módulo entero: problemas aparentemente enrevesados se descomponen en <a href="#g-filtro">filtros</a>
 triviales conectados por pipes. El enunciado avisa: «sigue los pasos exactamente en el orden
 indicado» — cambiar el orden de sort y el recorte de rango da resultados distintos.</p>
 <div class="trasfondo"><b>El nombre</b> — <code>r_dwssap</code> es <code>passwd_r</code> escrito
@@ -177,8 +459,8 @@ nacional en 42.</div>
 <div class="card" id="ex08">
 <h2><span class="ex">ex08</span>add_chelou</h2>
 <div class="meta"><span>Entregable: <b>add_chelou.sh</b></span></div>
-<p>El jefe final. Sumar dos números que llegan en variables de entorno, cada uno escrito en una
-base inventada, y mostrar el resultado en una tercera base inventada:</p>
+<p>El jefe final. Sumar dos números que llegan en <a href="#g-variable">variables de entorno</a>, cada uno escrito en una
+<a href="#g-base">base inventada</a>, y mostrar el resultado en una tercera base inventada:</p>
 <ul>
 <li><code>FT_NBR1</code> viene en base 5 con los símbolos <code>' \ " ? !</code> (es decir:
 <code>'</code>=0, <code>\</code>=1, <code>"</code>=2, <code>?</code>=3, <code>!</code>=4).</li>
@@ -192,12 +474,12 @@ echo "obase=13; ibase=5; $n1 + $n2" | bc \
   | sed 's/0/g/g; s/1/t/g; s/2/a/g; s/3/i/g; s/4/o/g; s/5/ /g;
          s/6/l/g; s/7/u/g; s/8/S/g; s/9/n/g; s/A/e/g; s/B/m/g; s/C/f/g'</code></pre>
 <p>La clave es darse cuenta de que una "base rara" solo es un cambio de alfabeto: con
-<code>sed</code> se traducen los símbolos a dígitos normales, <strong><code>bc</code></strong>
+<a href="#g-sed"><code>sed</code></a> se traducen los símbolos a dígitos normales, <strong><a href="#g-bc"><code>bc</code></a></strong>
 (la calculadora de precisión arbitraria de Unix) hace la conversión de bases y la suma de verdad
 (<code>ibase=5</code>, <code>obase=13</code> — el obase se fija primero, cuando aún se lee en
 decimal), y un último <code>sed</code> traduce los dígitos del resultado (0–9, A, B, C — así
 imprime bc las bases hasta 16) al alfabeto final. Los símbolos elegidos (<code>\</code>,
-<code>"</code>, <code>?</code>…) obligan además a repasar el quoting del ex05: escapar el
+<code>"</code>, <code>?</code>…) obligan además a repasar el <a href="#g-comillas">quoting</a> del ex05: escapar el
 backslash <em>dentro</em> de un sed <em>dentro</em> de unas comillas dobles tiene su miga
 (<code>s/\\\\/1/g</code>).</p>
 <p>¿Y los alfabetos no son arbitrarios? El de salida, leído con sus 13 símbolos en orden de valor,
@@ -207,6 +489,108 @@ ejercicio está montado para que el resultado salude.</p>
 <div class="trasfondo"><b>El nombre</b> — <em>chelou</em> es <em>verlan</em> (el argot francés de
 invertir sílabas) de <em>louche</em>: "raro", "turbio". Literalmente: "suma rara". El verlan es al
 francés lo que <code>r_dwssap</code> a passwd — hasta el argot del enunciado invierte cosas.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a donde está
+explicado. En Shell 01 casi todo se defiende ejecutando: ten preparada una carpeta de pruebas con
+algunos <code>.sh</code> y saber cambiar las variables de entorno en la misma línea del comando.
+Están agrupadas en: los comandos, casos límite y entrega. Antes de mirar la respuesta, intenta
+contestar tú.</p>
+
+<h3>Los comandos</h3>
+<details id="q-pipe">
+<summary>¿Qué hace exactamente el <code>|</code> de print_groups?</summary>
+<p>Conecta la salida estándar de un comando con la entrada estándar del siguiente, y los tres
+comandos se ejecutan a la vez. <code>id -Gn</code> escribe los grupos separados por espacios,
+el primer <code>tr</code> los recibe y cambia espacios por comas, y el segundo borra el salto de
+línea. Solo pasa stdout: los errores siguen saliendo por pantalla.
+→ <a href="#g-pipe">tubería</a>, <a href="#ex01">ex01</a></p>
+</details>
+<details id="q-tr-n">
+<summary>¿Por qué quitas el salto de línea en print_groups?</summary>
+<p>Porque el ejemplo del enunciado lo muestra así: el prompt sale pegado a la lista
+(<code>…libvirt$&gt;</code>). La Moulinette compara byte a byte y el <code>\n</code> es un byte
+más. En cambio find_sh y count_files sí lo llevan: en sus ejemplos con <code>cat -e</code> cada
+línea acaba en <code>$</code>. → <a href="#g-salto">salto de línea</a>, <a href="#ex01">ex01</a></p>
+</details>
+<details id="q-sed">
+<summary>Explícame el <code>sed</code> de find_sh.</summary>
+<p>Son dos sustituciones seguidas, con <code>|</code> como separador para no escapar las barras.
+<code>s|.*/||</code> borra desde el principio hasta la última <code>/</code> (el <code>.*</code>
+se come todo lo que puede), y <code>s|\.sh$||</code> borra <code>.sh</code> solo si está al final.
+<code>./sub/file2.sh</code> queda en <code>file2</code>. → <a href="#g-sed">sed</a>,
+<a href="#ex02">ex02</a></p>
+</details>
+<details id="q-orden">
+<summary>En r_dwssap, ¿da igual el orden de los pasos?</summary>
+<p>No, y el enunciado lo avisa. Invertir los nombres antes o después de ordenar cambia el orden
+(se ordena <code>toor</code>, no <code>root</code>), y recortar <code>FT_LINE1</code>–<code>FT_LINE2</code>
+antes de ordenar se quedaría con otros usuarios. La selección de líneas pares también tiene que
+hacerse después de quitar los comentarios, o cambian las parejas. → <a href="#ex07">ex07</a></p>
+</details>
+<details id="q-obase">
+<summary>En add_chelou, ¿por qué <code>obase</code> va antes que <code>ibase</code>?</summary>
+<p>Porque bc lee cada número en la base de entrada vigente. Si primero pones <code>ibase=5</code>,
+el <code>13</code> de <code>obase=13</code> se lee en base 5 y vale 8:
+<code>echo "ibase=5; obase=13; 4 + 4" | bc</code> da <code>10</code> (8 en base 8) en vez de
+<code>8</code>. → <a href="#g-bc">bc</a>, <a href="#ex08">ex08</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-comillas-find">
+<summary>¿Por qué <code>'*.sh'</code> entre comillas en find_sh?</summary>
+<p>Para que el patrón le llegue a <code>find</code> sin tocar. Sin comillas, si en el directorio
+actual hay un <code>a.sh</code>, el shell cambia <code>*.sh</code> por <code>a.sh</code> antes de
+ejecutar, y <code>find . -name a.sh</code> solo encuentra ese: probado en una carpeta con
+<code>a.sh</code>, <code>sub/b.sh</code> y <code>sub/x y.sh</code>, sin comillas sale solo
+<code>./a.sh</code>. → <a href="#g-comodin">comodines</a>, <a href="#ex02">ex02</a></p>
+</details>
+<details id="q-ftuser">
+<summary>¿Y por qué <code>"$FT_USER"</code> con comillas dobles?</summary>
+<p>Para que el valor llegue a <code>id</code> como un solo argumento pase lo que pase. Con las
+dobles se sigue expandiendo el <code>$</code>, pero los espacios y los <code>*</code> del valor ya
+no se interpretan. Con simples, <code>id</code> recibiría el texto literal <code>$FT_USER</code>.
+→ <a href="#g-comillas">comillas</a>, <a href="#g-variable">variables de entorno</a></p>
+</details>
+<details id="q-count">
+<summary>¿count_files cuenta el <code>.</code>? ¿Y los enlaces simbólicos?</summary>
+<p>El <code>.</code> sí, como pide el enunciado: <code>find</code> lo imprime el primero, porque
+es un directorio. Los enlaces simbólicos no: no son <code>-type f</code> ni <code>-type d</code>
+sino <code>-type l</code>. Lo mismo pasa con un <code>enlace.sh</code> en find_sh.
+→ <a href="#g-find">find</a>, <a href="#ex03">ex03</a></p>
+</details>
+<details id="q-mac">
+<summary>¿Por qué MAC.sh saca más de una dirección?</summary>
+<p>Porque saca una por cada interfaz con línea <code>ether</code>: la tarjeta de red, el wifi y
+también las interfaces virtuales (en un puesto con máquinas virtuales aparece, por ejemplo, una
+<code>52:54:00:…</code>, el prefijo de QEMU/libvirt). El lazo local <code>lo</code> no tiene MAC.
+El enunciado pide «las direcciones MAC», en plural, una por línea. → <a href="#g-mac">MAC</a>,
+<a href="#ex04">ex04</a></p>
+</details>
+<details id="q-marvin">
+<summary>¿Cómo demuestras que el archivo de ex05 tiene solo <code>42</code>?</summary>
+<p>Con <code>ls -l</code>, que da un tamaño de 2 bytes, o con <code>cat -e</code>, que enseña
+<code>42</code> sin <code>$</code> al final. Para no tener que escribir el nombre se puede usar un
+comodín, como hace el enunciado: <code>ls -lRa *MaRV* | cat -e</code>.
+→ <a href="#g-comillas">comillas</a>, <a href="#ex05">ex05</a></p>
+</details>
+
+<h3>Entrega</h3>
+<details id="q-sh">
+<summary>¿Con qué se ejecutan los scripts? ¿Necesitan permisos?</summary>
+<p>El enunciado pide que funcionen con <code>/bin/sh</code>, así que nada exclusivo de bash. Si se
+lanzan como en los ejemplos, <code>./find_sh.sh</code>, necesitan permiso de ejecución; con
+<code>sh find_sh.sh</code>, no. Ojo: en este repo solo <code>print_groups.sh</code> tiene la
+<code>x</code>, los demás están a <code>-rw-r--r--</code>, y <code>./skip.sh</code> daría
+<code>Permission denied</code>. → <a href="#g-script">script</a></p>
+</details>
+<details id="q-extra">
+<summary>¿Puedo dejar en el repo mis archivos de prueba?</summary>
+<p>No. El enunciado dice que solo se entregan los archivos pedidos y la Moulinette lo comprueba.
+Las carpetas de prueba, fuera del repositorio. → <a href="#g-moulinette">Moulinette</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — Shell 01 · <a href="000_shell00.html">← volver a Shell 00</a></footer>

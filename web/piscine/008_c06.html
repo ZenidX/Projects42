@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -25,26 +27,197 @@ función <code>main</code>. El tema es uno solo — los argumentos de la línea 
 <code>argc</code> y <code>argv</code>, de dónde salen y qué puedes hacer con ellos.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_print_program_name</a></li>
   <li><a href="#ex01">ex01 — ft_print_params</a></li>
   <li><a href="#ex02">ex02 — ft_rev_params</a></li>
   <li><a href="#ex03">ex03 — ft_sort_params</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>El concepto que vertebra el módulo: quién llama a tu <code>main</code></b> —
-Hasta ahora escribías <em>funciones</em> que evaluaba un tester. Aquí escribes <em>programas</em>, y un
+Hasta ahora escribías <em>funciones</em> que evaluaba un tester. Aquí escribes <a href="#g-programa"><em>programas</em></a>, y un
 programa en C empieza en <code>main</code>… pero <code>main</code> no se ejecuta solo: lo llama el
 sistema operativo cuando tecleas <code>./a.out uno dos tres</code>. Y le pasa dos argumentos igual que
-tú se los pasas a cualquier función: <code>int main(int argc, char **argv)</code>. <code>argc</code>
+tú se los pasas a cualquier función: <a href="#g-main"><code>int main(int argc, char **argv)</code></a>. <a href="#g-argc"><code>argc</code></a>
 (<em>argument count</em>) es cuántas palabras había en la línea, contando el propio nombre del programa.
-<code>argv</code> (<em>argument vector</em>) es un array de cadenas con esas palabras: <code>argv[0]</code>
+<a href="#g-argv"><code>argv</code></a> (<em>argument vector</em>) es un array de cadenas con esas palabras: <code>argv[0]</code>
 es siempre el nombre con el que se invocó el programa, <code>argv[1]</code> el primer argumento real, y
 así hasta <code>argv[argc-1]</code>; por convención <code>argv[argc]</code> es <code>NULL</code>. No hay
-magia: es el mismo shell que trabajaste en Shell 00/01 el que trocea tu línea por espacios y te la
+magia: es el mismo <a href="#g-shell">shell</a> que trabajaste en Shell 00/01 el que trocea tu línea por espacios y te la
 entrega. Todo <code>ls -la</code>, <code>grep patrón fichero</code> o <code>cc -Wall main.c</code> que
 has escrito llega a su <code>main</code> exactamente así. Este módulo es donde por fin ves el otro lado
 del mostrador. (El prólogo reproduce la escena de los bolos de <em>El Gran Lebowski</em>, con Walter
 gritando "¡apunta un cero!"; puro relleno marca de la casa.)</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 06 es el primer módulo en el que entregas programas y no funciones sueltas, y casi todo gira
+alrededor de cómo le llegan a <code>main</code> las palabras que escribes en la terminal. Aquí está
+cada término explicado desde cero y con un ejemplo sacado del propio módulo. En el resto de la
+página, la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su
+entrada.</p>
+
+<h3>Programas y línea de comandos</h3>
+<details id="g-programa">
+<summary>Programa frente a función</summary>
+<p>Una <em>función</em> es un trozo de código que alguien llama desde otro código: hasta C 05, la
+llamaba el <code>main</code> de pruebas de la Moulinette. Un <em>programa</em> es un ejecutable
+completo que se lanza desde la terminal, y para eso necesita su propia función <code>main</code>,
+que es por donde empieza a ejecutarse.</p>
+<p>El enunciado lo dice en cada ejercicio de C 06: «tu archivo .c deberá contener una función main».
+Es al revés que en los módulos anteriores, donde dejar un <code>main</code> sin comentar hacía
+fallar la entrega.</p>
+</details>
+<details id="g-main">
+<summary>main y su prototipo con argumentos</summary>
+<p><code>main</code> es la función que el sistema llama al arrancar el programa. Tiene dos formas
+válidas: <code>int main(void)</code>, si no te interesan los argumentos, e
+<code>int main(int argc, char **argv)</code>, si sí. Los nombres <code>argc</code> y
+<code>argv</code> son una costumbre, no una obligación, pero todo el mundo los usa.</p>
+<p>Los cuatro ejercicios usan la segunda forma, porque los cuatro leen la línea de comandos.</p>
+</details>
+<details id="g-argc">
+<summary>argc (argument count)</summary>
+<p>Un <code>int</code> con cuántas palabras tenía la línea de comandos, <em>contando el nombre del
+programa</em>. Por eso nunca vale menos de 1 en un uso normal: <code>./ft_print_params</code> a
+secas tiene <code>argc == 1</code>, y <code>./ft_print_params a b</code> tiene
+<code>argc == 3</code>.</p>
+<p>Es lo que pone el límite de los bucles: ex01 recorre de 1 a <code>argc - 1</code>, ex02 al revés.</p>
+</details>
+<details id="g-argv">
+<summary>argv (argument vector) y char **</summary>
+<p>Un array de cadenas con esas palabras. Su tipo, <code>char **</code>, se lee «puntero a puntero
+a <code>char</code>»: <code>argv</code> apunta a la primera casilla de un array, y cada casilla es
+un <code>char *</code> que apunta a una cadena. Así, <code>argv[1]</code> es una cadena entera y
+<code>argv[1][0]</code> es su primer carácter.</p>
+<pre><code>./ft_print_params uno dos
+
+argv[0] → "./ft_print_params"
+argv[1] → "uno"
+argv[2] → "dos"
+argv[3] → NULL          (argc == 3)</code></pre>
+<p>El estándar de C garantiza que <code>argv[argc]</code> es <code>NULL</code>: es un centinela,
+como el <code>'\0'</code> de las cadenas pero un nivel más arriba.</p>
+</details>
+<details id="g-argv0">
+<summary>argv[0]: el nombre del programa</summary>
+<p>La primera casilla de <code>argv</code> no es un argumento tuyo sino el nombre con el que se
+lanzó el programa, <em>tal como se escribió</em>. No es «el nombre del archivo»: si lo llamas con
+la ruta completa, sale la ruta completa, y si lo llamas a través de un enlace simbólico, sale el
+nombre del enlace.</p>
+<p>Con el ex00 del repo: <code>./ft_print_program_name</code> imprime
+<code>./ft_print_program_name</code>; lanzado con su ruta absoluta, imprime la ruta absoluta; y con
+un enlace <code>hola</code> que apunta a él, <code>./hola</code> imprime <code>./hola</code>.</p>
+</details>
+<details id="g-shell">
+<summary>Cómo trocea el shell la línea</summary>
+<p>No es tu programa quien separa las palabras: lo hace el shell (bash, zsh) antes de lanzarlo. Corta
+por espacios, salvo lo que va entre comillas, que queda como una sola palabra; las comillas en sí
+no llegan al programa. Una cadena vacía entre comillas, <code>''</code>, es un argumento de
+longitud 0.</p>
+<pre><code>$ ./ft_print_params uno "dos tres" '' cuatro | cat -e
+uno$
+dos tres$
+$
+cuatro$</code></pre>
+<p>Cuatro argumentos, <code>argc == 5</code>. El tercero es una línea vacía, y es correcto: existe,
+solo que no tiene caracteres.</p>
+</details>
+<details id="g-retorno">
+<summary>Valor de retorno de main y código de salida</summary>
+<p>Lo que devuelve <code>main</code> es el <em>código de salida</em> del programa, que el shell
+guarda en <code>$?</code>. Por convención, 0 significa «todo bien» y cualquier otro valor, error.
+Desde C99, si <code>main</code> llega a su llave final sin <code>return</code>, devuelve 0
+igualmente.</p>
+<p>ex01, ex02 y ex03 del repo no tienen <code>return</code> en <code>main</code>, y
+<code>echo $?</code> tras <code>./ft_print_params</code> da 0. ex00 sí lo pone.</p>
+</details>
+
+<h3>Cadenas y punteros</h3>
+<details id="g-cadena">
+<summary>Cadena en C y el terminador '\0'</summary>
+<p>En C una cadena es una fila de <code>char</code> seguidos en memoria que termina en el carácter
+<code>'\0'</code> (el byte 0). No guarda su longitud: para saber dónde acaba hay que recorrerla hasta
+encontrar ese byte. <code>"uno"</code> ocupa 4 bytes: <code>'u' 'n' 'o' '\0'</code>.</p>
+<p>Es lo que hace <code>ft_putstr</code> en los cuatro archivos del repo: <code>while (str[i])</code>
+escribe un carácter tras otro hasta dar con el 0.</p>
+</details>
+<details id="g-write">
+<summary>write y la salida estándar</summary>
+<p><code>write(fd, dirección, n)</code> escribe <code>n</code> bytes a partir de una dirección en el
+<em>descriptor de archivo</em> <code>fd</code>. El 1 es la salida estándar (la terminal, o lo que
+venga después de un <code>|</code>). No sabe nada de cadenas: escribe exactamente los bytes que le
+digas.</p>
+<p>Es la única función autorizada en C 06. <code>write(1, &amp;str[i], 1)</code> escribe un carácter;
+<code>write(1, "\n", 1)</code>, el salto de línea.</p>
+</details>
+<details id="g-void">
+<summary>(void)argc y las flags -Wextra -Werror</summary>
+<p>Con <code>-Wextra</code> el compilador avisa de los parámetros que no se usan, y con
+<code>-Werror</code> todo aviso se convierte en error que impide compilar. Escribir
+<code>(void)argc;</code> «usa» el parámetro sin hacer nada con él: lo convierte a <code>void</code>
+y descarta el resultado.</p>
+<p>Solo hace falta en ex00, que no mira <code>argc</code>. Los otros tres lo usan en sus bucles.</p>
+</details>
+<details id="g-strcmp">
+<summary>Comparar cadenas: strcmp</summary>
+<p><code>strcmp(a, b)</code> compara dos cadenas carácter a carácter hasta encontrar la primera
+diferencia (o el final de las dos) y devuelve un número negativo si <code>a</code> va antes, 0 si
+son iguales y positivo si va después. No se puede comparar con <code>a == b</code>: eso compara las
+direcciones de memoria, y dos cadenas con el mismo texto en sitios distintos darían «distintas».</p>
+<p>En ex03 hay que escribirla a mano, porque solo está autorizada <code>write</code>.</p>
+</details>
+<details id="g-ascii">
+<summary>Orden ASCII</summary>
+<p>ASCII es la tabla que asigna un número a cada carácter: <code>'0'</code> es 48, <code>'A'</code>
+65, <code>'a'</code> 97. Ordenar «según el orden ASCII», como pide el enunciado, es comparar esos
+números, así que las cifras van antes que las mayúsculas y las mayúsculas antes que las minúsculas.
+Y se compara carácter a carácter, no por valor numérico: <code>"10"</code> va antes que
+<code>"9"</code> porque <code>'1'</code> &lt; <code>'9'</code>.</p>
+<pre><code>$ printf '%s\n' b B a 10 9 | LC_ALL=C sort | tr '\n' ' '
+10 9 B a b</code></pre>
+<p>Es la salida que debería dar <code>./ft_sort_params b B a 10 9</code>.</p>
+</details>
+<details id="g-unsigned">
+<summary>signed y unsigned char</summary>
+<p>Un <code>char</code> es un byte. En Linux x86 es <em>con signo</em> (<code>signed</code>): va de
+−128 a 127, y los bytes de 128 a 255 se leen como negativos. Un <code>unsigned char</code> va de 0 a
+255. Los caracteres no ASCII, como las letras con tilde en UTF-8, usan esos bytes altos.</p>
+<p>Por eso ex03 hace el cast a <code>unsigned char</code> antes de restar, igual que el
+<code>strcmp</code> real. Con <code>"é"</code> (bytes 0xC3 0xA9) frente a <code>"a"</code>: con
+signo la resta da −158 y <code>"é"</code> iría antes; sin signo da 98, como <code>strcmp</code>.</p>
+</details>
+<details id="g-paso-valor">
+<summary>Paso por valor e intercambio de punteros (swap)</summary>
+<p>En C, los argumentos se pasan <em>por valor</em>: la función recibe una copia. Si dentro cambias
+la copia, el original no se entera. Para que una función cambie una variable de quien la llama hay
+que pasarle su <em>dirección</em>.</p>
+<p>Para intercambiar dos casillas de <code>argv</code>, que son <code>char *</code>, hay que pasar
+punteros a ellas (<code>char **</code>) o hacer el intercambio en el propio bucle, como la tarjeta
+de ex03 con <code>tmp</code>. El <code>ft_swap(char *a, char *b)</code> del repo intercambia sus
+copias locales <code>a</code> y <code>b</code> y no cambia nada fuera.</p>
+</details>
+<details id="g-gnome">
+<summary>Gnome sort</summary>
+<p>Un algoritmo de ordenación muy corto: se recorre la lista comparando cada pareja de vecinos; si
+está en orden, se avanza; si no, se intercambian y se vuelve atrás (o al principio). Termina cuando
+se llega al final sin encontrar ninguna pareja desordenada. Es O(n²): con listas grandes es lento,
+con argumentos de línea de comandos da igual.</p>
+<p>El <code>sort</code> de la tarjeta de ex03 vuelve a <code>i = 1</code> tras cada intercambio, y el
+<code>ft_sort</code> del repo a <code>i = 0</code>: la misma idea.</p>
+</details>
+<details id="g-segfault">
+<summary>Segmentation fault y desreferenciar NULL</summary>
+<p><code>NULL</code> es un puntero que no apunta a nada. <em>Desreferenciarlo</em>, leer lo que hay
+«en» esa dirección (<code>a[0]</code> con <code>a == NULL</code>), es un acceso a memoria prohibida, y
+el sistema mata el programa con <code>Segmentation fault</code> (código de salida 139). Según las
+instrucciones de la piscine, un segfault en evaluación es un 0.</p>
+<p>Le pasa al ex03 del repo con dos o más argumentos: <code>main</code> pone
+<code>argv[0] = NULL</code> y luego <code>ft_sort</code> empieza comparando <code>tab[0]</code> con
+<code>tab[1]</code>. <code>./ft_sort_params b a</code> termina con código 139.</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_print_program_name</h2>
@@ -64,8 +237,8 @@ gritando "¡apunta un cero!"; puro relleno marca de la casa.)</div>
 	write(1, "\n", 1);
 	return (0);
 }</code></pre>
-<p>El nombre está en <code>argv[0]</code>, que es una cadena como cualquier otra: se recorre carácter
-a carácter hasta el <code>'\0'</code>. El <code>(void)argc;</code> es necesario porque compilamos con
+<p>El nombre está en <a href="#g-argv0"><code>argv[0]</code></a>, que es una <a href="#g-cadena">cadena</a> como cualquier otra: se recorre carácter
+a carácter hasta el <code>'\0'</code>. El <a href="#g-void"><code>(void)argc;</code></a> es necesario porque compilamos con
 <code>-Wextra -Werror</code> y no usar un parámetro es un aviso que aquí se convierte en error;
 "tocarlo" con el <em>cast</em> a <code>void</code> le dice al compilador "sé que existe y lo ignoro
 a propósito".</p>
@@ -79,7 +252,7 @@ es la forma limpia y estándar de silenciar un parámetro no usado.</div>
 <div class="card" id="ex01">
 <h2><span class="ex">ex01</span>ft_print_params</h2>
 <div class="meta"><span>Entrega: <b>ft_print_params.c</b></span><span>Autorizado: <b>write</b></span></div>
-<p>Imprimir cada argumento en su propia línea, en orden, saltándose <code>argv[0]</code>.</p>
+<p>Imprimir cada argumento en su propia línea, en orden, saltándose <a href="#g-argv0"><code>argv[0]</code></a>.</p>
 <pre><code>int	main(int argc, char **argv)
 {
 	int	i;
@@ -93,10 +266,10 @@ es la forma limpia y estándar de silenciar un parámetro no usado.</div>
 	return (0);
 }</code></pre>
 <p>El bucle empieza en <code>i = 1</code> para saltar el nombre del programa y llega hasta
-<code>argc - 1</code>. <code>print_str</code> es un pequeño <em>helper</em> <code>static</code> que
-escribe una cadena y su salto de línea (mismo patrón de recorrer hasta el <code>'\0'</code>).</p>
+<a href="#g-argc"><code>argc - 1</code></a>. <code>print_str</code> es un pequeño <em>helper</em> <code>static</code> que
+escribe una <a href="#g-cadena">cadena</a> y su salto de línea (mismo patrón de recorrer hasta el <code>'\0'</code>).</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La estructura real de <code>argv</code>: un
-<code>char **</code>, es decir, un array de punteros a cadenas. <code>argv[i]</code> es una cadena
+<a href="#g-argv"><code>char **</code></a>, es decir, un array de punteros a cadenas. <code>argv[i]</code> es una cadena
 completa; <code>argv[i][j]</code> es un carácter suelto. Recorrer <code>argv</code> con un índice
 acotado por <code>argc</code> es el modelo mental que necesitarás para cualquier programa de línea de
 comandos, incluidos los que parsean opciones y flags.</div>
@@ -106,7 +279,7 @@ comandos, incluidos los que parsean opciones y flags.</div>
 <h2><span class="ex">ex02</span>ft_rev_params</h2>
 <div class="meta"><span>Entrega: <b>ft_rev_params.c</b></span><span>Autorizado: <b>write</b></span></div>
 <p>Lo mismo que ex01 pero en orden <em>inverso</em>: del último argumento al primero (sin
-<code>argv[0]</code>).</p>
+<a href="#g-argv0"><code>argv[0]</code></a>).</p>
 <pre><code>int	main(int argc, char **argv)
 {
 	int	i;
@@ -119,7 +292,7 @@ comandos, incluidos los que parsean opciones y flags.</div>
 	}
 	return (0);
 }</code></pre>
-<p>El único cambio respecto a ex01 es la dirección del recorrido: se arranca en <code>argc - 1</code>
+<p>El único cambio respecto a ex01 es la dirección del recorrido: se arranca en <a href="#g-argc"><code>argc - 1</code></a>
 (el último) y se baja hasta <code>1</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que recorrer una colección de atrás hacia
 delante es solo cuestión de invertir el índice y la condición, no de tocar los datos. No hace falta
@@ -130,7 +303,7 @@ verás al invertir una cadena o una lista, pero sin escribir en memoria.</div>
 <div class="card" id="ex03">
 <h2><span class="ex">ex03</span>ft_sort_params</h2>
 <div class="meta"><span>Entrega: <b>ft_sort_params.c</b></span><span>Autorizado: <b>write</b></span></div>
-<p>Imprimir los argumentos (sin <code>argv[0]</code>) ordenados según el orden ASCII, uno por línea.</p>
+<p>Imprimir los argumentos (sin <a href="#g-argv0"><code>argv[0]</code></a>) ordenados según el <a href="#g-ascii">orden ASCII</a>, uno por línea.</p>
 <pre><code>static int	ft_strcmp(char *a, char *b)
 {
 	int	i;
@@ -160,18 +333,107 @@ static void	sort(char **tab, int size)
 			i++;
 	}
 }</code></pre>
-<p>Ordenar cadenas necesita saber cuál va "antes": eso lo decide <code>ft_strcmp</code>, que compara
+<p>Ordenar cadenas necesita saber cuál va "antes": eso lo decide <a href="#g-strcmp"><code>ft_strcmp</code></a>, que compara
 carácter a carácter y devuelve la diferencia en el primer punto donde difieren. Y ordenar necesita
 <em>mover</em>: pero lo que se intercambia no son las cadenas sino los <em>punteros</em> del array
-<code>tab</code> (por eso <code>tmp</code> es un <code>char *</code>). El algoritmo es un gnome sort,
+<code>tab</code> (por eso <code>tmp</code> es un <code>char *</code>). El algoritmo es un <a href="#g-gnome">gnome sort</a>,
 el mismo de C01: si el par está desordenado lo intercambia y reinicia; si no, avanza.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos ideas grandes. (1) Comparar cadenas no es
 comparar con <code>==</code> (eso compararía direcciones, no contenido): hay que recorrerlas, y el
-<em>cast</em> a <code>unsigned char</code> asegura que el orden de bytes altos sea el correcto — así se
+<em>cast</em> a <a href="#g-unsigned"><code>unsigned char</code></a> asegura que el orden de bytes altos sea el correcto — así se
 comporta el <code>strcmp</code> real. (2) Ordenar un array de punteros mueve las <em>referencias</em>,
 no los datos: barato y sin tocar las cadenas originales, que además no debes modificar. Aquí se juntan
-todo lo del módulo (recorrer <code>argv</code>) con lo de C01 (punteros, swap, sort) — por eso es el
+todo lo del módulo (recorrer <code>argv</code>) con lo de C01 (punteros, <a href="#g-paso-valor">swap</a>, sort) — por eso es el
 cierre natural de C06.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado. Están agrupadas en: argumentos, comparar y ordenar, y puntos débiles. Las
+respuestas hablan del código de tu entrega (<code>repo/</code>), que no siempre es el mismo que se
+muestra en las tarjetas. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Argumentos</h3>
+<details id="q-argc-argv">
+<summary>¿Qué son <code>argc</code> y <code>argv</code> y quién los rellena?</summary>
+<p><code>argc</code> es cuántas palabras hay en la línea, contando el nombre del programa;
+<code>argv</code>, un array de cadenas con esas palabras, terminado en <code>NULL</code>
+(<code>argv[argc] == NULL</code>). Las trocea el shell antes de lanzar el programa, y el sistema se
+las pasa a <code>main</code>. → <a href="#g-argc">argc</a>, <a href="#g-argv">argv</a>,
+<a href="#g-shell">cómo trocea el shell</a></p>
+</details>
+<details id="q-argv0">
+<summary>¿Qué imprime ex00 si lo lanzas con la ruta completa?</summary>
+<p>La ruta completa: <code>argv[0]</code> es el nombre <em>tal como se escribió</em>, no el nombre
+del archivo. Con <code>./ft_print_program_name</code> sale eso mismo, y con un enlace simbólico
+sale el nombre del enlace. → <a href="#ex00">ex00</a>, <a href="#g-argv0">argv[0]</a></p>
+</details>
+<details id="q-void">
+<summary>¿Para qué sirve <code>(void)argc;</code>?</summary>
+<p>Para que compile con <code>-Wall -Wextra -Werror</code>. ex00 no usa <code>argc</code>, el
+compilador avisaría de un parámetro sin usar y <code>-Werror</code> convierte el aviso en error. El
+cast a <code>void</code> lo «usa» sin hacer nada. → <a href="#ex00">ex00</a>,
+<a href="#g-void">(void)argc</a></p>
+</details>
+<details id="q-comillas">
+<summary>¿Cuántas líneas imprime <code>./ft_print_params uno "dos tres" ''</code>?</summary>
+<p>Tres: <code>uno</code>, <code>dos tres</code> y una línea vacía. Las comillas juntan palabras en un
+solo argumento y no llegan al programa; <code>''</code> es un argumento vacío pero existe. Sin
+argumentos, ex01 y ex02 no imprimen nada y <a href="#g-retorno">salen con 0</a>. → <a href="#ex01">ex01</a>,
+<a href="#g-shell">cómo trocea el shell</a></p>
+</details>
+
+<h3>Comparar y ordenar</h3>
+<details id="q-igual">
+<summary>¿Por qué no comparas los argumentos con <code>==</code> o <code>&lt;</code>?</summary>
+<p>Porque <code>argv[i]</code> es un puntero: <code>==</code> compararía direcciones de memoria, no
+el texto. Hay que recorrer las dos cadenas hasta la primera diferencia y restar esos caracteres,
+que es lo que hace <code>ft_strcmp</code>. → <a href="#ex03">ex03</a>,
+<a href="#g-strcmp">strcmp</a></p>
+</details>
+<details id="q-orden">
+<summary>¿En qué orden deben salir <code>b B a 10 9</code>?</summary>
+<p><code>10</code>, <code>9</code>, <code>B</code>, <code>a</code>, <code>b</code>. En ASCII las cifras
+van antes que las mayúsculas y estas antes que las minúsculas, y se compara carácter a carácter:
+<code>"10"</code> va antes que <code>"9"</code> porque <code>'1'</code> &lt; <code>'9'</code>.
+→ <a href="#g-ascii">orden ASCII</a></p>
+</details>
+<details id="q-unsigned">
+<summary>¿Por qué el cast a <code>unsigned char</code> en <code>ft_strcmp</code>?</summary>
+<p>Porque <code>char</code> tiene signo en esta máquina, y los bytes de 128 a 255 (letras con tilde
+en UTF-8) saldrían negativos y se ordenarían antes que <code>'a'</code>. El <code>strcmp</code> real
+compara como <code>unsigned char</code>: <code>"é"</code> frente a <code>"a"</code> da 98 y no −158.
+→ <a href="#g-unsigned">signed y unsigned char</a></p>
+</details>
+
+<h3>Puntos débiles (mejor tener la respuesta preparada)</h3>
+<details id="q-sort-crash">
+<summary>¿Funciona tu <code>ft_sort_params</code> con dos argumentos?</summary>
+<p>No: <code>./ft_sort_params b a</code> da <code>Segmentation fault</code> (código 139).
+<code>main</code> pone <code>argv[0] = NULL</code> y <code>ft_sort</code> empieza en
+<code>i = 0</code>, así que lo primero que hace es <code>ft_strcmp(NULL, argv[1])</code>. Con cero o
+un argumento sí funciona, porque el bucle no llega a comparar. Hay que ordenar desde
+<code>argv + 1</code> o empezar en <code>i = 1</code>. → <a href="#ex03">ex03</a>,
+<a href="#g-segfault">segfault</a></p>
+</details>
+<details id="q-swap">
+<summary>Aunque no petara, ¿ordenaría bien?</summary>
+<p>Tampoco. <code>ft_swap(char *a, char *b)</code> recibe copias de los punteros y las intercambia
+entre sí, sin tocar <code>argv</code>: el intercambio se pierde al salir. Y el
+<code>if (ft_strcmp(...) &lt; 0)</code> está al revés: intercambia las parejas que ya están en orden.
+Con las dos cosas juntas, la primera pareja en orden haría <code>i = 0</code> sin cambiar nada, para
+siempre. Lo correcto: intercambiar si es <code>&gt; 0</code>, y pasar <code>&amp;tab[i]</code> y
+<code>&amp;tab[i + 1]</code> a un swap de <code>char **</code>. → <a href="#g-paso-valor">paso por
+valor</a>, <a href="#g-gnome">gnome sort</a></p>
+</details>
+<details id="q-norma">
+<summary>¿Pasa la Norma? ¿Usas alguna función prohibida?</summary>
+<p>norminette 3.3.59 da <code>OK!</code> en los cuatro archivos, y solo se llama a
+<code>write</code>, la única autorizada. <code>ft_putstr</code> está repetida en cada archivo porque
+cada ejercicio es un programa aparte que se compila solo. → <a href="#g-write">write</a>,
+<a href="#g-programa">programa frente a función</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 06 · <a href="007_c05.html">← C 05</a> · <a href="009_c07.html">C 07 →</a></footer>

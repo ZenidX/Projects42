@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -27,10 +29,12 @@ descriptor de fichero, cómo se gestionan los errores y los códigos de salida. 
 (ex00–ex03).</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — display_file</a></li>
   <li><a href="#ex01">ex01 — cat</a></li>
   <li><a href="#ex02">ex02 — tail</a></li>
   <li><a href="#ex03">ex03 — hexdump</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>La introducción</b> — El enunciado abre con una tanda de preguntas
@@ -40,11 +44,178 @@ al de una furgoneta de FedEx cargada de discos. La última pregunta — qué pas
 aspirantes al carnet respondieran al azar — es un guiño a la evaluación automática: la Moulinette
 no responde al azar, compara byte a byte.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 10 es la primera vez que tu programa habla directamente con el sistema operativo: abre
+archivos, lee bytes y escribe errores. Las palabras vienen de Unix y de cómo se guardan los datos.
+Aquí está cada una explicada desde cero y con un ejemplo sacado del propio módulo. En el resto de la
+página, la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su entrada.
+Las salidas de ejemplo son las de los comandos del sistema (<code>cat</code>, <code>tail</code>,
+<code>hexdump</code>) que los ejercicios tienen que imitar, ejecutados en Linux.</p>
+
+<h3>Hablar con el sistema</h3>
+<details id="g-syscall">
+<summary>Llamada al sistema (syscall)</summary>
+<p>Un programa no puede tocar el disco ni la pantalla por su cuenta: se lo pide al núcleo
+(<em>kernel</em>) del sistema operativo, que es quien controla el hardware y decide si tienes
+permiso. Cada una de esas peticiones es una <em>llamada al sistema</em>. <code>open</code>,
+<code>read</code>, <code>write</code> y <code>close</code> son envoltorios finos de las syscalls del
+mismo nombre.</p>
+<p>Frente a ellas, <code>printf</code> o <code>fopen</code> son funciones de la biblioteca de C que,
+por debajo, acaban llamando a <code>write</code> o <code>open</code>. En C 10 solo están autorizadas
+las de abajo, así que haces tú lo que la biblioteca hace por ti.</p>
+</details>
+<details id="g-fd">
+<summary>Descriptor de fichero (fd)</summary>
+<p>Un entero pequeño que identifica algo abierto por tu proceso. <code>open</code> lo devuelve y
+<code>read</code>, <code>write</code> y <code>close</code> lo reciben: no trabajan con nombres de
+archivo, sino con ese número. El núcleo da siempre el más bajo libre, así que el primer
+<code>open</code> de un programa que no ha cerrado nada suele dar 3.</p>
+<p>Cada proceso tiene un límite de descriptores abiertos a la vez (lo dice <code>ulimit -n</code>).
+Un <code>ft_cat</code> con cientos de archivos que nunca hiciera <code>close</code> acabaría
+recibiendo <code>-1</code> de <code>open</code> aunque los archivos existan.</p>
+</details>
+<details id="g-std">
+<summary>Entrada estándar, salida estándar y salida de error (0, 1, 2)</summary>
+<p>Tres descriptores que todo programa recibe ya abiertos: <code>0</code> es la entrada estándar
+(<em>stdin</em>, normalmente el teclado), <code>1</code> la salida estándar (<em>stdout</em>, la
+pantalla) y <code>2</code> la salida de error (<em>stderr</em>, también la pantalla). Se separan los
+resultados de los avisos para que se puedan redirigir por separado.</p>
+<p>En C 10: <code>ft_display_file</code> escribe el archivo por 1 y <code>File name missing.</code>
+por 2; <code>ft_cat</code> sin argumentos lee del 0 hasta el fin de archivo (en el teclado,
+<kbd>Ctrl</kbd>+<kbd>D</kbd>).</p>
+</details>
+<details id="g-redireccion">
+<summary>Redirección y tubería (<code>&gt;</code>, <code>2&gt;</code>, <code>|</code>)</summary>
+<p>La shell puede cambiar a dónde apuntan los descriptores antes de arrancar el programa:
+<code>&gt; f</code> pone el 1 en el archivo <code>f</code>, <code>2&gt; f</code> hace lo mismo con
+el 2, <code>&lt; f</code> pone el 0 en <code>f</code> y <code>a | b</code> conecta el 1 de
+<code>a</code> con el 0 de <code>b</code>. El programa no se entera: sigue escribiendo en «el 1».</p>
+<p>Por eso importa escribir cada cosa por su descriptor. Con <code>./ft_cat a nofile &gt; todo</code>,
+el contenido de <code>a</code> va al archivo y el error de <code>nofile</code> sale en pantalla; si
+lo hubieras escrito por el 1, acabaría mezclado dentro de <code>todo</code>.</p>
+</details>
+<details id="g-open">
+<summary><code>open</code> y <code>O_RDONLY</code></summary>
+<p><code>open(ruta, modo)</code> abre un archivo y devuelve su descriptor, o <code>-1</code> si no
+puede (no existe, no hay permiso, es un directorio y pides escribir…). <code>O_RDONLY</code> es el
+modo «solo lectura», una constante de <code>&lt;fcntl.h&gt;</code>. Comprobar el <code>-1</code> es
+obligatorio: un <code>read</code> sobre <code>-1</code> no lee nada y falla.</p>
+<p>Ese <code>-1</code> es el que convierte <code>ft_display_file</code> en <code>Cannot read
+file.</code>, y en <code>ft_cat</code> el mensaje con <code>strerror(errno)</code>.</p>
+</details>
+<details id="g-read">
+<summary><code>read</code>, fin de archivo y lecturas parciales</summary>
+<p><code>read(fd, buf, n)</code> copia <em>como mucho</em> n bytes al buffer y devuelve cuántos
+copió de verdad: <code>0</code> significa fin de archivo y <code>-1</code>, error. Cada llamada sigue
+donde se quedó la anterior, porque el descriptor recuerda la posición.</p>
+<p>Que devuelva menos de n es normal: la última lectura de un archivo, o cualquier lectura de la
+terminal o de una tubería. Por eso se lee en bucle hasta el 0 y se escribe solo lo leído,
+<code>write(1, buf, n)</code> con la <code>n</code> devuelta y no con el tamaño del buffer. Si
+escribieras el buffer entero, la última vuelta sacaría basura de la vuelta anterior.</p>
+</details>
+<details id="g-buffer">
+<summary>Buffer de tamaño fijo y la pila</summary>
+<p>Un <em>buffer</em> es una zona de memoria donde dejas los datos de paso, entre leerlos y
+escribirlos. «De tamaño fijo» quiere decir un array declarado con su tamaño, como
+<code>char buf[4096];</code>, sin <code>malloc</code>. El archivo puede medir lo que sea: se procesa
+a trozos de ese tamaño.</p>
+<p>Ese array local vive en la <em>pila</em>, que tiene un tamaño limitado (en Linux suele ser de
+8 MB; se ve con <code>ulimit -s</code>, en KB). Por eso el enunciado de ex01 limita el buffer a «algo
+menos de unos 30 ko» y propone probarlo con <code>ulimit</code>: con una pila pequeña, un buffer
+grande hace que el programa muera al entrar en la función.</p>
+</details>
+<details id="g-errno">
+<summary><code>errno</code> y <code>strerror</code></summary>
+<p>Cuando una llamada al sistema falla, devuelve <code>-1</code> y deja en la variable global
+<code>errno</code> (de <code>&lt;errno.h&gt;</code>) un número que dice por qué: <code>ENOENT</code>
+(no existe), <code>EACCES</code> (sin permiso), <code>EISDIR</code> (es un directorio).
+<code>strerror(errno)</code> devuelve el texto de ese número.</p>
+<p>Así se construye el mensaje de <code>cat</code>. El de verdad, con un archivo que no existe:</p>
+<pre><code>$ cat nofile
+cat: nofile: No such file or directory</code></pre>
+<p>Hay que leer <code>errno</code> justo después del fallo: la siguiente llamada que falle lo
+sobrescribe, y una que vaya bien no tiene por qué ponerlo a 0.</p>
+</details>
+<details id="g-basename">
+<summary><code>basename</code></summary>
+<p>Devuelve el último componente de una ruta: de <code>/home/yo/ex01/ft_cat</code>, o de
+<code>./ft_cat</code>, devuelve <code>ft_cat</code>. Se aplica a <code>argv[0]</code>, que es el
+nombre con el que se lanzó el programa, para que el mensaje de error empiece por
+<code>ft_cat:</code> como el de <code>cat</code> empieza por <code>cat:</code>, se lance como se
+lance. Está en <code>&lt;libgen.h&gt;</code>.</p>
+</details>
+<details id="g-codigo-salida">
+<summary>Código de salida</summary>
+<p>El número que un programa devuelve al terminar: el <code>return</code> de <code>main</code>. 0
+significa que fue bien y cualquier otro valor, que algo falló. La shell lo guarda en
+<code>$?</code> y lo usan <code>&amp;&amp;</code>, <code>||</code> y los scripts.</p>
+<p><code>cat</code> sigue con los demás archivos aunque uno falle, pero al final devuelve 1:</p>
+<pre><code>$ cat nofile; echo $?
+cat: nofile: No such file or directory
+1</code></pre>
+</details>
+<details id="g-argc">
+<summary><code>argc</code> y <code>argv</code></summary>
+<p>Los parámetros de <code>main</code>: <code>argc</code> es cuántas palabras hay en la línea de
+comandos, contando el nombre del programa, y <code>argv</code> un array con ellas, terminado en
+<code>NULL</code>. <code>./ft_display_file texto</code> da <code>argc == 2</code>,
+<code>argv[0] == "./ft_display_file"</code> y <code>argv[1] == "texto"</code>.</p>
+<p>ex00 decide sus errores mirando solo <code>argc</code>: 1 es «falta el nombre», más de 2 es
+«demasiados argumentos». En ex02, <code>-c</code> y el número también llegan como elementos de
+<code>argv</code>, y separarlos de los nombres de archivo es parte del ejercicio.</p>
+</details>
+
+<h3>Bytes</h3>
+<details id="g-byte">
+<summary>Byte y hexadecimal</summary>
+<p>Un <em>byte</em> son 8 bits, un número de 0 a 255; un archivo es una fila de bytes, sea texto o
+no. El <em>hexadecimal</em> escribe los números en base 16, con cifras 0–9 y a–f: cada cifra son 4
+bits, así que un byte son siempre dos cifras, de <code>00</code> a <code>ff</code>.</p>
+<p>En ASCII, <code>H</code> es 72, que en hexadecimal es <code>48</code>, y <code>e</code> es 101,
+<code>65</code>. Es lo que enseña <code>hexdump -C</code>, byte a byte y con el texto al lado:</p>
+<pre><code>00000000  48 65 6c 6c 6f 20 77 6f  72 6c 64 21              |Hello world!|
+0000000c</code></pre>
+</details>
+<details id="g-offset">
+<summary>Desplazamiento (offset)</summary>
+<p>La posición de un byte contada desde el principio del archivo, empezando en 0. <code>hexdump</code>
+lo imprime en hexadecimal al principio de cada línea: la primera es <code>0000000</code>, la segunda
+<code>0000010</code> (16 en decimal) y así. La última línea es solo un desplazamiento: el del byte que
+vendría después del último, es decir, el tamaño del archivo. <code>Hello world!</code> tiene 12
+bytes y acaba en <code>000000c</code>.</p>
+<p><code>tail -c N</code> es una cuestión de desplazamientos: hay que escribir desde el
+desplazamiento <code>tamaño − N</code> hasta el final.</p>
+</details>
+<details id="g-endianness">
+<summary>Endianness: little-endian</summary>
+<p>Cuando un número ocupa varios bytes, hay que decidir en qué orden se guardan. En
+<em>little-endian</em>, el de las máquinas x86 y la mayoría de ARM, el byte menos significativo va
+primero; en <em>big-endian</em>, el más significativo. El número de 16 bits <code>0x6548</code> se
+guarda como <code>48 65</code> en little-endian.</p>
+<p>El formato por defecto de <code>hexdump</code> lee los bytes de dos en dos como números de 16 bits
+y los escribe en hexadecimal, así que los bytes <code>48 65</code> («He») salen como
+<code>6548</code>. Un byte suelto al final se completa con un <code>00</code> como byte alto:
+<code>abcde</code> sale como <code>6261 6463 0065</code>.</p>
+</details>
+<details id="g-repeticion">
+<summary>Líneas repetidas: el <code>*</code> de <code>hexdump</code></summary>
+<p>Si varias líneas seguidas de 16 bytes son idénticas a la anterior, <code>hexdump</code> no las
+repite: escribe una sola línea con <code>*</code> y sigue en la siguiente que cambie. Con 48 letras
+<code>a</code>:</p>
+<pre><code>0000000 6161 6161 6161 6161 6161 6161 6161 6161
+*
+0000030</code></pre>
+<p>Para coincidir con el original, <code>ft_hexdump</code> tiene que recordar la última línea
+escrita y comparar cada línea nueva con ella.</p>
+</details>
+</div>
+
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>display_file</h2>
 <div class="meta"><span>Entregable: <b>Makefile</b> + programa</span><span>Funciones: <b>open, read, write, close</b></span></div>
-<p>Un programa <code>ft_display_file</code> que vuelca a la salida estándar el contenido del archivo
-que se le pasa. Sin <code>malloc</code>: buffer de tamaño fijo. Y con los errores exactos que pide
+<p>Un programa <code>ft_display_file</code> que vuelca a la <a href="#g-std">salida estándar</a> el contenido del archivo
+que se le pasa. Sin <code>malloc</code>: <a href="#g-buffer">buffer de tamaño fijo</a>. Y con los errores exactos que pide
 el enunciado:</p>
 <pre><code>fd = open(argv[1], O_RDONLY);
 if (fd &lt; 0)
@@ -55,16 +226,16 @@ if (fd &lt; 0)
 while ((n = read(fd, buf, 4096)) &gt; 0)
 	write(1, buf, n);
 close(fd);</code></pre>
-<p>Sin argumentos imprime <code>File name missing.</code>; con demasiados,
+<p>Sin <a href="#g-argc">argumentos</a> imprime <code>File name missing.</code>; con demasiados,
 <code>Too many arguments.</code>; si el archivo no se puede leer, <code>Cannot read file.</code> —
 todos por la salida de error y con salto de línea.</p>
-<div class="trasfondo"><b>Descriptores de fichero y syscalls</b> — Un <em>descriptor de fichero</em>
+<div class="trasfondo"><b>Descriptores de fichero y syscalls</b> — Un <a href="#g-fd"><em>descriptor de fichero</em></a>
 (fd) es un simple entero con el que el kernel identifica algo abierto: un archivo, la terminal, un
 socket. Tres están abiertos siempre al arrancar: <code>0</code> es la entrada estándar,
-<code>1</code> la salida estándar, <code>2</code> la salida de error. <code>open</code> devuelve un
-fd nuevo (o <code>-1</code> si falla); <code>read</code> copia bytes del fd a un buffer y devuelve
+<code>1</code> la salida estándar, <code>2</code> la salida de error. <a href="#g-open"><code>open</code></a> devuelve un
+fd nuevo (o <code>-1</code> si falla); <a href="#g-read"><code>read</code></a> copia bytes del fd a un buffer y devuelve
 cuántos leyó (<code>0</code> = fin de archivo); <code>write</code> los vuelca a otro fd;
-<code>close</code> libera el descriptor. Estas son <strong>llamadas al sistema</strong>: no las
+<code>close</code> libera el descriptor. Estas son <a href="#g-syscall"><strong>llamadas al sistema</strong></a>: no las
 resuelve tu programa, sino el núcleo del sistema operativo. Aquí, por primera vez, no se usa
 <code>printf</code> ni buffers automáticos: se habla con el disco directamente, en trozos de un
 buffer fijo, que es como funciona todo por debajo.</div>
@@ -74,14 +245,14 @@ buffer fijo, que es como funciona todo por debajo.</div>
 <h2><span class="ex">ex01</span>cat</h2>
 <div class="meta"><span>Entregable: <b>Makefile</b> + programa</span><span>Funciones: <b>open, read, write, close, strerror, basename</b></span></div>
 <p>Un <code>ft_cat</code> que hace lo mismo que el <code>cat</code> del sistema: concatena los
-archivos que se le pasen (o lee de la entrada estándar si no hay ninguno) y, ante un archivo que
+archivos que se le pasen (o lee de la <a href="#g-std">entrada estándar</a> si no hay ninguno) y, ante un archivo que
 falla, imprime un error con el formato de <code>cat</code> y sigue con el resto.</p>
 <pre><code>ft_cat: nofile: No such file or directory</code></pre>
-<p>El mensaje se construye con <code>basename(argv[0])</code> (el nombre del programa),
-<code>strerror(errno)</code> (la descripción del error del sistema) y se escribe a la salida de
-error. El código de salida es <code>1</code> si algún archivo falló.</p>
+<p>El mensaje se construye con <a href="#g-basename"><code>basename(argv[0])</code></a> (el nombre del programa),
+<a href="#g-errno"><code>strerror(errno)</code></a> (la descripción del error del sistema) y se escribe a la salida de
+error. El <a href="#g-codigo-salida">código de salida</a> es <code>1</code> si algún archivo falló.</p>
 <div class="trasfondo"><b><code>stderr</code> vs <code>stdout</code>, <code>errno</code> y códigos
-de salida</b> — La razón de tener <em>dos</em> salidas separadas es poder redirigir el resultado
+de salida</b> — La razón de tener <em>dos</em> salidas separadas es poder <a href="#g-redireccion">redirigir</a> el resultado
 sin mezclarlo con los avisos: <code>ft_cat *.txt &gt; todo.txt</code> manda el contenido al archivo
 (fd 1) mientras los errores siguen apareciendo en pantalla (fd 2). <code>errno</code> es una
 variable global que el sistema pone al fallar una llamada (por ejemplo, "no existe"); no es legible
@@ -110,10 +281,10 @@ $ ft_tail -c 3 a b
 <div class="trasfondo"><b>Buffers y el problema de "los últimos N"</b> — <code>tail</code> tiene una
 dificultad de fondo: para dar los <em>últimos</em> bytes hay que llegar primero al final, y un
 archivo se lee de principio a fin. Sin poder saltar directamente (aquí no se usa
-<code>lseek</code>), la vía es leer en bloques con un buffer fijo llevando la cuenta de la posición,
+<code>lseek</code>), la vía es leer en bloques con un <a href="#g-buffer">buffer fijo</a> llevando la cuenta de la <a href="#g-offset">posición</a>,
 y empezar a escribir solo cuando se cruza el umbral <code>tamaño − N</code>. Es el primer ejercicio
 que obliga a razonar sobre <em>cuánto</em> se ha leído y no solo <em>qué</em>: el buffer no es el
-archivo entero, es una ventana que se va deslizando. Que <code>read</code> pueda devolver menos
+archivo entero, es una ventana que se va deslizando. Que <a href="#g-read"><code>read</code></a> pueda devolver menos
 bytes de los pedidos (y haya que llamarlo en bucle) es la lección que se arrastra desde ex00.</div>
 </div>
 
@@ -121,14 +292,14 @@ bytes de los pedidos (y haya que llamarlo en bucle) es la lección que se arrast
 <h2><span class="ex">ex03</span>hexdump</h2>
 <div class="meta"><span>Entregable: <b>Makefile</b> + programa</span><span>Funciones: <b>+ malloc, free</b></span></div>
 <p>Un <code>ft_hexdump</code> que reproduce el <code>hexdump</code> del sistema (formato por
-defecto, sin opciones): el desplazamiento en hexadecimal y, por cada 16 bytes, grupos de dos bytes
+defecto, sin opciones): el <a href="#g-offset">desplazamiento</a> en <a href="#g-byte">hexadecimal</a> y, por cada 16 bytes, grupos de dos bytes
 en hexadecimal.</p>
 <pre><code>$ ft_hexdump saludo.txt
 0000000 6548 6c6c 206f 6f77 6c72 2164
 000000c</code></pre>
 <div class="trasfondo"><b>Bytes, endianness y coincidir al byte</b> — El formato por defecto de
 <code>hexdump</code> esconde un detalle revelador: cada grupo son <em>dos</em> bytes leídos como un
-número de 16 bits, y como la máquina es <strong>little-endian</strong> (el byte menos significativo
+número de 16 bits, y como la máquina es <a href="#g-endianness"><strong>little-endian</strong></a> (el byte menos significativo
 va primero en memoria), los dos bytes salen con el orden invertido. Por eso "He" (bytes
 <code>48 65</code>) se imprime <code>6548</code>: el programa lee el par y lo muestra como una
 palabra, byte alto primero. Un byte suelto al final se completa con <code>00</code>. El
@@ -137,6 +308,98 @@ desplazamiento va en hexadecimal, y la línea final repite el total de bytes. Re
 es lo que hace que la salida coincida byte a byte con la herramienta real: la lección de fondo es
 que un archivo no es "texto", es una secuencia de bytes, y ver esos bytes en crudo es lo que
 permite entender formatos, cabeceras y los "números mágicos" del <code>ft_magic</code> de Shell 00.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: descriptores y lectura, errores, y
+<code>tail</code> y <code>hexdump</code>. La forma más rápida de comprobar tus programas en la
+evaluación es compararlos con el comando del sistema: <code>diff &lt;(./ft_tail -c 5 f) &lt;(tail -c 5 f)</code>.
+Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Descriptores y lectura</h3>
+<details id="q-fd">
+<summary>¿Qué es un descriptor de fichero y qué son el 0, el 1 y el 2?</summary>
+<p>Un entero con el que el núcleo identifica algo abierto por el proceso; <code>open</code> lo da y
+<code>read</code>/<code>write</code>/<code>close</code> lo usan. El 0 es la entrada estándar, el 1
+la salida estándar y el 2 la de error, abiertos ya al arrancar. El primer <code>open</code> suele
+devolver 3. → <a href="#g-fd">descriptor</a>, <a href="#g-std">0, 1 y 2</a></p>
+</details>
+<details id="q-bucle">
+<summary>¿Por qué <code>read</code> va en un bucle y por qué escribes <code>n</code> bytes y no el buffer entero?</summary>
+<p>Porque el archivo puede ser más grande que el buffer y <code>read</code> devuelve como mucho lo
+que cabe: se repite hasta que devuelve 0. Y porque puede devolver menos de lo pedido, sobre todo en la
+última vuelta; escribir el buffer entero sacaría restos de la vuelta anterior.
+→ <a href="#ex00">ex00</a>, <a href="#g-read">read</a></p>
+</details>
+<details id="q-buffer">
+<summary>¿Por qué un buffer de tamaño fijo y de qué tamaño?</summary>
+<p>Porque <code>malloc</code> está prohibido en ex00 y ex01 y el enunciado pide un array de tamaño
+fijo, de menos de unos 30 KB en ex01. Es un array local, así que vive en la pila: con un límite de
+pila pequeño (<code>ulimit -s</code>), un buffer demasiado grande mata el programa. Con 1 MB y
+<code>ulimit -s 512</code>, sale con 139 (señal de violación de segmento). Un tamaño como 4096 cumple
+de sobra. → <a href="#g-buffer">buffer</a></p>
+</details>
+<details id="q-stdin">
+<summary>¿Qué hace tu <code>ft_cat</code> sin argumentos?</summary>
+<p>Lo mismo que <code>cat</code>: leer de la entrada estándar (fd 0) y copiarla a la salida hasta el
+fin de archivo, que en la terminal se manda con <kbd>Ctrl</kbd>+<kbd>D</kbd>. Se prueba también con
+una tubería: <code>echo hola | ./ft_cat</code>. → <a href="#ex01">ex01</a></p>
+</details>
+<details id="q-close">
+<summary>¿Por qué cierras cada archivo?</summary>
+<p>Porque cada proceso tiene un número máximo de descriptores abiertos a la vez. Un
+<code>ft_cat</code> que abriera muchos archivos sin <code>close</code> acabaría recibiendo
+<code>-1</code> de <code>open</code> con archivos que existen. → <a href="#g-fd">descriptor</a></p>
+</details>
+
+<h3>Errores</h3>
+<details id="q-stderr">
+<summary>¿Por qué los errores van por la salida 2?</summary>
+<p>Para que redirigir el resultado no se lleve los errores: con <code>./ft_cat a nofile &gt; todo</code>
+el contenido va al archivo y el error se sigue viendo. El enunciado lo exige («en la salida que les
+haya sido reservada»).
+→ <a href="#ex01">ex01</a>, <a href="#g-redireccion">redirección</a></p>
+</details>
+<details id="q-mensaje">
+<summary>¿Cómo construyes el mensaje <code>ft_cat: nofile: No such file or directory</code>?</summary>
+<p>Tres trozos por el fd 2: <code>basename(argv[0])</code>, el nombre del archivo tal como se pasó y
+<code>strerror(errno)</code>, leído justo después del <code>open</code> que falló, separados por
+<code>": "</code> y con salto de línea. Es el formato de <code>cat</code>, que da
+<code>cat: nofile: No such file or directory</code>. → <a href="#g-errno">errno</a>,
+<a href="#g-basename">basename</a></p>
+</details>
+<details id="q-salida">
+<summary>Si un archivo falla, ¿qué devuelve <code>ft_cat</code> y sigue con los demás?</summary>
+<p>Sigue con los demás y al final devuelve 1, como <code>cat</code>: <code>cat nofile; echo $?</code>
+imprime el error y <code>1</code>. Devuelve 0 solo si todo fue bien.
+→ <a href="#g-codigo-salida">código de salida</a></p>
+</details>
+
+<h3>tail y hexdump</h3>
+<details id="q-tail-grande">
+<summary>¿Qué hace <code>ft_tail -c N</code> si el archivo tiene menos de N bytes? ¿Y con varios archivos?</summary>
+<p>Si N es mayor que el tamaño, saca el archivo entero (<code>tail -c 100</code> sobre un archivo de
+3 bytes da los 3). Con varios archivos, antes de cada uno escribe <code>==&gt; nombre &lt;==</code>
+y separa un bloque del siguiente con una línea en blanco; un archivo que no existe da un error por
+la salida 2 y el resto sigue. → <a href="#ex02">ex02</a>, <a href="#g-offset">desplazamiento</a></p>
+</details>
+<details id="q-endian">
+<summary>¿Por qué <code>hexdump</code> enseña <code>6548</code> para «He» y no <code>4865</code>?</summary>
+<p>Porque el formato por defecto lee los bytes de dos en dos como enteros de 16 bits, y la máquina es
+little-endian: el primer byte (<code>48</code>, la H) es el de menos peso y se escribe a la derecha.
+<code>hexdump -C</code> sí enseña los bytes en orden, <code>48 65</code>.
+→ <a href="#ex03">ex03</a>, <a href="#g-endianness">little-endian</a></p>
+</details>
+<details id="q-hexdump-casos">
+<summary>¿Qué casos especiales tiene la salida de <code>hexdump</code>?</summary>
+<p>Tres que hay que imitar al byte: un número impar de bytes completa el último grupo con
+<code>00</code> (<code>abcde</code> acaba en <code>0065</code>); las líneas idénticas seguidas se
+sustituyen por un <code>*</code>; y la última línea es solo el desplazamiento final, el tamaño en
+hexadecimal (<code>000000c</code> para 12 bytes). Un archivo vacío no imprime nada.
+→ <a href="#g-repeticion">líneas repetidas</a>, <a href="#g-offset">desplazamiento</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 10 · <a href="013_c11.html">continuar con C 11 →</a></footer>

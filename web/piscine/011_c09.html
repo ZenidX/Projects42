@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,9 +28,11 @@ crea una <em>librería estática</em> (<code>libft.a</code>) y se automatiza su 
 3 ejercicios (ex00–ex02).</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — libft</a></li>
   <li><a href="#ex01">ex01 — Makefile</a></li>
   <li><a href="#ex02">ex02 — ft_split</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>La introducción</b> — El enunciado cita un fragmento de <em>Proyecto Hail
@@ -38,25 +42,236 @@ coletilla de siempre: "este enunciado no tiene nada que ver con el aprendizaje d
 paralelo es fino — este módulo va justamente de eso: darle a la máquina un <em>vocabulario</em>
 (reglas de <code>make</code>) para que sepa qué construir y cómo.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 09 es el primer módulo en el que lo importante no es lo que hace el código, sino cómo se
+construye. Las palabras vienen de la cadena de compilación de C y de <code>make</code>. Aquí está
+cada una explicada desde cero y con un ejemplo sacado del propio módulo. En el resto de la página,
+la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su entrada. Las
+salidas que aparecen se han obtenido ejecutando el script y el <code>Makefile</code> de esta página
+con cinco fuentes de prueba.</p>
+
+<h3>Compilar y enlazar</h3>
+<details id="g-compilar">
+<summary>Compilación (de <code>.c</code> a <code>.o</code>)</summary>
+<p><code>cc</code> hace en realidad varios pasos seguidos: el preprocesador resuelve los
+<code>#include</code> y <code>#define</code>, el compilador traduce el C a código máquina y, al
+final, el enlazador lo junta todo en un ejecutable. Con <code>-c</code> se para antes de enlazar y
+deja un <a href="#g-objeto">archivo objeto</a> por cada <code>.c</code>.</p>
+<p>Cada <code>.c</code> se compila solo, sin ver los demás: <code>ft_putstr.c</code> puede llamar a
+<code>ft_putchar</code> porque incluye el prototipo, aunque el código esté en otro archivo.</p>
+</details>
+<details id="g-objeto">
+<summary>Archivo objeto (<code>.o</code>)</summary>
+<p>El resultado de compilar un <code>.c</code> con <code>-c</code>: código máquina de sus funciones,
+más una lista de lo que define y de lo que usa sin definir. No se puede ejecutar porque le falta lo
+que viene de fuera (y, aquí, no tiene <code>main</code>).</p>
+<p>Si se intenta crear un ejecutable a partir de <code>ft_putchar.c</code> sin <code>-c</code>,
+compila bien pero falla al enlazar:</p>
+<pre><code>(.text+0x1b): undefined reference to `main'
+collect2: error: ld returned 1 exit status</code></pre>
+</details>
+<details id="g-simbolo">
+<summary>Símbolo y <code>undefined reference</code></summary>
+<p>Un <em>símbolo</em> es el nombre de una función o variable global tal como lo ve el enlazador.
+Cada <code>.o</code> lleva los símbolos que define (<code>ft_strlen</code> en
+<code>ft_strlen.o</code>) y los que necesita de otros (si tu <code>ft_putstr</code> llama a
+<code>ft_putchar</code>, ese es un símbolo que <code>ft_putstr.o</code> necesita y no define).
+<code>nm archivo.o</code> los lista: <code>T</code> delante de los definidos, <code>U</code> delante
+de los que faltan.</p>
+<p>Si al enlazar nadie define uno que se necesita, el enlazador da <code>undefined
+reference</code>. Un <code>main</code> que llama a <code>ft_putstr</code>, compilado sin la
+librería:</p>
+<pre><code>m.c:(.text+0x13): undefined reference to `ft_putstr'</code></pre>
+</details>
+<details id="g-enlazar">
+<summary>Enlazado y enlazador (<code>ld</code>)</summary>
+<p>El último paso: el enlazador junta los <code>.o</code>, empareja cada símbolo usado con el que lo
+define y escribe el ejecutable. En Linux es <code>ld</code>, y <code>cc</code> lo llama por ti
+(<code>collect2</code> es el intermediario que sale en los errores).</p>
+<p>Para usar <code>libft.a</code>: <code>cc main.c -L. -lft</code>. <code>-L.</code> dice dónde
+buscar y <code>-lft</code> busca <code>libft.a</code> (el prefijo <code>lib</code> y la extensión se
+ponen solos). El orden importa: el enlazador recorre los archivos de izquierda a derecha y de una
+librería solo saca lo que alguien ha pedido <em>antes</em>. Con
+<code>cc -L. -lft main.c</code> falla con el mismo <code>undefined reference to `ft_putstr'</code>.</p>
+</details>
+<details id="g-libreria-estatica">
+<summary>Librería estática (<code>.a</code>) y <code>ar rcs</code></summary>
+<p>Un archivo que guarda varios <code>.o</code> juntos, con un índice de los símbolos que define.
+Se crea con <code>ar</code>, el «archivador»: <code>r</code> mete los <code>.o</code> (reemplazando
+los que ya estuvieran), <code>c</code> crea el <code>.a</code> sin avisar si no existía y
+<code>s</code> escribe el índice. <code>ar t libft.a</code> lista lo que hay dentro:</p>
+<pre><code>ft_putchar.o
+ft_swap.o
+ft_putstr.o
+ft_strlen.o
+ft_strcmp.o</code></pre>
+<p>«Estática» quiere decir que al enlazar se copian dentro del ejecutable los <code>.o</code> que se
+usan; después el programa ya no necesita el <code>.a</code>. La alternativa es una librería
+<em>dinámica</em> (<code>.so</code>): el ejecutable solo apunta a ella y el sistema la carga al
+arrancarlo, así que varios programas comparten la misma copia, como pasa con la libc.</p>
+</details>
+<details id="g-flags">
+<summary><code>-Wall -Wextra -Werror</code></summary>
+<p><code>-Wall</code> y <code>-Wextra</code> encienden avisos (<em>warnings</em>) sobre código
+legal pero sospechoso: una variable sin usar, una comparación entre con signo y sin signo, una
+función que no devuelve nada en algún camino. <code>-Werror</code> convierte cada aviso en error, de
+modo que no se genera nada.</p>
+<p>La Moulinette compila siempre con los tres, y el enunciado de ex01 pide ponerlos «en ese orden».
+Un aviso que en casa ignoras es, en la corrección, un ejercicio que no compila y un 0.</p>
+</details>
+<details id="g-script">
+<summary>Script de shell</summary>
+<p>Un archivo de texto con comandos de la shell, uno detrás de otro, que se ejecutan como si los
+escribieras tú. <code>sh libft_creator.sh</code> lanza un <code>sh</code> que lo lee y ejecuta sus
+líneas. La primera, <code>#!/bin/sh</code> (el <em>shebang</em>), solo se usa si lo ejecutas
+directamente como <code>./libft_creator.sh</code>, y entonces necesita permiso de ejecución.</p>
+<p>Un script no sabe nada de qué ha cambiado: repite todos los comandos cada vez. Esa es la
+diferencia con <code>make</code>.</p>
+</details>
+
+<h3>make</h3>
+<details id="g-regla">
+<summary>Makefile: regla, objetivo, prerequisitos y receta</summary>
+<p>Un <code>Makefile</code> es una lista de <em>reglas</em>. Cada una dice qué se quiere obtener
+(el <em>objetivo</em>), de qué depende (los <em>prerequisitos</em>) y cómo se hace (la
+<em>receta</em>, en las líneas siguientes y empezando obligatoriamente por un tabulador):</p>
+<pre><code>$(NAME): $(OBJS)              ← objetivo: prerequisitos
+	ar rcs $(NAME) $(OBJS)    ← receta (tabulador delante)</code></pre>
+<p><code>make</code> sin nada construye el primer objetivo del archivo; por eso <code>all</code> va
+el primero y <code>make</code> equivale a <code>make all</code>, como pide el enunciado. Y
+<code>make</code> imprime cada comando antes de ejecutarlo, que es lo de «tu makefile debe mostrar
+cada comando».</p>
+</details>
+<details id="g-dependencias">
+<summary>Grafo de dependencias y fechas de modificación</summary>
+<p>Las reglas forman un grafo: <code>all</code> necesita <code>libft.a</code>, que necesita cinco
+<code>.o</code>, cada uno de los cuales necesita su <code>.c</code>. <code>make</code> lo recorre y
+solo rehace un objetivo si no existe o si algún prerequisito es más nuevo que él (compara las fechas
+de modificación de los archivos).</p>
+<p>Con el <code>Makefile</code> de ex01, un segundo <code>make</code> responde
+<code>make: Nothing to be done for 'all'.</code>, y tras un <code>touch srcs/ft_swap.c</code> solo
+recompila ese archivo y vuelve a hacer el <code>ar</code>. La otra cara: <code>make</code> solo
+sabe lo que pones en las reglas. <code>includes/ft.h</code> no figura como prerequisito, así que si
+lo cambias tampoco hace nada.</p>
+</details>
+<details id="g-patron">
+<summary>Regla de patrón y variables automáticas (<code>%.o: %.c</code>, <code>$&lt;</code>, <code>$@</code>)</summary>
+<p>Una regla con <code>%</code> vale para muchos archivos a la vez: <code>%.o: %.c</code> dice «para
+hacer cualquier <code>X.o</code>, a partir de <code>X.c</code>». Dentro de la receta,
+<code>$@</code> es el objetivo de ese momento y <code>$&lt;</code> su primer prerequisito.</p>
+<p>Para <code>srcs/ft_swap.o</code>, la receta se convierte en
+<code>cc -Wall -Wextra -Werror -I includes -c srcs/ft_swap.c -o srcs/ft_swap.o</code>. Como el
+<code>.o</code> se escribe con la misma ruta que el <code>.c</code>, queda a su lado, que es lo que
+pide el enunciado.</p>
+</details>
+<details id="g-variables">
+<summary>Variables de make y la sustitución <code>$(SRCS:.c=.o)</code></summary>
+<p><code>NAME = libft.a</code> define una variable y <code>$(NAME)</code> la usa. Sirven para no
+repetir listas ni opciones: cambiar los flags es tocar una línea. <code>$(SRCS:.c=.o)</code> es la
+misma lista que <code>SRCS</code> con cada <code>.c</code> final cambiado por <code>.o</code>:
+<code>srcs/ft_putchar.o srcs/ft_swap.o …</code>.</p>
+<p><code>CC</code> y <code>CFLAGS</code> son nombres que <code>make</code> ya conoce, pero en
+ex01 se usan de forma explícita en la regla de patrón, así que el comando que se ve es exactamente
+el escrito.</p>
+</details>
+<details id="g-phony">
+<summary><code>.PHONY</code></summary>
+<p>Declara objetivos que no son archivos, sino nombres de acciones: <code>all</code>,
+<code>clean</code>, <code>fclean</code>, <code>re</code>. Sin eso, <code>make</code> los trata como
+archivos y, si por casualidad existe uno con ese nombre, cree que ya está hecho. Probado con un
+archivo vacío llamado <code>clean</code> y el <code>.PHONY</code> quitado:</p>
+<pre><code>make: 'clean' is up to date.</code></pre>
+<p>y no borra nada. Con <code>.PHONY</code> la receta se ejecuta siempre.</p>
+</details>
+<details id="g-wildcard">
+<summary>Wildcard (comodín)</summary>
+<p>Un patrón como <code>*.c</code> que se expande a todos los archivos que encajan. En un
+<code>Makefile</code> se escribiría <code>$(wildcard srcs/*.c)</code>. Es cómodo, pero compila lo
+que haya en la carpeta, no lo que debe haber: un <code>main.c</code> de pruebas olvidado acaba
+dentro de la librería, y uno que falta no da ningún error.</p>
+<p>Por eso el enunciado avisa «¡Ten cuidado con los wildcards!»: solo se recoge tu
+<code>Makefile</code> y se prueba con los archivos de la Moulinette, así que tiene que nombrar
+exactamente los cinco fuentes que pide.</p>
+</details>
+
+<h3>Cadenas y memoria (ft_split)</h3>
+<details id="g-doble-puntero">
+<summary><code>char **</code>: puntero a puntero y array de cadenas</summary>
+<p>Una cadena en C es un <code>char *</code>, la dirección de su primer carácter. Un array de
+cadenas es entonces un array de <code>char *</code>, y la dirección de su primer elemento es un
+<code>char **</code>. <code>argv</code> es el ejemplo de siempre.</p>
+<p><code>ft_split</code> devuelve uno: <code>tab[0]</code> es la primera palabra (un
+<code>char *</code>) y <code>tab[0][0]</code> su primera letra (un <code>char</code>). Hacen falta
+dos niveles de reserva: uno para el array de punteros y uno por cada palabra.</p>
+</details>
+<details id="g-malloc">
+<summary>Memoria dinámica: <code>malloc</code></summary>
+<p><code>malloc(n)</code> reserva n bytes en el <em>heap</em> y devuelve su dirección, o
+<code>NULL</code> si no hay memoria. Esa memoria sigue viva al salir de la función y hasta que
+alguien llama a <code>free</code>. Es la única forma de devolver un resultado cuyo tamaño no se
+conoce antes de ejecutar.</p>
+<p>En <code>ft_split</code>, para <code>"hola mundo"</code> con <code>" "</code> hay tres reservas:
+3 punteros (dos palabras y el <code>NULL</code>), 5 bytes para <code>"hola"</code> y 6 para
+<code>"mundo"</code>, siempre con uno más para el <code>'\0'</code>. Solo <code>malloc</code> está
+autorizado, no <code>free</code>: liberar es cosa de quien recibe el resultado.</p>
+</details>
+<details id="g-centinela">
+<summary>Centinela <code>NULL</code></summary>
+<p>Un valor especial que marca el final de una secuencia, para no tener que devolver su longitud
+aparte. El enunciado pide que el último elemento del array de <code>ft_split</code> sea 0: quien lo
+recibe avanza con <code>while (tab[i])</code> hasta encontrarlo. Es el mismo truco que el
+<code>'\0'</code> de las cadenas o el <code>NULL</code> tras el último <code>argv</code>.</p>
+</details>
+<details id="g-dos-pasadas">
+<summary>Patrón de dos pasadas: contar y luego reservar</summary>
+<p>Cuando hay que reservar memoria para un resultado que todavía no conoces, se recorre la entrada
+dos veces: la primera solo cuenta y la segunda rellena la memoria ya reservada con el tamaño exacto.
+Cuesta una pasada más, pero evita reservar de más o tener que agrandar el array por el camino (y
+<code>realloc</code> no está autorizado).</p>
+<p>En <code>ft_split</code>: contar palabras para reservar <code>palabras + 1</code> punteros, y para
+cada palabra medir su longitud antes de reservar <code>longitud + 1</code> bytes.</p>
+</details>
+<details id="g-palabra">
+<summary>Palabra, separador y cadena vacía</summary>
+<p>Para <code>ft_split</code>, un <em>separador</em> es cualquier carácter que aparezca en
+<code>charset</code>, y una <em>palabra</em> es un tramo de uno o más caracteres que no lo son. Una
+<em>cadena vacía</em> es <code>""</code>: un solo <code>'\0'</code>, longitud 0.</p>
+<p>Si se cortara a ciegas en cada separador, <code>",,a,"</code> con <code>","</code> daría
+<code>""</code>, <code>""</code>, <code>"a"</code> y <code>""</code>. El enunciado prohíbe las cadenas
+vacías, así que la única palabra es <code>"a"</code>: los separadores del principio, del final y los
+repetidos no producen nada. Una palabra empieza donde un carácter no separador va detrás de un
+separador o del inicio.</p>
+</details>
+<details id="g-fuga">
+<summary>Fuga de memoria (leak)</summary>
+<p>Memoria reservada con <code>malloc</code> que nadie libera y cuya dirección se ha perdido. En
+<code>ft_split</code> hay un caso clásico: si el <code>malloc</code> de la tercera palabra falla, las
+dos primeras y el array ya están reservados. Devolver <code>NULL</code> sin más los pierde; lo
+correcto es liberarlos antes. Como <code>free</code> no está autorizado en este ejercicio, la mayoría
+de soluciones de la piscine se limitan a devolver <code>NULL</code>, y conviene saber explicarlo.</p>
+</details>
+</div>
+
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>libft</h2>
 <div class="meta"><span>Entregables: <b>libft_creator.sh</b> + 5 <code>.c</code></span><span>Funciones: <b>write</b></span></div>
 <p>Crear la biblioteca <code>libft.a</code> con cinco funciones (<code>ft_putchar</code>,
 <code>ft_swap</code>, <code>ft_putstr</code>, <code>ft_strlen</code>, <code>ft_strcmp</code>) y un
-script que la construya:</p>
+<a href="#g-script">script</a> que la construya:</p>
 <pre><code>#!/bin/sh
 cc -Wall -Wextra -Werror -c ft_putchar.c ft_swap.c ft_putstr.c ft_strlen.c \
 	ft_strcmp.c
 ar rcs libft.a ft_putchar.o ft_swap.o ft_putstr.o ft_strlen.o ft_strcmp.o</code></pre>
-<p>El <code>cc -c</code> compila cada <code>.c</code> a un objeto <code>.o</code> (código máquina,
-pero sin enlazar). El <code>ar rcs</code> empaqueta esos objetos en un solo archivo
+<p>El <code>cc -c</code> compila cada <code>.c</code> a un <a href="#g-objeto">objeto <code>.o</code></a> (código máquina,
+pero sin enlazar). El <a href="#g-libreria-estatica"><code>ar rcs</code></a> empaqueta esos objetos en un solo archivo
 <code>libft.a</code>.</p>
 <div class="trasfondo"><b>Qué es una librería estática</b> — Compilar un programa tiene dos fases:
-<strong>compilar</strong> (cada <code>.c</code> → un <code>.o</code> con el código de sus funciones)
-y <strong>enlazar</strong> (juntar los <code>.o</code> y resolver quién llama a quién). Una
+<a href="#g-compilar"><strong>compilar</strong></a> (cada <code>.c</code> → un <code>.o</code> con el código de sus funciones)
+y <a href="#g-enlazar"><strong>enlazar</strong></a> (juntar los <code>.o</code> y resolver quién llama a quién). Una
 librería <code>.a</code> es, literalmente, un <em>archivo</em> (eso es <code>ar</code>, de
 <em>archiver</em>, el mismo linaje que <code>tar</code>) que agrupa varios <code>.o</code> para no
-ir pasándolos sueltos. La <code>s</code> de <code>rcs</code> escribe un índice de símbolos para que
+ir pasándolos sueltos. La <code>s</code> de <code>rcs</code> escribe un <a href="#g-simbolo">índice de símbolos</a> para que
 el enlazador encuentre rápido cada función. "Estática" quiere decir que, al enlazar, el código de
 las funciones que uses se <em>copia dentro</em> de tu ejecutable (frente a las dinámicas
 <code>.so</code>, que se cargan aparte al arrancar). Es el primer paso para dejar de reescribir
@@ -68,8 +283,8 @@ las funciones que uses se <em>copia dentro</em> de tu ejecutable (frente a las d
 <div class="meta"><span>Entregable: <b>Makefile</b></span><span>Reglas: <b>all, clean, fclean, re</b></span></div>
 <p>El mismo resultado que el script, pero con un <code>Makefile</code>: busca las fuentes en
 <code>srcs/</code>, la cabecera en <code>includes/</code>, compila con
-<code>-Wall -Wextra -Werror</code> y crea <code>libft.a</code>. Sin recompilar de más, sin
-wildcards.</p>
+<a href="#g-flags"><code>-Wall -Wextra -Werror</code></a> y crea <code>libft.a</code>. Sin recompilar de más, sin
+<a href="#g-wildcard">wildcards</a>.</p>
 <pre><code>NAME = libft.a
 CC = cc
 CFLAGS = -Wall -Wextra -Werror
@@ -97,14 +312,14 @@ re: fclean all
 .PHONY: all clean fclean re</code></pre>
 <div class="trasfondo"><b>Por qué existe <code>make</code> y su grafo de dependencias</b> — El
 script del ejercicio anterior recompila <em>todo</em> cada vez. En un proyecto grande eso es
-insoportable. <code>make</code> resuelve el problema con un <strong>grafo de dependencias</strong>:
-cada objetivo (<code>libft.a</code>) depende de unos prerequisitos (los <code>.o</code>), y cada
+insoportable. <code>make</code> resuelve el problema con un <a href="#g-dependencias"><strong>grafo de dependencias</strong></a>:
+cada <a href="#g-regla">objetivo</a> (<code>libft.a</code>) depende de unos prerequisitos (los <code>.o</code>), y cada
 <code>.o</code> depende de su <code>.c</code>. Antes de rehacer algo, <code>make</code> compara las
 fechas de modificación: si el <code>.c</code> no ha cambiado desde que se generó el <code>.o</code>,
 no lo recompila. Por eso al tocar un solo fuente solo se recompila ese, y volver a ejecutar
 <code>make</code> sin cambios responde "nothing to be done". Las reglas <code>clean</code> (borra
 los <code>.o</code>), <code>fclean</code> (borra también la librería) y <code>re</code> (todo de
-cero) son la convención de 42. La regla <code>%.o: %.c</code> es un <em>patrón</em>: "para hacer
+cero) son la convención de 42. La regla <code>%.o: %.c</code> es un <a href="#g-patron"><em>patrón</em></a>: "para hacer
 cualquier <code>.o</code>, compila su <code>.c</code>", con <code>$&lt;</code> = el prerequisito y
 <code>$@</code> = el objetivo. Y el aviso "cuidado con los wildcards": listar las fuentes a mano en
 vez de <code>*.c</code> evita que un archivo de sobra se cuele en la compilación.</div>
@@ -113,21 +328,118 @@ vez de <code>*.c</code> evita que un archivo de sobra se cuele en la compilació
 <div class="card" id="ex02">
 <h2><span class="ex">ex02</span>ft_split</h2>
 <div class="meta"><span>Entregable: <b>ft_split.c</b></span><span>Funciones: <b>malloc</b></span></div>
-<p>Partir una cadena en trozos usando cualquier carácter de un <em>charset</em> como separador, y
-devolver un array de cadenas terminado en <code>NULL</code>. Sin trozos vacíos.</p>
+<p>Partir una cadena en trozos usando cualquier carácter de un <a href="#g-palabra"><em>charset</em></a> como separador, y
+devolver un array de cadenas terminado en <a href="#g-centinela"><code>NULL</code></a>. Sin trozos vacíos.</p>
 <pre><code>char	**ft_split(char *str, char *charset);</code></pre>
 <p>La solución se descompone en piezas pequeñas (Norma: máximo 25 líneas por función): detectar si
 un carácter es separador, contar cuántas palabras hay, duplicar una palabra reservando su tamaño
 exacto, y rellenar el array. Se reserva sitio para <code>nº palabras + 1</code> y la última entrada
 se pone a <code>NULL</code> como centinela.</p>
 <div class="trasfondo"><b>El clásico que lo junta todo</b> — <code>ft_split</code> es el ejercicio
-donde convergen casi todos los conceptos previos: punteros a puntero (<code>char **</code>, un
-array de cadenas), memoria dinámica (un <code>malloc</code> para el array y uno por cada palabra),
+donde convergen casi todos los conceptos previos: <a href="#g-doble-puntero">punteros a puntero</a> (<code>char **</code>, un
+array de cadenas), <a href="#g-malloc">memoria dinámica</a> (un <code>malloc</code> para el array y uno por cada palabra),
 recorrer cadenas con centinela, y descomponer un problema en funciones cortas para respetar la
 Norma. La regla "sin cadenas vacías" obliga a pensar los casos borde: separadores al principio, al
 final, o varios seguidos ("saca las conclusiones pertinentes", dice el enunciado con retranca).
-Contar primero y reservar exacto — en vez de ir agrandando el array — es el patrón de dos pasadas
-que evita realloc y fugas.</div>
+Contar primero y reservar exacto — en vez de ir agrandando el array — es el <a href="#g-dos-pasadas">patrón de dos pasadas</a>
+que evita realloc y <a href="#g-fuga">fugas</a>.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: la librería, el <code>Makefile</code> y
+<code>ft_split</code>. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>La librería</h3>
+<details id="q-c">
+<summary>¿Para qué sirve el <code>-c</code> del script?</summary>
+<p>Para compilar sin enlazar: cada <code>.c</code> da su <code>.o</code> y no se intenta crear un
+ejecutable. Sin <code>-c</code>, <code>cc</code> intentaría enlazar los cinco archivos en un
+programa, y fallaría con <code>undefined reference to `main'</code> porque ninguno tiene
+<code>main</code>. → <a href="#ex00">ex00</a>, <a href="#g-objeto">archivo objeto</a></p>
+</details>
+<details id="q-ar">
+<summary>¿Qué hace <code>ar rcs</code>? ¿Qué significa cada letra?</summary>
+<p>Empaqueta los <code>.o</code> en <code>libft.a</code>. <code>r</code>: añade o reemplaza los
+<code>.o</code>; <code>c</code>: crea el archivo sin avisar si no existe; <code>s</code>: escribe el
+índice de símbolos que usa el enlazador. <code>ar t libft.a</code> enseña lo que hay dentro.
+→ <a href="#g-libreria-estatica">librería estática</a></p>
+</details>
+<details id="q-usar">
+<summary>¿Cómo se usa la librería desde un programa?</summary>
+<p><code>cc main.c -L. -lft</code>, con la cabecera incluida en <code>main.c</code>. La librería va
+<em>después</em> de los archivos que la usan: con <code>cc -L. -lft main.c</code> da
+<code>undefined reference to `ft_putstr'</code>, porque el enlazador va de izquierda a derecha y,
+cuando pasa por la librería, todavía nadie ha pedido nada. → <a href="#g-enlazar">enlazado</a></p>
+</details>
+<details id="q-so">
+<summary>¿Qué diferencia hay entre una librería estática y una dinámica?</summary>
+<p>La estática (<code>.a</code>) se copia dentro del ejecutable al enlazar: el programa no la
+necesita después, pero cada programa lleva su copia. La dinámica (<code>.so</code>) se carga al
+arrancar: los ejecutables son más pequeños y comparten una sola copia, pero tiene que estar
+instalada donde se ejecuta. → <a href="#ex00">ex00</a></p>
+</details>
+
+<h3>El Makefile</h3>
+<details id="q-relink">
+<summary>Si ejecuto <code>make</code> dos veces seguidas, ¿qué pasa?</summary>
+<p>La segunda no hace nada: <code>make: Nothing to be done for 'all'.</code> Todos los
+<code>.o</code> son más nuevos que sus <code>.c</code> y la librería más nueva que los
+<code>.o</code>. Si recompilara, incumpliría «no debe compilar los archivos inútilmente».
+→ <a href="#ex01">ex01</a>, <a href="#g-dependencias">dependencias</a></p>
+</details>
+<details id="q-touch">
+<summary>¿Y si modifico solo <code>ft_swap.c</code>?</summary>
+<p>Recompila <code>srcs/ft_swap.o</code> y vuelve a hacer el <code>ar</code>, nada más: es el único
+<code>.o</code> cuyo prerequisito es más nuevo, y la librería depende de él. Se comprueba con
+<code>touch srcs/ft_swap.c</code> y <code>make</code>. → <a href="#g-dependencias">dependencias</a></p>
+</details>
+<details id="q-header">
+<summary>¿Y si modifico <code>includes/ft.h</code>?</summary>
+<p>Con el <code>Makefile</code> de esta página, nada: <code>ft.h</code> no es prerequisito de ninguna
+regla, y <code>make</code> responde <code>Nothing to be done</code>. Para el ejercicio basta (el
+enunciado solo habla de fuentes), pero la respuesta honesta es que habría que añadir la cabecera como
+prerequisito de los <code>.o</code>, por ejemplo <code>%.o: %.c includes/ft.h</code>.
+→ <a href="#g-dependencias">dependencias</a></p>
+</details>
+<details id="q-reglas">
+<summary>¿Qué diferencia hay entre <code>clean</code>, <code>fclean</code> y <code>re</code>?</summary>
+<p><code>clean</code> borra los <code>.o</code>; <code>fclean</code> hace <code>clean</code> y además
+borra <code>libft.a</code>; <code>re</code> es <code>fclean</code> seguido de <code>all</code>,
+reconstruir desde cero. Se encadenan poniendo una regla como prerequisito de otra
+(<code>fclean: clean</code>, <code>re: fclean all</code>). → <a href="#ex01">ex01</a></p>
+</details>
+<details id="q-phony">
+<summary>¿Para qué sirve <code>.PHONY</code>?</summary>
+<p>Para decirle a <code>make</code> que <code>all</code>, <code>clean</code>, <code>fclean</code> y
+<code>re</code> no son archivos. Si no, basta un archivo llamado <code>clean</code> en la carpeta
+para que <code>make clean</code> responda <code>'clean' is up to date</code> y no borre nada.
+→ <a href="#g-phony">.PHONY</a></p>
+</details>
+<details id="q-wildcard">
+<summary>¿Por qué no pones <code>SRCS = $(wildcard srcs/*.c)</code>?</summary>
+<p>Porque la <a href="#g-variables">variable</a> <code>SRCS</code> compilaría lo que haya en la carpeta y no lo que pide el enunciado: un archivo de pruebas
+se colaría en la librería y uno que faltara no daría error. El enunciado avisa de los wildcards y la
+Moulinette prueba el <code>Makefile</code> con sus propios archivos. → <a href="#g-wildcard">wildcard</a></p>
+</details>
+
+<h3>ft_split</h3>
+<details id="q-vacias">
+<summary>¿Qué devuelve tu <code>ft_split</code> con separadores al principio, al final o repetidos, o con una cadena hecha solo de separadores?</summary>
+<p>Solo las palabras: con <code>",,a,"</code> y <code>","</code>, un array con <code>"a"</code> y
+<code>NULL</code>. Con una cadena vacía o hecha solo de separadores, un array con un único elemento
+<code>NULL</code> (no un puntero <code>NULL</code>: el array existe y está vacío). Una palabra
+empieza donde un no separador sigue a un separador o al principio.
+→ <a href="#ex02">ex02</a>, <a href="#g-palabra">palabra y separador</a></p>
+</details>
+<details id="q-split-malloc">
+<summary>¿Cuántos <code>malloc</code> hace y qué pasa si falla uno a mitad?</summary>
+<p>Uno para el array (palabras + 1 punteros) y uno por palabra (longitud + 1 bytes). Si falla
+uno a mitad, lo ya reservado se queda sin liberar si solo se devuelve <code>NULL</code>; el enunciado
+solo autoriza <code>malloc</code>, así que hay que saber explicar qué se pierde y cómo se arreglaría
+con <code>free</code>. → <a href="#g-dos-pasadas">dos pasadas</a>, <a href="#g-fuga">fuga</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 09 · <a href="012_c10.html">continuar con C 10 →</a></footer>

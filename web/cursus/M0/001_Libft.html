@@ -14,6 +14,8 @@
       <a href="../../index.html">Inicio</a>
       <a href="../../index.html#piscine">Piscine</a>
       <a href="../../index.html#cursus" class="active">Cursus</a>
+      <a href="../../galaxia.html">Galaxia</a>
+      <a href="../../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ descriptores, y una lista enlazada genérica con <code>t_list</code> — todo em
 Makefile y <code>ar</code>.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#libc-char">is* / to* — clasificar caracteres</a></li>
   <li><a href="#libc-str">strlen, strchr, strrchr</a></li>
   <li><a href="#libc-cmp">strncmp, strnstr</a></li>
@@ -45,6 +48,7 @@ Makefile y <code>ar</code>.</p>
   <li><a href="#lstclear">lstdelone, lstclear, lstiter</a></li>
   <li><a href="#lstmap">lstmap y la liberación si falla</a></li>
   <li><a href="#makefile">Makefile y librería estática</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>Por qué una librería propia</b> — En casi todos los proyectos de C del
@@ -63,13 +67,367 @@ nada de variables globales, auxiliares siempre <code>static</code>, todo en la r
 ningún segfault fuera del comportamiento indefinido. Y un README.md con descripción, instrucciones,
 recursos y uso de IA, que este repo incluye.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>Libft es el primer contacto serio con cómo C guarda las cadenas, la memoria y los números, y con
+cómo se compila y se empaqueta una librería. Aquí está cada término explicado desde cero y con un
+ejemplo sacado de esta libft. En el resto de la página, la primera vez que sale uno de estos
+términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Caracteres y cadenas</h3>
+<details id="g-ascii">
+<summary>ASCII y EOF</summary>
+<p>ASCII es la tabla que asigna un número a cada carácter: del 0 al 127, con los de control
+(<code>'\n'</code> es el 10, <code>'\t'</code> el 9), el espacio en el 32, los dígitos del 48 al 57,
+las mayúsculas del 65 al 90 y las minúsculas del 97 al 122. Para C un <code>char</code> es solo un
+número pequeño, así que <code>'a' + 1</code> es <code>'b'</code>. <code>EOF</code> es un valor
+especial (normalmente -1) que devuelven las funciones de lectura cuando no queda nada que leer; no es
+ningún carácter de la tabla.</p>
+<p>Por eso las <code>ft_is*</code> reciben un <code>int</code>: tienen que aceptar cualquier byte y
+también <code>EOF</code>. <code>ft_isprint</code> es el rango 32..126 (del espacio a la
+<code>~</code>), <code>ft_isascii</code> el 0..127, y <code>ft_toupper</code> suma
+<code>'A' - 'a'</code> (que vale -32) en vez de escribir el número a mano. <code>ft_atoi</code>
+salta los espacios del 9 al 13: <code>\t \n \v \f \r</code>.</p>
+</details>
+<details id="g-terminador">
+<summary>Terminador nulo (<code>'\0'</code>)</summary>
+<p>En C una cadena es una fila de <code>char</code> que acaba en el byte <code>'\0'</code> (valor 0).
+No se guarda la longitud: el final se sabe porque ahí está el cero. <code>"hola"</code> ocupa 5
+bytes, no 4, y por eso toda función que crea una cadena reserva <code>longitud + 1</code>.</p>
+<p><code>ft_strlen</code> cuenta hasta el <code>'\0'</code> sin incluirlo; <code>ft_strdup</code> y
+<code>ft_substr</code> reservan <code>l + 1</code> y escriben el cero al final;
+<code>ft_strchr(s, '\0')</code> devuelve un puntero al terminador, porque el <code>man</code> dice que
+cuenta como parte de la cadena. Las <code>mem*</code>, en cambio, ignoran los ceros: trabajan con
+<code>n</code> bytes exactos.</p>
+</details>
+<details id="g-const">
+<summary><code>const</code></summary>
+<p>Un calificador que promete que algo no se va a modificar a través de ese nombre. En
+<code>const char *s</code> lo constante son los caracteres apuntados: <code>s++</code> está
+permitido, <code>*s = 'x'</code> no compila. Sirve de documentación (la función no te va a tocar la
+cadena) y de red: el compilador avisa si lo intentas.</p>
+<p><code>ft_strchr(const char *s, int c)</code> promete no tocar <code>s</code> pero devuelve un
+<code>char *</code> dentro de ella, así que tiene que quitar el <code>const</code> con el cast
+<code>(char *) s</code>. Es el prototipo de la libc y hay que copiarlo tal cual.</p>
+</details>
+<details id="g-unsigned-char">
+<summary><code>unsigned char</code> y bytes con signo</summary>
+<p>Un byte puede leerse como <code>signed char</code> (-128..127) o como <code>unsigned char</code>
+(0..255). Un <code>char</code> a secas es uno u otro según la plataforma; en x86 tiene signo. El
+mismo byte <code>0x80</code> vale -128 con signo y 128 sin signo, y eso cambia el resultado de
+cualquier comparación o resta.</p>
+<p>El <code>man</code> de <code>strncmp</code> y <code>memcmp</code> pide comparar sin signo, y por
+eso <code>ft_strncmp</code> resta <code>(unsigned char) s1[i] - (unsigned char) s2[i]</code>:
+<code>ft_strncmp("\200", "a", 1)</code> da positivo, igual que la de la libc (probado). Las
+<code>mem*</code> convierten el <code>void *</code> a <code>unsigned char *</code> por lo mismo: así
+cada byte es un número de 0 a 255.</p>
+</details>
+
+<h3>Memoria</h3>
+<details id="g-void">
+<summary><code>void *</code>: memoria sin tipo</summary>
+<p>Un puntero genérico: guarda una dirección pero no dice qué hay en ella. Cualquier puntero se
+convierte a <code>void *</code> y de vuelta sin cast, pero no se puede desreferenciar
+(<code>*p</code>) ni avanzar (<code>p + 1</code>), porque no se sabe cuántos bytes ocupa cada
+elemento. Antes de usarlo hay que decidir cómo leerlo.</p>
+<p>Las <code>mem*</code> reciben <code>void *</code> para trabajar con cualquier memoria y lo primero
+que hacen es <code>p = dest</code> con <code>unsigned char *p</code>. El <code>content</code> de
+<code>t_list</code> también es <code>void *</code>: la lista no sabe qué guarda, y por eso necesita
+que le pases <code>del</code> para liberarlo.</p>
+</details>
+<details id="g-size-t">
+<summary><code>size_t</code> y la vuelta de los sin signo</summary>
+<p><code>size_t</code> es el tipo entero sin signo que usa C para tamaños: lo devuelve
+<code>sizeof</code>, lo recibe <code>malloc</code> y en Linux de 64 bits va de 0 a 2⁶⁴ - 1. Al no
+tener negativos, una resta que «debería» dar -1 da la vuelta y sale el número más grande posible.
+Esa vuelta está definida por el estándar (aritmética módulo 2⁶⁴), así que no da error: da un
+resultado enorme y silencioso.</p>
+<p>Es la fuente de los bordes más delicados de libft: en <code>ft_strlcpy</code>,
+<code>siz - 1</code> con <code>siz == 0</code> copiaría sin límite, por eso ese caso va primero. En
+<code>ft_memmove</code> se recorre hacia atrás con <code>i = n; while (i &gt; 0) { i--; … }</code>,
+porque <code>while (i &gt;= 0)</code> con <code>size_t</code> es siempre cierto.</p>
+</details>
+<details id="g-solapamiento">
+<summary>Solapamiento de memoria</summary>
+<p>Dos zonas de memoria se solapan cuando comparten bytes, por ejemplo dos trozos del mismo array.
+Si copias de una a otra en el sentido equivocado, sobrescribes bytes del origen antes de haberlos
+leído.</p>
+<p>Con <code>m = "123456"</code>, <code>ft_memmove(m + 1, m, 4)</code> da <code>"112346"</code>
+(probado): como el destino está por delante, copia del último byte al primero. Un bucle hacia delante
+leería un <code>'1'</code> ya copiado en cada paso y daría <code>"111116"</code>.
+<code>memcpy</code> no promete nada con zonas solapadas; <code>memmove</code> sí.</p>
+</details>
+<details id="g-heap">
+<summary>Heap, <code>malloc</code> y <code>free</code></summary>
+<p>El <em>heap</em> (montículo) es la zona de memoria que el programa pide y devuelve a mano mientras
+se ejecuta. <code>malloc(n)</code> reserva n bytes y devuelve su dirección, o <code>NULL</code> si no
+puede; <code>free(p)</code> los devuelve. Lo que se reserva ahí sobrevive al final de la función que
+lo pidió, al contrario que las variables locales, que viven en la pila de llamadas y desaparecen al
+salir.</p>
+<p>Por eso <code>ft_strdup</code>, <code>ft_substr</code> o <code>ft_lstnew</code> pueden devolver
+memoria nueva: está en el heap. Y por eso cada <code>malloc</code> va seguido de
+<code>if (!p) return (NULL)</code>. <code>ft_calloc</code> añade el poner a cero con
+<code>ft_bzero</code>.</p>
+</details>
+<details id="g-propiedad">
+<summary>Propiedad de la memoria</summary>
+<p>No es una palabra del lenguaje sino una forma de razonar: en cada momento, cada bloque del heap
+tiene un <em>dueño</em>, el trozo de código que debe liberarlo. Si nadie es dueño, se pierde (una
+fuga); si lo son dos, se libera dos veces.</p>
+<p>En libft, las funciones que reservan pasan la propiedad al llamante: quien llama a
+<code>ft_split</code> debe liberar cada palabra y luego el array. En las listas, la lista es dueña de
+sus nodos, pero el contenido lo libera <code>del</code>, que pone el llamante. Y en
+<code>ft_lstmap</code> hay un momento en que el <code>content</code> recién creado por
+<code>f</code> no es de ningún nodo: por eso se libera aparte si falla <code>ft_lstnew</code>.</p>
+</details>
+<details id="g-fuga">
+<summary>Fuga de memoria, doble <code>free</code> y valgrind</summary>
+<p>Una <em>fuga</em> (<em>leak</em>) es memoria reservada que ya no se puede liberar porque no queda
+ningún puntero hacia ella. Un <em>doble free</em> es liberar dos veces el mismo bloque: es
+comportamiento indefinido, y glibc suele abortar el programa con <code>free(): double free
+detected</code>. Valgrind ejecuta el programa vigilando cada <code>malloc</code> y cada
+<code>free</code> y avisa de las dos cosas.</p>
+<p>Un main de prueba que llama a <code>ft_split</code>, <code>ft_itoa</code>,
+<code>ft_strtrim</code> y <code>ft_substr</code> y libera lo que recibe pasa
+<code>valgrind --leak-check=full</code> sin ningún aviso. El README cuenta que una versión anterior
+de <code>ft_lstmap</code> tenía un doble free en el camino de error.</p>
+</details>
+<details id="g-indefinido">
+<summary>Comportamiento indefinido</summary>
+<p>Lo que el estándar de C no define: leer fuera de un array, desreferenciar <code>NULL</code>,
+liberar dos veces, desbordar un <code>int</code> con signo. El programa puede funcionar, dar basura o
+caerse, y puede cambiar de un compilador a otro. El enunciado pide que no haya segfaults «salvo
+comportamiento indefinido»: si te pasan <code>NULL</code> donde la libc tampoco lo acepta, no se te
+exige nada.</p>
+<p>Ejemplos en esta libft: <code>ft_strlen(NULL)</code> se cae, igual que <code>strlen</code>; el
+<code>ft_strnstr</code> lee <code>big</code> hasta su <code>'\0'</code> aunque <code>len</code> sea
+menor, que con un buffer sin terminador sería leer fuera; y <code>ft_lstmap</code> con
+<code>del</code> nulo llamaría a un puntero nulo si falla un <code>malloc</code>.</p>
+</details>
+
+<h3>Números</h3>
+<details id="g-complemento-a-dos">
+<summary>Complemento a dos e <code>INT_MIN</code></summary>
+<p>La forma en que el procesador guarda los enteros con signo. Con 32 bits, un <code>int</code> va de
+<code>INT_MIN</code> = -2147483648 a <code>INT_MAX</code> = 2147483647: hay un negativo más que
+positivos, porque el 0 ocupa un hueco de la mitad positiva. Consecuencia: <code>-INT_MIN</code> no
+cabe en un <code>int</code>.</p>
+<p>Es el borde que más se evalúa en libft. <code>ft_putnbr_fd</code> lo resuelve copiando a
+<code>long</code> antes de negar; <code>ft_itoa</code> y <code>ft_atoi</code>, sin <code>long</code>:
+trabajan con el número en negativo y nunca calculan +2147483648.
+<code>ft_itoa(-2147483648)</code> da <code>"-2147483648"</code> (probado).</p>
+</details>
+<details id="g-desbordamiento">
+<summary>Desbordamiento de enteros</summary>
+<p>Pasa cuando el resultado de una operación no cabe en el tipo. Con signo (<code>int</code>) es
+comportamiento indefinido; sin signo (<code>size_t</code>) da la vuelta y sigue como si nada. Lo
+peligroso es que no avisa: el programa sigue con un número equivocado.</p>
+<p>En <code>ft_calloc</code>, <code>nmemb * size</code> puede no caber en 64 bits: el producto daría
+la vuelta, se reservaría un bloque diminuto y quien lo use escribiría fuera. Por eso se comprueba
+<code>s / nmemb != size</code>: <code>ft_calloc((size_t)-1, 2)</code> devuelve <code>NULL</code>
+(probado).</p>
+</details>
+<details id="g-division">
+<summary>División y módulo con negativos</summary>
+<p>Desde C99, la división entera trunca hacia cero: <code>7 / -2</code> da -3, no -4. Y el resto
+lleva el signo del dividendo: <code>-7 % 10</code> da -7. Se cumple siempre que
+<code>(a / b) * b + a % b == a</code>.</p>
+<p><code>ft_itoa</code> se apoya en eso para no negar nunca el número: con un <code>n</code>
+negativo, <code>n % 10</code> está entre -9 y 0, así que <code>-(n % 10)</code> es el dígito.
+Con <code>-2147483648</code> la última cifra es <code>-(-8) = 8</code>.</p>
+</details>
+
+<h3>Funciones y paso de parámetros</h3>
+<details id="g-paso-valor">
+<summary>Paso por valor</summary>
+<p>En C los argumentos se copian: la función recibe su propia copia de cada parámetro, y cambiarla
+no afecta a la variable del llamante. Para que una función cambie algo de fuera, hay que pasarle su
+dirección y escribir a través de ella.</p>
+<p>En <code>ft_lstadd_back</code>, la rama <code>lst = &amp;new;</code> cambia la copia local de
+<code>lst</code> y no tiene ningún efecto fuera. <code>ft_striteri</code> pasa
+<code>&amp;s[i]</code> precisamente para que <code>f</code> pueda cambiar el carácter, mientras que
+<code>ft_strmapi</code> pasa el carácter por valor.</p>
+</details>
+<details id="g-doble-puntero">
+<summary>Doble puntero (<code>t_list **</code>)</summary>
+<p>Un puntero a un puntero. Si el llamante tiene <code>t_list *lista</code> y la función debe
+cambiar a qué nodo apunta <code>lista</code> (porque cambia la cabeza o la deja a
+<code>NULL</code>), tiene que recibir <code>&amp;lista</code>, de tipo <code>t_list **</code>, y
+escribir en <code>*lst</code>. Es el paso por valor aplicado a un puntero.</p>
+<p>Lo usan las tres funciones que pueden cambiar la cabeza: <code>ft_lstadd_front</code> (el nodo
+nuevo pasa a ser la cabeza), <code>ft_lstadd_back</code> (si la lista estaba vacía) y
+<code>ft_lstclear</code> (la deja a <code>NULL</code>). <code>ft_lstsize</code> o
+<code>ft_lstlast</code> solo leen y reciben <code>t_list *</code>. <code>ft_split</code> devuelve
+un <code>char **</code>, un array de punteros a cadenas.</p>
+</details>
+<details id="g-puntero-funcion">
+<summary>Puntero a función</summary>
+<p>Una variable que guarda la dirección de una función, para llamarla después. Se declara con la
+forma de la función: <code>void (*del)(void *)</code> es «un puntero llamado <code>del</code> a una
+función que recibe un <code>void *</code> y no devuelve nada». Se llama con <code>del(x)</code> o
+<code>(*del)(x)</code>, que son equivalentes.</p>
+<p>Permite que la librería deje una parte del trabajo a quien la usa: <code>ft_strmapi</code> y
+<code>ft_striteri</code> reciben qué hacer con cada carácter, <code>ft_lstiter</code> y
+<code>ft_lstmap</code> qué hacer con cada contenido, y <code>ft_lstdelone</code> y
+<code>ft_lstclear</code> cómo liberarlo (para un <code>content</code> hecho con
+<code>malloc</code>, basta pasar <code>free</code>).</p>
+<p>Hay dos formas clásicas de usarlo para recorrer una colección: <em>map</em> construye una
+colección nueva con los resultados y deja la original intacta (<code>ft_strmapi</code>,
+<code>ft_lstmap</code>); <em>for-each</em> llama a la función con cada elemento y no devuelve nada,
+y si algo cambia, cambia en el sitio (<code>ft_striteri</code>, <code>ft_lstiter</code>).</p>
+</details>
+<details id="g-static">
+<summary>Funciones <code>static</code></summary>
+<p>Una función declarada <code>static</code> solo es visible dentro de su fichero <code>.c</code>:
+el enlazador no la ve desde fuera y no choca con otra del mismo nombre en otro fichero. El enunciado
+obliga a que todas las auxiliares lo sean, y el tester del pack comprueba que todo símbolo global
+empiece por <code>ft_</code>.</p>
+<p>Las auxiliares de libft son <code>static</code>: <code>ft_trim_r</code> y
+<code>ft_trim_l</code> en strtrim, las cuatro de split y <code>ft_char_init</code> e
+<code>ft_itoa_real</code> en itoa. Con <code>nm libft.a</code> salen con una <code>t</code>
+minúscula (locales) y las 43 públicas con <code>T</code>.</p>
+</details>
+<details id="g-cortocircuito">
+<summary>Evaluación en cortocircuito</summary>
+<p><code>&amp;&amp;</code> y <code>||</code> evalúan de izquierda a derecha y se paran en cuanto
+saben el resultado: en <code>A &amp;&amp; B</code>, si A es falso, B ni se evalúa. Así se escriben
+condiciones en las que la segunda parte solo es segura si la primera se cumple.</p>
+<p><code>ft_memchr</code> hace <code>while (i &lt; n &amp;&amp; p[i] != c)</code>: con
+<code>i == n</code> el byte <code>p[n]</code> no llega a leerse. <code>ft_lstlast</code> hace
+<code>while (n &amp;&amp; n-&gt;next != NULL)</code>, y por eso acepta una lista vacía. Si se
+invierte el orden, la lectura se hace antes de comprobar el límite.</p>
+</details>
+<details id="g-recursion">
+<summary>Recursión</summary>
+<p>Una función es recursiva si se llama a sí misma con un problema más pequeño, hasta llegar a un
+<em>caso base</em> que se resuelve sin volver a llamarse. Cada llamada pendiente ocupa un trozo de la
+pila de llamadas, y si se anidan demasiadas, se agota (<em>stack overflow</em>).</p>
+<p>Esta libft tiene tres: <code>ft_putnbr_fd</code> (imprime <code>n / 10</code> antes que su
+último dígito), <code>ft_itoa_real</code> (el caso base, el dígito más alto, reserva la cadena) y
+<code>ft_lstclear</code> (borra el resto de la lista antes que el nodo actual). Las dos primeras se
+anidan como mucho 10 veces; <code>ft_lstclear</code>, una vez por nodo.</p>
+</details>
+<details id="g-maquina-estados">
+<summary>Máquina de estados</summary>
+<p>Una forma de escribir un recorrido: el programa está siempre en uno de unos pocos
+<em>estados</em> y cada cosa que lee lo hace pasar de uno a otro. En vez de muchos <code>if</code>
+anidados, una variable dice «dónde estoy».</p>
+<p><code>ft_count_words</code> y <code>ft_add_word</code> usan dos estados, «fuera de palabra» (0) y
+«dentro» (1), guardados en una variable (<code>f</code> en <code>ft_count_words</code>, <code>i[1]</code> en <code>ft_add_word</code>). Un carácter distinto de <code>c</code> pasa de 0 a 1 y
+marca el inicio; un <code>c</code> o el <code>'\0'</code> pasan de 1 a 0 y cierran la palabra. Por
+eso <code>"  a bb  ccc "</code> da <code>a</code>, <code>bb</code> y <code>ccc</code> sin palabras
+vacías (probado).</p>
+</details>
+
+<h3>Estructuras, coste y sistema</h3>
+<details id="g-lista-enlazada">
+<summary>Lista enlazada</summary>
+<p>Una secuencia hecha de nodos sueltos en memoria, cada uno con su dato y un puntero al siguiente;
+el último apunta a <code>NULL</code>. La lista se maneja con un puntero al primer nodo (la cabeza),
+y una lista vacía es simplemente ese puntero a <code>NULL</code>.</p>
+<p>Frente a un array, meter un nodo al principio es inmediato (<code>ft_lstadd_front</code> son dos
+asignaciones), pero llegar al final exige recorrerla entera: <code>ft_lstlast</code>,
+<code>ft_lstsize</code> y <code>ft_lstadd_back</code> caminan hasta <code>NULL</code>. El
+<code>t_list</code> de libft es <em>simple</em> (cada nodo solo conoce al siguiente) y genérico
+(<code>void *content</code>).</p>
+</details>
+<details id="g-o-grande">
+<summary>Coste: O(n) y O(n²)</summary>
+<p>La notación O grande dice cómo crece el trabajo cuando crece la entrada, sin fijarse en
+constantes. O(1) es coste fijo; O(n), proporcional al tamaño (el doble de nodos, el doble de
+trabajo); O(n²), proporcional al cuadrado (el doble de nodos, cuatro veces más).</p>
+<p><code>ft_lstadd_front</code> es O(1); <code>ft_lstadd_back</code> es O(n), porque recorre la
+lista para encontrar el último. <code>ft_lstmap</code> llama a <code>ft_lstadd_back</code> por cada
+nodo sobre una lista que va creciendo: 1 + 2 + … + n pasos, O(n²). Guardando un puntero al último
+nodo sería O(n).</p>
+</details>
+
+<details id="g-fd">
+<summary>Descriptor de fichero</summary>
+<p>Un número entero con el que el sistema operativo identifica algo abierto por el proceso: un
+fichero, una tubería, la terminal. Todo proceso arranca con tres: 0 es la entrada estándar (stdin),
+1 la salida estándar (stdout) y 2 la salida de errores (stderr). <code>write(fd, buf, n)</code>
+escribe <code>n</code> bytes en el que le digas.</p>
+<p>Las <code>ft_put*_fd</code> reciben el descriptor como parámetro: <code>ft_putstr_fd("hola", 1)</code>
+escribe en pantalla, con 2 va a stderr (lo que no se cuela en una tubería <code>|</code>), y con el
+número que devuelve <code>open</code> iría a un fichero.</p>
+</details>
+
+<h3>Compilación y librería</h3>
+<details id="g-objeto">
+<summary>Fichero objeto (<code>.o</code>)</summary>
+<p>El resultado de compilar un <code>.c</code> sin enlazarlo (<code>cc -c</code>): código máquina
+de sus funciones más una tabla de símbolos con lo que define y lo que necesita de fuera. Todavía no
+se puede ejecutar, porque las llamadas a funciones de otros ficheros están sin resolver.</p>
+<p>El Makefile compila cada <code>ft_*.c</code> a su <code>.o</code> por separado. <code>nm -u</code>
+sobre la librería lista lo que necesitan de fuera: solo <code>malloc</code>, <code>free</code>,
+<code>write</code> y <code>__stack_chk_fail</code>, que la añade el compilador para proteger la
+pila, no el código.</p>
+</details>
+<details id="g-libreria">
+<summary>Librería estática y <code>ar</code></summary>
+<p>Una librería estática (<code>.a</code>) es un archivo que guarda varios ficheros objeto juntos con
+un índice de qué símbolo está en cuál. Al enlazar un programa con ella, se copian dentro del
+ejecutable los objetos que hacen falta y nada más. La alternativa es una librería dinámica
+(<code>.so</code>), que se carga al ejecutar.</p>
+<p><code>ar rcs libft.a *.o</code> la crea: <code>r</code> inserta o reemplaza, <code>c</code> crea
+el archivo sin avisar y <code>s</code> escribe el índice. <code>ar t libft.a</code> lista los 43
+objetos, y <code>nm -s</code> enseña el índice (<code>ft_isalpha in ft_isalpha.o</code>…).</p>
+</details>
+<details id="g-enlazador">
+<summary>Enlazador (<code>-L</code>, <code>-l</code>, <code>-I</code>)</summary>
+<p>El enlazador (<em>linker</em>) es la última fase de la compilación: junta los ficheros objeto y
+las librerías y resuelve cada llamada a la dirección de su función. Si falta una, da
+<code>undefined reference</code>. <code>-I</code> dice dónde buscar los headers (eso es del
+compilador), <code>-L</code> dónde buscar librerías y <code>-lft</code> que use
+<code>libft.a</code>: el nombre sin <code>lib</code> ni extensión.</p>
+<p>Para usar libft: <code>cc main.c -I. -L. -lft</code>. El orden importa: la librería va después de
+los ficheros que la usan, porque el enlazador solo saca de ella lo que ya sabe que falta.</p>
+</details>
+<details id="g-relink">
+<summary>Dependencias del Makefile y relink</summary>
+<p>Una regla de Makefile dice qué fichero se construye (<em>objetivo</em>), de qué depende y con
+qué comando. <code>make</code> solo ejecuta el comando si el objetivo no existe o alguna dependencia
+es más nueva. Se dice que un Makefile <em>relinkea</em> cuando un segundo <code>make</code> sin
+cambios vuelve a compilar o a crear la librería: en 42 cuenta como fallo.</p>
+<p>Aquí <code>libft.a</code> depende de los <code>.o</code> y cada <code>.o</code> de su
+<code>.c</code> y de <code>libft.h</code>. Un segundo <code>make</code> responde <code>Nothing to be
+done for 'all'</code>; tras <code>touch ft_strlen.c</code> recompila solo
+<code>ft_strlen.o</code> y vuelve a pasar <code>ar</code> (probado). <code>.PHONY</code> marca
+<code>all</code>, <code>clean</code>, <code>fclean</code> y <code>re</code> como reglas que no son
+ficheros.</p>
+</details>
+<details id="g-include-guard">
+<summary>Include guard</summary>
+<p>Un <code>#ifndef NOMBRE</code> / <code>#define NOMBRE</code> / <code>#endif</code> que envuelve un
+header para que, si se incluye dos veces en el mismo <code>.c</code> (directa o indirectamente), la
+segunda vez quede vacía. Sin él, el <code>typedef</code> de <code>t_list</code> se definiría dos
+veces y no compilaría.</p>
+<p><code>libft.h</code> empieza con <code>#ifndef LIBFT_H</code> y <code># define LIBFT_H</code>
+(la Norma pide sangrar con un espacio tras la <code>#</code> lo que va dentro del guard) e incluye
+<code>&lt;unistd.h&gt;</code> y <code>&lt;stdlib.h&gt;</code>, que dan <code>size_t</code>,
+<code>write</code>, <code>malloc</code> y <code>free</code>.</p>
+</details>
+<details id="g-norma">
+<summary>La Norma y norminette</summary>
+<p>La Norma es el estilo obligatorio de 42 para C, y <code>norminette</code> el programa que la
+comprueba. Entre otras cosas: funciones de 25 líneas como mucho, 5 funciones por fichero, 4
+parámetros y 5 variables por función, declaraciones al principio y separadas del código, nada de
+<code>for</code>, <code>switch</code> ni <code>do while</code>, y tabuladores para indentar. Un error
+de norma es un 0 en la evaluación.</p>
+<p>Explica varias decisiones del código: que <code>ft_split</code> se parta en cuatro auxiliares, o
+que <code>ft_add_word</code> guarde sus cuatro contadores en <code>int i[4]</code> para ahorrar
+líneas. <code>norminette</code> sobre el repo da OK en todos los ficheros.</p>
+</details>
+</div>
+
 <h2>Parte 1 — Funciones de la libc</h2>
 
 <div class="card" id="libc-char">
 <h2><span class="ex">is* / to*</span>isalpha, isdigit, isalnum, isascii, isprint, toupper, tolower</h2>
 <div class="meta"><span>Entrega: <b>ft_isalpha.c</b> … <b>ft_tolower.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
 <p>Siete funciones de una comparación. Todas reciben un <code>int</code> (no un
-<code>char</code>, para poder recibir <code>EOF</code>) y, según el enunciado, las de clasificación
+<code>char</code>, para poder recibir <a href="#g-ascii"><code>EOF</code></a>) y, según el enunciado, las de clasificación
 devuelven exactamente <code>1</code> o <code>0</code>:</p>
 <pre><code>int	ft_isalpha(int c)
 {
@@ -133,14 +491,14 @@ char	*ft_strrchr(const char *s, int c)
 	else
 		return (p);
 }</code></pre>
-<p>Dos detalles que pide el <code>man</code> y que el código cumple. El <code>'\0'</code> final
+<p>Dos detalles que pide el <code>man</code> y que el código cumple. El <a href="#g-terminador"><code>'\0'</code></a> final
 cuenta como parte de la cadena: <code>ft_strchr(s, '\0')</code> devuelve un puntero al terminador,
 porque el bucle para en él y la comparación final acierta. Y <code>c</code> se convierte a
 <code>(char)</code> antes de comparar, así que <code>ft_strchr(s, 'a' + 256)</code> encuentra la
 <code>'a'</code>. <code>ft_strrchr</code> va al revés: empieza <em>en</em> el terminador y retrocede
 hasta encontrar <code>c</code> o chocar con el principio.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El cast <code>(char *) s</code> es el
-primer choque con <code>const</code>: la libc recibe una cadena que promete no modificar pero
+primer choque con <a href="#g-const"><code>const</code></a>: la libc recibe una cadena que promete no modificar pero
 devuelve un <code>char *</code> modificable dentro de ella. Es una decisión histórica del estándar
 (si devolviese <code>const char *</code> sería incómoda de usar con cadenas no constantes) y aquí
 te toca reproducirla tal cual.</div>
@@ -162,7 +520,7 @@ te toca reproducirla tal cual.</div>
 		return ((unsigned char) s1[i] - (unsigned char) s2[i]);
 	return (0);
 }</code></pre>
-<p>La resta se hace con <code>unsigned char</code>: el <code>man</code> exige comparar los bytes como
+<p>La resta se hace con <a href="#g-unsigned-char"><code>unsigned char</code></a>: el <code>man</code> exige comparar los bytes como
 sin signo, de modo que <code>'\200'</code> sea <em>mayor</em> que <code>'a'</code> y no un número
 negativo. El bucle se detiene en <code>n - 1</code> para que la última comparación sea la del
 carácter <code>n</code>-ésimo. Ojo, una rareza inofensiva: <code>i &lt; n</code> sobra (lo implica
@@ -181,10 +539,10 @@ carácter <code>n</code>-ésimo. Ojo, una rareza inofensiva: <code>i &lt; n</cod
 	return (NULL);</code></pre>
 <p><code>ft_strnstr</code> busca <code>little</code> dentro de los primeros <code>len</code>
 caracteres de <code>big</code>: por cada posición de salida intenta casar la aguja entera sin
-pasarse de <code>len</code>. Ojo: el bucle exterior solo para en el <code>'\0'</code> de
+pasarse de <code>len</code>. Ojo: el bucle exterior solo para en el <a href="#g-terminador"><code>'\0'</code></a> de
 <code>big</code>, no en <code>len</code>. El resultado es correcto (pasado <code>len</code> el bucle
 interior no avanza y nunca hay coincidencia), pero sigue leyendo <code>big</code> hasta su final;
-con un buffer que no tenga <code>'\0'</code> dentro de los <code>len</code> bytes, leería fuera.</p>
+con un buffer que no tenga <code>'\0'</code> dentro de los <code>len</code> bytes, <a href="#g-indefinido">leería fuera</a>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Es la segunda vuelta de
 <a href="../../piscine/005_c03.html">C 03</a> (strncmp, strstr), con dos matices nuevos: la
 comparación con <code>unsigned char</code> y el límite <code>len</code>. Las funciones "con n" de
@@ -196,7 +554,7 @@ respete en <em>todas</em> las lecturas, no solo en el resultado.</div>
 <h2><span class="ex">strl*</span>strlcpy / strlcat</h2>
 <div class="meta"><span>Entrega: <b>ft_strlcpy.c</b>, <b>ft_strlcat.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
 <p>Las copias "seguras" de BSD: reciben el tamaño <em>total</em> del buffer destino
-(<code>siz</code>), nunca escriben más allá, siempre terminan en <code>'\0'</code> si hay sitio, y
+(<code>siz</code>), nunca escriben más allá, siempre terminan en <a href="#g-terminador"><code>'\0'</code></a> si hay sitio, y
 devuelven la longitud de la cadena que <em>intentaron</em> crear. Si el valor devuelto es
 <code>&gt;= siz</code>, hubo truncado.</p>
 <pre><code>size_t	ft_strlcpy(char *dst, const char *src, size_t siz)
@@ -215,7 +573,7 @@ devuelven la longitud de la cadena que <em>intentaron</em> crear. Si el valor de
 	return (ft_strlen(src));
 }</code></pre>
 <p>El caso <code>siz == 0</code> va primero por una razón concreta: <code>siz</code> es
-<code>size_t</code>, y <code>siz - 1</code> con <code>siz == 0</code> no da -1, da el
+<a href="#g-size-t"><code>size_t</code></a>, y <code>siz - 1</code> con <code>siz == 0</code> no da -1, da el
 <code>size_t</code> máximo — el bucle copiaría sin límite.</p>
 <pre><code>size_t	ft_strlcat(char *dst, const char *src, size_t siz)
 {
@@ -257,8 +615,8 @@ destino lleno. El enunciado recuerda que glibc no las trae: para compararlas hac
 <h2><span class="ex">mem</span>memset, bzero, memcpy, memchr, memcmp</h2>
 <div class="meta"><span>Entrega: <b>ft_memset.c</b>, <b>ft_bzero.c</b>, <b>ft_memcpy.c</b>, <b>ft_memchr.c</b>, <b>ft_memcmp.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
 <p>Las <code>mem*</code> no saben nada de cadenas: trabajan con <code>n</code> bytes de memoria
-cualquiera, recibida como <code>void *</code>, y no se paran en ningún <code>'\0'</code>. Lo primero
-que hacen todas es convertir ese puntero genérico en <code>unsigned char *</code> para poder
+cualquiera, recibida como <a href="#g-void"><code>void *</code></a>, y no se paran en ningún <a href="#g-terminador"><code>'\0'</code></a>. Lo primero
+que hacen todas es convertir ese puntero genérico en <a href="#g-unsigned-char"><code>unsigned char *</code></a> para poder
 recorrerlo byte a byte:</p>
 <pre><code>void	*ft_memcpy(void *dest, const void *src, size_t n)
 {
@@ -292,7 +650,7 @@ con dos punteros nulos (no hacer nada) y es la que suelen comprobar los testers.
 		return (&amp;p[i]);</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <code>void *</code> es "memoria sin
 tipo": no se puede desreferenciar ni hacer aritmética con él, hay que decidir cómo leerlo. Y que el
-orden de las condiciones de un <code>&amp;&amp;</code> importa: la evaluación en cortocircuito es
+orden de las condiciones de un <code>&amp;&amp;</code> importa: la <a href="#g-cortocircuito">evaluación en cortocircuito</a> es
 lo que garantiza que la comprobación del límite proteja la lectura. El README del propio repo
 menciona justo ese fallo (leer <code>p[n]</code> tras el bucle de memchr) entre los que hubo que
 corregir, y un test que coloca los buffers pegados a una página de memoria protegida para cazar
@@ -302,7 +660,7 @@ lecturas fuera de rango.</div>
 <div class="card" id="memmove">
 <h2><span class="ex">memmove</span>memmove y el solapamiento</h2>
 <div class="meta"><span>Entrega: <b>ft_memmove.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
-<p><code>memcpy</code> no garantiza nada si origen y destino se solapan; <code>memmove</code> sí.
+<p><code>memcpy</code> no garantiza nada si origen y destino se <a href="#g-solapamiento">solapan</a>; <code>memmove</code> sí.
 El problema: si copias hacia delante y el destino empieza <em>dentro</em> del origen, machacas
 bytes que aún no has leído.</p>
 <pre><code>void	*ft_memmove(void *dest, const void *src, size_t n)
@@ -334,11 +692,11 @@ bytes que aún no has leído.</p>
 que se sobrescriben ya se han leído. Con <code>"123456"</code> y
 <code>ft_memmove(m + 1, m, 4)</code> sale <code>"112346"</code>; un memcpy ingenuo daría
 <code>"111116"</code>. El patrón <code>i = n; while (i &gt; 0) { i--; … }</code> evita el clásico
-<code>while (i &gt;= 0)</code>, que con <code>size_t</code> sería un bucle infinito.</p>
+<code>while (i &gt;= 0)</code>, que con <a href="#g-size-t"><code>size_t</code></a> sería un bucle infinito.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A visualizar la memoria como una tira de
 bytes donde dos "variables" pueden ser trozos de la misma tira. Es la primera vez que el orden de
-un bucle cambia el resultado y no solo el rendimiento. (Comparar punteros con <code>&gt;</code> solo
-está garantizado por el estándar dentro del mismo objeto; en la práctica todas las implementaciones
+un bucle cambia el resultado y no solo el rendimiento. (Comparar punteros con <code>&gt;</code> <a href="#g-indefinido">solo
+está garantizado por el estándar</a> dentro del mismo objeto; en la práctica todas las implementaciones
 de memmove hacen esto mismo.)</div>
 </div>
 
@@ -362,7 +720,7 @@ de memmove hacen esto mismo.)</div>
 <p>Espacios (incluidos <code>\t \n \v \f \r</code>, del 9 al 13), un único signo opcional y
 dígitos. Lo interesante es <code>r * 10 + s * digito</code>: el signo se aplica a cada dígito en
 lugar de al final, de modo que con <code>"-2147483648"</code> el acumulador va bajando por los
-negativos y llega a <code>INT_MIN</code> sin pasar nunca por <code>+2147483648</code>, que no cabe
+negativos y llega a <a href="#g-complemento-a-dos"><code>INT_MIN</code></a> sin pasar nunca por <code>+2147483648</code>, que no cabe
 en un <code>int</code>. La condición <code>&amp;&amp; nptr[i]</code> sobra: un dígito ya no es
 <code>'\0'</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Es el atoi de
@@ -391,13 +749,13 @@ fondo es la de siempre: el rango del complemento a dos es asimétrico.</div>
 	return (p);
 }</code></pre>
 <p>calloc tiene dos responsabilidades además de poner a cero: (1) detectar que
-<code>nmemb * size</code> desborda — si al dividir el producto entre <code>nmemb</code> no sale
+<code>nmemb * size</code> <a href="#g-desbordamiento">desborda</a> — si al dividir el producto entre <code>nmemb</code> no sale
 <code>size</code>, la multiplicación dio la vuelta y se devuelve <code>NULL</code> en lugar de
 reservar un trozo diminuto; y (2) la regla que añade el enunciado: con <code>nmemb</code> o
-<code>size</code> a 0 debe devolver un puntero único que se pueda pasar a <code>free</code>. El
+<code>size</code> a 0 debe devolver un puntero único que se pueda pasar a <a href="#g-heap"><code>free</code></a>. El
 código delega en <code>malloc(0)</code>, que en glibc cumple eso (aunque el estándar permite que
 devuelva <code>NULL</code>). Ojo, una rareza: <code>s</code> es <code>long</code> y no
-<code>size_t</code>; la comprobación funciona igual porque en <code>s / nmemb</code> el
+<a href="#g-size-t"><code>size_t</code></a>; la comprobación funciona igual porque en <code>s / nmemb</code> el
 <code>long</code> se convierte a <code>size_t</code>, pero el tipo natural sería
 <code>size_t</code>. El <code>nmemb != 0</code> es redundante tras el primer <code>if</code>.</p>
 <p><code>ft_strdup</code> es el de <a href="../../piscine/009_c07.html">C 07</a>:
@@ -430,14 +788,14 @@ seguida de un desbordamiento de buffer: un fallo de seguridad clásico. Y que "l
 <code>ft_substr("hola", 1, 1000000)</code>. Si <code>start</code> está más allá del final, se
 devuelve una cadena vacía reservada (no <code>NULL</code>), que es lo que esperan los testers. Ojo
 al segundo <code>if</code>: cuando <code>start</code> se pasa, la resta
-<code>ft_strlen(s) - start</code> da la vuelta y vale un número enorme; no rompe nada porque
+<code>ft_strlen(s) - start</code> <a href="#g-size-t">da la vuelta</a> y vale un número enorme; no rompe nada porque
 <code>len</code> ya es 0 y la comparación sale falsa, pero funciona más por suerte del orden que por
 diseño.</p>
 <p><code>ft_strjoin</code> mide las dos cadenas, reserva <code>l1 + l2 + 1</code> y copia una
 detrás de otra escribiendo en <code>p[l1 + i]</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El patrón de toda la Parte 2: <em>medir,
 reservar lo justo, comprobar <code>NULL</code>, rellenar, terminar en <code>'\0'</code></em>. Y que
-el llamante es quien libera: cada una de estas funciones devuelve memoria nueva cuya propiedad pasa
+<a href="#g-propiedad">el llamante es quien libera</a>: cada una de estas funciones devuelve memoria nueva cuya propiedad pasa
 a quien la llamó, como ya se vio con join en <a href="../../piscine/009_c07.html">C 07</a>.</div>
 </div>
 
@@ -476,14 +834,14 @@ Cuando todo <code>s1</code> está formado por caracteres del set, <code>i</code>
 <code>l + 1</code> y la longitud <code>l - i + 1</code> es 0: sale <code>""</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A componer: strtrim es casi solo pegamento
 entre strchr y substr. También a pensar los bordes antes de escribir (vacía, todo set, nada de set,
-un solo carácter), y a partir la función en auxiliares <code>static</code> para cumplir las 25 líneas
-de la Norma.</div>
+un solo carácter), y a partir la función en <a href="#g-static">auxiliares <code>static</code></a> para cumplir las 25 líneas
+de la <a href="#g-norma">Norma</a>.</div>
 </div>
 
 <div class="card" id="split">
 <h2><span class="ex">split</span>ft_split</h2>
 <div class="meta"><span>Entrega: <b>ft_split.c</b></span><span>Autorizado: <b>malloc</b>, <b>free</b></span></div>
-<p>La función más larga del proyecto, partida en cuatro auxiliares <code>static</code>. Dos pasadas
+<p>La función más larga del proyecto, partida en cuatro <a href="#g-static">auxiliares <code>static</code></a>. Dos pasadas
 sobre la cadena: una para contar palabras y reservar el array de punteros, otra para copiar cada
 palabra.</p>
 <pre><code>char	**ft_split(char const *s, char c)
@@ -500,7 +858,7 @@ palabra.</p>
 	else
 		return (NULL);
 }</code></pre>
-<p>Contar y copiar usan la misma máquina de dos estados: un indicador "estoy dentro de una palabra"
+<p>Contar y copiar usan la misma <a href="#g-maquina-estados">máquina de dos estados</a>: un indicador "estoy dentro de una palabra"
 que pasa a 1 al ver un carácter distinto de <code>c</code> y vuelve a 0 al ver <code>c</code> o el
 final. El bucle es <code>while (1)</code> con <code>break</code> <em>después</em> de procesar el
 <code>'\0'</code>, para que la última palabra se cierre al llegar al terminador:</p>
@@ -534,7 +892,7 @@ final. El bucle es <code>while (1)</code> con <code>break</code> <em>después</e
 <p>Las cuatro variables van en un array <code>int i[4]</code> puesto a cero con
 <code>ft_bzero</code>: <code>i[0]</code> recorre la cadena, <code>i[1]</code> es el estado,
 <code>i[2]</code> marca dónde empezó la palabra e <code>i[3]</code> es el índice en el resultado.
-Es un recurso para que la función quepa en las 25 líneas de la Norma (cuatro declaraciones y cuatro
+Es un recurso para que la función quepa en las 25 líneas de la <a href="#g-norma">Norma</a> (cuatro declaraciones y cuatro
 inicializaciones se quedan en dos líneas), a costa de legibilidad.</p>
 <pre><code>static int	ft_free_split(char **r)
 {
@@ -552,20 +910,20 @@ inicializaciones se quedan en dos líneas), a costa de legibilidad.</p>
 <p>La gestión del fallo es la parte que se evalúa: si un <code>ft_word_dup</code> devuelve
 <code>NULL</code>, ese mismo <code>NULL</code> ya está escrito en <code>r[i[3]]</code>, así que
 <code>ft_free_split</code> libera exactamente las palabras anteriores, luego el array, y
-<code>ft_split</code> devuelve <code>NULL</code> sin fugas. Con <code>"  a bb  ccc "</code> y
+<code>ft_split</code> devuelve <code>NULL</code> <a href="#g-fuga">sin fugas</a>. Con <code>"  a bb  ccc "</code> y
 <code>' '</code> salen <code>a</code>, <code>bb</code>, <code>ccc</code> — separadores repetidos o
 en los extremos no generan palabras vacías.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Memoria en dos niveles: un array de
 punteros, cada uno a su propia reserva, que hay que liberar de dentro afuera. Y el principio de que
 si fallas a mitad, deshaces lo hecho: la función no puede devolver <code>NULL</code> dejando medio
-resultado colgado en el heap. Es el split de <a href="../../piscine/009_c07.html">C 07</a> simplificado
+resultado colgado en el <a href="#g-heap">heap</a>. Es el split de <a href="../../piscine/009_c07.html">C 07</a> simplificado
 a un único separador, pero ahora con la liberación en caso de error como requisito explícito.</div>
 </div>
 
 <div class="card" id="itoa">
 <h2><span class="ex">itoa</span>ft_itoa y el INT_MIN</h2>
 <div class="meta"><span>Entrega: <b>ft_itoa.c</b></span><span>Autorizado: <b>malloc</b></span></div>
-<p>Una solución recursiva poco habitual: la recursión baja dígito a dígito contando la profundidad
+<p>Una solución <a href="#g-recursion">recursiva</a> poco habitual: la recursión baja dígito a dígito contando la profundidad
 <code>d</code>, y es el caso base (el dígito más significativo) quien sabe ya cuántas cifras tiene el
 número y reserva la cadena. Al volver, cada nivel escribe su dígito en su posición.</p>
 <pre><code>static char	*ft_itoa_real(int n, int d)
@@ -606,8 +964,8 @@ el signo más el <code>'\0'</code>, y <code>ft_char_init</code> lo rellena de <c
 <code>ft_strlen(r)</code> dé la longitud final desde el principio. El nivel de profundidad
 <code>d</code> escribe en <code>r[dd - 1 - d]</code>: el nivel 0 (las unidades) en la última
 posición, y así hacia la izquierda.</p>
-<p>El <code>INT_MIN</code> se resuelve sin <code>long</code>: el número <em>nunca se niega</em>.
-Se divide tal cual, negativo, y en C99 <code>n % 10</code> de un negativo es negativo (o cero), así
+<p>El <a href="#g-complemento-a-dos"><code>INT_MIN</code></a> se resuelve sin <code>long</code>: el número <em>nunca se niega</em>.
+Se divide tal cual, negativo, y en C99 <a href="#g-division"><code>n % 10</code></a> de un negativo es negativo (o cero), así
 que <code>-(n % 10)</code> es un dígito entre 0 y 9. Con <code>-2147483648</code> la última cifra
 es <code>-(-8) = 8</code> y no hace falta calcular <code>+2147483648</code>. Los casos
 <code>0</code>, <code>-5</code>, <code>INT_MAX</code> e <code>INT_MIN</code> dan la cadena
@@ -651,11 +1009,11 @@ convertirse en la herramienta que evita el desbordamiento.</div>
 <p>Las dos recorren la cadena y llaman a <code>f</code> con el índice y el carácter. La diferencia
 es la de <em>map</em> frente a <em>for-each</em>: <code>ft_strmapi</code> recibe el carácter por
 valor y construye una cadena nueva con lo que devuelve <code>f</code>; <code>ft_striteri</code> le
-pasa la <em>dirección</em> del carácter (<code>&amp;s[i]</code>) para que <code>f</code> lo cambie en
+pasa la <a href="#g-paso-valor"><em>dirección</em></a> del carácter (<code>&amp;s[i]</code>) para que <code>f</code> lo cambie en
 el sitio, y no reserva nada. Las dos sintaxis de llamada, <code>(*f)(…)</code> y <code>f(…)</code>,
 son equivalentes en C. <code>ft_striteri</code> protege <code>s</code> y <code>f</code> nulos;
 <code>ft_strmapi</code> no.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Punteros a función, ya vistos en
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <a href="#g-puntero-funcion">Punteros a función</a>, ya vistos en
 <a href="../../piscine/013_c11.html">C 11</a>: la función recibe el <em>comportamiento</em> como
 parámetro. Y la diferencia entre transformar devolviendo algo nuevo y mutar lo existente, que es la
 misma que separa <code>lstmap</code> de <code>lstiter</code> en la Parte 3.</div>
@@ -685,12 +1043,12 @@ void	ft_putnbr_fd(int n, int fd)
 	d = nl % 10 + '0';
 	write(fd, &amp;d, 1);
 }</code></pre>
-<p>Las funciones de salida de la piscine, ahora con el descriptor como parámetro: 1 para stdout,
+<p>Las funciones de salida de la piscine, ahora con el <a href="#g-fd">descriptor</a> como parámetro: 1 para stdout,
 2 para stderr o el <code>fd</code> de un fichero abierto. <code>ft_putstr_fd</code> hace un solo
 <code>write</code> con la longitud entera en vez de uno por carácter, y
 <code>ft_putendl_fd</code> reutiliza <code>ft_putstr_fd</code> y añade el <code>'\n'</code>.
 <code>ft_putnbr_fd</code> es el putnbr de <a href="../../piscine/002_c00.html">C 00</a>: copia a
-<code>long</code> antes de negar para que <code>INT_MIN</code> quepa, y recursión para imprimir los
+<code>long</code> antes de negar para que <a href="#g-complemento-a-dos"><code>INT_MIN</code></a> quepa, y <a href="#g-recursion">recursión</a> para imprimir los
 dígitos en orden (al volver a llamarse con <code>nl / 10</code>, el <code>long</code> se convierte
 en <code>int</code> sin pérdida, porque ya es positivo y menor).</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que "imprimir" es siempre escribir en un
@@ -708,8 +1066,8 @@ más adelante, mandar los errores a stderr o escribir en un fichero con las mism
 	struct s_list	*next;
 }					t_list;</code></pre>
 Es la misma idea que el <code>t_list</code> de <a href="../../piscine/014_c12.html">C 12</a> con otros
-nombres (<code>content</code> en lugar de <code>data</code>): un nodo que se apunta a sí mismo y un
-<code>void *</code> que permite guardar cualquier cosa. En la versión 42next estas nueve funciones
+nombres (<code>content</code> en lugar de <code>data</code>): <a href="#g-lista-enlazada">un nodo que se apunta a sí mismo</a> y un
+<a href="#g-void"><code>void *</code></a> que permite guardar cualquier cosa. En la versión 42next estas nueve funciones
 forman parte de la parte obligatoria, como las demás; no hay ficheros <code>_bonus</code> ni regla
 <code>bonus</code>. Un cambio respecto a versiones anteriores del enunciado: <code>ft_lstsize</code>
 devuelve <code>unsigned int</code>, y así está en el código.</div>
@@ -751,12 +1109,12 @@ t_list	*ft_lstlast(t_list *lst)
 	return (n);
 }</code></pre>
 <p>Las cuatro piezas básicas. <code>ft_lstnew</code> no copia <code>content</code>: guarda el
-puntero tal cual. <code>ft_lstadd_front</code> recibe <code>t_list **</code> porque tiene que
-cambiar la cabeza del llamante. <code>ft_lstlast</code> admite una lista vacía (devuelve
+puntero tal cual. <code>ft_lstadd_front</code> recibe <a href="#g-doble-puntero"><code>t_list **</code></a> porque tiene que
+cambiar la cabeza del llamante. <code>ft_lstlast</code> admite una <a href="#g-lista-enlazada">lista vacía</a> (devuelve
 <code>NULL</code>) gracias al <code>n &amp;&amp;</code>, y <code>ft_lstsize</code> es el recorrido
 canónico <code>while (n) { n = n-&gt;next; i++; }</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Repaso de
-<a href="../../piscine/014_c12.html">C 12</a>: nodos en el heap, el doble puntero para modificar la
+<a href="../../piscine/014_c12.html">C 12</a>: nodos en el <a href="#g-heap">heap</a>, el doble puntero para modificar la
 cabeza y el recorrido hasta <code>NULL</code>. La novedad es que ahora la lista es tuya para todo el
 cursus: estas funciones van a sostener las pilas de push_swap.</div>
 </div>
@@ -787,10 +1145,10 @@ cursus: estas funciones van a sostener las pilas de push_swap.</div>
 }</code></pre>
 <p>Tres casos: puntero a lista nulo, lista vacía (el nuevo nodo pasa a ser la cabeza) y lista con
 nodos (se camina hasta el último y se engancha). El comportamiento es correcto, pero ojo a dos
-líneas que no hacen nada: <code>lst = &amp;new;</code> cambia la copia local del parámetro
+líneas que no hacen nada: <code>lst = &amp;new;</code> cambia la <a href="#g-paso-valor">copia local del parámetro</a>
 <code>lst</code>, que se pierde al salir de la función (el efecto real de esa rama es "no hacer
 nada", que es lo razonable), y <code>n = NULL;</code> asigna una variable que no se vuelve a usar.
-Además, como hay que recorrer la lista entera, añadir al final cuesta O(n).</p>
+Además, como hay que recorrer la lista entera, añadir al final cuesta <a href="#g-o-grande">O(n)</a>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Justo lo que ilustra esa línea muerta: un
 parámetro es una variable local. Para que un cambio se vea fuera hay que escribir a través del
 puntero (<code>*lst = …</code>), no reasignar el puntero mismo. Y que en una lista simple sin
@@ -821,8 +1179,8 @@ void	ft_lstclear(t_list **lst, void (*del)(void *))
 	}
 }</code></pre>
 <p>Liberar un nodo son dos <code>free</code> distintos: el del contenido, que hace
-<code>del</code> porque solo el llamante sabe qué hay detrás del <code>void *</code>, y el del
-propio nodo. <code>ft_lstclear</code> está hecha con recursión: primero borra el resto de la lista
+<a href="#g-puntero-funcion"><code>del</code></a> porque solo el llamante sabe qué hay detrás del <a href="#g-void"><code>void *</code></a>, y el del
+propio nodo. <code>ft_lstclear</code> está hecha con <a href="#g-recursion">recursión</a>: primero borra el resto de la lista
 desde el siguiente, luego el nodo actual, y deja el puntero del llamante a <code>NULL</code> como
 pide el enunciado. Así se evita el problema clásico de perder <code>next</code> al liberar un nodo.
 Ojo: cada nodo es un nivel de recursión, así que con una lista muy larga (cientos de miles de nodos)
@@ -831,7 +1189,7 @@ tiene ese límite.</p>
 <p><code>ft_lstiter</code> aplica <code>f</code> al contenido de cada nodo; el bucle se detiene en el
 último nodo y lo procesa aparte después, en lugar del más directo
 <code>while (n) { f(n-&gt;content); n = n-&gt;next; }</code>, con el mismo resultado.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — La propiedad de la memoria cuando el
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La <a href="#g-propiedad">propiedad de la memoria</a> cuando el
 contenedor no sabe qué contiene: la lista es dueña de sus nodos, pero el contenido lo libera una
 función que pone otro. Y el orden al destruir: nunca liberes algo de lo que todavía necesitas leer un
 campo. La recursión resuelve ese orden "gratis", a cambio de usar pila.</div>
@@ -871,15 +1229,15 @@ el <code>content</code> que <code>f</code> acaba de crear y que todavía no pert
 <code>r</code>, que <code>ft_lstclear</code> borra junto con sus contenidos. Guardar el resultado de
 <code>f</code> en una variable antes de crear el nodo es lo que permite liberarlo; la versión que
 hace <code>ft_lstnew(f(lst-&gt;content))</code> en una línea lo pierde. El README del repo cuenta que
-una versión anterior tenía aquí un doble <code>free</code>.</p>
+una versión anterior tenía aquí un <a href="#g-fuga">doble <code>free</code></a>.</p>
 <p>Ojo a dos detalles. Se comprueba que <code>f</code> no sea <code>NULL</code> pero no
 <code>del</code>: si <code>del</code> es <code>NULL</code> y falla un <code>malloc</code>, la llamada
-<code>del(content)</code> se haría sobre un puntero nulo. Y como cada nodo se añade con
+<code>del(content)</code> se haría sobre un <a href="#g-indefinido">puntero nulo</a>. Y como cada nodo se añade con
 <code>ft_lstadd_back</code>, que recorre <code>r</code> desde el principio, construir la lista cuesta
-O(n²); guardar un puntero al último nodo lo dejaría en O(n).</p>
+<a href="#g-o-grande">O(n²)</a>; guardar un puntero al último nodo lo dejaría en O(n).</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La regla que el enunciado repite en toda la
 Parte 2 y 3: si fallas a medias, no dejes nada colgado. Aquí obliga a llevar la cuenta de quién es
-dueño de cada trozo de memoria en cada instante, incluido el contenido "huérfano" que aún no está en
+<a href="#g-propiedad">dueño</a> de cada trozo de memoria en cada instante, incluido el contenido "huérfano" que aún no está en
 ningún nodo. Es el mismo razonamiento que el <code>ft_free_split</code> de split, en una estructura
 enlazada.</div>
 </div>
@@ -919,13 +1277,13 @@ fclean: clean
 re: fclean all
 
 .PHONY: all clean fclean re</code></pre>
-<p>Cada <code>ft_*.c</code> se compila por separado a su <code>.o</code>, y <code>ar rcs</code> los
+<p>Cada <code>ft_*.c</code> se compila por separado a su <a href="#g-objeto"><code>.o</code></a>, y <a href="#g-libreria"><code>ar rcs</code></a> los
 mete en un archivo: <code>r</code> inserta o reemplaza los objetos, <code>c</code> crea el archivo
-sin avisar y <code>s</code> escribe el índice de símbolos que usa el enlazador. <code>libft.a</code>
+sin avisar y <code>s</code> escribe el índice de símbolos que usa el <a href="#g-enlazador">enlazador</a>. <code>libft.a</code>
 depende de los <code>.o</code> y cada <code>.o</code> de su <code>.c</code> y de
-<code>libft.h</code>, así que un segundo <code>make</code> no recompila nada (no hay relink) y tocar
+<code>libft.h</code>, así que un segundo <code>make</code> no recompila nada (<a href="#g-relink">no hay relink</a>) y tocar
 el header recompila todo. Las listas van en <code>SRCS</code> como cualquier otra función: no hay
-regla <code>bonus</code>. <code>libft.h</code> lleva include guard
+regla <code>bonus</code>. <code>libft.h</code> lleva <a href="#g-include-guard">include guard</a>
 (<code>#ifndef LIBFT_H</code>), el <code>typedef</code> de <code>t_list</code> y los 43 prototipos.</p>
 <p>Para usarla, como explica el README: <code>cc main.c -I. -L. -lft</code>, donde
 <code>-lft</code> busca <code>libft.a</code> (o <code>libft.so</code>) en las rutas de
@@ -936,6 +1294,134 @@ objetos que necesitas. Por eso la regla de "una función por fichero" tiene sent
 <code>ft_strlen</code>, solo entra <code>ft_strlen.o</code>. Las dependencias del Makefile son lo
 que <a href="../../piscine/011_c09.html">C 09</a> empezó y aquí se vuelve obligatorio: compilar solo lo
 que cambió.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: funciones de la libc, memoria dinámica, listas,
+Makefile y normas, y puntos débiles. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Funciones de la libc</h3>
+<details id="q-memmove">
+<summary>¿Qué diferencia hay entre <code>memcpy</code> y <code>memmove</code>?</summary>
+<p>Que <code>memmove</code> funciona aunque origen y destino se <a href="#g-solapamiento">solapen</a>.
+<code>ft_memmove</code> mira dónde está el destino: si está por delante del origen, copia del último
+byte al primero; si no, delega en <code>ft_memcpy</code>, que copia hacia delante. Con
+<code>"123456"</code> y <code>ft_memmove(m + 1, m, 4)</code> sale <code>"112346"</code>.
+→ <a href="#memmove">memmove</a></p>
+</details>
+<details id="q-strlcat">
+<summary>¿Qué devuelve <code>strlcat</code> y para qué sirve ese valor?</summary>
+<p>La longitud de la cadena que intentó crear: <code>strlen(dst) + strlen(src)</code>, o
+<code>siz + strlen(src)</code> si en los primeros <code>siz</code> bytes de <code>dst</code> no hay
+<code>'\0'</code>. Si el valor es <code>&gt;= siz</code>, hubo truncado, y sabes cuánto reservar para
+el segundo intento. Con <code>"abc"</code>, <code>siz = 6</code> y <code>"defghijkl"</code> queda
+<code>"abcde"</code> y devuelve 12. → <a href="#strlcpy">strlcpy / strlcat</a></p>
+</details>
+<details id="q-atoi">
+<summary>¿Qué da <code>ft_atoi</code> con <code>"  -42abc"</code>, <code>"+-5"</code> y <code>"-2147483648"</code>?</summary>
+<p>-42, 0 y -2147483648. Salta los espacios (del 9 al 13 y el 32), admite <em>un</em> signo y lee
+dígitos hasta el primero que no lo sea. <code>"+-5"</code> tiene dos signos y el segundo ya no es un
+dígito. <code>INT_MIN</code> sale bien porque el signo se aplica a cada dígito
+(<code>r * 10 + s * dígito</code>) y el acumulador nunca pasa por +2147483648.
+→ <a href="#atoi">atoi</a>, <a href="#g-complemento-a-dos">complemento a dos</a></p>
+</details>
+<details id="q-strncmp">
+<summary>¿Por qué <code>ft_strncmp</code> resta como <code>unsigned char</code>?</summary>
+<p>Porque el <code>man</code> pide comparar los bytes sin signo. Con <code>char</code>, que en x86
+tiene signo, <code>'\200'</code> valdría -128 y saldría menor que <code>'a'</code>; con
+<code>unsigned char</code> vale 128 y sale mayor, como en la libc. → <a href="#libc-cmp">strncmp</a>,
+<a href="#g-unsigned-char">unsigned char</a></p>
+</details>
+
+<h3>Memoria dinámica</h3>
+<details id="q-calloc">
+<summary>¿Qué hace <code>ft_calloc</code> además de poner a cero?</summary>
+<p>Dos cosas. Detecta que <code>nmemb * size</code> <a href="#g-desbordamiento">desborda</a>: si al
+dividir el producto entre <code>nmemb</code> no sale <code>size</code>, devuelve <code>NULL</code>
+(<code>ft_calloc((size_t)-1, 2)</code> da <code>NULL</code>). Y con <code>nmemb</code> o
+<code>size</code> a 0 devuelve <code>malloc(0)</code>, que en glibc es un puntero válido para
+<code>free</code>, como pide el enunciado. → <a href="#calloc">calloc</a></p>
+</details>
+<details id="q-split">
+<summary>Si falla un <code>malloc</code> a mitad de <code>ft_split</code>, ¿hay fugas?</summary>
+<p>No. El <code>NULL</code> de la palabra que falló queda escrito en <code>r[i[3]]</code>, así que
+<code>ft_free_split</code> recorre el array hasta ese <code>NULL</code> liberando las palabras
+anteriores, libera el array y <code>ft_split</code> devuelve <code>NULL</code>. Si falla el
+<code>malloc</code> del array, devuelve <code>NULL</code> sin haber reservado nada más.
+→ <a href="#split">split</a></p>
+</details>
+<details id="q-itoa">
+<summary>¿Cómo sabe <code>ft_itoa</code> cuánta memoria reservar, y cómo trata <code>INT_MIN</code>?</summary>
+<p>La <a href="#g-recursion">recursión</a> baja dígito a dígito contando la profundidad
+<code>d</code>; el caso base (el dígito más alto) ya sabe que hay <code>d + 1</code> cifras y
+reserva <code>d + 2</code> bytes más uno si es negativo. <code>INT_MIN</code> no se niega nunca: se
+divide en negativo y cada dígito sale de <code>-(n % 10)</code>. → <a href="#itoa">itoa</a>,
+<a href="#g-division">división con negativos</a></p>
+</details>
+
+<h3>Listas</h3>
+<details id="q-doble-puntero">
+<summary>¿Por qué <code>ft_lstadd_front</code> recibe <code>t_list **</code> y <code>ft_lstsize</code> <code>t_list *</code>?</summary>
+<p>Porque <code>ft_lstadd_front</code> cambia la cabeza de la lista del llamante, y en C los
+parámetros se <a href="#g-paso-valor">pasan por valor</a>: para cambiar su puntero necesita su
+dirección y escribir en <code>*lst</code>. <code>ft_lstsize</code> solo lee. →
+<a href="#lst-basic">lstnew, lstadd_front…</a>, <a href="#g-doble-puntero">doble puntero</a></p>
+</details>
+<details id="q-del">
+<summary>¿Para qué sirve el parámetro <code>del</code>?</summary>
+<p>El <code>content</code> es un <code>void *</code>: la lista no sabe qué hay detrás ni cómo se
+libera. <code>del</code> es un <a href="#g-puntero-funcion">puntero a función</a> que pone quien
+creó el contenido (para un <code>content</code> reservado con <code>malloc</code>, vale
+<code>free</code>). <code>ft_lstdelone</code> llama a <code>del(content)</code> y después libera el
+nodo. → <a href="#lstclear">lstdelone, lstclear</a></p>
+</details>
+<details id="q-lstmap">
+<summary>¿Qué libera <code>ft_lstmap</code> si falla <code>ft_lstnew</code>?</summary>
+<p>Dos cosas: el <code>content</code> que <code>f</code> acaba de crear y que aún no está en ningún
+nodo (<code>del(content)</code>), y la lista nueva construida hasta ahí
+(<code>ft_lstclear(&amp;r, del)</code>). La original no se toca. Por eso el resultado de
+<code>f</code> se guarda en una variable antes de crear el nodo. → <a href="#lstmap">lstmap</a></p>
+</details>
+
+<h3>Makefile y normas</h3>
+<details id="q-relink">
+<summary>¿Relinkea? ¿Qué hace <code>ar rcs</code>?</summary>
+<p>No: <code>libft.a</code> depende de los <code>.o</code> y cada <code>.o</code> de su
+<code>.c</code> y de <code>libft.h</code>, así que un segundo <code>make</code> dice <code>Nothing to
+be done for 'all'</code>, y si tocas un <code>.c</code> solo se recompila ese. <code>ar rcs</code>
+mete los objetos en el archivo (<code>r</code>), lo crea sin avisar (<code>c</code>) y escribe el
+índice de símbolos (<code>s</code>). Para usarla: <code>cc main.c -I. -L. -lft</code>.
+→ <a href="#makefile">Makefile</a>, <a href="#g-relink">relink</a></p>
+</details>
+<details id="q-prohibidas">
+<summary>¿Usas alguna función no autorizada? ¿Pasa la norminette?</summary>
+<p>No y sí. <code>nm -u libft.a</code> solo lista <code>malloc</code>, <code>free</code>,
+<code>write</code> y <code>__stack_chk_fail</code> (esta la pone el compilador). Todas las
+auxiliares son <a href="#g-static"><code>static</code></a>, así que los únicos símbolos globales son
+las 43 <code>ft_</code>. Y <code>norminette</code> da OK en todos los ficheros; la Norma es la razón
+de que <code>ft_split</code> tenga cuatro auxiliares y un <code>int i[4]</code>.
+→ <a href="#split">split</a>, <a href="#g-norma">la Norma</a></p>
+</details>
+
+<h3>Puntos débiles (mejor tener la respuesta preparada)</h3>
+<details id="q-lstadd-back">
+<summary>¿Qué hace la línea <code>lst = &amp;new;</code> de <code>ft_lstadd_back</code>?</summary>
+<p>Nada útil: cambia la copia local del parámetro, que se pierde al salir. El efecto de esa rama es
+no hacer nada cuando <code>lst</code> es <code>NULL</code>, que es lo razonable, pero la línea
+sobra; igual que el <code>n = NULL;</code> de la rama siguiente. Además añadir al final es O(n),
+y por eso <code>ft_lstmap</code> acaba siendo O(n²). → <a href="#lstadd_back">lstadd_back</a></p>
+</details>
+<details id="q-strnstr">
+<summary>¿Respeta <code>ft_strnstr</code> el límite <code>len</code> en todas las lecturas?</summary>
+<p>No del todo. El resultado es correcto, pero el bucle exterior solo para en el <code>'\0'</code> de
+<code>big</code>, no en <code>len</code>: sigue leyendo <code>big</code> hasta el final. Con un
+buffer sin <code>'\0'</code> dentro de los <code>len</code> bytes leería fuera. El arreglo es añadir
+<code>i &lt; len</code> a esa condición. Algo parecido en <code>ft_lstmap</code>: no comprueba que
+<code>del</code> no sea <code>NULL</code>. → <a href="#libc-cmp">strnstr</a>,
+<a href="#lstmap">lstmap</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — Libft · <a href="../M1/100_ft_printf.html">continuar con ft_printf →</a></footer>

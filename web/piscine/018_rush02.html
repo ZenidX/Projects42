@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ fichero que se puede cambiar. Es el primer programa de la piscine que lee un fic
 parsea, guarda lo leído en memoria dinámica y lo libera todo.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#main">main — argumentos y entrada estándar</a></li>
   <li><a href="#leer">ft_read_file — el fichero entero en una cadena</a></li>
   <li><a href="#parse">ft_parse_dict — de texto a tabla</a></li>
@@ -34,6 +37,7 @@ parsea, guarda lo leído en memoria dinámica y lo libera todo.</p>
   <li><a href="#pasadas">ft_write_nbr — dos pasadas</a></li>
   <li><a href="#memoria">Memoria y Makefile</a></li>
   <li><a href="#ojo">Ojo: lo que no cumple</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>El enunciado</b> — Ejecutable <code>rush-02</code>, compilado con
@@ -52,6 +56,238 @@ Error</code></pre>
 Como bonus se puede añadir «and» y guiones, otro idioma con otro diccionario, o leer números
 de la entrada estándar si el argumento es <code>-</code>. Este grupo hizo el último. Trabajo de
 grupo; el código está en <code>packs/piscine/018_rush02/repo/ex00/</code>.</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>El Rush 02 es el primer programa «de verdad» de la piscine: lee un fichero, lo trocea, guarda
+lo leído en memoria dinámica, lo libera y se compila con un Makefile. La página usa el vocabulario
+de todo eso; aquí está cada término explicado desde cero y con un ejemplo sacado del propio rush. En
+el resto de la página, la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace
+a su entrada.</p>
+
+<h3>Ficheros y entrada/salida</h3>
+<details id="g-fd">
+<summary>Descriptor de fichero, stdin y stdout</summary>
+<p>Un <em>descriptor de fichero</em> (fd) es un número pequeño con el que el programa se refiere a
+algo donde puede leer o escribir. Todo programa arranca con tres: 0 es la entrada estándar
+(stdin), 1 la salida estándar (stdout) y 2 la salida de errores (stderr). Con una tubería
+(<code>printf "42\n" | ./rush-02 -</code>) la salida de un programa se convierte en el stdin del
+siguiente.</p>
+<p>En el rush, <code>ft_putstr</code> escribe siempre en el 1, también los mensajes
+<code>Error</code> y <code>Dict Error</code> (los ejemplos del enunciado los muestran pasando por
+<code>| cat -e</code>, así que van por stdout). El bonus lee del 0 con la misma
+<code>ft_read_file</code> que lee el diccionario.</p>
+</details>
+<details id="g-open-read">
+<summary><code>open</code>, <code>read</code> y <code>close</code></summary>
+<p><code>open(nombre, O_RDONLY)</code> abre un fichero para leer y devuelve su descriptor, o −1 si
+no puede (no existe, no hay permiso). <code>read(fd, buf, n)</code> lee <em>como mucho</em>
+<code>n</code> bytes y devuelve cuántos ha leído de verdad: puede ser menos que <code>n</code>, 0
+al llegar al final y −1 si hay un error. <code>close(fd)</code> lo cierra cuando ya no hace
+falta.</p>
+<p><code>ft_read_dict</code> hace <code>open</code>, devuelve <code>NULL</code> si da −1 (por eso
+<code>./rush-02 noexiste.dict 42</code> da <code>Dict Error</code>), lee con
+<code>ft_read_file</code> y cierra antes de parsear.</p>
+</details>
+<details id="g-buffer">
+<summary>Buffer</summary>
+<p>Una zona de memoria donde se guardan datos de paso, mientras se leen o se escriben. Su tamaño
+es fijo, así que si los datos no caben hay que trabajar a trozos.</p>
+<p><code>ft_read_file</code> usa <code>char buffer[255]</code> y lee 254 bytes cada vez; el byte
+que queda es para el <code>'\0'</code>. El diccionario de referencia ocupa más que eso, así que se
+lee en varias vueltas y se va pegando cada trozo.</p>
+</details>
+<details id="g-terminador">
+<summary>Terminador nulo</summary>
+<p>En C una cadena es una fila de <code>char</code> que termina en el byte <code>'\0'</code> (valor
+0). La longitud no se guarda: se sabe dónde acaba porque ahí está el cero. <code>read</code> no lo
+pone, porque lee bytes, no cadenas.</p>
+<p>Por eso <code>ft_read_file</code> hace <code>buffer[n] = '\0'</code> tras cada lectura, antes de
+pasarlo a <code>ft_strcat</code>, que busca el final con ese cero. Sin él, <code>ft_strcat</code>
+seguiría leyendo basura detrás del trozo.</p>
+</details>
+
+<h3>Memoria</h3>
+<details id="g-heap">
+<summary>Memoria dinámica: <code>malloc</code> y <code>free</code></summary>
+<p>Las variables locales viven en la <em>pila</em> de llamadas y desaparecen al salir de su
+función; su tamaño se fija al compilar. <code>malloc(n)</code> reserva <code>n</code> bytes en otra
+zona, el <em>heap</em>, que dura hasta que se llama a <code>free</code> y cuyo tamaño se decide
+mientras el programa corre. Si no hay memoria, <code>malloc</code> devuelve <code>NULL</code>.</p>
+<p>El rush no sabe cuánto mide el diccionario ni cuántas líneas tiene hasta leerlo, así que todo lo
+que guarda es del heap: la cadena del fichero, los arrays de <code>ft_split</code>, cada palabra
+recortada y la tabla de <code>t_dict</code>.</p>
+</details>
+<details id="g-fuga">
+<summary>Fuga de memoria y valgrind</summary>
+<p>Una <em>fuga</em> (<em>leak</em>) es memoria del heap que ya no se puede liberar porque no queda
+ningún puntero hacia ella. El sistema la recupera al terminar el proceso, pero en 42 cuenta como
+error, y el enunciado avisa de que se revisa. Valgrind ejecuta el programa vigilando cada
+<code>malloc</code> y cada <code>free</code> y al final dice lo que quedó sin liberar.</p>
+<p>Con <code>valgrind --leak-check=full ./rush-02 123456</code>, y también con un diccionario que
+da <code>Dict Error</code>, el informe acaba en <code>All heap blocks were freed -- no leaks are
+possible</code>.</p>
+</details>
+<details id="g-propiedad">
+<summary>Propiedad de la memoria</summary>
+<p>Para cada bloque de <code>malloc</code> tiene que haber un responsable claro de su
+<code>free</code>: quien lo reservó, quien lo recibió o la función a la que se le pasa. Si dos
+partes creen que les toca, hay doble <code>free</code>; si ninguna lo cree, hay fuga. Por eso se
+documenta.</p>
+<p>El <code>ft_strcat</code> del rush <em>consume</em> su primer argumento: lo libera y devuelve un
+bloque nuevo. Quien lo llama pierde la propiedad del viejo y gana la del nuevo; por eso se usa como
+<code>s = ft_strcat(s, trozo)</code> y nunca con un literal. <code>ft_strifcpy</code> hace lo
+contrario: reserva, y la propiedad pasa a quien recoge el retorno.</p>
+</details>
+<details id="g-centinela">
+<summary>Centinela</summary>
+<p>Un valor especial al final de un array que marca dónde acaba, para no tener que guardar su
+longitud aparte. Las cadenas de C usan el <code>'\0'</code>; <code>argv</code> y los arrays de
+<code>ft_split</code> terminan en <code>NULL</code>.</p>
+<p>La tabla del diccionario acaba en una entrada con <code>nbr</code> a 0. <code>find_word</code> y
+<code>ft_free_dict</code> recorren hasta encontrarla, y en el camino de error
+<code>ft_parse_error</code> la pone en la entrada <code>i</code> para que solo se libere lo que ya
+estaba relleno.</p>
+</details>
+<details id="g-struct">
+<summary><code>struct</code> y <code>typedef</code></summary>
+<p>Un <code>struct</code> agrupa varias variables bajo un mismo nombre, como una ficha con campos.
+<code>typedef</code> le da un nombre corto al tipo para no escribir <code>struct s_dict</code> cada
+vez. En la Norma, los structs empiezan por <code>s_</code> y los typedef por <code>t_</code>.</p>
+<p><code>rush02.h</code> define <code>t_dict</code> con dos cadenas, <code>nbr</code> y
+<code>word</code>: una entrada del diccionario. <code>dict[i].word</code> es la palabra de la
+entrada <code>i</code>.</p>
+</details>
+
+<h3>Texto</h3>
+<details id="g-parseo">
+<summary>Parsear</summary>
+<p>Convertir un texto con un formato en datos que el programa pueda usar, comprobando por el camino
+que el formato se cumple. Si no se cumple, es un error de parseo.</p>
+<p><code>ft_parse_dict</code> convierte las líneas <code>número : palabra</code> en la tabla de
+<code>t_dict</code>; una línea que no da exactamente dos trozos al partirla por <code>':'</code> es
+un <code>Dict Error</code>.</p>
+</details>
+<details id="g-split">
+<summary>Split (trocear)</summary>
+<p>Partir una cadena en trozos allí donde aparece un separador, y devolverlos como un array de
+cadenas. En este <code>ft_split</code> varios separadores seguidos cuentan como uno, así que no
+salen trozos vacíos.</p>
+<p>El rush lo usa dos veces: por <code>"\n"</code> para sacar las líneas (las vacías desaparecen
+solas, como pide el enunciado) y por <code>":"</code> para separar clave y valor. Esa segunda vez
+es la que hace que <code>20: a:b</code> dé tres trozos.</p>
+</details>
+<details id="g-trim">
+<summary>Recortar (trim)</summary>
+<p>Quitar los espacios (u otros caracteres) del principio y del final de una cadena, sin tocar los
+de en medio.</p>
+<p><code>ft_outspace</code> mueve un índice desde delante y otro desde detrás mientras haya
+espacios, y copia lo que queda entre ellos. <code>"   forty  "</code> queda en
+<code>"forty"</code>; <code>"hey     everybody !"</code> se queda igual, porque los espacios están
+en medio.</p>
+</details>
+<details id="g-strcmp">
+<summary>Comparar cadenas</summary>
+<p><code>==</code> entre dos <code>char *</code> compara direcciones, no contenido: dos copias de
+<code>"42"</code> en sitios distintos darían «distintas». Para comparar el texto se recorren las
+dos a la vez hasta la primera diferencia; <code>ft_strcmp</code> devuelve 0 si son iguales.</p>
+<p>Todas las búsquedas del diccionario son con <code>ft_strcmp</code>, y por eso las claves pueden
+ser tan largas como se quiera: <code>"1000000000000000000000000000000000000"</code> se compara
+igual que <code>"7"</code>.</p>
+</details>
+<details id="g-busqueda-lineal">
+<summary>Búsqueda lineal</summary>
+<p>Buscar un elemento mirando uno por uno desde el principio hasta encontrarlo o llegar al final.
+No necesita que los datos estén ordenados, y el coste crece en proporción al tamaño.</p>
+<p><code>find_word</code> recorre la tabla hasta el centinela. Con las 41 entradas de
+<code>numbers.dict</code> no se nota, y además el enunciado dice que las entradas pueden venir en
+cualquier orden, así que no se podría buscar por mitades sin ordenar antes.</p>
+</details>
+
+<h3>Números</h3>
+<details id="g-posicional">
+<summary>Notación posicional y grupos de tres</summary>
+<p>En base 10 cada cifra vale según su posición: en 345, el 3 vale 300. Para leerlos en voz alta,
+en inglés y en español se agrupan las cifras de tres en tres desde la derecha, y cada grupo lleva
+su escala: 1 234 567 es «one million, two hundred thirty four thousand, five hundred sixty
+seven».</p>
+<p><code>write_num</code> hace exactamente eso: <code>exp</code> va de 3 en 3 (… 6, 3, 0),
+<code>group_value</code> saca las tres cifras de esa posición y <code>scale_key</code> construye la
+clave de la escala.</p>
+</details>
+<details id="g-escala-corta">
+<summary>Escala corta</summary>
+<p>En inglés, cada palabra nueva de escala multiplica por mil: million es 10<sup>6</sup>, billion
+10<sup>9</sup>, trillion 10<sup>12</sup>. Es la <em>escala corta</em>. En español se usa la
+<em>larga</em>, donde billón es 10<sup>12</sup> (un millón de millones) y entre medias se dice
+«mil millones».</p>
+<p><code>numbers.dict</code> va hasta <code>undecillion</code>, 10<sup>36</sup>. Un diccionario en
+español no bastaría con cambiar las palabras: la estructura de grupos de tres del programa da «mil
+millones» solo si hay una clave <code>1000000000</code> que diga eso.</p>
+</details>
+<details id="g-unsigned">
+<summary><code>unsigned int</code> y su límite</summary>
+<p>Un <code>unsigned int</code> de 32 bits guarda enteros de 0 a 4 294 967 295 (2<sup>32</sup> −
+1). Si un cálculo se pasa, el valor da la vuelta y vuelve a empezar desde 0, sin avisar. Por eso
+el enunciado insiste en que el programa tiene que «ir más allá de unsigned int».</p>
+<p><code>./rush-02 4294967296</code>, uno más que el máximo, escribe <code>four billion two hundred
+ninety four million nine hundred sixty seven thousand two hundred ninety six</code>: el número
+nunca se convierte, se trata como cadena.</p>
+</details>
+<details id="g-precision-arbitraria">
+<summary>Números como cadenas de dígitos</summary>
+<p>Si un número no cabe en ningún tipo de C, se puede guardar como texto, una cifra por carácter.
+Las bibliotecas de «precisión arbitraria» lo llevan al extremo y suman o multiplican cifra a cifra.
+Si solo hay que leer el número, no hace falta ni eso.</p>
+<p>El rush nunca hace aritmética con el número entero: lo valida con <code>ft_is_positive</code>
+(solo dígitos), le quita los ceros de delante y lo recorre por posiciones. El único entero que
+calcula es el valor de un grupo, que como mucho es 999. El límite real lo pone el diccionario:
+hasta 39 cifras escribe el número; con 40, <code>Dict Error</code>.</p>
+</details>
+
+<h3>Compilar y comprobar</h3>
+<details id="g-dos-pasadas">
+<summary>Validar antes de escribir (dos pasadas)</summary>
+<p>Si un proceso puede fallar a mitad, a veces conviene hacerlo primero «en seco», solo
+comprobando, y después de verdad. Así o sale todo o no sale nada. Las bases de datos llaman a esa
+garantía <em>transacción</em>.</p>
+<p><code>ft_write_nbr</code> llama a <code>write_num</code> con <code>do_write = 0</code>, que solo
+busca las claves; si falta alguna, escribe <code>Dict Error</code> sin haber escrito media frase.
+Solo si la primera pasada sale bien, se repite con <code>do_write = 1</code>.</p>
+</details>
+<details id="g-makefile">
+<summary>Makefile, reglas y relink</summary>
+<p>Un Makefile describe cómo construir un programa: cada <em>regla</em> dice qué fichero produce,
+de qué depende y qué comando lo genera. <code>make</code> solo rehace lo que está más viejo que sus
+dependencias. Si al ejecutar <code>make</code> dos veces la segunda vuelve a compilar o enlazar,
+hay <em>relink</em>, y en 42 es un error.</p>
+<p>El del rush tiene <code>all</code>, <code>$(NAME)</code>, <code>clean</code>,
+<code>fclean</code> y <code>re</code>, todas en <code>.PHONY</code> salvo <code>$(NAME)</code>.
+Un segundo <code>make</code> responde <code>make: Nothing to be done for 'all'.</code>, y
+tras <code>touch rush02.h</code> recompila todos los <code>.o</code>, porque todos dependen del
+header.</p>
+</details>
+<details id="g-regla-patron">
+<summary>Regla patrón: <code>%</code>, <code>$&lt;</code> y <code>$@</code></summary>
+<p>Una regla con <code>%</code> sirve para muchos ficheros a la vez: <code>%.o: %.c</code> dice
+«cualquier <code>.o</code> se hace a partir del <code>.c</code> del mismo nombre». Dentro del
+comando, <code>$&lt;</code> es la primera dependencia y <code>$@</code> el fichero que se está
+generando.</p>
+<p>En el rush, <code>%.o: %.c rush02.h</code> con <code>$(CC) $(FLAGS) -c $&lt; -o $@</code> se
+convierte, para <code>rush02.o</code>, en <code>cc -Wall -Wextra -Werror -c rush02.c -o
+rush02.o</code>: <code>$&lt;</code> es el <code>.c</code> (va primero) y el header solo está para
+que su cambio dispare la regla.</p>
+</details>
+<details id="g-asan">
+<summary>AddressSanitizer</summary>
+<p>Una herramienta del compilador que se activa con <code>-fsanitize=address</code>: vigila cada
+acceso a memoria y, si uno se sale de su sitio o usa memoria ya liberada, para el programa y dice
+dónde. Encuentra desbordamientos que sin ella pasarían desapercibidos.</p>
+<p>Con un número de 49 cifras, el informe empieza por <code>AddressSanitizer:
+stack-buffer-overflow</code> en <code>scale_key</code>: la clave de escala no cabe en el
+<code>char buf[48]</code> de <code>write_num</code>.</p>
+</details>
+</div>
 
 <div class="card" id="main">
 <h2><span class="ex">main</span>main, get_args y read_stdin</h2>
@@ -76,7 +312,7 @@ número <em>antes</em> de abrir el diccionario, cargar el diccionario y escribir
 		ft_write_nbr(num, dict);
 	ft_free_dict(dict);</code></pre>
 <p>El bonus de la entrada estándar reutiliza piezas: <code>ft_read_file(0)</code> lee del
-descriptor 0 igual que de un fichero, y <code>ft_split(content, "\n")</code> lo trocea en
+<a href="#g-fd">descriptor 0</a> igual que de un fichero, y <code>ft_split(content, "\n")</code> lo <a href="#g-split">trocea</a> en
 líneas. Cada línea se valida y se escribe por separado.</p>
 <pre><code>$&gt; printf "42\n7\n\n1000001\n" | ./rush-02 -
 forty two
@@ -85,17 +321,17 @@ one million one</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la entrada estándar es un
 descriptor más (el 0). Si <code>ft_read_file</code> recibe un <code>fd</code> en vez de un
 nombre de fichero, el bonus sale casi gratis. Y que el número nunca se convierte a
-<code>int</code>: se valida y se trata como cadena de dígitos, que es la única forma de «ir más
-allá de unsigned int» sin tipos grandes.</div>
+<code>int</code>: se valida y se trata como <a href="#g-precision-arbitraria">cadena de dígitos</a>, que es la única forma de «ir más
+allá de <a href="#g-unsigned">unsigned int</a>» sin tipos grandes.</div>
 </div>
 
 <div class="card" id="leer">
 <h2><span class="ex">leer</span>ft_read_file y ft_strcat</h2>
 <div class="meta"><span>Entrega: <b>ex00/ft_read_dict.c</b>, <b>ex00/ft_strutils.c</b></span><span>Autorizado: <b>read</b>, <b>malloc</b>, <b>free</b></span></div>
-<p>No se sabe de antemano cuánto mide el fichero, así que se lee a trozos de 254 bytes y se va
+<p>No se sabe de antemano cuánto mide el fichero, así que se lee a <a href="#g-buffer">trozos de 254 bytes</a> y se va
 pegando cada trozo a lo acumulado. El <code>ft_strcat</code> de este rush no es el de la libc:
-devuelve un bloque nuevo y <em>libera el primero</em>, pensado para usarse como
-<code>s = ft_strcat(s, trozo)</code>. Por eso la cadena inicial es una cadena vacía del heap y
+devuelve un bloque nuevo y <a href="#g-propiedad"><em>libera el primero</em></a>, pensado para usarse como
+<code>s = ft_strcat(s, trozo)</code>. Por eso la cadena inicial es una cadena vacía del <a href="#g-heap">heap</a> y
 no el literal <code>""</code>.</p>
 <pre><code>	dict_str = ft_strifcpy("", 0, 0);
 	n = read(fd, buffer, sizeof(buffer) - 1);
@@ -110,9 +346,9 @@ no el literal <code>""</code>.</p>
 		free(dict_str);
 		return (0);
 	}</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — <code>read</code> no lee «el
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <a href="#g-open-read"><code>read</code></a> no lee «el
 fichero»: lee <em>como mucho</em> n bytes y te dice cuántos ha leído (0 al final, −1 si falla).
-El <code>sizeof(buffer) - 1</code> reserva el hueco del <code>'\0'</code> para poder tratar cada
+El <code>sizeof(buffer) - 1</code> reserva el hueco del <a href="#g-terminador"><code>'\0'</code></a> para poder tratar cada
 trozo como cadena. Y la regla de propiedad de memoria: una función que libera su argumento tiene
 que decirlo, porque quien la llame con un literal se lleva un <code>free</code> inválido. El
 comentario del código lo deja escrito.</div>
@@ -121,9 +357,9 @@ comentario del código lo deja escrito.</div>
 <div class="card" id="parse">
 <h2><span class="ex">parse</span>ft_parse_dict y ft_outspace</h2>
 <div class="meta"><span>Entrega: <b>ex00/ft_read_dict.c</b>, <b>ex00/ft_split.c</b></span><span>Autorizado: <b>malloc</b>, <b>free</b></span></div>
-<p>El texto se convierte en un array de <code>t_dict</code> (pares <code>nbr</code> /
-<code>word</code>, ambos cadenas) terminado en una entrada con <code>nbr</code> a 0, igual que
-<code>argv</code> termina en <code>NULL</code>. Primero se parte por <code>'\n'</code> (las
+<p>El texto se convierte en un array de <a href="#g-struct"><code>t_dict</code></a> (pares <code>nbr</code> /
+<code>word</code>, ambos cadenas) <a href="#g-centinela">terminado en una entrada con <code>nbr</code> a 0</a>, igual que
+<code>argv</code> termina en <code>NULL</code>. Primero se <a href="#g-split">parte</a> por <code>'\n'</code> (las
 líneas vacías desaparecen solas en el split), luego cada línea por <code>':'</code>. Si no salen
 exactamente dos trozos, es un <code>Dict Error</code>.</p>
 <pre><code>	while (dict_lines[i])
@@ -138,7 +374,7 @@ exactamente dos trozos, es un <code>Dict Error</code>.</p>
 	}
 	dict[i].nbr = 0;
 	dict[i].word = 0;</code></pre>
-<p><code>ft_outspace</code> recorta espacios por los dos extremos moviendo dos índices hacia
+<p><code>ft_outspace</code> <a href="#g-trim">recorta espacios</a> por los dos extremos moviendo dos índices hacia
 dentro, y copia lo que queda con <code>ft_strifcpy(str, ini, fin)</code>, que reserva y copia
 el trozo <code>[ini, fin)</code>. El camino de error, <code>ft_parse_error</code>, pone el
 centinela en la entrada <code>i</code> para que <code>ft_free_dict</code> sepa hasta dónde
@@ -146,13 +382,13 @@ liberar.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A diseñar una estructura de datos
 propia (el <code>struct</code> de C11 en un caso real) y a decidir cómo se sabe dónde acaba un
 array dinámico: aquí con un centinela. Y que el camino de error también tiene que liberar todo
-lo reservado hasta ese momento, que es donde suelen aparecer las fugas.</div>
+lo reservado hasta ese momento, que es donde suelen aparecer las <a href="#g-fuga">fugas</a>.</div>
 </div>
 
 <div class="card" id="grupos">
 <h2><span class="ex">clave</span>write_num, group_value y scale_key</h2>
 <div class="meta"><span>Entrega: <b>ex00/ft_write_nbr.c</b>, <b>ex00/ft_write_utils.c</b></span><span>Autorizado: <b>write</b></span></div>
-<p>Así se leen los números en inglés (y en español): en grupos de tres cifras, cada uno
+<p>Así se leen los números en inglés (y en español): en <a href="#g-posicional">grupos de tres cifras</a>, cada uno
 seguido de su escala. <code>123456789</code> es «123 million, 456 thousand, 789». El número
 nunca pasa a entero: <code>exp</code> es la potencia de 10 del grupo (0, 3, 6…), y
 <code>group_value</code> saca las tres cifras de esas posiciones de la cadena. Esas sí caben en
@@ -176,12 +412,12 @@ un <code>int</code>, porque nunca pasan de 999.</p>
 	}</code></pre>
 <p>Para buscar la escala en el diccionario no hace falta calcular 10<sup>exp</sup>:
 <code>scale_key</code> escribe la clave como texto, un <code>'1'</code> y <code>exp</code>
-ceros. Las claves del diccionario son cadenas y se comparan con <code>ft_strcmp</code>, así que
+ceros. Las claves del diccionario son cadenas y se <a href="#g-strcmp">comparan con <code>ft_strcmp</code></a>, así que
 <code>"1000000000000000000000000000000000000"</code> (undecillion) funciona igual que
 <code>"1000"</code>. Los grupos a cero se saltan enteros: por eso <code>1000000</code> da
 <code>one million</code> y no «one million zero thousand».</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un número es una
-<em>representación</em>: si el problema no pide aritmética, no hace falta convertirlo, y
+<a href="#g-precision-arbitraria"><em>representación</em></a>: si el problema no pide aritmética, no hace falta convertirlo, y
 trabajar con los dígitos como texto elimina el límite de tamaño. Es la misma descomposición
 posicional de <code>ft_putnbr</code> (C00), pero de tres en tres cifras y sin división.</div>
 </div>
@@ -208,7 +444,7 @@ propia; si no está (21, 47…), se compone con decena + unidad.</p>
 		return (0);</code></pre>
 <p>Buscar primero la clave exacta tiene un efecto bonito: si alguien añade
 <code>42: the answer</code> a un diccionario, el programa lo usa. <code>find_word</code> es una
-búsqueda lineal por la tabla, suficiente para cuarenta entradas.</p>
+<a href="#g-busqueda-lineal">búsqueda lineal</a> por la tabla, suficiente para cuarenta entradas.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A no meter datos en el código. El
 programa no sabe inglés: sabe la <em>estructura</em> de los números (centenas, decenas,
 escalas) y le pide las palabras al diccionario. Cambiar el fichero cambia el idioma, que es la
@@ -221,7 +457,7 @@ configuraciones, traducciones y plantillas.</div>
 <div class="meta"><span>Entrega: <b>ex00/ft_write_nbr.c</b></span><span>Autorizado: <b>write</b></span></div>
 <p>Si al diccionario le falta una palabra a mitad de número, no debería salir media frase y
 luego <code>Dict Error</code>. La solución del grupo: <code>write_num</code> recibe un
-<code>do_write</code>, y se llama dos veces. La primera en seco, solo comprobando que todas las
+<code>do_write</code>, y se llama dos veces. La primera <a href="#g-dos-pasadas">en seco</a>, solo comprobando que todas las
 claves existen; la segunda, escribiendo. <code>put_word</code> pone el espacio
 <em>antes</em> de cada palabra salvo la primera (<code>first</code>).</p>
 <pre><code>	while (nbr[0] == '0' &amp;&amp; nbr[1])
@@ -248,9 +484,9 @@ más.</div>
 <h2><span class="ex">extra</span>Memoria y Makefile</h2>
 <div class="meta"><span>Entrega: <b>ex00/Makefile</b>, <b>ex00/numbers.dict</b></span><span>Probado con: <b>-fsanitize=address</b></span></div>
 <p>Todo lo que se reserva se libera: el split de líneas, cada split de línea, la cadena del
-fichero y el diccionario. Compilado con AddressSanitizer y probado con números normales, el
-cero, errores y el diccionario alternativo, no aparecen fugas. El Makefile hace que cada
-<code>.o</code> dependa también de <code>rush02.h</code>, para que cambiar el header recompile
+fichero y el diccionario. Compilado con <a href="#g-asan">AddressSanitizer</a> y probado con números normales, el
+cero, errores y el diccionario alternativo, no aparecen <a href="#g-fuga">fugas</a>. El <a href="#g-makefile">Makefile</a> hace que cada
+<code>.o</code> <a href="#g-regla-patron">dependa también de</a> <code>rush02.h</code>, para que cambiar el header recompile
 lo que lo usa:</p>
 <pre><code>%.o: %.c rush02.h
 	$(CC) $(FLAGS) -c $&lt; -o $@</code></pre>
@@ -265,15 +501,15 @@ quién es responsable de su <code>free</code>.</div>
 <div class="meta"><span>Probado: <b>compilado y ejecutado tal cual</b></span></div>
 <ul>
 <li><b>Espacios internos.</b> El ejemplo del enunciado tiene <code>20    :     hey     everybody !</code>
-y espera <code>hey everybody !</code>, con un solo espacio. <code>ft_outspace</code> solo recorta
+y espera <code>hey everybody !</code>, con un solo espacio. <code>ft_outspace</code> solo <a href="#g-trim">recorta</a>
 los extremos, así que el programa escribe <code>hey     everybody !</code> tal cual.</li>
 <li><b>Dos puntos en el valor.</b> El valor puede ser «cualquier carácter imprimible», pero la
-línea se parte por <em>todos</em> los <code>':'</code>: <code>20: a:b</code> da tres trozos y
+línea se <a href="#g-split">parte</a> por <em>todos</em> los <code>':'</code>: <code>20: a:b</code> da tres trozos y
 <code>Dict Error</code>.</li>
 <li><b>Números de 49 cifras o más.</b> Ojo: <code>write_num</code> usa <code>char buf[48]</code>
 para la clave de escala, y <code>scale_key</code> escribe <code>exp + 2</code> bytes sin mirar el
 tamaño. Hasta 39 cifras escribe el número; de 40 a 48, <code>Dict Error</code> como debe ser; con
-49 o más, AddressSanitizer marca un <em>stack-buffer-overflow</em> en <code>scale_key</code>
+49 o más, <a href="#g-asan">AddressSanitizer</a> marca un <em>stack-buffer-overflow</em> en <code>scale_key</code>
 durante la pasada en seco.</li>
 <li><b>Claves sin validar.</b> No se comprueba que la parte izquierda sea un número, ni que una
 línea de solo espacios sea «vacía» (da <code>Dict Error</code>).</li>
@@ -282,8 +518,113 @@ trabajo de vim); no está en git, así que no llega a la entrega.</li>
 </ul>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A leer los ejemplos del enunciado como
 casos de prueba. Los dos primeros puntos están literalmente en él; el tercero es la otra cara de
-«ir más allá de unsigned int»: quitar un límite (el del tipo) y dejar otro escondido (el de un
+«ir más allá de <a href="#g-unsigned">unsigned int</a>»: quitar un límite (el del tipo) y dejar otro escondido (el de un
 buffer fijo).</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. El enunciado avisa de que la memoria se revisa en la evaluación, así
+que espera preguntas de <code>malloc</code> y <code>free</code>. Antes de mirar la respuesta,
+intenta contestar tú.</p>
+
+<h3>Diseño</h3>
+<details id="q-grandes">
+<summary>¿Cómo vais «más allá de unsigned int»?</summary>
+<p>No convirtiendo nunca el número: se valida como cadena de dígitos y se recorre por grupos de
+tres cifras. El único entero que se calcula es el valor de un grupo, de 0 a 999. Las claves de
+escala se construyen como texto (<code>'1'</code> y <code>exp</code> ceros) y se comparan con
+<code>ft_strcmp</code>. <code>4294967296</code> se escribe sin problema.
+→ <a href="#grupos">write_num</a>, <a href="#g-unsigned">unsigned int</a></p>
+</details>
+<details id="q-dict-error">
+<summary>¿Cómo evitáis escribir media frase y después <code>Dict Error</code>?</summary>
+<p>Con <a href="#g-dos-pasadas">dos pasadas</a>: <code>write_num</code> se llama primero con
+<code>do_write = 0</code>, que solo busca las claves. Si falta alguna, sale <code>Dict Error</code>
+sin haber escrito nada; si no, se repite escribiendo. → <a href="#pasadas">ft_write_nbr</a></p>
+</details>
+<details id="q-idioma">
+<summary>¿Cómo cambiaríais de idioma?</summary>
+<p>Con otro diccionario como primer argumento: el programa no sabe inglés, solo la estructura de
+centenas, decenas y escalas, y las palabras salen del fichero (en español, además, la <a href="#g-escala-corta">escala</a> es otra). Si el diccionario tiene la clave
+exacta de un número de dos cifras (por ejemplo <code>42</code>), se usa antes de descomponerlo.
+→ <a href="#grupo">write_group</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-errores">
+<summary>¿Qué da <code>Error</code> y qué da <code>Dict Error</code>?</summary>
+<p><code>Error</code>: un número que no son solo dígitos (<code>10.4</code>, <code>-5</code>,
+<code>+5</code>, <code>""</code>). Se comprueba <em>antes</em> de abrir el diccionario.
+<code>Dict Error</code>: el diccionario no se puede abrir, una línea no da exactamente dos trozos
+al <a href="#g-parseo">parsearla</a> partiéndola por <code>':'</code>, o falta una clave para el número pedido (a partir de 40 cifras
+con <code>numbers.dict</code>). Los dos van por stdout, como en los ejemplos del enunciado.
+→ <a href="#main">main</a>, <a href="#parse">ft_parse_dict</a></p>
+</details>
+<details id="q-cero">
+<summary>¿Qué pasa con <code>0</code> y con <code>007</code>?</summary>
+<p><code>0</code> da <code>zero</code>: como no tiene grupos, se trata aparte con la clave
+<code>"0"</code>. A <code>007</code> se le quitan los ceros de delante y da <code>seven</code>.
+→ <a href="#pasadas">ft_write_nbr</a></p>
+</details>
+<details id="q-espacios">
+<summary>Con <code>20    :     hey     everybody !</code>, ¿qué sale?</summary>
+<p><code>hey     everybody !</code>, con los espacios de en medio, y el enunciado espera
+<code>hey everybody !</code>. <code>ft_outspace</code> solo <a href="#g-trim">recorta</a> los
+extremos. Es el punto débil más visible, porque está en el propio ejemplo del enunciado.
+→ <a href="#ojo">lo que no cumple</a></p>
+</details>
+<details id="q-49">
+<summary>¿Y un número de 49 cifras?</summary>
+<p>Desborda <code>char buf[48]</code> en <code>scale_key</code> durante la pasada en seco
+(<a href="#g-asan">AddressSanitizer</a> lo marca). Hasta 39 cifras escribe el número y de 40 a 48
+da <code>Dict Error</code>. El arreglo es dejar de construir la clave cuando no cabe, o dar
+<code>Dict Error</code> en cuanto <code>exp</code> pasa del tamaño del buffer.
+→ <a href="#ojo">lo que no cumple</a></p>
+</details>
+
+<h3>Memoria y Makefile</h3>
+<details id="q-leaks">
+<summary>¿Hay leaks? ¿Quién libera cada cosa?</summary>
+<p>Valgrind no da fugas, ni con un número normal ni con un <code>Dict Error</code>. Cada split se
+libera con <code>ft_free_split</code>, la cadena del fichero en <code>ft_read_dict</code> después
+de parsear, y la tabla con <code>ft_free_dict</code> al final de <code>main</code>. En el camino de
+error, <code>ft_parse_error</code> pone el <a href="#g-centinela">centinela</a> donde se quedó para
+liberar solo lo relleno. → <a href="#memoria">memoria</a>, <a href="#parse">ft_parse_dict</a></p>
+</details>
+<details id="q-strcat">
+<summary>¿Por qué <code>ft_strcat</code> libera su primer argumento?</summary>
+<p>Para acumular en bucle: <code>s = ft_strcat(s, trozo)</code> crea un bloque nuevo con los dos
+pegados, y el viejo ya no sirve. Por eso la cadena inicial es <code>ft_strifcpy("", 0, 0)</code>,
+del heap: con el literal <code>""</code> el <code>free</code> sería inválido.
+→ <a href="#leer">ft_read_file</a>, <a href="#g-propiedad">propiedad de la memoria</a></p>
+</details>
+<details id="q-malloc">
+<summary>¿Y si falla un <code>malloc</code>?</summary>
+<p>No está cubierto del todo. Si falla el de la tabla en <code>ft_parse_dict</code>, se devuelve
+<code>NULL</code> (sale <code>Dict Error</code>) pero las líneas de <code>ft_split</code> no se
+liberan; y el retorno de <code>ft_split</code> no se comprueba en ningún sitio, así que si fuera
+<code>NULL</code>, <code>ft_arrlen</code> lo leería. Mejor reconocerlo que defenderlo.
+→ <a href="#parse">ft_parse_dict</a></p>
+</details>
+<details id="q-relink">
+<summary>¿El Makefile hace relink?</summary>
+<p>No: un segundo <code>make</code> responde <code>Nothing to be done for 'all'.</code> Y como cada
+<code>.o</code> depende también de <code>rush02.h</code>, al cambiar el header se recompila todo
+lo que lo incluye. Tiene las reglas que pide el enunciado (<code>$(NAME)</code>,
+<code>clean</code>, <code>fclean</code>) más <code>all</code> y <code>re</code>.
+→ <a href="#memoria">Makefile</a>, <a href="#g-makefile">relink</a></p>
+</details>
+
+<h3>Sobre el trabajo en grupo</h3>
+<details id="q-grupo">
+<summary>¿Quién hizo qué? ¿Qué bonus hicisteis?</summary>
+<p>El reparto te lo tienes que preparar tú; en la defensa cualquiera del grupo tiene que poder
+explicar cualquier fichero. El bonus hecho es la entrada estándar: con <code>-</code> como número,
+cada línea de stdin se convierte por separado (<code>printf "1\n2\n" | ./rush-02 -</code> da
+<code>one</code> y <code>two</code>). Ni «and» ni guiones. → <a href="#main">main</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — Rush 02 · <a href="019_bsq.html">continuar con BSQ →</a></footer>

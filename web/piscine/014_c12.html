@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ fusionan sin duplicar memoria — y que introducen el puntero a puntero (<code>t
 poder cambiar la cabeza desde dentro.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_create_elem</a></li>
   <li><a href="#ex01">ex01 — push_front</a></li>
   <li><a href="#ex02">ex02 — list_size</a></li>
@@ -44,6 +47,7 @@ poder cambiar la cabeza desde dentro.</p>
   <li><a href="#ex15">ex15 — reverse_fun</a></li>
   <li><a href="#ex16">ex16 — sorted_list_insert</a></li>
   <li><a href="#ex17">ex17 — sorted_list_merge</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>La estructura que se repite en todo el módulo</b> — Todos los ejercicios usan
@@ -53,15 +57,251 @@ el mismo nodo, entregado en <code>ft_list.h</code>:
 	struct s_list	*next;
 	void			*data;
 }	t_list;</code></pre>
-Dos ideas clave. <strong>El nodo se apunta a sí mismo</strong> (<code>struct s_list *next</code>): esa
-recursividad en el tipo es la que encadena la lista. Y <strong><code>void *data</code></strong>: un
+Dos ideas clave. <strong>El nodo se apunta a sí mismo</strong> (<a href="#g-autorreferente"><code>struct s_list *next</code></a>): esa
+recursividad en el tipo es la que encadena la lista. Y <strong><a href="#g-void-ptr"><code>void *data</code></a></strong>: un
 puntero «a cualquier cosa», que permite que la misma lista guarde enteros, cadenas o structs. La lista
 es genérica porque no sabe qué guarda.</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 12 es el módulo de las listas enlazadas, y con ellas llegan palabras de estructuras de datos y de
+gestión de memoria. Aquí está cada una explicada desde cero y con un ejemplo sacado del propio módulo.
+En el resto de la página, la primera vez que sale uno de estos términos en cada tarjeta lleva un
+enlace a su entrada.</p>
+
+<h3>La estructura</h3>
+<details id="g-lista">
+<summary>Lista enlazada</summary>
+<p>Una secuencia de elementos en la que cada uno sabe dónde está el siguiente. Al contrario que un
+array, los elementos no están seguidos en memoria: cada uno puede estar en cualquier sitio, y lo que
+los une es un puntero de uno al siguiente. Se llama <em>simplemente enlazada</em> cuando cada elemento
+solo apunta al siguiente (no al anterior), como la de C 12.</p>
+<p>Una lista con <code>"uno"</code>, <code>"dos"</code> y <code>"tres"</code> se dibuja así:</p>
+<pre><code>begin_list → [ "uno" | •]→[ "dos" | •]→[ "tres" | NULL]</code></pre>
+</details>
+<details id="g-nodo">
+<summary>Nodo (elemento)</summary>
+<p>Cada caja de la lista. En C 12 es un <code>t_list</code> con dos campos: <code>data</code>, lo que
+guarda, y <code>next</code>, la dirección del nodo siguiente. El enunciado lo llama «elemento». Cada
+nodo se crea con <code>ft_create_elem</code>, que es la única función del módulo que llama a
+<code>malloc</code> (las demás que crean nodos tienen que usarla a ella).</p>
+</details>
+<details id="g-autorreferente">
+<summary>Struct autorreferente</summary>
+<p>Un <code>struct</code> que tiene un campo que apunta a otro <code>struct</code> de su mismo tipo:
+<code>struct s_list *next</code> dentro de <code>struct s_list</code>. Es lo que permite encadenar.</p>
+<p>Por eso dentro del <code>struct</code> se escribe <code>struct s_list</code> y no <code>t_list</code>:
+el nombre corto del <code>typedef</code> todavía no existe en esa línea, porque el
+<code>typedef</code> no termina hasta el <code>t_list;</code> del final. Y el campo tiene que ser un
+<em>puntero</em>: un <code>struct s_list next</code> (sin <code>*</code>) contendría otro struct entero
+dentro, que contendría otro, y no tendría tamaño finito.</p>
+</details>
+<details id="g-void-ptr">
+<summary><code>void *</code>: puntero genérico</summary>
+<p>Un puntero que guarda una dirección sin decir de qué tipo es lo que hay allí. Se puede asignar a y
+desde cualquier otro puntero a datos sin conversión, pero no se puede desreferenciar directamente:
+para leer lo que apunta hay que convertirlo primero, por ejemplo <code>(char *)elem-&gt;data</code>.</p>
+<p>Es lo que hace genérica la lista: <code>data</code> puede apuntar a una cadena, a un
+<code>int</code> o a un struct. La contrapartida es que la lista no sabe qué guarda, y por eso necesita
+que le pasen <code>cmp</code> para comparar y <code>free_fct</code> para liberar.</p>
+</details>
+<details id="g-flecha">
+<summary>El operador <code>-&gt;</code></summary>
+<p>Acceso a un campo a través de un puntero. <code>elem-&gt;next</code> es una forma corta de escribir
+<code>(*elem).next</code>: primero se sigue el puntero hasta el struct y luego se coge el campo. Con
+un struct que no es puntero se usa el punto (<code>elem.next</code>).</p>
+<p>Cuando hay doble puntero hacen falta paréntesis: <code>(*begin_list)-&gt;data</code> en ex12 y
+ex16. Sin ellos, <code>*begin_list-&gt;data</code> se leería como <code>*(begin_list-&gt;data)</code>,
+porque <code>-&gt;</code> va antes que <code>*</code>.</p>
+</details>
+<details id="g-cabeza">
+<summary>Cabeza de la lista y lista vacía</summary>
+<p>La <em>cabeza</em> es el primer nodo, y la variable que la apunta (<code>begin_list</code>) es la
+única puerta de entrada a la lista: desde ahí se llega a todos los demás siguiendo
+<code>next</code>. El final se marca con <code>next == NULL</code>.</p>
+<p>Una lista vacía no es un nodo especial: es <code>begin_list == NULL</code>. Casi todos los
+ejercicios tienen que funcionar con ella: <code>ft_list_size</code> devuelve 0, <code>ft_list_at</code>
+devuelve <code>NULL</code> y <code>ft_list_push_back</code> tiene que convertir el nodo nuevo en la
+cabeza.</p>
+</details>
+
+<h3>Memoria</h3>
+<details id="g-heap">
+<summary>Heap y pila de llamadas</summary>
+<p>Las variables locales de una función viven en la <em>pila</em> (<em>stack</em>) y desaparecen al
+salir de ella. Lo que se reserva con <code>malloc</code> vive en el <em>heap</em>, que no se vacía solo:
+sigue ahí hasta que se llama a <code>free</code>.</p>
+<p>Por eso <code>ft_create_elem</code> tiene que usar <code>malloc</code>: si declarase un
+<code>t_list elem;</code> local y devolviera <code>&amp;elem</code>, el llamante recibiría la dirección
+de algo que ya no existe.</p>
+</details>
+<details id="g-malloc-free">
+<summary><code>malloc</code>, <code>free</code> y <code>sizeof</code></summary>
+<p><code>malloc(n)</code> reserva n bytes y devuelve su dirección, o <code>NULL</code> si no puede.
+<code>free(p)</code> devuelve al sistema lo que se reservó en <code>p</code>; después,
+<code>p</code> sigue teniendo la misma dirección pero ya no se puede usar. <code>sizeof(t_list)</code>
+es lo que mide un nodo: dos punteros, 16 bytes en los Linux de 64 bits de 42.</p>
+<p>Cada <code>malloc</code> necesita exactamente un <code>free</code>: ninguno es una fuga y dos son un
+<em>double free</em>, que puede romper el programa. El enunciado de C 12 avisa de que un segfault, un
+bus error o un double free es un 0.</p>
+</details>
+<details id="g-doble-puntero">
+<summary>Doble puntero (<code>t_list **</code>)</summary>
+<p>En C los argumentos se pasan siempre por copia. Si una función recibe <code>t_list *begin_list</code>
+y hace <code>begin_list = elem</code>, cambia su copia y el llamante no se entera. Para que pueda
+cambiar la variable del llamante, hay que pasarle la <em>dirección</em> de esa variable: un
+<code>t_list **</code>, y escribir a través de él con <code>*begin_list = elem</code>.</p>
+<pre><code>t_list	*lista = NULL;
+
+ft_list_push_front(&amp;lista, "hola");   /* ahora lista apunta al nodo nuevo */</code></pre>
+<p>La regla para leer las firmas del módulo: recibe <code>t_list **</code> la función que puede tener
+que cambiar la cabeza (<code>push_front</code>, <code>push_back</code>, <code>reverse</code>,
+<code>remove_if</code>, <code>merge</code>, <code>sort</code>, las <code>sorted_</code>), y
+<code>t_list *</code> la que solo mira o cambia los <code>data</code> (<code>size</code>,
+<code>last</code>, <code>at</code>, <code>foreach</code>, <code>find</code>,
+<code>clear</code>, <code>reverse_fun</code>).</p>
+</details>
+<details id="g-use-after-free">
+<summary>Use-after-free</summary>
+<p>Usar memoria después de haberla liberado. Es un error grave porque a menudo <em>parece</em> que
+funciona: la memoria liberada suele seguir conteniendo lo de antes un rato, hasta que otro
+<code>malloc</code> la reutiliza y aparecen datos absurdos o un segfault lejos del fallo.</p>
+<p>En listas sale al liberar: <code>free(p); p = p-&gt;next;</code> lee el campo <code>next</code> de un
+nodo ya liberado. La solución de ex06 y ex12 es guardar el siguiente en <code>tmp</code> antes del
+<code>free</code>.</p>
+</details>
+<details id="g-leak">
+<summary>Fuga de memoria (leak) y valgrind</summary>
+<p>Memoria reservada que ya nadie puede liberar porque se ha perdido su dirección. En un programa corto
+no se nota, pero en uno que funciona mucho tiempo se va comiendo la memoria. <code>valgrind</code>
+ejecuta el programa vigilando cada <code>malloc</code> y <code>free</code> y al final dice cuántos bytes
+se quedaron sin liberar y dónde se reservaron.</p>
+<p>En C 12 una fuga típica es desenganchar un nodo en <code>ft_list_remove_if</code> sin hacer
+<code>free</code> del nodo, o hacer <code>free</code> del nodo pero no llamar a <code>free_fct</code> con
+su <code>data</code>.</p>
+</details>
+<details id="g-propiedad">
+<summary>Propiedad de la memoria: quién libera qué</summary>
+<p>Para cada bloque reservado tiene que estar claro quién es su <em>dueño</em>, el responsable de
+liberarlo. En C 12 hay dos dueños distintos: el nodo lo creó la lista (con <code>ft_create_elem</code>)
+y lo libera la lista con <code>free</code>; el <code>data</code> lo trajo el llamante, y solo él sabe si
+es memoria reservada, una cadena literal o un struct con más punteros dentro. Por eso se lo libera con
+la función que él pasa, <code>free_fct</code>.</p>
+<p>Ejemplo: en una lista hecha con <code>ft_list_push_strs</code> a partir de <code>argv</code>, los
+<code>data</code> no se reservaron con <code>malloc</code>; un <code>free_fct</code> que no hace nada es
+lo correcto, y uno que llame a <code>free</code> rompería el programa.</p>
+</details>
+
+<h3>Coste y recorridos</h3>
+<details id="g-recorrido">
+<summary>Recorrido de una lista</summary>
+<p>Visitar los nodos uno a uno desde la cabeza siguiendo <code>next</code> hasta llegar a
+<code>NULL</code>. Es el bucle de casi todo el módulo:</p>
+<pre><code>while (p)
+{
+	/* hacer algo con p-&gt;data */
+	p = p-&gt;next;
+}</code></pre>
+<p>Si el bucle es <code>while (p-&gt;next)</code>, se para <em>en</em> el último nodo en vez de después
+(lo que quiere <code>ft_list_last</code>), pero entonces hay que comprobar antes que <code>p</code> no es
+<code>NULL</code>.</p>
+</details>
+<details id="g-coste">
+<summary>Coste O(1) y O(n)</summary>
+<p>O(1) es coste constante: lo mismo con 3 nodos que con un millón. O(n) es coste lineal: crece en
+proporción al número de nodos, porque hay que recorrerlos.</p>
+<p><code>ft_list_push_front</code> es O(1): crea un nodo y toca dos punteros. <code>ft_list_push_back</code>
+es O(n), porque antes de enganchar tiene que ir hasta el último; lo mismo <code>ft_list_size</code>,
+<code>ft_list_last</code>, <code>ft_list_merge</code> y <code>ft_list_at</code>.</p>
+</details>
+<details id="g-acceso">
+<summary>Acceso directo frente a acceso secuencial</summary>
+<p>En un array, <code>tab[5]</code> se calcula: la dirección del principio más 5 veces el tamaño de un
+elemento, y se llega en un paso. En una lista no hay fórmula: los nodos están dispersos y solo se llega
+al quinto pasando por los cuatro anteriores. El array tiene acceso <em>directo</em>; la lista,
+<em>secuencial</em>.</p>
+<p>A cambio, la lista gana al insertar o quitar en medio: basta con cambiar un <code>next</code>, sin
+desplazar el resto como en un array. <code>ft_list_reverse_fun</code> paga ese precio: busca el nodo
+de la derecha con un <code>node_at</code> en cada vuelta, así que en total recorre del orden de n²
+nodos.</p>
+</details>
+<details id="g-lifo">
+<summary>Pila (LIFO) y orden inverso</summary>
+<p>Una <em>pila</em> es una estructura en la que el último en entrar es el primero en salir
+(<em>Last In, First Out</em>), como una pila de platos. Una lista en la que siempre se inserta y se
+saca por la cabeza funciona así.</p>
+<p>Por eso <code>ft_list_push_strs</code> invierte el orden: con <code>{"uno", "dos", "tres"}</code>
+mete <code>"uno"</code> el primero y queda al fondo. Compilado y recorrido, sale
+<code>tres dos uno</code>, que es justo lo que pide el enunciado («el primer elemento de la tabla se
+encontrará al final de la lista»).</p>
+</details>
+<details id="g-invariante">
+<summary>Invariante</summary>
+<p>Una propiedad que el código se compromete a mantener cierta siempre, antes y después de cada
+operación. Sirve para razonar: si al entrar la lista está ordenada y la función conserva el orden, al
+salir sigue ordenada, sin tener que comprobarlo entero.</p>
+<p>En C 12 hay dos: «un nodo nuevo tiene <code>next</code> a <code>NULL</code>» (ex00) y «la lista está
+ordenada de forma creciente según <code>cmp</code>» (ex16 y ex17, que la reciben ordenada y tienen que
+dejarla igual).</p>
+</details>
+
+<h3>Algoritmos</h3>
+<details id="g-burbuja">
+<summary>Ordenación de burbuja</summary>
+<p>Se comparan dos vecinos y, si están al revés, se intercambian; se repite hasta que no quede ninguna
+pareja al revés. Hace del orden de n² comparaciones, así que es lenta con listas grandes, pero se
+adapta bien a una lista enlazada porque solo mira vecinos, que es lo único barato en una lista.</p>
+<p><code>ft_list_sort</code> la usa intercambiando los <code>data</code> y no los nodos, y tras cada
+intercambio vuelve a la cabeza (<code>cur = *begin_list</code>), así que hace más vueltas que la
+burbuja clásica.</p>
+</details>
+<details id="g-insercion">
+<summary>Inserción ordenada</summary>
+<p>Meter un elemento en una secuencia ya ordenada en el único sitio en que sigue ordenada: delante del
+primero que sea mayor que él. Repetido con cada elemento, es la <em>ordenación por inserción</em>.</p>
+<p>Es <code>ft_sorted_list_insert</code>: avanza mientras el siguiente sea menor o igual
+(<code>cmp(cur-&gt;next-&gt;data, data) &lt;= 0</code>) y empalma ahí. Con ese <code>&lt;= 0</code>, un
+elemento igual a otros entra <em>detrás</em> de ellos.</p>
+</details>
+<details id="g-fusion">
+<summary>Fusión de listas ordenadas (merge)</summary>
+<p>Juntar dos secuencias ordenadas en una sola ordenada. La forma clásica va con un dedo en cada lista:
+compara los dos primeros, coge el menor, avanza ese dedo y repite. Así cada elemento se mira una vez y
+el coste es lineal, n + m. Es el paso central del <em>merge sort</em>.</p>
+<p><code>ft_sorted_list_merge</code> llega al mismo resultado de otra forma: inserta los nodos de
+<code>begin2</code> uno a uno con la lógica de ex16, buscando el hueco desde la cabeza cada vez. Es
+correcto y no crea nodos, pero no aprovecha que <code>begin2</code> ya viene ordenada: cuesta del orden
+de n·m comparaciones en vez de n + m.</p>
+</details>
+
+<h3>Funciones que se pasan</h3>
+<details id="g-callback">
+<summary>Callbacks: <code>f</code>, <code>cmp</code> y <code>free_fct</code></summary>
+<p>Funciones que la lista recibe como argumento para llamarlas ella (los punteros a función de C 11).
+En C 12 hay tres papeles: <code>f</code> <em>actúa</em> sobre un <code>data</code>, <code>cmp</code>
+<em>compara</em> dos (0 si «casan», con el convenio de signo de <code>strcmp</code>) y
+<code>free_fct</code> <em>destruye</em> un <code>data</code>.</p>
+<p>El enunciado dice cómo se llaman: <code>(*cmp)(list_ptr-&gt;data, data_ref)</code>, con el dato de
+la lista primero y la referencia después. Respetar ese orden importa cuando el comparador no es
+simétrico. Sobre por qué algunos prototipos llevan <code>int (*cmp)()</code> con los paréntesis vacíos, ver
+<a href="#g-cmp-sin-prototipo">la entrada siguiente</a>.</p>
+</details>
+<details id="g-cmp-sin-prototipo">
+<summary><code>int (*cmp)()</code> con los paréntesis vacíos</summary>
+<p>En ex11, ex12, ex14, ex16 y ex17 el enunciado declara <code>int (*cmp)()</code>, sin tipos dentro.
+En el C de la piscine eso significa «puntero a función que devuelve <code>int</code>, con argumentos
+<em>sin especificar</em>»: el compilador no comprueba qué le pasas. No es lo mismo que
+<code>(void)</code>, que significa «sin argumentos».</p>
+<p>Por eso se le puede pasar <code>ft_strcmp</code>, que recibe <code>char *</code>, aunque la lista
+le dé <code>void *</code>. Hay que copiar el prototipo tal cual lo da el enunciado, porque es con el
+que compila la Moulinette.</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_create_elem</h2>
 <div class="meta"><span>Entregable: <b>ft_create_elem.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>malloc</b></span></div>
-<p>Crear un nodo: reservar memoria, poner su <code>data</code> y dejar <code>next</code> a <code>NULL</code>.</p>
+<p>Crear un <a href="#g-nodo">nodo</a>: reservar memoria, poner su <code>data</code> y dejar <code>next</code> a <code>NULL</code>.</p>
 <pre><code>elem = malloc(sizeof(t_list));
 if (!elem)
 	return (NULL);
@@ -69,8 +309,8 @@ elem-&gt;data = data;
 elem-&gt;next = NULL;
 return (elem);</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El ladrillo de todo lo demás. Un nodo vive en el
-<em>heap</em> (por eso <code>malloc</code>): sobrevive a la función que lo crea, al revés que una
-variable local. Dejar <code>next</code> a <code>NULL</code> no es un detalle: es la <em>invariante</em>
+<em><a href="#g-heap">heap</a></em> (por eso <a href="#g-malloc-free"><code>malloc</code></a>): sobrevive a la función que lo crea, al revés que una
+variable local. Dejar <code>next</code> a <code>NULL</code> no es un detalle: es la <em><a href="#g-invariante">invariante</a></em>
 de que un nodo recién nacido no apunta a basura. Toda la piscina de listas se apoya en que esta
 función sea impecable.</div>
 </div>
@@ -78,7 +318,7 @@ función sea impecable.</div>
 <div class="card" id="ex01">
 <h2><span class="ex">ex01</span>ft_list_push_front</h2>
 <div class="meta"><span>Entregable: <b>ft_list_push_front.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ft_create_elem</b></span></div>
-<p>Añadir un elemento al principio y actualizar la cabeza.</p>
+<p>Añadir un elemento al principio y actualizar la <a href="#g-cabeza">cabeza</a>.</p>
 <pre><code>void	ft_list_push_front(t_list **begin_list, void *data)
 {
 	t_list	*elem;
@@ -89,7 +329,7 @@ función sea impecable.</div>
 	elem-&gt;next = *begin_list;
 	*begin_list = elem;
 }</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Aquí aparece el <code>t_list **</code> y es el
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Aquí aparece el <a href="#g-doble-puntero"><code>t_list **</code></a> y es el
 concepto más difícil del módulo. Para <em>cambiar</em> a dónde apunta la cabeza del llamante, no basta
 con recibir la cabeza: hay que recibir <em>la dirección de la variable cabeza</em>. Con un solo
 <code>*</code> cambiarías una copia y el llamante no se enteraría. El doble puntero es «pásame dónde
@@ -107,22 +347,22 @@ while (begin_list)
 	begin_list = begin_list-&gt;next;
 }
 return (size);</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — El recorrido canónico de una lista: avanzar
-<code>p = p-&gt;next</code> hasta caer en <code>NULL</code>. Como <code>begin_list</code> es una copia
-local del puntero, puedes machacarla sin dañar la lista: mueves la <em>vista</em>, no los nodos. Ese
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El <a href="#g-recorrido">recorrido</a> canónico de una lista: avanzar
+<a href="#g-flecha"><code>p = p-&gt;next</code></a> hasta caer en <code>NULL</code>. Como <code>begin_list</code> es una copia
+local del puntero, puedes machacarla sin dañar la lista: mueves la <em>vista</em>, no los <a href="#g-nodo">nodos</a>. Ese
 bucle <code>while (p)</code> es el <code>for</code> de las listas.</div>
 </div>
 
 <div class="card" id="ex03">
 <h2><span class="ex">ex03</span>ft_list_last</h2>
 <div class="meta"><span>Entregable: <b>ft_list_last.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Devolver el último nodo.</p>
+<p>Devolver el último <a href="#g-nodo">nodo</a>.</p>
 <pre><code>while (begin_list-&gt;next)
 	begin_list = begin_list-&gt;next;
 return (begin_list);</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre parar en <code>next == NULL</code>
 (el último nodo) y parar en el nodo mismo <code>== NULL</code> (te has pasado). Aquí se para en
-<code>begin_list-&gt;next</code>. Y el caso borde: una lista vacía no tiene último, hay que devolver
+<a href="#g-flecha"><code>begin_list-&gt;next</code></a>. Y el caso borde: una <a href="#g-cabeza">lista vacía</a> no tiene último, hay que devolver
 <code>NULL</code> sin desreferenciar. Este «buscar el final» es lo que hace lento el
 <code>push_back</code> ingenuo.</div>
 </div>
@@ -130,7 +370,7 @@ return (begin_list);</code></pre>
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>ft_list_push_back</h2>
 <div class="meta"><span>Entregable: <b>ft_list_push_back.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ft_create_elem</b></span></div>
-<p>Añadir al final. Si la lista está vacía, el nuevo nodo pasa a ser la cabeza.</p>
+<p>Añadir al final. Si la <a href="#g-cabeza">lista está vacía</a>, el nuevo <a href="#g-nodo">nodo</a> pasa a ser la cabeza.</p>
 <pre><code>if (!*begin_list)
 {
 	*begin_list = elem;
@@ -140,10 +380,10 @@ last = *begin_list;
 while (last-&gt;next)
 	last = last-&gt;next;
 last-&gt;next = elem;</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la lista simplemente enlazada es <em>asimétrica</em>:
-meter por delante es O(1), meter por detrás es O(n) porque hay que recorrerla entera. Y otra vez el
-doble puntero, pero solo se usa de verdad en el caso de lista vacía (cuando hay que crear la cabeza);
-si ya hay nodos, el enganche es sobre <code>last-&gt;next</code>. Distinguir esos dos casos es el
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la <a href="#g-lista">lista simplemente enlazada</a> es <em>asimétrica</em>:
+meter por delante es <a href="#g-coste">O(1)</a>, meter por detrás es O(n) porque hay que <a href="#g-recorrido">recorrerla</a> entera. Y otra vez el
+<a href="#g-doble-puntero">doble puntero</a>, pero solo se usa de verdad en el caso de lista vacía (cuando hay que crear la cabeza);
+si ya hay nodos, el enganche es sobre <a href="#g-flecha"><code>last-&gt;next</code></a>. Distinguir esos dos casos es el
 ejercicio.</div>
 </div>
 
@@ -151,7 +391,7 @@ ejercicio.</div>
 <h2><span class="ex">ex05</span>ft_list_push_strs</h2>
 <div class="meta"><span>Entregable: <b>ft_list_push_strs.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ft_create_elem</b></span></div>
 <p>Construir una lista con las cadenas de <code>strs</code>. El primer elemento de la tabla acaba al
-<em>final</em> de la lista; se devuelve la cabeza.</p>
+<em>final</em> de la lista; se devuelve la <a href="#g-cabeza">cabeza</a>.</p>
 <pre><code>i = 0;
 while (i &lt; size)
 {
@@ -163,14 +403,14 @@ while (i &lt; size)
 return (list);</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que insertar por delante <em>invierte</em> el orden:
 metes <code>strs[0]</code> primero y queda al fondo; <code>strs[size-1]</code> entra el último y queda
-en cabeza. Entender esa inversión es el ejercicio, y es la misma razón por la que una pila (LIFO)
+en cabeza. Entender esa inversión es el ejercicio, y es la misma razón por la que una <a href="#g-lifo">pila (LIFO)</a>
 devuelve las cosas del revés.</div>
 </div>
 
 <div class="card" id="ex06">
 <h2><span class="ex">ex06</span>ft_list_clear</h2>
 <div class="meta"><span>Entregable: <b>ft_list_clear.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>free</b></span></div>
-<p>Liberar todos los nodos y, con <code>free_fct</code>, también sus <code>data</code>.</p>
+<p>Liberar todos los <a href="#g-nodo">nodos</a> y, con <a href="#g-propiedad"><code>free_fct</code></a>, también sus <code>data</code>.</p>
 <pre><code>while (begin_list)
 {
 	tmp = begin_list-&gt;next;
@@ -179,16 +419,16 @@ devuelve las cosas del revés.</div>
 	begin_list = tmp;
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El error clásico de C: <code>free(p); p = p-&gt;next;</code>
-lee memoria ya liberada (<em>use-after-free</em>). Por eso hay que guardar <code>next</code> en
+lee memoria ya liberada (<em><a href="#g-use-after-free">use-after-free</a></em>). Por eso hay que guardar <code>next</code> en
 <code>tmp</code> <strong>antes</strong> de liberar. Y la doble propiedad: el nodo lo liberas tú con
-<code>free</code>, pero el <code>data</code> lo libera <code>free_fct</code> — porque quien creó el
+<a href="#g-malloc-free"><code>free</code></a>, pero el <code>data</code> lo libera <code>free_fct</code> — porque quien creó el
 dato sabe cómo destruirlo, y la lista no.</div>
 </div>
 
 <div class="card" id="ex07">
 <h2><span class="ex">ex07</span>ft_list_at</h2>
 <div class="meta"><span>Entregable: <b>ft_list_at.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Devolver el nodo n-ésimo (el primero es el 0), o <code>NULL</code> si no existe.</p>
+<p>Devolver el <a href="#g-nodo">nodo</a> n-ésimo (el primero es el 0), o <code>NULL</code> si no existe.</p>
 <pre><code>i = 0;
 while (begin_list)
 {
@@ -198,7 +438,7 @@ while (begin_list)
 	begin_list = begin_list-&gt;next;
 }
 return (NULL);</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en una lista <em>no hay acceso directo</em>:
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en una lista <em>no hay <a href="#g-acceso">acceso directo</a></em>:
 llegar al elemento 5 cuesta cinco saltos, no un cálculo de dirección como en un array
 (<code>tab[5]</code>). Ese es el gran <em>trade-off</em> de las listas frente a los arrays: baratas
 para insertar/borrar en cualquier punto, caras para acceder por índice.</div>
@@ -207,7 +447,7 @@ para insertar/borrar en cualquier punto, caras para acceder por índice.</div>
 <div class="card" id="ex08">
 <h2><span class="ex">ex08</span>ft_list_reverse</h2>
 <div class="meta"><span>Entregable: <b>ft_list_reverse.c</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Invertir el orden de los nodos. <em>Ojo</em>: este ejercicio entrega solo el <code>.c</code> (usa el
+<p>Invertir el orden de los <a href="#g-nodo">nodos</a>. <em>Ojo</em>: este ejercicio entrega solo el <code>.c</code> (usa el
 <code>ft_list.h</code> del corrector).</p>
 <pre><code>prev = NULL;
 cur = *begin_list;
@@ -221,15 +461,15 @@ while (cur)
 *begin_list = prev;</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El baile de tres punteros
 (<code>prev</code>, <code>cur</code>, <code>next</code>) que da la vuelta a los enlaces sin perder el
-resto de la lista. Si le das la vuelta a <code>cur-&gt;next</code> sin haber guardado antes
+resto de la lista. Si le das la vuelta a <a href="#g-flecha"><code>cur-&gt;next</code></a> sin haber guardado antes
 <code>next</code>, pierdes la cola. Es una de esas piezas que hay que dibujar en papel una vez y ya no
-se olvida. Se hace en una pasada, O(n), sin memoria extra.</div>
+se olvida. Se hace en una pasada, <a href="#g-coste">O(n)</a>, sin memoria extra.</div>
 </div>
 
 <div class="card" id="ex09">
 <h2><span class="ex">ex09</span>ft_list_foreach</h2>
 <div class="meta"><span>Entregable: <b>ft_list_foreach.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Aplicar <code>f</code> al <code>data</code> de cada nodo, en orden.</p>
+<p>Aplicar <code>f</code> al <code>data</code> de cada <a href="#g-nodo">nodo</a>, en orden.</p>
 <pre><code>while (begin_list)
 {
 	f(begin_list-&gt;data);
@@ -237,7 +477,7 @@ se olvida. Se hace en una pasada, O(n), sin memoria extra.</div>
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El <code>ft_foreach</code> de C 11, pero sobre una
 lista en vez de un array. Junta las dos ideas del bloque de C: <em>puntero a función</em> (el qué) y
-<em>recorrido de lista</em> (el cómo). A partir de aquí, casi todo lo que queda es este bucle con una
+<em><a href="#g-recorrido">recorrido</a> de lista</em> (el cómo). A partir de aquí, casi todo lo que queda es este bucle con una
 condición o una acción distinta.</div>
 </div>
 
@@ -252,7 +492,7 @@ devuelva 0.</p>
 		f(begin_list-&gt;data);
 	begin_list = begin_list-&gt;next;
 }</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos funciones inyectadas a la vez:
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <a href="#g-callback">Dos funciones inyectadas</a> a la vez:
 <code>cmp</code> decide, <code>f</code> actúa. Y una función con cuatro parámetros, justo el máximo que
 permite la Norma. Es <em>filter</em> + <em>map</em> combinados: recorre, filtra por comparación con una
 referencia y transforma solo lo que pasa el filtro.</div>
@@ -261,8 +501,8 @@ referencia y transforma solo lo que pasa el filtro.</div>
 <div class="card" id="ex11">
 <h2><span class="ex">ex11</span>ft_list_find</h2>
 <div class="meta"><span>Entregable: <b>ft_list_find.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Devolver el primer nodo cuyo <code>data</code>, comparado con <code>data_ref</code>, hace que
-<code>cmp</code> devuelva 0.</p>
+<p>Devolver el primer <a href="#g-nodo">nodo</a> cuyo <code>data</code>, comparado con <code>data_ref</code>, hace que
+<a href="#g-callback"><code>cmp</code></a> devuelva 0.</p>
 <pre><code>while (begin_list)
 {
 	if (cmp(begin_list-&gt;data, data_ref) == 0)
@@ -279,8 +519,8 @@ cortocircuito: en cuanto encuentra, devuelve. La comparación la decide quien ll
 <div class="card" id="ex12">
 <h2><span class="ex">ex12</span>ft_list_remove_if</h2>
 <div class="meta"><span>Entregable: <b>ft_list_remove_if.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>free</b></span></div>
-<p>Borrar todos los nodos que casen con <code>data_ref</code> según <code>cmp</code>, liberando su
-<code>data</code> con <code>free_fct</code>.</p>
+<p>Borrar todos los <a href="#g-nodo">nodos</a> que casen con <code>data_ref</code> según <a href="#g-callback"><code>cmp</code></a>, liberando su
+<code>data</code> con <a href="#g-propiedad"><code>free_fct</code></a>.</p>
 <pre><code>/* 1) quitar los que casen mientras estén en la cabeza */
 while (*begin_list &amp;&amp; cmp((*begin_list)-&gt;data, data_ref) == 0)
 { ... free ... *begin_list = tmp; }
@@ -293,16 +533,16 @@ while (cur &amp;&amp; cur-&gt;next)
 		cur = cur-&gt;next;
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El caso más traicionero de las listas: borrar
-mientras recorres. Hay que tratar aparte los borrados <em>en la cabeza</em> (mueven <code>*begin_list</code>,
-de ahí el doble puntero) y los del <em>interior</em> (se miran desde el nodo anterior, con
-<code>cur-&gt;next</code>). Y no avanzar cuando borras, o te saltas el siguiente. Coordinar el
-desenganche con el <code>free</code> sin dejar cabos sueltos es el examen.</div>
+mientras recorres. Hay que tratar aparte los borrados <em>en la <a href="#g-cabeza">cabeza</a></em> (mueven <code>*begin_list</code>,
+de ahí el <a href="#g-doble-puntero">doble puntero</a>) y los del <em>interior</em> (se miran desde el nodo anterior, con
+<a href="#g-flecha"><code>cur-&gt;next</code></a>). Y no avanzar cuando borras, o te saltas el siguiente. Coordinar el
+desenganche con el <a href="#g-malloc-free"><code>free</code></a> sin dejar cabos sueltos es el examen.</div>
 </div>
 
 <div class="card" id="ex13">
 <h2><span class="ex">ex13</span>ft_list_merge</h2>
 <div class="meta"><span>Entregable: <b>ft_list_merge.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Pegar <code>begin2</code> al final de <code>begin1</code>. Sin crear nodos.</p>
+<p>Pegar <code>begin2</code> al final de <code>begin1</code>. Sin crear <a href="#g-nodo">nodos</a>.</p>
 <pre><code>if (!*begin_list1)
 {
 	*begin_list1 = begin_list2;
@@ -314,14 +554,14 @@ while (last-&gt;next)
 last-&gt;next = begin_list2;</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que unir dos listas es <em>reconectar un puntero</em>,
 no copiar nada. «Sin crear elementos» es la clave: se reutilizan los nodos de <code>begin2</code> tal
-cual, enganchando el <code>next</code> del último de <code>begin1</code>. Coste O(n) por buscar la
+cual, enganchando el <code>next</code> del último de <code>begin1</code>. Coste <a href="#g-coste">O(n)</a> por buscar la
 cola, pero cero memoria nueva.</div>
 </div>
 
 <div class="card" id="ex14">
 <h2><span class="ex">ex14</span>ft_list_sort</h2>
 <div class="meta"><span>Entregable: <b>ft_list_sort.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Ordenar la lista de forma creciente comparando con <code>cmp</code>.</p>
+<p>Ordenar la lista de forma creciente comparando con <a href="#g-callback"><code>cmp</code></a>.</p>
 <pre><code>if (cmp(cur-&gt;data, cur-&gt;next-&gt;data) &gt; 0)
 {
 	tmp = cur-&gt;data;
@@ -330,8 +570,8 @@ cola, pero cero memoria nueva.</div>
 	cur = *begin_list;   /* vuelve al principio tras cada cambio */
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Un truco que simplifica mucho: en vez de
-reencadenar nodos (mover <code>next</code>), se intercambian los <code>data</code>. La lista física no
-cambia; cambia qué guarda cada nodo. Es una ordenación por burbuja: correcta y fácil de razonar,
+reencadenar <a href="#g-nodo">nodos</a> (mover <code>next</code>), se intercambian los <code>data</code>. La lista física no
+cambia; cambia qué guarda cada nodo. Es una <a href="#g-burbuja">ordenación por burbuja</a>: correcta y fácil de razonar,
 aunque O(n²). El comparador genérico ordena enteros, cadenas o lo que sea.</div>
 </div>
 
@@ -349,8 +589,8 @@ aunque O(n²). El comparador genérico ordena enteros, cadenas o lo que sea.</di
 	i++;
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Un detalle de firma con consecuencias grandes:
-como recibe <code>t_list *</code> (no <code>**</code>), <em>no puede cambiar la cabeza</em> del llamante.
-Así que no vale reencadenar nodos (el primero pasaría a ser el último y el llamante se quedaría
+como recibe <code>t_list *</code> (no <code>**</code>), <em>no puede cambiar la <a href="#g-cabeza">cabeza</a></em> del llamante.
+Así que no vale reencadenar <a href="#g-nodo">nodos</a> (el primero pasaría a ser el último y el llamante se quedaría
 apuntando al sitio equivocado); hay que invertir los <code>data</code> intercambiando extremos hacia el
 centro. La forma de una función te dicta qué solución es legal.</div>
 </div>
@@ -366,16 +606,16 @@ while (cur-&gt;next &amp;&amp; cmp(cur-&gt;next-&gt;data, data) &lt;= 0)
 	cur = cur-&gt;next;
 elem-&gt;next = cur-&gt;next;
 cur-&gt;next = elem;</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Mantener una <em>invariante</em>: la lista está
-ordenada y debe seguir estándolo tras insertar. Se busca el hueco (el primer nodo mayor) y se empalma
-ahí. El caso de insertar en cabeza vuelve a pedir el doble puntero. Insertar así, uno a uno, es la
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Mantener una <em><a href="#g-invariante">invariante</a></em>: la lista está
+ordenada y debe seguir estándolo tras insertar. Se busca el hueco (el primer <a href="#g-nodo">nodo</a> mayor) y se empalma
+ahí. El caso de insertar en <a href="#g-cabeza">cabeza</a> vuelve a pedir el <a href="#g-doble-puntero">doble puntero</a>. Insertar así, uno a uno, es la
 base del <em>insertion sort</em>.</div>
 </div>
 
 <div class="card" id="ex17">
 <h2><span class="ex">ex17</span>ft_sorted_list_merge</h2>
 <div class="meta"><span>Entregable: <b>ft_sorted_list_merge.c</b>, <b>ft_list.h</b></span><span>Autorizadas: <b>ninguna</b></span></div>
-<p>Fusionar <code>begin2</code> (ordenada) dentro de <code>begin1</code> (ordenada) manteniendo el orden
+<p><a href="#g-fusion">Fusionar</a> <code>begin2</code> (ordenada) dentro de <code>begin1</code> (ordenada) manteniendo el orden
 creciente.</p>
 <pre><code>while (begin_list2)
 {
@@ -384,10 +624,99 @@ creciente.</p>
 	begin_list2 = next2;
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El cierre del módulo: se reutiliza la lógica de
-inserción ordenada (ex16) pero <em>sin crear nodos</em>, empalmando los de <code>begin2</code> uno a
+<a href="#g-insercion">inserción ordenada</a> (ex16) pero <em>sin crear <a href="#g-nodo">nodos</a></em>, empalmando los de <code>begin2</code> uno a
 uno en su sitio. Hay que guardar <code>next2</code> antes de reengancharlo, porque al insertarlo su
 <code>next</code> se sobrescribe. Esta fusión de dos listas ordenadas es, en esencia, el corazón del
 <em>merge sort</em>.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado. Están agrupadas en: punteros, memoria, casos límite y entrega. Antes de mirar la
+respuesta, intenta contestar tú. Pide papel: en listas casi todo se explica mejor dibujando cajas y
+flechas.</p>
+
+<h3>Punteros</h3>
+<details id="q-doble">
+<summary>¿Por qué <code>ft_list_push_front</code> recibe <code>t_list **</code> y <code>ft_list_size</code> no?</summary>
+<p>Porque <code>push_front</code> cambia la cabeza del llamante, y para escribir en una variable ajena
+hace falta su dirección. <code>size</code> solo lee, y puede avanzar su copia del puntero sin dañar
+nada. → <a href="#g-doble-puntero">doble puntero</a>, <a href="#ex01">ex01</a></p>
+</details>
+<details id="q-reverse-fun">
+<summary>¿Por qué <code>ft_list_reverse_fun</code> intercambia los <code>data</code> en vez de darle la vuelta a los enlaces?</summary>
+<p>Porque recibe <code>t_list *</code>: si se reencadenaran los nodos, la cabeza pasaría a ser el
+último y el llamante seguiría apuntando al nodo viejo, con una lista de un solo elemento. Moviendo los
+<code>data</code>, los nodos no se mueven y la cabeza sigue siendo la misma. → <a href="#ex15">ex15</a></p>
+</details>
+<details id="q-reverse">
+<summary>Explica <code>ft_list_reverse</code> con una lista de tres.</summary>
+<p>Con <code>uno → dos → tres</code>: en cada vuelta se guarda <code>next</code>, se hace que el nodo
+actual apunte a <code>prev</code> y se avanzan los dos. Tras tres vueltas, <code>prev</code> es
+<code>tres</code> y se escribe en <code>*begin_list</code>; recorrida, sale <code>tres dos uno</code>
+(comprobado compilando el fragmento). → <a href="#ex08">ex08</a></p>
+</details>
+
+<h3>Memoria</h3>
+<details id="q-clear">
+<summary>En <code>ft_list_clear</code>, ¿por qué el <code>tmp</code>?</summary>
+<p>Porque después de <code>free(begin_list)</code> ya no se puede leer <code>begin_list-&gt;next</code>:
+sería un use-after-free. Se guarda el siguiente antes y se avanza con él. → <a href="#g-use-after-free">use-after-free</a>,
+<a href="#ex06">ex06</a></p>
+</details>
+<details id="q-free-fct">
+<summary>¿Por qué existe <code>free_fct</code>? ¿No bastaría con <code>free(data)</code>?</summary>
+<p>No, porque la lista no sabe qué es <code>data</code>: puede no venir de <code>malloc</code> (una
+cadena de <code>argv</code>) o ser un struct con más memoria dentro. Lo libera quien sabe cómo, y la
+lista solo libera sus nodos. Si no se llamara a <code>free_fct</code>, cada <code>data</code> reservado
+sería una <a href="#g-leak">fuga</a>. → <a href="#g-propiedad">propiedad de la memoria</a></p>
+</details>
+<details id="q-malloc-falla">
+<summary>¿Y si falla <code>malloc</code>?</summary>
+<p><code>ft_create_elem</code> devuelve <code>NULL</code> y <code>push_front</code> lo comprueba y no
+toca la lista. Punto débil: el fragmento de <code>ft_list_push_strs</code> hace
+<code>elem-&gt;next = list</code> sin mirar si <code>elem</code> es <code>NULL</code>, y ahí sería un
+segfault. → <a href="#ex05">ex05</a>, <a href="#g-malloc-free">malloc y free</a></p>
+</details>
+<details id="q-merge-crear">
+<summary>En <code>ft_list_merge</code>, ¿cuántos <code>malloc</code> haces?</summary>
+<p>Ninguno: el enunciado prohíbe crear elementos. Se engancha la segunda lista entera al
+<code>next</code> del último nodo de la primera. Y si la primera está vacía, la segunda pasa a ser la
+cabeza. → <a href="#ex13">ex13</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-vacia">
+<summary>¿Qué hacen tus funciones con una lista vacía?</summary>
+<p><code>size</code> devuelve 0, <code>at</code> y <code>find</code> devuelven <code>NULL</code>,
+<code>push_back</code> y <code>merge</code> ponen el nodo o la lista como cabeza. <code>ft_list_last</code>
+tiene que devolver <code>NULL</code> antes del bucle: el fragmento de la página empieza directamente
+con <code>while (begin_list-&gt;next)</code>, que con <code>NULL</code> es un segfault, así que esa
+comprobación tiene que estar en tu versión. → <a href="#g-cabeza">lista vacía</a>, <a href="#ex03">ex03</a></p>
+</details>
+<details id="q-remove-if">
+<summary>En <code>ft_list_remove_if</code>, ¿por qué dos bucles y por qué no avanzas al borrar?</summary>
+<p>El primero quita los nodos que casan mientras estén en la cabeza, porque eso cambia
+<code>*begin_list</code>. El segundo mira siempre <code>cur-&gt;next</code>, para poder enganchar el
+anterior con el siguiente; si avanzara tras borrar, se saltaría el nodo que acaba de subir. Con
+<code>x a x x b x</code> y referencia <code>"x"</code> queda <code>a b</code> (comprobado).
+→ <a href="#ex12">ex12</a></p>
+</details>
+
+<h3>Entrega, Norma y Moulinette</h3>
+<details id="q-header">
+<summary>¿Qué va en <code>ft_list.h</code> y por qué ex08 no lo entrega?</summary>
+<p>El <code>t_list</code> tal cual lo da el enunciado y los prototipos que uses, como el de
+<code>ft_create_elem</code>, que a partir de ex01 lo pone la Moulinette (no lo entregas tú). En ex08 el
+enunciado dice que se usa su propio <code>ft_list.h</code>, así que solo se entrega el <code>.c</code>.
+→ <a href="#ex08">ex08</a>, <a href="#g-autorreferente">struct autorreferente</a></p>
+</details>
+<details id="q-prohibidas">
+<summary>¿Puedes usar <code>malloc</code> en <code>push_back</code> o <code>push_strs</code>?</summary>
+<p>No: allí la única función autorizada es <code>ft_create_elem</code>. Usar otra es trampa y es un
+−42. <code>malloc</code> solo aparece en ex00, y <code>free</code> en ex06 y ex12. → <a href="#ex04">ex04</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 12 · <a href="015_c13.html">continuar con C 13 →</a></footer>

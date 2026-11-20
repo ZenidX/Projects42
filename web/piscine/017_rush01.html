@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ problema de la piscine que no se resuelve con una fórmula, sino probando — y 
 pensar en cuánto cuesta probar.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#entrada">Entrada — validar y leer las pistas</a></li>
   <li><a href="#vistas">Contar edificios visibles</a></li>
   <li><a href="#perm">ft_ordcom — la permutación número k</a></li>
@@ -33,10 +36,11 @@ pensar en cuánto cuesta probar.</p>
   <li><a href="#columnas">Columnas: solo al final</a></li>
   <li><a href="#salida">ft_putmatrix — la salida</a></li>
   <li><a href="#ojo">Ojo: límites y coste</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>El puzle</b> — Cada casilla es un edificio de altura 1…N; en cada
-fila y en cada columna no se repite ninguna altura (es un cuadrado latino). Alrededor de la
+fila y en cada columna no se repite ninguna altura (es un <a href="#g-cuadrado-latino">cuadrado latino</a>). Alrededor de la
 cuadrícula hay 4N pistas: cuántos edificios ve alguien que mira desde ese borde, teniendo en
 cuenta que uno alto tapa a los bajos que tiene detrás. El programa recibe las pistas en un solo
 argumento, en este orden: columnas vistas desde arriba, columnas desde abajo, filas desde la
@@ -51,10 +55,186 @@ pistas (de 3×3 en adelante). No hay PDF del enunciado en el pack. Es trabajo de
 cabecera de <code>rush01.c</code> la firma otra persona del grupo; el repo vive en
 <code>packs/piscine/017_rush01/repo/ex00/</code>.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>El Rush 01 es el primer encuentro con la combinatoria y con la búsqueda de soluciones por
+prueba y error. La página usa palabras de las matemáticas, de la teoría de algoritmos y de cómo C
+guarda los datos; aquí está cada una explicada desde cero y con un ejemplo sacado del propio rush.
+En el resto de la página, la primera vez que sale uno de estos términos en cada tarjeta lleva un
+enlace a su entrada.</p>
+
+<h3>El puzle y la combinatoria</h3>
+<details id="g-cuadrado-latino">
+<summary>Cuadrado latino</summary>
+<p>Una cuadrícula N×N rellena con N símbolos de forma que ninguno se repite en una fila ni en una
+columna. Un sudoku resuelto es un cuadrado latino 9×9 con una regla más (las cajas de 3×3).</p>
+<p>Toda solución del puzle de los rascacielos es un cuadrado latino con las alturas 1…N. La
+solución del ejemplo, <code>1 2 3 4 / 2 3 4 1 / 3 4 1 2 / 4 1 2 3</code>, lo es: cada fila es la
+anterior desplazada una posición. El rush garantiza las filas porque las construye como
+permutaciones, y las columnas las comprueba <code>ft_diff_col</code>.</p>
+</details>
+<details id="g-permutacion">
+<summary>Permutación</summary>
+<p>Una forma de ordenar un conjunto de elementos, usando cada uno exactamente una vez.
+<code>3 1 2</code> es una permutación de <code>{1, 2, 3}</code>; <code>3 1 1</code> no, porque
+repite el 1 y le falta el 2.</p>
+<p>Cada fila válida del puzle es una permutación de 1…N. Por eso el rush no rellena casillas
+sueltas: elige una permutación entera para cada fila, y así una fila nunca puede repetir altura.</p>
+</details>
+<details id="g-factorial">
+<summary>Factorial (N!)</summary>
+<p>El producto de todos los enteros de 1 a N: 4! = 4·3·2·1 = 24. Por convenio 0! = 1. Es el número
+de permutaciones de N elementos: hay N candidatos para la primera posición, N−1 para la segunda, y
+así hasta 1.</p>
+<p><code>ft_factorial</code> lo calcula de forma recursiva (<code>n * ft_factorial(n - 1)</code>,
+con 1 para 0 y 1). El rush lo usa dos veces: <code>ft_factorial(size)</code> es cuántas
+permutaciones prueba por fila (24 en un 4×4, 120 en un 5×5) y <code>ft_ordcom</code> lo necesita
+para numerarlas.</p>
+</details>
+<details id="g-lexicografico">
+<summary>Orden lexicográfico</summary>
+<p>El orden del diccionario: se compara el primer elemento, y solo si empatan se mira el segundo, y
+así sucesivamente. Aplicado a permutaciones de <code>1 2 3</code>: <code>1 2 3</code>,
+<code>1 3 2</code>, <code>2 1 3</code>, <code>2 3 1</code>, <code>3 1 2</code>,
+<code>3 2 1</code>.</p>
+<p><code>ft_ordcom</code> recorre las permutaciones en este orden: la número 0 es
+<code>1 2 3 4</code>, la 23 (la última de un 4×4) es <code>4 3 2 1</code>, y la 10 es
+<code>2 4 1 3</code>, como se ve en la tabla de la sección de <code>ft_ordcom</code>.</p>
+</details>
+<details id="g-factoradico">
+<summary>Sistema factorial de numeración</summary>
+<p>Una forma de escribir enteros en la que cada cifra tiene su propia base: la de la derecha vale
+0!, la siguiente 1!, luego 2!, 3!… Igual que 345 en base 10 es 3·100 + 4·10 + 5, en sistema
+factorial el 10 se escribe <code>1 2 0 0</code>: 1·3! + 2·2! + 0·1! + 0·0!. Cada cifra de la
+posición k puede valer de 0 a k.</p>
+<p>La gracia es que esas cifras dicen directamente qué permutación es: «toma la 2.ª altura libre,
+luego la 3.ª de las que quedan, luego la 1.ª, luego la 1.ª». Es exactamente lo que hacen las
+divisiones y restos de <code>ft_ordcom</code> con <code>i = 10</code>. A esta numeración también
+se la llama código de Lehmer.</p>
+</details>
+<details id="g-explosion">
+<summary>Explosión combinatoria</summary>
+<p>Cuando el número de casos posibles crece tan deprisa con el tamaño que probarlos todos deja de
+ser viable. Los factoriales y las potencias crecen más rápido que cualquier mejora de hardware: 4!
+es 24, pero 6! es 720 y 9! ya es 362 880.</p>
+<p>En el rush, si se probaran todas las combinaciones de filas serían (N!)<sup>N</sup> cuadrículas:
+24<sup>4</sup> ≈ 330 000 para 4×4 y 720<sup>6</sup> ≈ 1,4·10<sup>17</sup> para 6×6. Por eso el
+programa resuelve 5×5 al instante y con 6×6 no termina en un minuto.</p>
+</details>
+
+<h3>Buscar una solución</h3>
+<details id="g-fuerza-bruta">
+<summary>Fuerza bruta</summary>
+<p>Resolver un problema probando todas las candidatas posibles hasta dar con una que cumpla. Es
+siempre correcto si se prueba todo, y muchas veces es demasiado lento.</p>
+<p>La idea de partida del rush es fuerza bruta: probar permutaciones fila a fila. Lo que la hace
+manejable hasta 5×5 es la poda por filas.</p>
+</details>
+<details id="g-backtracking">
+<summary>Backtracking (vuelta atrás)</summary>
+<p>Una forma ordenada de fuerza bruta: se construye la solución paso a paso; en cada paso se elige
+una opción, se comprueba que no rompe nada y se pasa al siguiente. Si más adelante todo falla, se
+<em>vuelve atrás</em> al último paso con opciones sin probar y se elige la siguiente.</p>
+<p><code>ft_skyline_isolver</code> es eso: el paso es la fila <code>p</code>, las opciones son las
+N! permutaciones, y volver atrás es simplemente que la llamada de la fila <code>p + 1</code>
+devuelve 0 y el bucle de la fila <code>p</code> sigue con <code>i_com + 1</code>.</p>
+</details>
+<details id="g-recursion">
+<summary>Recursión y caso base</summary>
+<p>Una función es <em>recursiva</em> si se llama a sí misma con un problema más pequeño, hasta
+llegar a un <em>caso base</em> que se resuelve sin volver a llamarse. Cada llamada pendiente guarda
+sus variables locales en la pila de llamadas.</p>
+<p><code>ft_skyline_isolver(…, p)</code> se llama con <code>p + 1</code>; el caso base es
+<code>p == size</code>, cuando ya no quedan filas y solo hay que mirar las columnas. Como mucho hay
+<code>size + 1</code> llamadas anidadas, así que la pila de llamadas no es problema.
+<code>ft_factorial</code> también es recursiva, con caso base en <code>n &lt;= 1</code>.</p>
+</details>
+<details id="g-poda">
+<summary>Poda</summary>
+<p>Descartar una rama entera de la búsqueda en cuanto se sabe que no puede llevar a una solución,
+sin explorar lo que cuelga de ella. Cuanto antes se poda, menos se prueba.</p>
+<p>El rush poda por filas: si una permutación no cumple las pistas de izquierda y derecha, no se
+baja a la fila siguiente. Las columnas, en cambio, no podan nada porque solo se miran con la
+cuadrícula completa; comprobarlas fila a fila (que no se repita altura en ninguna columna) cortaría
+muchas más ramas.</p>
+</details>
+<details id="g-invariante">
+<summary>Invariante de bucle</summary>
+<p>Una afirmación que es cierta antes de cada vuelta de un bucle y que la vuelta mantiene. Sirve
+para convencerse de que el bucle hace lo que debe: si es cierta al principio y cada vuelta la
+conserva, al terminar sigue siéndolo.</p>
+<p>En <code>ft_check_row_left</code>: «<code>max</code> es la altura más alta entre las casillas
+ya vistas y <code>count</code> cuántas de ellas se ven». Al acabar, <code>count</code> es
+justamente la pista que hay que comparar.</p>
+</details>
+
+<h3>C y memoria</h3>
+<details id="g-maquina-estados">
+<summary>Máquina de estados</summary>
+<p>Un programa que en cada momento está en uno de unos pocos <em>estados</em> y, según lo que lee,
+pasa a otro. Es la forma más sencilla de reconocer un formato carácter a carácter.</p>
+<p><code>ft_is_valid_arg</code> tiene dos estados: <code>check = 0</code> («espero un dígito») y
+<code>check = 1</code> («espero un espacio»). Un dígito en el estado 0 cuenta una pista y pasa al
+1; un espacio en el estado 1 vuelve al 0; cualquier otra cosa detiene el bucle.</p>
+</details>
+<details id="g-char-digito">
+<summary>De carácter a dígito y vuelta</summary>
+<p>En ASCII los dígitos <code>'0'</code>…<code>'9'</code> son los códigos 48…57, seguidos. Por eso
+restar <code>'0'</code> (48, o <code>0x30</code> en hexadecimal) a un carácter dígito da su valor,
+y sumárselo a un número de 0 a 9 da su carácter.</p>
+<p><code>ft_parse_arg</code> hace <code>*str - 0x30</code> para pasar de <code>'3'</code> a 3, y
+<code>ft_putmatrix</code> hace <code>matrix[i][j] + '0'</code> para el camino contrario. Solo
+funciona con una cifra: una altura 10 saldría como <code>':'</code>.</p>
+</details>
+<details id="g-division-entera">
+<summary>División entera y resto</summary>
+<p>Entre enteros, <code>/</code> da el cociente sin decimales (<code>10 / 6</code> es 1) y
+<code>%</code> el resto (<code>10 % 6</code> es 4). Juntos descomponen un número: 10 = 1·6 + 4.</p>
+<p>Es la herramienta de <code>ft_ordcom</code>: el cociente <code>i / (N−1−j)!</code> elige la
+altura de la posición <code>j</code> y el resto <code>i % (N−1−j)!</code> pasa a la siguiente.</p>
+</details>
+<details id="g-array-2d">
+<summary>Arrays de dos dimensiones</summary>
+<p><code>int pos[9][9]</code> son 81 enteros seguidos en memoria, fila tras fila;
+<code>pos[i][j]</code> está en la posición <code>i·9 + j</code>. El tamaño es fijo y se decide al
+compilar. Al pasarlo a una función, en realidad se pasa la dirección de la primera fila, así que la
+función escribe en el array original y no en una copia.</p>
+<p>Por eso <code>ft_setcom</code> puede rellenar la fila <code>p</code> de <code>sol</code>, que
+vive en <code>main</code>. Las tablas son de 4×9 (pistas) y 9×9 (cuadrícula), declaradas como
+variables locales: el rush no usa <code>malloc</code>.</p>
+</details>
+<details id="g-overflow">
+<summary>Desbordamiento de buffer</summary>
+<p>Escribir o leer fuera de los límites de un array. C no lo comprueba: <code>a[9]</code> en un
+array de 9 elementos accede a lo que haya justo detrás en memoria, que puede ser otra variable. Es
+<em>comportamiento indefinido</em>: puede funcionar, dar resultados raros o romper el
+programa.</p>
+<p>En el rush, <code>main</code> acepta <code>size</code> 10 pero <code>inp</code> tiene filas de
+9: con 40 pistas, <code>ft_parse_arg</code> escribe fuera de la tabla.</p>
+</details>
+<details id="g-asan">
+<summary>AddressSanitizer</summary>
+<p>Una herramienta del compilador que se activa con <code>-fsanitize=address</code>: añade
+comprobaciones a cada acceso a memoria y, cuando uno se sale de su sitio, para el programa y dice
+dónde. Sirve para ver desbordamientos que sin ella pasarían desapercibidos.</p>
+<p>Compilando el rush con ella y pasando 40 pistas <code>1</code>, el informe empieza por
+<code>AddressSanitizer: stack-buffer-overflow</code> en <code>ft_parse_arg.c:28</code>, la línea
+<code>inp[i][j] = *str - 0x30;</code>.</p>
+</details>
+<details id="g-estado-salida">
+<summary>Código de salida</summary>
+<p>El número que devuelve <code>main</code> llega al sistema como resultado del programa: 0 quiere
+decir «todo bien» y cualquier otro valor, «algo falló». En la terminal se ve con
+<code>echo $?</code> justo después de ejecutar.</p>
+<p>El rush devuelve 0 cuando imprime una solución y 1 en todos los casos de <code>Error</code>
+(argumentos de más o de menos, pistas mal contadas, sin solución).</p>
+</details>
+</div>
+
 <div class="card" id="entrada">
 <h2><span class="ex">entrada</span>ft_is_valid_arg y ft_parse_arg</h2>
 <div class="meta"><span>Entrega: <b>ex00/ft_is_valid_arg.c</b>, <b>ex00/ft_parse_arg.c</b></span><span>Usa: <b>write</b></span></div>
-<p>La validación es una pequeña máquina de dos estados: <code>check</code> vale 0 cuando se
+<p>La validación es una pequeña <a href="#g-maquina-estados">máquina de dos estados</a>: <code>check</code> vale 0 cuando se
 espera un dígito y 1 cuando se espera un espacio. Así se aceptan solo dígitos sueltos
 separados por un espacio. El número de pistas tiene que ser múltiplo de 4, y el tamaño es ese
 número dividido entre 4.</p>
@@ -77,7 +257,7 @@ número dividido entre 4.</p>
 	if (length % 4 == 0)
 		return (length / 4);
 	return (0);</code></pre>
-<p>Después, <code>ft_parse_arg</code> vuelca los dígitos en <code>int inp[4][9]</code>: una
+<p>Después, <code>ft_parse_arg</code> vuelca los dígitos en <a href="#g-array-2d"><code>int inp[4][9]</code></a>: una
 fila por borde (arriba, abajo, izquierda, derecha) y <code>size</code> pistas en cada una. Aquí
 sí se comprueba que ninguna pista pase de <code>size</code>.</p>
 <pre><code>		if (j &gt;= size)
@@ -116,7 +296,7 @@ abajo se lee el índice al revés (<code>size - i - 1</code>).</p>
 	if (count == inp[2][p])
 		return (1);</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A traducir una regla del mundo real
-(«uno alto tapa a los de detrás») a un invariante de bucle: «<code>max</code> es el edificio más
+(«uno alto tapa a los de detrás») a un <a href="#g-invariante">invariante de bucle</a>: «<code>max</code> es el edificio más
 alto visto hasta <code>i</code>». Escribir la misma función cuatro veces cambiando solo el
 recorrido también deja ver el coste de no tener todavía punteros a función (C11).</div>
 </div>
@@ -124,10 +304,10 @@ recorrido también deja ver el coste de no tener todavía punteros a función (C
 <div class="card" id="perm">
 <h2><span class="ex">clave</span>ft_ordcom — la permutación número k</h2>
 <div class="meta"><span>Entrega: <b>ex00/rush01.c</b>, <b>ex00/ft_factorial.c</b></span><span>Usa: <b>write</b></span></div>
-<p>La pieza más original del rush. Una fila válida es una permutación de 1…N, y hay N! de
-ellas. En vez de generarlas con recursión, el grupo las <em>numera</em>: dada una
+<p>La pieza más original del rush. Una fila válida es una <a href="#g-permutacion">permutación</a> de 1…N, y hay <a href="#g-factorial">N!</a> de
+ellas. En vez de generarlas con <a href="#g-recursion">recursión</a>, el grupo las <em>numera</em>: dada una
 <code>i</code> entre 0 y N!−1, <code>ft_ordcom</code> construye directamente la permutación que
-ocupa ese puesto en orden lexicográfico. <code>ava</code> marca qué alturas están ya usadas
+ocupa ese puesto en <a href="#g-lexicografico">orden lexicográfico</a>. <code>ava</code> marca qué alturas están ya usadas
 (0 = libre).</p>
 <pre><code>	j = 0;
 	while (j &lt; size)
@@ -145,7 +325,7 @@ ocupa ese puesto en orden lexicográfico. <code>ava</code> marca qué alturas es
 		i = i % ft_factorial(size - 1 - j);
 		j++;
 	}</code></pre>
-<p>Es el sistema factorial de numeración: en la posición <code>j</code>, el cociente
+<p>Es el <a href="#g-factoradico">sistema factorial de numeración</a>: en la posición <code>j</code>, el <a href="#g-division-entera">cociente</a>
 <code>i / (N−1−j)!</code> dice cuál de las alturas <em>que quedan libres</em> va ahí, y el resto
 pasa a la posición siguiente. Por ejemplo, con N = 4 e <code>i = 10</code>:</p>
 <table>
@@ -168,8 +348,8 @@ factorial de C05 deja de ser un ejercicio y se convierte en herramienta.</div>
 <div class="card" id="solver">
 <h2><span class="ex">solver</span>ft_skyline_isolver — backtracking por filas</h2>
 <div class="meta"><span>Entrega: <b>ex00/rush01.c</b></span><span>Usa: <b>write</b></span></div>
-<p>La recursión va fila a fila (<code>p</code>). Para la fila actual prueba las N!
-permutaciones; si una cumple las pistas de izquierda y derecha, baja a la fila siguiente. Si
+<p>La <a href="#g-recursion">recursión</a> va fila a fila (<code>p</code>). Para la fila actual prueba las <a href="#g-factorial">N!</a>
+<a href="#g-permutacion">permutaciones</a>; si una cumple las pistas de izquierda y derecha, baja a la fila siguiente. Si
 desde ahí se llega a una solución, devuelve 1 hacia arriba sin probar más; si no, sigue con la
 siguiente permutación de esta fila.</p>
 <pre><code>	while (i_com &lt; ft_factorial(size) &amp;&amp; p &lt; size)
@@ -191,17 +371,17 @@ siguiente permutación de esta fila.</p>
 	return (r);</code></pre>
 <p>Cuando <code>p == size</code> el bucle ni entra: todas las filas están puestas y lo que queda
 es comprobar las columnas. Ese es el caso base.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — El esqueleto del backtracking:
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El esqueleto del <a href="#g-backtracking">backtracking</a>:
 elegir, comprobar, bajar un nivel y, si falla, deshacer y probar la siguiente opción. Aquí
 «deshacer» es gratis porque la fila <code>p</code> se sobrescribe con la siguiente permutación.
 Es el mismo patrón que <code>ft_print_combn</code> (C00) o las diez reinas (C05), ahora con
-poda: las filas que no cumplen sus pistas cortan una rama entera.</div>
+<a href="#g-poda">poda</a>: las filas que no cumplen sus pistas cortan una rama entera.</div>
 </div>
 
 <div class="card" id="columnas">
 <h2><span class="ex">final</span>Columnas: ft_check_col y ft_diff_col</h2>
 <div class="meta"><span>Entrega: <b>ex00/ft_check_col.c</b>, <b>ex00/ft_diff_col.c</b></span><span>Usa: <b>write</b></span></div>
-<p>Las filas no repiten alturas por construcción (son permutaciones), pero las columnas sí
+<p>Las filas no repiten alturas por construcción (son <a href="#g-permutacion">permutaciones</a>), pero las columnas sí
 podrían. <code>ft_diff_col</code> compara cada casilla con todas las de debajo en su columna, y
 <code>ft_check_col</code> comprueba las pistas de arriba y de abajo. Las dos se ejecutan solo
 cuando la cuadrícula está completa.</p>
@@ -222,9 +402,9 @@ primeras filas no se detecta hasta haber rellenado todas las demás.</div>
 <div class="card" id="salida">
 <h2><span class="ex">salida</span>ft_putmatrix y main</h2>
 <div class="meta"><span>Entrega: <b>ex00/ft_putmatrix.c</b>, <b>ex00/rush01.c</b></span><span>Usa: <b>write</b></span></div>
-<p><code>ft_putmatrix</code> escribe cada altura como dígito, con espacio entre columnas y salto
+<p><code>ft_putmatrix</code> escribe cada altura como <a href="#g-char-digito">dígito</a>, con espacio entre columnas y salto
 de línea al final de la fila. <code>main</code> encadena todo y responde <code>Error</code> (con
-código de salida 1) si falta el argumento, si el número de pistas no cuadra o si no hay
+<a href="#g-estado-salida">código de salida</a> 1) si falta el argumento, si el número de pistas no cuadra o si no hay
 solución.</p>
 <pre><code>	size = ft_is_valid_arg(argv[1]);
 	if (size &lt; 3 || size &gt; 10)
@@ -247,7 +427,7 @@ hay que saber explicar las de los demás.</div>
 <ul>
 <li><b>Tope de tamaño.</b> Ojo: <code>main</code> acepta <code>size</code> hasta 10, pero las
 tablas son de 9 (<code>inp[4][9]</code>, <code>pos[9][9]</code>). Con 40 pistas,
-<code>ft_parse_arg</code> escribe fuera de <code>inp</code> (AddressSanitizer lo marca como
+<code>ft_parse_arg</code> <a href="#g-overflow">escribe fuera de <code>inp</code></a> (<a href="#g-asan">AddressSanitizer</a> lo marca como
 <em>stack-buffer-overflow</em>). La comprobación debería cortar en 9.</li>
 <li><b>9×9.</b> En <code>ft_ordcom</code>, <code>while (ava[size] == 0) size++;</code> busca el
 primer 1 que puso <code>ft_setcom</code>; con tamaño 9 no hay ninguno dentro del array y la
@@ -257,8 +437,8 @@ lectura sigue en <code>ava[9]</code>, fuera de rango.</li>
 inicializar. En la práctica sale <code>Error</code> porque no hay solución, pero es por
 casualidad.</li>
 <li><b>Coste.</b> Cada fila prueba N! permutaciones y las columnas solo se miran al final, así
-que en el peor caso son (N!)<sup>N</sup> cuadrículas: 24<sup>4</sup> ≈ 330 000 para 4×4, pero
-720<sup>6</sup> ≈ 1,4·10<sup>17</sup> para 6×6. La poda por filas salva el 5×5; el 6×6 ya no.
+que en el peor caso son <a href="#g-explosion">(N!)<sup>N</sup> cuadrículas</a>: 24<sup>4</sup> ≈ 330 000 para 4×4, pero
+720<sup>6</sup> ≈ 1,4·10<sup>17</sup> para 6×6. <a href="#g-poda">La poda por filas</a> salva el 5×5; el 6×6 ya no.
 Además <code>ft_factorial</code> se recalcula en cada vuelta del bucle.</li>
 <li><b>Restos.</b> En <code>ft_factorial.c</code> queda comentada una versión con los valores a
 mano, donde 8! y 9! están mal (<code>40200</code> y <code>361800</code>; son 40320 y 362880).
@@ -267,7 +447,102 @@ No se usa, pero se entrega.</li>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que «funciona con el ejemplo» no es lo
 mismo que «funciona». Generalizar de 4×4 a N×N es buena idea, pero trae dos obligaciones: que
 los límites de las tablas coincidan con los que acepta <code>main</code>, y que el algoritmo
-aguante el crecimiento. Las factoriales crecen más deprisa que cualquier ordenador.</div>
+aguante el crecimiento. <a href="#g-factorial">Las factoriales</a> crecen más deprisa que cualquier ordenador.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. En un rush la pregunta puede ir a cualquiera del grupo, sobre
+cualquier fichero. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>El algoritmo</h3>
+<details id="q-como">
+<summary>Explícame cómo resuelve el puzle.</summary>
+<p>Con <a href="#g-backtracking">backtracking</a> por filas, una <a href="#g-fuerza-bruta">fuerza bruta</a> ordenada: para la fila <code>p</code> prueba
+las N! permutaciones; si una cumple las pistas de izquierda y derecha, se llama a sí mismo con la
+fila <code>p + 1</code>. Cuando están todas puestas (<code>p == size</code>) comprueba las
+columnas: pistas de arriba y abajo, y que no se repita ninguna altura. Si falla, vuelve a la fila
+anterior y prueba la permutación siguiente. → <a href="#solver">ft_skyline_isolver</a></p>
+</details>
+<details id="q-perm">
+<summary>¿Cómo generas las permutaciones?</summary>
+<p>No se generan con recursión: se numeran. <code>ft_ordcom</code> recibe un número
+<code>i</code> de 0 a N!−1 y construye la permutación que ocupa ese puesto en
+<a href="#g-lexicografico">orden lexicográfico</a>, dividiendo entre factoriales: el cociente
+elige cuál de las alturas libres va en cada posición y el resto pasa a la siguiente. La 10 de un
+4×4 es <code>2 4 1 3</code>. → <a href="#perm">ft_ordcom</a></p>
+</details>
+<details id="q-ver">
+<summary>¿Cómo cuentas los edificios que se ven?</summary>
+<p>Recorriendo desde el borde con el máximo visto hasta ahora: si la casilla es más alta que
+<code>max</code>, se ve, se suma 1 y pasa a ser el nuevo máximo. Desde la derecha o desde abajo se
+lee el índice al revés, <code>size - i - 1</code>. → <a href="#vistas">contar edificios
+visibles</a></p>
+</details>
+<details id="q-filas-repetidas">
+<summary>¿Dónde compruebas que no se repitan alturas?</summary>
+<p>En las filas no hace falta: cada fila es una <a href="#g-permutacion">permutación</a>, así que
+no puede repetir. En las columnas sí, y lo hace <code>ft_diff_col</code>, pero solo con la
+cuadrícula completa. → <a href="#columnas">columnas</a></p>
+</details>
+
+<h3>Entrada y casos límite</h3>
+<details id="q-errores">
+<summary>¿Qué entradas dan <code>Error</code>?</summary>
+<p>Sin argumento o con más de uno; un número de pistas que no es múltiplo de 4 o que da un tamaño
+fuera de 3…10 (con 15 pistas, o con dos espacios seguidos, que cortan la validación antes de
+tiempo); y un puzle sin solución (<code>"1 1 1 1 …"</code>). En todos los casos sale
+<code>Error</code> y el <a href="#g-estado-salida">código de salida</a> es 1.
+→ <a href="#entrada">entrada</a>, <a href="#salida">main</a></p>
+</details>
+<details id="q-basura">
+<summary>¿Y si después de las pistas hay basura, como <code>"… 2 2 2x"</code>?</summary>
+<p>Se acepta y lo resuelve como si no estuviera. <code>ft_is_valid_arg</code> para en la
+<code>x</code> pero ya ha contado 16 pistas, así que devuelve 4; <code>ft_parse_arg</code> llega a
+la <code>x</code> con todo <code>inp</code> relleno y devuelve 0, pero <code>main</code> no mira el
+retorno. Mejor tenerlo reconocido antes de que lo encuentren: bastaría con exigir que la validación
+llegue al final de la cadena. → <a href="#entrada">entrada</a>, <a href="#ojo">ojo</a></p>
+</details>
+<details id="q-tamano">
+<summary>¿Hasta qué tamaño funciona?</summary>
+<p>3×3, 4×4 y 5×5 se resuelven al instante; 6×6 no termina en un minuto por la
+<a href="#g-explosion">explosión combinatoria</a>: (N!)<sup>N</sup> cuadrículas en el peor caso. Y
+aunque <code>main</code> deja pasar hasta 10, las tablas son de 9: con 40 pistas se
+<a href="#g-overflow">escribe fuera</a> de <code>inp</code>, y con 9×9 <code>ft_ordcom</code> lee
+<code>ava[9]</code>. El tope correcto sería 9. → <a href="#ojo">límites y coste</a></p>
+</details>
+
+<h3>Memoria y reglas</h3>
+<details id="q-memoria">
+<summary>¿Hay leaks? ¿Dónde se reserva memoria?</summary>
+<p>En ninguna parte: no hay <code>malloc</code>. Todas las tablas (<code>inp[4][9]</code>,
+<code>sol[9][9]</code>, <code>ava[9]</code>) son variables locales de tamaño fijo, así que no hay
+nada que liberar. El precio es el tope de 9 que impone ese tamaño fijo.
+→ <a href="#g-array-2d">arrays de dos dimensiones</a></p>
+</details>
+<details id="q-mejora">
+<summary>¿Cómo lo harías más rápido?</summary>
+<p>Podando antes: comprobar al poner cada fila que no repite ninguna altura en las columnas ya
+rellenas, y descartar pronto las columnas que ya no pueden cumplir su pista. Y guardar
+<code>ft_factorial(size)</code> en una variable en lugar de recalcularlo en cada vuelta.
+→ <a href="#g-poda">poda</a>, <a href="#columnas">columnas</a></p>
+</details>
+<details id="q-norma">
+<summary>¿Pasa la Norma? ¿Por qué cuatro funciones casi iguales?</summary>
+<p><code>norminette</code> da <code>OK!</code> en los ocho ficheros. Las cuatro funciones de vistas
+son la misma idea con cuatro recorridos; unirlas en una exigiría pasar el sentido como parámetro, y
+con el límite de 25 líneas y 4 parámetros por función de la Norma es más sencillo tenerlas
+separadas. → <a href="#vistas">contar edificios visibles</a></p>
+</details>
+
+<h3>Sobre el trabajo en grupo</h3>
+<details id="q-grupo">
+<summary>¿Quién hizo qué? ¿Cómo os repartisteis los ocho ficheros?</summary>
+<p>Esta te la tienes que preparar tú. Las piezas se separan bien (validar y parsear, contar
+vistas, permutaciones, resolver, imprimir), pero en la defensa cualquiera del grupo tiene que poder
+explicar todas, y la que más se pregunta es <code>ft_ordcom</code>. → <a href="#perm">ft_ordcom</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — Rush 01 · <a href="018_rush02.html">continuar con Rush 02 →</a></footer>

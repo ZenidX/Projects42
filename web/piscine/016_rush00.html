@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,10 +28,12 @@ bordes. Solo con <code>write</code>, y con un fin de semana para ponerse de acue
 no conocías el viernes.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#rush">rush — el doble bucle</a></li>
   <li><a href="#print">print_character — qué letra va en cada celda</a></li>
   <li><a href="#main">main — las pruebas</a></li>
   <li><a href="#ojo">Ojo: una sola fila o una sola columna</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>Qué es un rush</b> — Los rushes son los proyectos de fin de semana
@@ -49,13 +53,158 @@ CBBBA</code></pre>
 El código es del grupo (la cabecera 42 de los ficheros la firma el compañero, y
 la última edición de <code>rush00.c</code> es de xalara).</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>El Rush 00 es corto, pero toca casi todo lo básico de C: cómo sale un carácter por pantalla,
+cómo se recorre una cuadrícula y cómo se juntan varios ficheros en un programa. Aquí está cada idea
+explicada desde cero y con un ejemplo sacado del propio rush. En el resto de la página, la primera
+vez que sale uno de estos términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Salida por pantalla</h3>
+<details id="g-write">
+<summary><code>write</code>: la única forma de escribir</summary>
+<p><code>write(fd, direccion, n)</code> es una llamada al sistema: le pide al sistema operativo
+que copie <code>n</code> bytes, empezando en <code>direccion</code>, al destino <code>fd</code>.
+No sabe nada de números ni de formatos; solo copia bytes. Por eso el enunciado prohíbe
+<code>printf</code> y obliga a construir lo demás encima.</p>
+<p>En el rush, todo pasa por una función de tres líneas: <code>ft_putchar(c)</code> hace
+<code>write(1, &amp;c, 1)</code>, es decir, «escribe en la salida estándar 1 byte, el que hay en
+la dirección de <code>c</code>». El <code>&amp;</code> hace falta porque <code>write</code> pide
+una dirección, no un valor.</p>
+</details>
+<details id="g-fd">
+<summary>Descriptor de fichero y salida estándar</summary>
+<p>Un <em>descriptor de fichero</em> (<em>file descriptor</em>, fd) es un número pequeño con el
+que el programa se refiere a algo donde se puede leer o escribir: un fichero, la terminal, una
+tubería. Todo programa arranca con tres abiertos: el 0 es la entrada estándar (stdin), el 1 la
+salida estándar (stdout) y el 2 la salida de errores (stderr).</p>
+<p>El rush escribe siempre en el 1. Si lo ejecutas con <code>./a.out | cat -e</code>, la salida
+no va a la pantalla sino a <code>cat</code>, que marca cada fin de línea con un <code>$</code>: es
+la forma de ver si sobran o faltan espacios al final de las filas.</p>
+</details>
+<details id="g-ascii">
+<summary><code>char</code> y la tabla ASCII</summary>
+<p>Un <code>char</code> es un entero de un byte. Lo que lo convierte en «letra» es la tabla ASCII,
+el acuerdo que dice qué número corresponde a cada carácter: <code>'A'</code> es 65,
+<code>'B'</code> 66, <code>'C'</code> 67, el espacio <code>' '</code> es 32 y el salto de línea
+<code>'\n'</code> es 10. Escribir <code>'A'</code> entre comillas simples es solo una forma
+legible de escribir 65.</p>
+<p>Cada <code>ft_putchar('B')</code> del rush manda a la terminal el byte 66, y es la terminal la
+que dibuja la B.</p>
+</details>
+<details id="g-salto">
+<summary>Salto de línea: la salida es una fila de bytes</summary>
+<p>La pantalla parece una cuadrícula, pero lo que el programa produce es una sola secuencia de
+bytes. El salto de línea <code>'\n'</code> es un byte más que le dice a la terminal «sigue en la
+línea de abajo». Sin él, todo el rectángulo saldría en una sola fila.</p>
+<p><code>rush(5, 3)</code> escribe 5 caracteres y un <code>'\n'</code> por fila, tres veces: 18
+bytes en total, que la terminal muestra como tres líneas de cinco.</p>
+</details>
+
+<h3>Recorrer la cuadrícula</h3>
+<details id="g-bucles">
+<summary>Bucles anidados</summary>
+<p>Un bucle dentro de otro: por cada vuelta del exterior, el interior da todas las suyas. Es la
+forma natural de recorrer algo de dos dimensiones. El número total de vueltas del interior es el
+producto de los dos: filas × columnas.</p>
+<p>En <code>rush</code>, el exterior recorre las filas (<code>i</code>, de 1 a <code>y</code>) y
+el interior las columnas (<code>j</code>, de 1 a <code>x</code>). <code>rush(123, 42)</code>, el
+último caso del <code>main</code>, llama 123 × 42 = 5166 veces a <code>print_character</code>. Si
+se cambiaran de sitio los dos bucles, el dibujo saldría traspuesto: <code>y</code> columnas por
+<code>x</code> filas.</p>
+</details>
+<details id="g-base1">
+<summary>Contar desde 0 o desde 1</summary>
+<p>En C los arrays empiezan en 0, y por costumbre los contadores también: <code>i = 0;
+while (i &lt; n)</code> da n vueltas con <code>i</code> de 0 a n−1. Pero un contador que no indexa
+ningún array puede empezar donde sea más claro: <code>i = 1; while (i &lt;= n)</code> da las mismas
+n vueltas, con <code>i</code> de 1 a n.</p>
+<p>El rush usa la segunda forma: «primera fila» es <code>i == 1</code> y «última» es
+<code>i == y</code>. Con contadores desde 0 las condiciones serían <code>i == 0</code> e
+<code>i == y - 1</code>, igual de correctas pero más fáciles de equivocar en un
+<code>-1</code>.</p>
+</details>
+<details id="g-else-if">
+<summary>Cadena <code>if / else if</code></summary>
+<p>Una serie de condiciones en la que se evalúan en orden y solo se ejecuta la rama de la
+<em>primera</em> que se cumple; las de detrás ni se miran. Si ninguna se cumple, va al
+<code>else</code> final. Cuando dos condiciones se pueden cumplir a la vez, el orden decide cuál
+gana.</p>
+<p>En <code>print_character</code> una esquina cumple también «está en un borde». Como las esquinas
+se preguntan antes, sale <code>A</code> o <code>C</code>; si la pregunta del borde fuera la
+primera, las esquinas saldrían como <code>B</code>.</p>
+</details>
+<details id="g-logicos">
+<summary>Operadores lógicos y precedencia</summary>
+<p><code>&amp;&amp;</code> («y») es cierto si lo son los dos lados; <code>||</code> («o») si lo es
+al menos uno. Los dos se evalúan de izquierda a derecha y se paran en cuanto saben el resultado (en
+<code>A || B</code>, si A es cierto, B no se evalúa). Y <code>&amp;&amp;</code> tiene más
+<em>precedencia</em> que <code>||</code>: se agrupa antes, igual que la multiplicación antes que la
+suma.</p>
+<p>Por eso los paréntesis de <code>(i == 1 &amp;&amp; j == 1) || (i == y &amp;&amp; j == x)</code>
+no cambian el resultado: sin ellos se agruparía igual. Aun así ayudan a leerlo como «esquina de
+arriba a la izquierda o esquina de abajo a la derecha».</p>
+</details>
+<details id="g-caso-limite">
+<summary>Caso límite (caso degenerado)</summary>
+<p>Una entrada en el extremo de lo posible, donde el problema se deforma: cero, negativos, un solo
+elemento, el valor más grande. En el caso general las reglas no chocan, y en el límite sí, por eso
+es donde aparecen los fallos.</p>
+<p>En el rush: <code>rush(0, 6)</code> y <code>rush(-1, 6)</code> no deben dibujar nada (el
+<code>if (x &lt;= 0 || y &lt;= 0)</code> lo resuelve); <code>rush(1, 1)</code> es a la vez las
+cuatro esquinas; y <code>rush(5, 1)</code> tiene una celda que es «última columna» de la primera
+fila y de la última a la vez.</p>
+</details>
+
+<h3>Compilar y entregar</h3>
+<details id="g-prototipo">
+<summary>Prototipo (declaración de una función)</summary>
+<p>El compilador lee cada <code>.c</code> de arriba abajo y por separado. Para poder llamar a una
+función que está en otro fichero necesita saber antes cómo es: su nombre, qué recibe y qué
+devuelve. Eso es el <em>prototipo</em>: la primera línea de la función terminada en
+<code>;</code>, sin cuerpo.</p>
+<p><code>rush00.c</code> empieza con <code>void ft_putchar(char c);</code> porque la función vive
+en <code>ft_putchar.c</code>, y <code>main.c</code> con <code>void rush(int x, int y);</code> por
+lo mismo. Sin ese prototipo, <code>-Werror</code> convierte el aviso de «declaración implícita» en
+un error y no compila.</p>
+</details>
+<details id="g-compilar">
+<summary>Compilación separada y enlazado</summary>
+<p>Compilar un programa de varios ficheros son dos pasos: cada <code>.c</code> se traduce por
+separado a código máquina (un fichero objeto), y después el <em>enlazador</em> (<em>linker</em>)
+los junta y conecta cada llamada con la función que le corresponde, esté en el fichero que esté.
+Tiene que haber exactamente un <code>main</code> y ninguna función definida dos veces.</p>
+<p>El rush se compila con <code>cc -Wall -Wextra -Werror ft_putchar.c main.c rush00.c</code>: tres
+traducciones y un enlazado que produce <code>a.out</code>. En la evaluación se cambia
+<code>main.c</code> por otro y el resto no se toca.</p>
+</details>
+<details id="g-flags">
+<summary><code>-Wall -Wextra -Werror</code></summary>
+<p>Opciones del compilador. <code>-Wall</code> y <code>-Wextra</code> activan muchos avisos
+(variables sin usar, comparaciones sospechosas, funciones sin declarar…) y <code>-Werror</code>
+convierte cualquier aviso en error, así que el programa no compila si hay alguno. En 42 son
+obligatorias: si no compila con ellas, la nota es 0.</p>
+<p>Los tres ficheros del rush compilan con las tres sin un solo aviso.</p>
+</details>
+<details id="g-norma">
+<summary>La Norma y norminette</summary>
+<p>La Norma es el reglamento de estilo de 42: como mucho 25 líneas por función y 5 funciones por
+fichero, tabulaciones para sangrar, declaraciones al principio de la función, nada de
+<code>for</code>, cabecera de 42 en cada fichero… <code>norminette</code> es el programa que lo
+comprueba, y un error de Norma es un 0.</p>
+<p>Las condiciones largas de <code>print_character</code> están partidas en dos líneas para no
+pasar de 80 columnas. <code>norminette</code> sobre <code>ex00/</code> da <code>OK!</code> en los
+tres ficheros.</p>
+</details>
+</div>
+
 <div class="card" id="rush">
 <h2><span class="ex">ex00</span>rush</h2>
 <div class="meta"><span>Entrega: <b>ex00/rush00.c</b>, <b>ex00/ft_putchar.c</b>, <b>ex00/main.c</b></span><span>Autorizado: <b>write</b></span></div>
 <p>Recorre el rectángulo fila a fila (<code>i</code>, de 1 a <code>y</code>) y, dentro de cada
 fila, columna a columna (<code>j</code>, de 1 a <code>x</code>). Cada celda se delega a
-<code>print_character</code> y al final de cada fila se escribe el salto de línea. Las medidas
-nulas o negativas no dibujan nada.</p>
+<code>print_character</code> y al final de cada fila se escribe el <a href="#g-salto">salto de línea</a>. Las <a href="#g-caso-limite">medidas
+nulas o negativas</a> no dibujan nada.</p>
 <pre><code>void	rush(int x, int y)
 {
 	int	i;
@@ -76,12 +225,12 @@ nulas o negativas no dibujan nada.</p>
 		i++;
 	}
 }</code></pre>
-<p>Un detalle que facilita la lectura: los contadores empiezan en 1, no en 0. Así «primera
+<p>Un detalle que facilita la lectura: los <a href="#g-base1">contadores empiezan en 1</a>, no en 0. Así «primera
 fila» es <code>i == 1</code> y «última fila» es <code>i == y</code>, que se parece mucho a cómo
 se describe el dibujo en español.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A pensar una salida en dos dimensiones
 como una secuencia de bytes: la pantalla no es una cuadrícula, es un flujo de caracteres donde
-<code>'\n'</code> marca dónde empieza la siguiente fila. El bucle exterior son las filas y el
+<code>'\n'</code> marca dónde empieza la siguiente fila. El <a href="#g-bucles">bucle exterior</a> son las filas y el
 interior las columnas, y confundirlos (o el orden de <code>x</code> e <code>y</code>) es el error
 típico que la defensa busca.</div>
 </div>
@@ -89,7 +238,7 @@ típico que la defensa busca.</div>
 <div class="card" id="print">
 <h2><span class="ex">celda</span>print_character</h2>
 <div class="meta"><span>Entrega: <b>ex00/rush00.c</b></span><span>Autorizado: <b>write</b> (vía ft_putchar)</span></div>
-<p>Toda la lógica del dibujo está en una cadena de <code>if / else if</code> que decide la letra
+<p>Toda la lógica del dibujo está en una <a href="#g-else-if">cadena de <code>if / else if</code></a> que decide la letra
 según la posición. El orden de las condiciones importa: primero las esquinas
 <code>A</code>, luego las esquinas <code>C</code>, luego cualquier borde, y si no es nada de eso,
 un espacio.</p>
@@ -118,7 +267,7 @@ en dos funciones es además lo que hace que el código sea defendible por cualqu
 <h2><span class="ex">main</span>main</h2>
 <div class="meta"><span>Entrega: <b>ex00/main.c</b></span><span>Autorizado: <b>write</b></span></div>
 <p>El enunciado de los Rush 00 deja que el grupo entregue su propio <code>main</code>, y en la
-evaluación se cambia por otros valores. El de este grupo prueba casos normales y los bordes:
+evaluación se cambia por otros valores. El de este grupo prueba casos normales y los <a href="#g-caso-limite">bordes</a>:
 1×1, una fila, una columna, ceros, negativos y uno grande.</p>
 <pre><code>	rush(6, 4);
 	rush(1, 1);
@@ -142,7 +291,7 @@ main que solo llama a <code>rush(5, 3)</code> no demuestra nada; uno con los cas
 <div class="meta"><span>Afecta a: <b>print_character</b></span></div>
 <p>Con una sola fila (<code>y == 1</code>), la primera y la última fila son la misma. En la
 última celda se cumplen a la vez «última fila y última columna» (<code>A</code>) y «primera fila
-y última columna» (<code>C</code>), y como la comprobación de <code>A</code> va primero, gana la
+y última columna» (<code>C</code>), y como la <a href="#g-else-if">comprobación de <code>A</code> va primero</a>, gana la
 <code>A</code>. Lo mismo pasa con una sola columna. Compilado y ejecutado tal cual:</p>
 <pre><code>rush(5, 1)      rush(1, 5)
 ABBBA           A
@@ -154,10 +303,97 @@ ABBBA           A
 <code>C</code> (<code>ABBBC</code> y <code>A B B B C</code> en vertical). Con los rectángulos de
 dos o más filas y columnas (<code>rush(5, 3)</code>, <code>rush(4, 4)</code>) la salida es la
 esperada, y el 1×1 da <code>A</code>.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que los casos degenerados son donde
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que los <a href="#g-caso-limite">casos degenerados</a> son donde
 dos reglas que nunca chocan en el caso general empiezan a solaparse. Cuando una celda es a la vez
 «primera» y «última», el orden de los <code>if</code> deja de ser un detalle de estilo y pasa a
 decidir el resultado.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. En un rush la pregunta puede ir a cualquiera del grupo, sobre
+cualquier línea. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>El código</h3>
+<details id="q-orden-if">
+<summary>¿Por qué las esquinas se comprueban antes que los bordes?</summary>
+<p>Porque una esquina también es borde, y en una <a href="#g-else-if">cadena de
+<code>else if</code></a> gana la primera condición que se cumple. Con el borde primero, las cuatro
+esquinas saldrían como <code>B</code>. → <a href="#print">print_character</a></p>
+</details>
+<details id="q-xy">
+<summary>¿Cuál es <code>x</code> y cuál es <code>y</code>? ¿Qué cambia si los cambio de sitio?</summary>
+<p><code>x</code> son las columnas (el ancho) e <code>y</code> las filas (el alto). El bucle
+exterior recorre las filas y el interior las columnas. <code>rush(6, 4)</code> da 4 líneas de 6
+caracteres; <code>rush(4, 6)</code>, 6 líneas de 4. → <a href="#rush">rush</a></p>
+</details>
+<details id="q-desde-1">
+<summary>¿Por qué los contadores empiezan en 1?</summary>
+<p>Para que las condiciones se lean como el dibujo: primera fila es <code>i == 1</code> y última
+<code>i == y</code>. Con contadores desde 0 serían <code>i == 0</code> e <code>i == y - 1</code>;
+funciona igual, pero es más fácil equivocarse en un <code>-1</code>. → <a href="#g-base1">contar
+desde 0 o desde 1</a></p>
+</details>
+<details id="q-otra-variante">
+<summary>Si te piden otra variante del dibujo, ¿qué tocas?</summary>
+<p>Solo <code>print_character</code>: las letras de cada <code>ft_putchar</code> y, si cambian las
+esquinas que se emparejan, qué esquinas van en cada condición. <code>rush</code> no se toca, porque
+solo recorre la cuadrícula. → <a href="#print">print_character</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-cero">
+<summary>¿Qué pasa con <code>rush(0, 6)</code> o con números negativos?</summary>
+<p>No se dibuja nada, ni un salto de línea: el <code>if (x &lt;= 0 || y &lt;= 0) return ;</code>
+de <code>rush</code> sale antes de empezar: con el <a href="#g-logicos"><code>||</code></a> basta con que una de las dos medidas no sea positiva. El <code>main</code> prueba 0 y negativos en cada
+posición. → <a href="#rush">rush</a>, <a href="#main">main</a></p>
+</details>
+<details id="q-una-fila">
+<summary>¿Qué sale con <code>rush(5, 1)</code>?</summary>
+<p><code>ABBBA</code>, y <code>rush(1, 5)</code> da A, B, B, B, A en vertical. Con una sola fila,
+la última celda cumple la condición de <code>A</code> (última fila y última columna) y la de
+<code>C</code> (primera fila y última columna), y gana la <code>A</code> porque va primero. Los
+ejemplos de esta variante terminan en <code>C</code>: mejor tenerlo explicado antes de que lo
+encuentre el evaluador. → <a href="#ojo">una sola fila o una sola columna</a></p>
+</details>
+<details id="q-grande">
+<summary>¿Y con un rectángulo muy grande?</summary>
+<p>Funciona igual: no se reserva memoria, cada celda se escribe al momento. <code>rush(123, 42)</code>
+está en el <code>main</code>. Lo único que limita es que <code>x</code> e <code>y</code> son
+<code>int</code>; con tamaños enormes tardaría, porque son <code>x · y</code> llamadas a
+<code>write</code> de un byte. → <a href="#g-bucles">bucles anidados</a></p>
+</details>
+
+<h3>Reglas de la piscine</h3>
+<details id="q-write">
+<summary>¿Por qué <code>ft_putchar</code> y no <code>printf</code>?</summary>
+<p>Porque la única función autorizada es <code>write</code>. <code>ft_putchar</code> es
+<code>write(1, &amp;c, 1)</code>: un byte, el <a href="#g-ascii">código ASCII</a> de la letra, a la salida estándar. → <a href="#g-write">write</a>,
+<a href="#g-fd">descriptor de fichero</a></p>
+</details>
+<details id="q-norma">
+<summary>¿Pasa la Norma? ¿Compila con los flags?</summary>
+<p>Sí: <code>norminette</code> da <code>OK!</code> en los tres ficheros y <a href="#g-flags"><code>cc -Wall -Wextra
+-Werror</code></a> compila sin avisos. Los prototipos al principio de <code>rush00.c</code> y
+<code>main.c</code> son los que evitan el error de «declaración implícita».
+→ <a href="#g-norma">la Norma</a>, <a href="#g-prototipo">prototipo</a></p>
+</details>
+<details id="q-main">
+<summary>¿Por qué entregáis un <code>main.c</code> aparte?</summary>
+<p>Porque en la evaluación lo cambian por el suyo con otros valores, y así se puede sustituir sin
+tocar <code>rush00.c</code>. Los tres ficheros se compilan por separado y el enlazador los junta.
+→ <a href="#main">main</a>, <a href="#g-compilar">compilación separada</a></p>
+</details>
+
+<h3>Sobre el trabajo en grupo</h3>
+<details id="q-grupo">
+<summary>¿Quién hizo qué? ¿Cómo os organizasteis?</summary>
+<p>Esta te la tienes que preparar tú. La cabecera de <code>rush00.c</code> la firma un compañero y
+la última edición es de xalara, pero en la defensa cualquiera del grupo tiene que poder explicar
+cualquier línea. Si piden un cambio en directo, lo típico es otra variante de letras o el caso de
+una sola fila. → <a href="#print">print_character</a>, <a href="#ojo">ojo</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — Rush 00 · <a href="017_rush01.html">continuar con Rush 01 →</a></footer>

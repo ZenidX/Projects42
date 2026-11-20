@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -25,6 +27,7 @@
 con recursión — todo construido desde un único byte.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_putchar</a></li>
   <li><a href="#ex01">ex01 — ft_print_alphabet</a></li>
   <li><a href="#ex02">ex02 — ft_print_reverse_alphabet</a></li>
@@ -34,6 +37,7 @@ con recursión — todo construido desde un único byte.</p>
   <li><a href="#ex06">ex06 — ft_print_comb2</a></li>
   <li><a href="#ex07">ex07 — ft_putnbr</a></li>
   <li><a href="#ex08">ex08 — ft_print_combn</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>Por qué solo write</b> — Es la decisión pedagógica que define el
@@ -47,6 +51,245 @@ printf, este será el único ladrillo de base. (El prólogo del enunciado — la
 fideos" de Pierre Dac, humorista francés — es puro absurdo intencional: dos páginas de receta
 imposible que terminan en "C sí que vale la pena".)</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 00 es el primer contacto con C, así que casi todo es nuevo: qué es compilar, qué es una
+función, por qué un carácter es un número, qué hace <code>write</code> con un
+<code>&amp;</code>, por qué <code>-2147483648</code> da problemas. Aquí está cada idea explicada
+desde cero, con un ejemplo sacado del propio módulo (las salidas están ejecutadas). En el resto de
+la página, la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su
+entrada.</p>
+
+<h3>Compilar y entregar</h3>
+<details id="g-compilar">
+<summary>Compilar, <code>cc</code> y las flags <code>-Wall -Wextra -Werror</code></summary>
+<p>El ordenador no ejecuta C: ejecuta código máquina. <em>Compilar</em> es traducir tus
+<code>.c</code> a un ejecutable, y lo hace el compilador, que en 42 se llama con
+<code>cc</code>. <code>cc main.c ft_putchar.c</code> genera un <code>a.out</code> que ya se puede
+lanzar con <code>./a.out</code>.</p>
+<p>Las flags que pide el enunciado activan los avisos (<em>warnings</em>): <code>-Wall</code> y
+<code>-Wextra</code> encienden la mayoría (variable sin usar, comparación sospechosa, función sin
+declarar…), y <code>-Werror</code> convierte cada aviso en error, así que el código con avisos ni
+siquiera compila. La Moulinette compila así: un aviso es un cero.</p>
+</details>
+<details id="g-main">
+<summary><code>main</code>: función frente a programa</summary>
+<p>Un programa en C empieza siempre por la función <code>main</code>. En C 00 no se piden
+programas sino <em>funciones</em>: se entrega solo <code>ft_putchar.c</code>, sin
+<code>main</code>, y la Moulinette lo compila junto a su propio <code>main</code> de pruebas. Si
+el tuyo también lo tiene, hay dos <code>main</code> y el enlazado falla
+(<code>multiple definition of `main'</code>). Para probar, escribe el <code>main</code> en otro
+archivo que no entregues, o déjalo comentado, como permite el enunciado.</p>
+</details>
+<details id="g-norma">
+<summary>La Norma y <code>norminette</code></summary>
+<p>La Norma es el reglamento de estilo de 42 y es obligatoria: si no se cumple, la nota es 0 aunque
+el código funcione. Algunas reglas que ya se notan en C 00: nada de <code>for</code> (solo
+<code>while</code>), como mucho 25 líneas por función y 5 funciones por archivo, como mucho
+5 variables por función, declaradas al principio y separadas del resto por una línea en blanco,
+sangría con tabuladores, y el header de 42 (el recuadro de comentarios con tu login) al principio
+de cada archivo.</p>
+<p><code>norminette</code> es el programa que comprueba buena parte de esas reglas. En este módulo
+se ejecuta con <code>-R CheckForbiddenSourceHeader</code>, como hará la Moulinette. No lo
+comprueba todo: quien te evalúa puede encontrar faltas que norminette no ve.</p>
+</details>
+<details id="g-moulinette">
+<summary>Moulinette</summary>
+<p>El corrector automático de 42 (en francés, el pasapurés). Después de la evaluación entre pares,
+compila tus funciones con su propio <code>main</code>, las llama con sus casos y compara la salida
+byte a byte. No admite discusión. Corrige en orden: si un ejercicio falla, los siguientes no
+cuentan aunque estén bien.</p>
+</details>
+<details id="g-include">
+<summary><code>#include</code> y <code>&lt;unistd.h&gt;</code></summary>
+<p>Para usar una función, el compilador tiene que conocer antes su prototipo. Las de la librería
+del sistema están declaradas en <em>cabeceras</em> (archivos <code>.h</code>), y
+<code>#include &lt;unistd.h&gt;</code> pega esas declaraciones al principio de tu archivo. En
+<code>unistd.h</code> está <code>write</code>. Sin el include, <code>-Wall -Werror</code> da error
+por usar una función sin declarar.</p>
+</details>
+
+<h3>Lo básico de C</h3>
+<details id="g-funcion">
+<summary>Función, prototipo y <code>void</code></summary>
+<p>Una función es un trozo de código con nombre que recibe parámetros y puede devolver un valor.
+Su <em>prototipo</em> es la primera línea: tipo de retorno, nombre y parámetros. El enunciado lo
+fija, y la Moulinette solo podrá llamar a tu función si coincide exactamente:</p>
+<pre><code>void	ft_is_negative(int n);</code></pre>
+<p><code>void</code> como tipo de retorno significa «no devuelve nada» (todas las de C 00 solo
+imprimen), y entre los paréntesis, como en <code>ft_print_alphabet(void)</code>, «no recibe
+nada».</p>
+</details>
+<details id="g-tipo">
+<summary>Tipos: <code>char</code>, <code>int</code> y <code>long</code></summary>
+<p>Cada variable tiene un tipo que dice cuántos bytes ocupa y qué valores caben. En una máquina
+Linux de 64 bits como las de 42, <code>sizeof</code> da 1 para <code>char</code>, 4 para
+<code>int</code> y 8 para <code>long</code>. Un <code>char</code> es un número de 8 bits (de −128 a
+127); un <code>int</code>, de 32 bits, va de −2147483648 a 2147483647; un <code>long</code> llega
+a unos 9,2 trillones.</p>
+<p>Al mezclar tipos, C convierte el pequeño al grande sin avisar: en
+<code>n = nb;</code> de ft_putnbr, el <code>int</code> se copia a un <code>long</code> sin perder
+nada. El tamaño de <code>long</code> depende del sistema (en Windows es de 4 bytes), pero en 42 se
+trabaja en Linux o macOS, donde es de 8.</p>
+</details>
+<details id="g-ascii">
+<summary>ASCII: los caracteres son números</summary>
+<p>El ordenador no guarda letras: guarda números, y una tabla dice qué carácter corresponde a cada
+uno. La tabla básica es ASCII (1963): 128 códigos en los que <code>'0'</code>–<code>'9'</code>
+van del 48 al 57, <code>'A'</code>–<code>'Z'</code> del 65 al 90 y <code>'a'</code>–<code>'z'</code>
+del 97 al 122, siempre seguidos y en orden. Por eso se puede contar con letras:</p>
+<pre><code>printf("%d %d %d %c\n", 'a', 'z', '0', 'a' + 1);
+97 122 48 b</code></pre>
+<p>De ahí salen ex01–ex03 (un contador que va de <code>'a'</code> a <code>'z'</code>) y el
+truco de ex06 y ex07: un dígito d se convierte en su carácter con <code>d + '0'</code>
+(3 + 48 = 51, que es <code>'3'</code>).</p>
+</details>
+<details id="g-literal">
+<summary>Literal de carácter <code>'N'</code> frente a cadena <code>"N"</code></summary>
+<p>Con comillas simples, <code>'N'</code> es un solo número, el 78. Con dobles, <code>"N"</code> es
+una <em>cadena</em>: un trozo de memoria con los bytes <code>N</code> y <code>\0</code> (el
+terminador), y lo que vale la expresión es la <em>dirección</em> de ese trozo. Por eso en ex04
+<code>write(1, "N", 1)</code> funciona sin <code>&amp;</code>: la cadena ya es una dirección. Con
+<code>write(1, 'N', 1)</code> se le pasaría el número 78 como si fuera una dirección (el
+compilador avisa y, con <code>-Werror</code>, no compila).</p>
+</details>
+<details id="g-bucle">
+<summary>Bucle <code>while</code>: inicio, condición y avance</summary>
+<p><code>while (condición) { … }</code> repite el bloque mientras la condición sea verdadera, y la
+comprueba antes de cada vuelta. Todo bucle de contador tiene tres piezas: el valor inicial (antes
+del <code>while</code>), la condición de parada y el avance (al final del bloque). En ex01:</p>
+<pre><code>c = 'a';             // inicio
+while (c &lt;= 'z')     // condición
+{
+	write(1, &amp;c, 1);
+	c++;                 // avance
+}</code></pre>
+<p>Si falta el avance, el bucle no acaba nunca. Si la condición es <code>&lt;</code> en vez de
+<code>&lt;=</code>, falta la última letra. La Norma prohíbe <code>for</code>, que junta las tres
+piezas en una línea.</p>
+</details>
+<details id="g-static">
+<summary>Función <code>static</code> (función auxiliar)</summary>
+<p>Una función marcada <code>static</code> solo existe dentro de su archivo: nadie de fuera puede
+llamarla y su nombre no choca con otra igual en otro archivo. Es lo indicado para las funciones
+auxiliares, las que solo sirven a la función pedida. En el repo lo son
+<code>ft_print_trio</code> (ex05), <code>ft_print_pair</code> (ex06), <code>ft_print_tab</code> y
+<code>ft_rec</code> (ex08). Partir así el código además ayuda a cumplir el límite de 25 líneas
+por función de la Norma.</p>
+</details>
+<details id="g-array">
+<summary>Array</summary>
+<p>Una fila de variables del mismo tipo, seguidas en memoria, a las que se accede por posición
+empezando en 0. <code>char s[5];</code> son cinco <code>char</code>, de <code>s[0]</code> a
+<code>s[4]</code>; <code>s[5]</code> ya está fuera y escribir ahí es un error grave. En ex06,
+<code>s</code> guarda los 5 caracteres de <code>"00 01"</code> para imprimirlos con un solo
+<code>write</code>; en ex08, <code>int tab[10]</code> guarda los dígitos de la combinación que se
+está construyendo.</p>
+</details>
+
+<h3>Memoria y salida</h3>
+<details id="g-write">
+<summary><code>write</code> y llamada al sistema</summary>
+<p>Una <em>llamada al sistema</em> es pedirle algo directamente al núcleo del sistema operativo
+(el <em>kernel</em>), que es el único que puede tocar la pantalla, los discos o la red.
+<code>write</code> es la de escribir:</p>
+<pre><code>ssize_t	write(int fd, const void *buf, size_t count);</code></pre>
+<p>«Escribe <code>count</code> bytes, empezando en la dirección <code>buf</code>, en el
+descriptor <code>fd</code>». Devuelve cuántos bytes ha escrito, o −1 si falla; en C 00 nadie
+mira ese valor. No sabe nada de números ni de formatos: <code>printf</code>, que sí formatea, está
+construida encima, y por eso aquí no se puede usar.</p>
+</details>
+<details id="g-fd">
+<summary>Descriptor de fichero (fd)</summary>
+<p>Un número pequeño con el que un programa se refiere a algo abierto: un archivo, la terminal,
+una tubería. Todo programa arranca con tres: 0 es la entrada estándar (stdin), 1 la salida
+estándar (stdout) y 2 la salida de error (stderr). El <code>1</code> de
+<code>write(1, &amp;c, 1)</code> es stdout, que es lo que la Moulinette captura y compara.</p>
+</details>
+<details id="g-puntero">
+<summary>Dirección de memoria, <code>&amp;</code> y puntero</summary>
+<p>Toda variable vive en algún sitio de la memoria, y ese sitio tiene un número, su
+<em>dirección</em>. <code>&amp;c</code> es la dirección de <code>c</code>. Un <em>puntero</em> es
+una variable que guarda una dirección. <code>write</code> no recibe el carácter sino dónde está,
+para poder escribir uno o mil bytes seguidos con la misma llamada: <code>write(1, &amp;c, 1)</code>
+es «el byte que hay donde vive <code>c</code>». En ex06 no hace falta <code>&amp;</code> porque el
+nombre de un array, <code>s</code>, ya vale la dirección de su primer elemento.</p>
+</details>
+
+<h3>Números</h3>
+<details id="g-division">
+<summary>División entera y módulo (<code>/</code> y <code>%</code>)</summary>
+<p>Entre enteros, <code>/</code> da el cociente sin decimales (se trunca hacia cero: 7 / 2 = 3 y
+−7 / 2 = −3) y <code>%</code> el resto (7 % 2 = 1). Con 10 sirven para separar las cifras de un
+número: <code>42 / 10</code> es 4 (lo que queda al quitar la última cifra) y
+<code>42 % 10</code> es 2 (la última cifra). ex06 lo usa para escribir números de dos cifras y
+ft_putnbr, para cualquier longitud. Ojo con los negativos: <code>-7 % 10</code> es −7, no 3.</p>
+</details>
+<details id="g-complemento">
+<summary>Complemento a dos y rango de <code>int</code></summary>
+<p>Es como la máquina guarda los enteros con signo. Con 32 bits hay 2³² combinaciones; la mitad
+con el bit más alto a 1 son los negativos. Como el 0 ocupa una de las «positivas», el rango queda
+asimétrico: de −2147483648 (<code>INT_MIN</code>) a 2147483647 (<code>INT_MAX</code>). Hay un
+negativo más que positivos, así que <code>INT_MIN</code> no tiene opuesto dentro de un
+<code>int</code>: 2147483648 no cabe. Es el caso que el enunciado de ex07 pide explícitamente
+(«cualquier valor posible de un int»).</p>
+</details>
+<details id="g-overflow">
+<summary>Desbordamiento y comportamiento indefinido</summary>
+<p>Un <em>desbordamiento</em> es una operación cuyo resultado no cabe en el tipo. Con enteros con
+signo, C no dice qué pasa: es <em>comportamiento indefinido</em>, y el programa puede dar
+cualquier cosa. Un putnbr que niega dentro del <code>int</code>, con <code>nb = -nb</code>,
+lo provoca con <code>INT_MIN</code>. Compilado aquí, imprime <code>-(</code>: la negación deja el
+número negativo, <code>nb % 10</code> vale −8 y <code>'0' - 8</code> es el carácter
+<code>(</code>. Con <code>-fsanitize=undefined</code> el propio programa lo denuncia:</p>
+<pre><code>runtime error: negation of -2147483648 cannot be represented in type 'int'</code></pre>
+<p>El ft_putnbr del repo lo evita copiando primero a un <code>long</code>, donde 2147483648 sí
+cabe.</p>
+</details>
+
+<h3>Algoritmos</h3>
+<details id="g-recursion">
+<summary>Recursión y pila de llamadas</summary>
+<p>Una función es <em>recursiva</em> cuando se llama a sí misma con un problema más pequeño, y
+tiene un <em>caso base</em> en el que ya no lo hace. Cada llamada pendiente se queda esperando en
+la <em>pila de llamadas</em> con sus propias variables, y se retoma cuando la de dentro termina.</p>
+<p>En ft_putnbr, para 123: <code>ft_putnbr(123)</code> llama a <code>ft_putnbr(12)</code>, que llama
+a <code>ft_putnbr(1)</code>. Esta es el caso base (1 &lt; 10), escribe <code>1</code> y vuelve;
+entonces la de 12 escribe <code>2</code> y la de 123 escribe <code>3</code>. Las cifras se calculan
+de la última a la primera, pero se imprimen al volver, en el orden correcto. Sin caso base la pila
+crece hasta que el programa revienta (segfault).</p>
+</details>
+<details id="g-combinacion">
+<summary>Combinación</summary>
+<p>Una forma de elegir k elementos de un conjunto sin que importe el orden: 012 y 210 son la misma
+combinación. Para no repetirlas se escribe cada una en un solo orden, el creciente, que es lo que
+piden ex05, ex06 y ex08. Cuántas hay es el número combinatorio C(n, k) = n! / (k!·(n−k)!):
+C(10, 3) = 120 tríos en ex05, C(100, 2) = 4950 parejas en ex06, y C(10, 2) = 45 para
+<code>ft_print_combn(2)</code>. Si el orden importase serían <em>variaciones</em> y habría
+muchas más (720 para tres dígitos distintos).</p>
+</details>
+<details id="g-valla">
+<summary>Problema de la valla (fencepost)</summary>
+<p>Una valla de 10 metros con un poste cada metro tiene 11 postes, no 10. En programación es el
+error de contar uno de más o de menos (en inglés, <em>off-by-one</em>), y su versión más común en
+la piscine es el separador: 120 combinaciones llevan 119 <code>", "</code>, porque va
+<em>entre</em> elementos. La salida de ex05 mide 120·3 + 119·2 = 598 bytes, y el repo los da.
+Las soluciones del repo lo resuelven detectando el último elemento: <code>789</code>,
+<code>98 99</code>, o en ex08 que el primer dígito sea <code>10 - n</code>.</p>
+</details>
+<details id="g-backtracking">
+<summary>Backtracking (vuelta atrás)</summary>
+<p>Una manera de recorrer todas las soluciones construyéndolas paso a paso: se elige un valor para
+la primera posición, se resuelve recursivamente el resto, y al volver se prueba el siguiente valor
+para esa posición. Cada nivel de la recursión hace de uno de los bucles anidados de ex05, así que
+sirve para cualquier número de posiciones. En <code>ft_rec</code> de ex08, el nivel
+<code>pos</code> prueba los dígitos desde <code>start</code> hasta 9 y le pasa al siguiente
+<code>d + 1</code>, de modo que solo se construyen combinaciones crecientes. Es el mismo esquema
+que resuelve sudokus o el problema de las n reinas, donde además se abandona una rama en cuanto
+deja de ser válida.</p>
+</details>
+</div>
+
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_putchar</h2>
 <div class="meta"><span>Entrega: <b>ft_putchar.c</b></span><span>Autorizado: <b>write</b></span></div>
@@ -55,11 +298,11 @@ imposible que terminan en "C sí que vale la pena".)</div>
 	write(1, &amp;c, 1);
 }</code></pre>
 <p>El enunciado incluso da la línea. Lo que se evalúa es entender sus tres argumentos:
-descriptor <code>1</code> (stdout), la <em>dirección</em> del carácter (<code>&amp;c</code> —
+<a href="#g-fd">descriptor</a> <code>1</code> (stdout), la <a href="#g-puntero"><em>dirección</em></a> del carácter (<code>&amp;c</code> —
 write no recibe valores, recibe punteros a memoria) y la longitud en bytes.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Tu primer contacto con dos ideas
 que lo atraviesan todo: (1) las funciones del sistema trabajan con <em>direcciones de
-memoria</em>, no con valores — de ahí el <code>&amp;</code>; y (2) un <code>char</code> no es
+memoria</em>, no con valores — de ahí el <code>&amp;</code>; y (2) un <a href="#g-tipo"><code>char</code></a> no es
 "una letra", es un byte, un número de 8 bits. Esta función de 1 línea es el átomo del que
 saldrán todas las demás salidas por pantalla de la piscine.</div>
 </div>
@@ -79,10 +322,10 @@ saldrán todas las demás salidas por pantalla de la piscine.</div>
 	}
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que los caracteres <em>son</em>
-números y se puede hacer aritmética con ellos: <code>'a'</code> vale 97 en ASCII y
+números y se puede hacer aritmética con ellos: <code>'a'</code> vale 97 en <a href="#g-ascii">ASCII</a> y
 <code>'a' + 1</code> es <code>'b'</code>. Ese diseño — heredar del telégrafo una tabla donde
 las letras son consecutivas — es lo que permite recorrer el alfabeto con un contador. También
-es tu primer bucle <code>while</code> de la Norma: 42 prohíbe <code>for</code> precisamente
+es tu primer bucle <a href="#g-bucle"><code>while</code></a> de la <a href="#g-norma">Norma</a>: 42 prohíbe <code>for</code> precisamente
 para que veas las tres piezas del bucle (inicialización, condición, avance) por separado.</div>
 </div>
 
@@ -98,7 +341,7 @@ para que veas las tres piezas del bucle (inicialización, condición, avance) po
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Parece el mismo ejercicio y esa es la
 trampa: al invertir el sentido cambian <em>tres</em> cosas coordinadas (valor inicial,
 condición de parada, operador de avance). El error clásico del principiante es cambiar dos de
-las tres. Enseña a razonar el bucle como un invariante y no como una receta copiada.</div>
+las tres. Enseña a razonar el <a href="#g-bucle">bucle</a> como un invariante y no como una receta copiada.</div>
 </div>
 
 <div class="card" id="ex03">
@@ -111,7 +354,7 @@ las tres. Enseña a razonar el bucle como un invariante y no como una receta cop
 		c++;
 	}</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La diferencia entre el número
-<code>0</code> y el carácter <code>'0'</code> (que vale 48 en ASCII). Confundirlos es uno de
+<code>0</code> y el carácter <code>'0'</code> (que vale 48 en <a href="#g-ascii">ASCII</a>). Confundirlos es uno de
 los errores más comunes de todo C. La conversión <code>digito + '0'</code> ↔
 <code>caracter - '0'</code> que aquí se insinúa será la pieza central de putnbr (ex07) y de
 atoi (C04).</div>
@@ -129,15 +372,15 @@ atoi (C04).</div>
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas pequeñas pero
 deliberadas: (1) leer la especificación con lupa — el 0 es "P", y quien imprime "N" para el
-cero suspende: los contratos se cumplen al pie de la letra, como hará la Moulinette; y
-(2) que un literal de cadena <code>"N"</code> ya es una dirección de memoria válida para
+cero suspende: los contratos se cumplen al pie de la letra, como hará la <a href="#g-moulinette">Moulinette</a>; y
+(2) que un <a href="#g-literal">literal de cadena</a> <code>"N"</code> ya es una dirección de memoria válida para
 write — la primera pista de que las cadenas en C son punteros.</div>
 </div>
 
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>ft_print_comb</h2>
 <div class="meta"><span>Entrega: <b>ft_print_comb.c</b></span><span>Autorizado: <b>write</b></span></div>
-<p>Todas las combinaciones de tres dígitos distintos en orden creciente:
+<p>Todas las <a href="#g-combinacion">combinaciones</a> de tres dígitos distintos en orden creciente:
 <code>012, 013, …, 789</code>.</p>
 <pre><code>	a = '0';
 	while (a &lt;= '7')
@@ -159,7 +402,7 @@ write — la primera pista de que las cadenas en C son punteros.</div>
 <em>generar por construcción, no filtrar</em>. La solución ingenua enumera 000–999 y descarta;
 la buena hace que cada bucle empiece donde el anterior lo dejó (<code>b = a + 1</code>), de
 modo que solo se generan combinaciones válidas — así se piensa en combinatoria y en SQL, en
-backtracking, en todo. Segunda: el <em>problema de la valla</em> (fencepost): hay separador
+<a href="#g-backtracking">backtracking</a>, en todo. Segunda: el <a href="#g-valla"><em>problema de la valla</em></a> (fencepost): hay separador
 "<code>, </code>" <em>entre</em> elementos, no después de cada uno; detectar el último
 elemento (789) es la parte que de verdad se falla. Además obliga a decidir los límites de
 cada bucle (¿por qué a para en '7'?) razonando, no probando.</div>
@@ -177,8 +420,8 @@ cada bucle (¿por qué a para en '7'?) razonando, no probando.</div>
 	write(1, s, 5);</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La descomposición posicional de un
 número: <code>n / 10</code> da las decenas y <code>n % 10</code> las unidades. La división
-entera y el módulo son las dos herramientas con las que un número "se convierte" en sus
-dígitos — putnbr (ex07) generaliza esto a cualquier longitud. De regalo: componer un buffer
+entera y el <a href="#g-division">módulo</a> son las dos herramientas con las que un número "se convierte" en sus
+dígitos — putnbr (ex07) generaliza esto a cualquier longitud. De regalo: componer un <a href="#g-array">buffer</a>
 de 5 bytes y hacer un solo write enseña que la salida no tiene por qué ir carácter a
 carácter.</div>
 </div>
@@ -204,12 +447,12 @@ carácter.</div>
 	write(1, &amp;c, 1);
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El ejercicio-emboscada del módulo,
-con dos lecciones. (1) <em>Recursión por necesidad</em>: los dígitos se obtienen del último
+con dos lecciones. (1) <a href="#g-recursion"><em>Recursión por necesidad</em></a>: los dígitos se obtienen del último
 al primero (n%10), pero se imprimen del primero al último — la pila de llamadas recursivas
-invierte el orden gratis. (2) <em>Complemento a dos</em>: en 32 bits el rango es
+invierte el orden gratis. (2) <a href="#g-complemento"><em>Complemento a dos</em></a>: en 32 bits el rango es
 [-2147483648, 2147483647] — asimétrico. <code>-INT_MIN</code> no cabe en un int: es
-comportamiento indefinido y el clásico segfault/valor basura de las malas soluciones. Pasar
-por <code>long</code> antes de negar es reconocer cómo representa los enteros la máquina.
+<a href="#g-overflow">comportamiento indefinido</a> y el clásico segfault/valor basura de las malas soluciones. Pasar
+por <a href="#g-tipo"><code>long</code></a> antes de negar es reconocer cómo representa los enteros la máquina.
 Es la primera vez que la piscine te castiga por no conocer los límites del hardware.</div>
 </div>
 
@@ -236,11 +479,107 @@ Es la primera vez que la piscine te castiga por no conocer los límites del hard
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La generalización que rompe el
 esquema anterior: en ex05 anidaste 3 bucles a mano, pero no puedes escribir "n bucles". La
-respuesta es que <em>la recursión es un bucle de profundidad variable</em>: cada nivel de la
-llamada es uno de los bucles anidados, y el array <code>tab</code> hace de estado compartido.
-Esto es backtracking en miniatura — el mismo esqueleto con el que se resuelven sudokus,
+respuesta es que <a href="#g-recursion"><em>la recursión es un bucle de profundidad variable</em></a>: cada nivel de la
+llamada es uno de los bucles anidados, y el <a href="#g-array">array</a> <code>tab</code> hace de estado compartido.
+Esto es <a href="#g-backtracking">backtracking</a> en miniatura — el mismo esqueleto con el que se resuelven sudokus,
 n-reinas o cualquier "prueba todas las opciones válidas". Cierra el módulo conectando ex05
 (enumeración por construcción) con ex07 (recursión).</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a donde está
+explicado. En C 00 lo normal es que te pidan compilar con un <code>main</code> de prueba delante de
+ellos y que expliques cada línea, así que ten ese <code>main</code> preparado fuera del repo. Están
+agrupadas en: <code>write</code> y caracteres, los ejercicios, casos límite y reglas. Antes de mirar
+la respuesta, intenta contestar tú.</p>
+
+<h3><code>write</code> y caracteres</h3>
+<details id="q-ampersand">
+<summary>¿Por qué <code>&amp;c</code> y no <code>c</code> en <code>write</code>?</summary>
+<p>Porque <code>write</code> no recibe el valor que hay que escribir sino la dirección donde
+empieza, y cuántos bytes leer desde ahí. <code>&amp;c</code> es la dirección de <code>c</code>.
+Con <code>write(1, c, 1)</code> el número del carácter se usaría como dirección: con
+<code>-Wall -Wextra -Werror</code> ni compila. → <a href="#g-puntero">puntero</a>,
+<a href="#ex00">ex00</a></p>
+</details>
+<details id="q-cero-char">
+<summary>¿Qué diferencia hay entre <code>0</code> y <code>'0'</code>?</summary>
+<p><code>0</code> es el número cero; <code>'0'</code> es el carácter que se ve como un cero, cuyo
+código ASCII es 48. Escribir el byte 0 no enseña nada en pantalla. Por eso ex03 cuenta de
+<code>'0'</code> a <code>'9'</code>, y para imprimir una cifra d se escribe <code>d + '0'</code>.
+→ <a href="#g-ascii">ASCII</a>, <a href="#ex03">ex03</a></p>
+</details>
+
+<h3>Los ejercicios</h3>
+<details id="q-cero">
+<summary>¿Qué imprime <code>ft_is_negative(0)</code>?</summary>
+<p><code>P</code>. El enunciado dice que el cero cuenta como positivo o nulo, y el código solo
+imprime <code>N</code> si <code>n &lt; 0</code>. Probado: <code>0</code>, <code>-1</code> y
+<code>5</code> dan <code>PNP</code>. → <a href="#ex04">ex04</a></p>
+</details>
+<details id="q-limites">
+<summary>En ft_print_comb, ¿por qué el primer bucle para en <code>'7'</code>?</summary>
+<p>Porque detrás tienen que caber dos dígitos mayores: si <code>a</code> fuese <code>'8'</code>,
+<code>b</code> sería <code>'9'</code> y para <code>c</code> no quedaría nada. Por lo mismo
+<code>b</code> para en <code>'8'</code>. Cada bucle empieza en el anterior más uno, así que nunca se
+repite un dígito ni sale un trío desordenado: 120 combinaciones, sin filtrar ninguna.
+→ <a href="#g-combinacion">combinación</a>, <a href="#ex05">ex05</a></p>
+</details>
+<details id="q-coma">
+<summary>¿Cómo evitas la coma después de la última combinación?</summary>
+<p>Detectando la última: <code>ft_print_trio</code> no escribe <code>", "</code> si el trío es
+<code>789</code>, <code>ft_print_pair</code> si la pareja es <code>98 99</code>, y
+<code>ft_print_tab</code> si el primer dígito es <code>10 - n</code>, porque la última combinación
+de n dígitos siempre empieza ahí (89, 789, 6789…). → <a href="#g-valla">problema de la valla</a>,
+<a href="#ex05">ex05</a>, <a href="#ex08">ex08</a></p>
+</details>
+<details id="q-recursion">
+<summary>¿Por qué ft_putnbr es recursiva?</summary>
+<p>Porque <code>% 10</code> saca las cifras de la última a la primera y hay que imprimirlas al
+revés. La recursión primero llama con <code>n / 10</code> y escribe su cifra al volver, así que las
+cifras salen en orden sin necesidad de un array. La profundidad es como mucho de 10 llamadas, una
+por cifra. → <a href="#g-recursion">recursión</a>, <a href="#ex07">ex07</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-intmin">
+<summary>¿Funciona ft_putnbr con <code>-2147483648</code>?</summary>
+<p>Sí: el test lo prueba y da <code>-2147483648</code>. El truco es copiar <code>nb</code> a un
+<code>long</code> antes de cambiarle el signo, porque 2147483648 no cabe en un <code>int</code>.
+Un putnbr que hace <code>nb = -nb</code> con <code>int</code> imprime aquí <code>-(</code>.
+→ <a href="#g-complemento">complemento a dos</a>, <a href="#g-overflow">desbordamiento</a>,
+<a href="#ex07">ex07</a></p>
+</details>
+<details id="q-combn-n">
+<summary>¿Qué hace ft_print_combn con n fuera de rango?</summary>
+<p>El enunciado garantiza <code>0 &lt; n &lt; 10</code>, así que no está pedido. Con
+<code>n = 10</code> imprime <code>0123456789</code>. Con <code>n = 0</code> imprime
+<code>", "</code>: entra directo al caso base y <code>ft_print_tab</code> lee
+<code>tab[0]</code> sin que nadie le haya dado valor. No se cuelga ni revienta, pero si te lo
+preguntan, esa es la respuesta honesta. → <a href="#ex08">ex08</a></p>
+</details>
+
+<h3>Reglas: Norma, Moulinette y funciones autorizadas</h3>
+<details id="q-printf">
+<summary>¿Puedo usar <code>printf</code>?</summary>
+<p>No en lo que se entrega: la única función autorizada en todo C 00 es <code>write</code>, y usar
+otra es un cero. En el <code>main</code> de pruebas, que no se entrega, da igual.
+→ <a href="#g-write">write</a></p>
+</details>
+<details id="q-main">
+<summary>¿Por qué no entregas un <code>main</code>?</summary>
+<p>Porque se piden funciones, no programas, y la Moulinette las compila con su propio
+<code>main</code>. Si el tuyo también tiene uno, el enlazado falla por
+<code>multiple definition of `main'</code>. → <a href="#g-main">main</a></p>
+</details>
+<details id="q-norma">
+<summary>Norminette dice OK. ¿Ya cumple la Norma?</summary>
+<p>No necesariamente: norminette no comprueba todas las reglas, y la Norma la revisa también quien
+te evalúa. En el repo los nueve archivos pasan <code>norminette -R CheckForbiddenSourceHeader</code>,
+usan solo <code>while</code>, tienen el header de 42 y las funciones auxiliares son
+<code>static</code>. → <a href="#g-norma">Norma</a>, <a href="#g-static">static</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 00 · <a href="003_c01.html">continuar con C 01 →</a></footer>

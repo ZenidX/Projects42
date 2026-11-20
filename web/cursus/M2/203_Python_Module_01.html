@@ -14,24 +14,34 @@
       <a href="../../index.html">Inicio</a>
       <a href="../../index.html#piscine">Piscine</a>
       <a href="../../index.html#cursus" class="active">Cursus</a>
+      <a href="../../galaxia.html">Galaxia</a>
+      <a href="../../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
 <div class="wrap">
 
-<h1>Cursus — Python Module 01 <span class="tag">en curso</span></h1>
+<h1>Cursus — Python Module 01 <span class="tag">hecho, sin entregar</span></h1>
 <p class="sub">«Code Cultivation»: del programa suelto a las clases. El mismo huerto del
-módulo anterior, ahora modelado con objetos. <strong>Módulo en curso</strong>: aquí están
-explicados los ejercicios ya hechos (ex0, ex1 y ex2); el resto se añadirá más adelante.</p>
+módulo anterior, ahora modelado con objetos. <strong>Los siete ejercicios están hechos</strong>
+y aquí están explicados uno a uno, con su código y la salida real; falta subirlos al repositorio
+y entregarlos.</p>
 
-<p><b>Estado:</b> ex0 y ex1 terminados · ex2 a medias (versión en disco, sin commit) ·
-ex3–ex6 pendientes.</p>
+<p><b>Estado:</b> ex0–ex6 terminados: los siete se ejecutan sin errores, su salida reproduce
+la del enunciado, mypy no da ningún error y flake8 solo avisa de <code>W191</code> (las
+tabulaciones, que son a propósito). Falta el paso de git: ex0–ex2 tienen cambios sin commitear
+y ex3–ex6 aún no están añadidos al repositorio.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex0">ex0 — ft_garden_intro</a></li>
   <li><a href="#ex1">ex1 — ft_garden_data</a></li>
   <li><a href="#ex2">ex2 — ft_plant_growth</a></li>
-  <li><a href="#pendientes">ex3–ex6 — pendientes</a></li>
+  <li><a href="#ex3">ex3 — ft_plant_factory</a></li>
+  <li><a href="#ex4">ex4 — ft_garden_security</a></li>
+  <li><a href="#ex5">ex5 — ft_plant_types</a></li>
+  <li><a href="#ex6">ex6 — ft_garden_analytics</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>De funciones sueltas a objetos</b> — En el Module 00 cada fichero
@@ -46,29 +56,248 @@ estáticos y de clase. Viniendo de C, la clase es lo que harías con un <code>st
 un puñado de funciones que reciben un puntero a él, solo que aquí datos y funciones viajan
 juntos y el puntero se llama <code>self</code>.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>La programación orientada a objetos trae mucho vocabulario nuevo. Aquí está cada término
+explicado desde cero y con un ejemplo sacado del propio huerto del módulo. En el resto de la
+página, la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su
+entrada.</p>
+
+<h3>El programa y sus herramientas</h3>
+<details id="g-name-main">
+<summary><code>__name__</code> y <code>"__main__"</code></summary>
+<p>Python no tiene una función <code>main</code> por la que empiece todo: ejecuta el fichero de
+arriba abajo. Antes de empezar, rellena por su cuenta una variable llamada
+<code>__name__</code>. Si el fichero se ejecuta directamente (<code>python3
+ft_garden_intro.py</code>) vale <code>"__main__"</code>; si otro fichero lo importa
+(<code>import ft_garden_intro</code>), vale el nombre del módulo, <code>"ft_garden_intro"</code>.</p>
+<p>Por eso <code>if __name__ == "__main__":</code> significa «esto solo cuando me ejecutan, no
+cuando me importan». Sirve para que un fichero pueda ofrecer su clase <code>Plant</code> a otros
+sin soltar por pantalla su demostración del huerto cada vez que alguien lo importa.</p>
+</details>
+<details id="g-shebang">
+<summary>Shebang (<code>#!</code>)</summary>
+<p>Una primera línea que empieza por <code>#!</code> y le dice al sistema operativo con qué
+programa abrir el fichero. Con <code>#!/usr/bin/env python3</code> arriba y permiso de ejecución
+(<code>chmod +x ft_garden_intro.py</code>) se puede lanzar como <code>./ft_garden_intro.py</code>,
+sin escribir <code>python3</code> delante. <code>env</code> busca <code>python3</code> en el
+<code>PATH</code>, así que funciona aunque Python no esté en la misma ruta en todos los
+puestos. Para Python es un simple comentario. El nombre viene de <em>hash</em> (#) y
+<em>bang</em> (!), y el truco viene de Unix, de finales de los años setenta.</p>
+</details>
+<details id="g-anotaciones">
+<summary>Anotaciones de tipo (type hints)</summary>
+<p>Indicaciones escritas en la firma de una función de qué tipos espera y qué devuelve:
+<code>def grow(self, growth_amount: float) -&gt; None</code> dice «recibe un número decimal y
+no devuelve nada». Python <em>no</em> las comprueba al ejecutar: si le pasas una cadena a
+<code>grow</code>, el programa intenta seguir igual. Las comprueba una herramienta aparte,
+<a href="#g-mypy">mypy</a>, antes de ejecutar. En este módulo son obligatorias en todas las
+funciones y métodos. Un tipo puede ir entre comillas (<code>-&gt; "Plant"</code>) cuando la
+clase todavía no está definida del todo en ese punto del fichero.</p>
+</details>
+<details id="g-mypy">
+<summary>flake8 y mypy</summary>
+<p>Dos revisores automáticos que leen el código sin ejecutarlo. <strong>flake8</strong> vigila
+el estilo (la guía PEP 8): líneas de más de 79 caracteres, dos líneas en blanco entre funciones,
+espacios sobrantes… En este repositorio los <code>.py</code> llevan tabulaciones a propósito, y
+por eso flake8 solo protesta con <code>W191</code> («indentación con tabuladores»).
+<strong>mypy</strong> comprueba los tipos: si <code>get_height()</code> promete devolver
+<code>float</code> y en algún camino devuelve una cadena, lo dice antes de que el programa
+llegue a ejecutarse. Es lo más parecido al compilador de C que hay en Python.</p>
+</details>
+<details id="g-float">
+<summary>Coma flotante y <code>round()</code></summary>
+<p>Los <code>float</code> se guardan en binario, y muchos decimales que en base 10 son exactos
+(0.8, 2.1) en binario tienen infinitas cifras y se guardan redondeados. El error es minúsculo,
+pero al sumar muchas veces se acumula: sumar 0.8 siete veces a 25.0 da
+<code>27.400000000000002</code> al tercer día y <code>30.600000000000005</code> al séptimo.
+<code>round(x, 1)</code> redondea a un decimal y lo deja en el número más cercano a lo que
+esperas, que es lo que se imprime. Es el mismo <code>double</code> de C; allí lo ocultaba el
+<code>%.1f</code> de <code>printf</code>.</p>
+</details>
+
+<h3>Clases y objetos</h3>
+<details id="g-clase">
+<summary>Clase</summary>
+<p>Un molde que describe cómo es y qué sabe hacer un tipo de cosa. <code>class Plant:</code>
+dice que toda planta tiene nombre, altura y edad, y que sabe mostrarse, crecer y envejecer. La
+clase no es ninguna planta concreta: es la receta. En C sería un <code>typedef struct</code> más
+las funciones que trabajan con él, pero metidas en el mismo sitio. Por convención los nombres de
+clase van en <em>PascalCase</em> (<code>Plant</code>, <code>TreeStats</code>) y el resto en
+<em>snake_case</em>.</p>
+</details>
+<details id="g-objeto">
+<summary>Objeto o instancia</summary>
+<p>Cada cosa concreta fabricada con el molde. <code>rose = Plant()</code> y
+<code>oak = Plant()</code> son dos objetos de la misma clase: comparten los métodos, pero cada
+uno guarda sus propios datos, y cambiar la altura de la rosa no toca la del roble.
+<em>Instanciar</em> es fabricar un objeto llamando a la clase como si fuera una función.
+Python libera el objeto solo cuando ya nadie lo usa: no hay <code>malloc</code> ni
+<code>free</code>.</p>
+</details>
+<details id="g-atributo">
+<summary>Atributo</summary>
+<p>Una variable que vive dentro de un objeto: <code>rose.height</code>, <code>rose.days</code>.
+Es el campo de un <code>struct</code>, pero con una diferencia importante: en Python se pueden
+crear en cualquier momento con solo asignarlos (<code>rose.color = "red"</code>), aunque la clase
+no los mencione. Por eso conviene crearlos todos en <a href="#g-constructor"><code>__init__</code></a>,
+para que estén siempre y para que mypy sepa de qué tipo es cada uno. Atributos y métodos
+comparten el mismo espacio de nombres: un atributo <code>age</code> tapa al método
+<code>age()</code>.</p>
+</details>
+<details id="g-metodo">
+<summary>Método</summary>
+<p>Una función definida dentro de una clase, que trabaja sobre un objeto concreto:
+<code>rose.show()</code>, <code>rose.grow(0.8)</code>. Lo que en C sería
+<code>plant_grow(&amp;rose, 0.8)</code>. Python lo convierte en
+<code>Plant.grow(rose, 0.8)</code>: el objeto de delante del punto llega como primer
+parámetro, que es <a href="#g-self"><code>self</code></a>.</p>
+</details>
+<details id="g-self">
+<summary><code>self</code></summary>
+<p>El primer parámetro de todo método normal: el objeto sobre el que se ha llamado. Dentro de
+<code>grow</code>, <code>self.height</code> es la altura de <em>esta</em> planta, la rosa si se
+llamó <code>rose.grow(…)</code>. Es el puntero al struct que en C pasabas a mano
+(<code>t_list *lst</code>). <code>self</code> no es una palabra reservada, solo una convención
+que sigue todo el mundo.</p>
+</details>
+<details id="g-constructor">
+<summary>Constructor (<code>__init__</code>)</summary>
+<p>El método que Python llama solo al crear un objeto, para dejarlo preparado.
+<code>Plant("Rose", 25.0, 30)</code> fabrica un objeto vacío y llama a
+<code>__init__(objeto, "Rose", 25.0, 30)</code>, que guarda los datos en sus atributos. Si
+<code>__init__</code> no recibe nada (como en ex1), el objeto nace con valores por defecto y
+los datos se ponen después, uno a uno. Los nombres con dos guiones bajos delante y detrás
+(<em>dunder</em>, de <em>double underscore</em>) son métodos especiales que Python llama por su
+cuenta en momentos concretos.</p>
+</details>
+<details id="g-estado">
+<summary>Estado</summary>
+<p>Los valores que tienen en un momento dado los atributos de un objeto. La rosa empieza en
+«25.0 cm, 30 días» y, tras siete llamadas a <code>grow</code>, su estado es «30.6 cm, 37 días».
+Los métodos que cambian el estado (<code>grow</code>, <code>age</code>, <code>set_height</code>)
+son la razón de tener objetos y no solo datos sueltos.</p>
+</details>
+
+<h3>Proteger los datos</h3>
+<details id="g-encapsulacion">
+<summary>Encapsulación</summary>
+<p>Esconder los datos de un objeto y dejar que solo se cambien a través de sus métodos, para
+que el objeto pueda vigilar que siempre tengan sentido. Si cualquiera puede escribir
+<code>rose.height = -25</code>, la planta acaba con una altura imposible; si solo se puede usar
+<code>set_height(-25)</code>, el método rechaza el valor y la planta sigue sana.</p>
+</details>
+<details id="g-protegido">
+<summary>Atributo «protegido» (<code>_</code>) y name mangling (<code>__</code>)</summary>
+<p>Python no tiene <code>private</code> de verdad. Un guion bajo delante
+(<code>self._height</code>) es una <em>convención</em>: «esto es interno, no lo toques desde
+fuera». Nada lo impide (ni Python ni flake8 protestan), pero los programadores lo respetan; y
+las clases hijas sí pueden usarlo, por eso se llama «protegido». Con dos guiones bajos
+(<code>self.__height</code>) Python renombra el atributo por dentro a
+<code>_Plant__height</code>: eso es el <em>name mangling</em>, que dificulta el acceso (también
+a las hijas). El enunciado de ex4 pide la convención de un guion y no el mangling.</p>
+</details>
+<details id="g-getter-setter">
+<summary>Getter y setter</summary>
+<p>Los dos métodos que dan acceso controlado a un atributo protegido. El <em>getter</em>
+(<code>get_height()</code>) lo devuelve; el <em>setter</em> (<code>set_height(valor)</code>)
+lo cambia, pero solo después de comprobar que el valor es válido. Toda la validación queda en un
+único sitio.</p>
+</details>
+
+<h3>Herencia</h3>
+<details id="g-herencia">
+<summary>Herencia, clase madre y clase hija</summary>
+<p>Crear una clase a partir de otra: <code>class Flower(Plant):</code> dice que una flor
+<em>es</em> una planta, así que recibe todos sus atributos y métodos sin volver a escribirlos y
+solo añade lo suyo (el color, florecer). <code>Plant</code> es la clase madre (o base) y
+<code>Flower</code> la hija (o derivada). Se puede encadenar: <code>Seed</code> hereda de
+<code>Flower</code>, que hereda de <code>Plant</code>. La prueba de que se ha usado bien es que
+el código común está escrito una sola vez.</p>
+</details>
+<details id="g-super">
+<summary><code>super()</code></summary>
+<p>Da acceso a los métodos de la clase madre desde la hija. En el constructor de
+<code>Flower</code>, <code>super().__init__(name, height, age)</code> deja que
+<code>Plant</code> prepare el nombre, la altura y la edad, y luego la flor añade su color. Sin
+esa llamada, la flor no tendría altura. También sirve en cualquier otro método:
+<code>super().show()</code> imprime la línea normal de planta antes de añadir el color.</p>
+</details>
+<details id="g-override">
+<summary>Sobrescritura (override)</summary>
+<p>Cuando una clase hija define un método con el mismo nombre que uno de su madre, el de la hija
+sustituye al heredado para sus objetos. <code>Flower.show()</code> sobrescribe a
+<code>Plant.show()</code>; <code>Vegetable.age()</code> sobrescribe a <code>Plant.age()</code>
+para sumar además valor nutricional. Con <a href="#g-super"><code>super()</code></a> el método
+nuevo puede reutilizar el viejo en lugar de copiarlo.</p>
+</details>
+<details id="g-polimorfismo">
+<summary>Polimorfismo y despacho dinámico</summary>
+<p>Una misma llamada hace cosas distintas según la clase real del objeto. Python decide qué
+método ejecutar en el momento de la llamada, mirando primero en la clase del objeto y subiendo
+después por sus madres. Por eso, cuando <code>Plant.grow</code> llama a
+<code>self.age(1)</code> con un tomate, se ejecuta <code>Vegetable.age</code> aunque el código
+esté escrito en <code>Plant</code>; y una función que recibe «cualquier planta» funciona igual
+con una rosa, un roble o una semilla. En C se simula con punteros a función (como una tabla de
+dispatch).</p>
+</details>
+
+<h3>Más allá del método normal</h3>
+<details id="g-decorador">
+<summary>Decorador (<code>@</code>)</summary>
+<p>Una línea con <code>@algo</code> justo encima de un <code>def</code>, que transforma la
+función que viene debajo. <code>@staticmethod</code> encima de <code>def older_year</code> es lo
+mismo que escribir después <code>older_year = staticmethod(older_year)</code>. El enunciado de
+ex6 acepta las dos formas.</p>
+</details>
+<details id="g-staticmethod">
+<summary>Método estático (<code>@staticmethod</code>)</summary>
+<p>Una función que vive dentro de la clase porque tiene que ver con ella, pero que no recibe ni
+el objeto (<code>self</code>) ni la clase. <code>Plant.older_year(400)</code> responde si 400
+días son más de un año sin necesitar ninguna planta concreta. Es una función normal guardada en
+el «cajón» de <code>Plant</code>.</p>
+</details>
+<details id="g-classmethod">
+<summary>Método de clase (<code>@classmethod</code>)</summary>
+<p>Un método que recibe la clase en lugar del objeto, en un primer parámetro que por convención
+se llama <code>cls</code>. Su uso típico es como constructor alternativo:
+<code>Plant.anonymous()</code> devuelve <code>cls("Unknown plant", 0.0, 0)</code>, una planta con
+valores por defecto para cuando aún no se sabe nada de ella. Como <code>cls</code> es la clase
+con la que se llamó, <code>Flower.anonymous()</code> intentaría fabricar una flor.</p>
+</details>
+<details id="g-clase-anidada">
+<summary>Clase anidada</summary>
+<p>Una clase definida dentro de otra: <code>class Stats:</code> dentro de <code>Plant</code>.
+Desde fuera se nombra <code>Plant.Stats</code>. No crea ningún vínculo mágico entre los objetos
+de las dos clases: solo ordena el código y deja claro que las estadísticas son una pieza interna
+de la planta. Cada planta guarda su propio objeto <code>Stats</code> en un atributo.</p>
+</details>
+</div>
+
 <div class="card" id="ex0">
 <h2><span class="ex">ex0</span>ft_garden_intro</h2>
 <div class="meta"><span>Entrega: <b>ft_garden_intro.py</b></span><span>Autorizado: <b>print()</b></span></div>
 <pre><code>if __name__ == "__main__":
-    name = "Rose"
-    height = "25 cm"
-    age = "30 days"
-    print("=== Welcome to My Garden ===")
-    print(f"Plant: {name}")
-    print(f"Height: {height}")
-    print(f"Age: {age}")
-    print("")
-    print("=== End of Program ===")</code></pre>
+	name = "Rose"
+	height = 25
+	age = 30
+	print("=== Welcome to My Garden ===")
+	print(f"Plant: {name}")
+	print(f"Height: {height}cm")
+	print(f"Age: {age} days")
+	print("=== End of Program ===")</code></pre>
 <pre><code>$&gt; python3 ft_garden_intro.py
 === Welcome to My Garden ===
 Plant: Rose
-Height: 25 cm
+Height: 25cm
 Age: 30 days
-
 === End of Program ===</code></pre>
 <p>Tres variables simples y unos <code>print</code>, todo dentro del bloque
-<code>__main__</code>. La altura sale como <code>25 cm</code> (con espacio) en lugar del
-<code>25cm</code> del ejemplo; el enunciado avisa de que la salida no se comprueba de forma
+<a href="#g-name-main"><code>__main__</code></a>. La altura y la edad se guardan como números
+(<code>25</code>, <code>30</code>) y las unidades se añaden solo al imprimir, dentro de la
+f-string (<code>f"Height: {height}cm"</code>): es la forma de guardar datos con la que luego se
+podrá calcular. Respecto al ejemplo del enunciado solo falta la línea en blanco antes de
+«=== End of Program ===»; el enunciado avisa de que la salida no se comprueba de forma
 estricta.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Dónde empieza un programa en
 Python. En C la respuesta era fija: <code>main</code>. En Python no hay función principal: el
@@ -77,142 +306,916 @@ Python rellena solo: vale <code>"__main__"</code> si el fichero se ejecuta direc
 nombre del módulo si otro fichero lo importa. El <code>if</code> sirve para que el código de
 prueba no se ejecute al importar — justo lo que hacía el <code>main.py</code> del módulo
 anterior con tus funciones. El enunciado anuncia además que en la evaluación habrá que añadir
-en directo la línea <em>shebang</em> (<code>#!/usr/bin/env python3</code>), que permite
-ejecutar el script como <code>./ft_garden_intro.py</code> tras darle permiso de
-ejecución.</div>
+en directo la línea <a href="#g-shebang"><em>shebang</em></a>
+(<code>#!/usr/bin/env python3</code>), que permite ejecutar el script como
+<code>./ft_garden_intro.py</code> tras darle permiso de ejecución.</div>
 </div>
 
 <div class="card" id="ex1">
 <h2><span class="ex">ex1</span>ft_garden_data</h2>
 <div class="meta"><span>Entrega: <b>ft_garden_data.py</b></span><span>Autorizado: <b>print()</b></span></div>
 <pre><code>class Plant:
-    def __init__(self, name: str, height: str, age: str) -&gt; None:
-        self.name = name
-        self.height = height
-        self.age = age
+	def __init__(self) -&gt; None:
+		self.name = ""
+		self.height = 0
+		self.days = 0
 
-    def show(self) -&gt; None:
-        print(f"{self.name}: {self.height}, {self.age}")
+	def show(self) -&gt; None:
+		print(f"{self.name}: {self.height}cm, {self.days} days old")
 
 
 if __name__ == "__main__":
-    plant1 = Plant("Rose", "25cm", "30 days old")
-    plant2 = Plant("Sunflower", "80cm", "45 days old")
-    plant3 = Plant("Cactus", "15cm", "120 days old")
-
-    print("=== Garden Plant Registry ===")
-    plant1.show()
-    plant2.show()
-    plant3.show()</code></pre>
+	rose = Plant()
+	rose.name = "Rose"
+	rose.height = 25
+	rose.days = 30
+	sunflower = Plant()
+	sunflower.name = "Sunflower"
+	sunflower.height = 80
+	sunflower.days = 45
+	cactus = Plant()
+	cactus.name = "Cactus"
+	cactus.height = 15
+	cactus.days = 120
+	print("=== Garden Plant Registry ===")
+	rose.show()
+	sunflower.show()
+	cactus.show()</code></pre>
 <pre><code>$&gt; python3 ft_garden_data.py
 === Garden Plant Registry ===
 Rose: 25cm, 30 days old
 Sunflower: 80cm, 45 days old
 Cactus: 15cm, 120 days old</code></pre>
-<p>Una clase <code>Plant</code> con constructor <code>__init__</code> y un método
-<code>show</code>. Cada <code>Plant(...)</code> crea un objeto nuevo y llama a
-<code>__init__</code> con él como <code>self</code>, que guarda los tres atributos.
-<code>plant1.show()</code> es azúcar para <code>Plant.show(plant1)</code>.</p>
-<p>Una rareza de diseño: la altura y la edad se guardan como cadenas ya formateadas
-(<code>"25cm"</code>, <code>"30 days old"</code>), con las unidades dentro. Para mostrar
-basta, pero en cuanto haya que hacer cuentas con ellas — que es justo lo que pide ex2 —
-habrá que sacar el número del texto. El propio enunciado lo deja caer: «¿qué problemas
-pueden aparecer con más plantas? Puede que tengas que hacer evolucionar tu enfoque».</p>
+<p>Una <a href="#g-clase">clase</a> <code>Plant</code> con un
+<a href="#g-constructor">constructor</a> <code>__init__</code> que no recibe datos: deja cada
+<a href="#g-atributo">atributo</a> con un valor por defecto (cadena vacía y ceros). Después, en
+el bloque principal, se <a href="#g-objeto">instancia</a> cada planta y se le asignan sus datos
+uno a uno, que es exactamente lo que describe el enunciado: «la clase se instancia y luego se
+dan valor a los atributos». El <a href="#g-metodo">método</a> <code>show</code> imprime la ficha
+y añade las unidades; <code>rose.show()</code> es azúcar para <code>Plant.show(rose)</code>.</p>
+<p>Dos detalles que preparan los ejercicios siguientes: la edad se llama <code>days</code> y no
+<code>age</code>, de modo que no chocará con el método <code>age()</code> que pide ex2 (un
+atributo y un método con el mismo nombre se tapan); y los valores por defecto le sirven a
+<a href="#g-mypy">mypy</a> para saber que <code>height</code> y <code>days</code> son
+enteros. Los dos métodos llevan ya sus <a href="#g-anotaciones">anotaciones de tipo</a>
+(<code>-&gt; None</code>: no devuelven nada), obligatorias en todo el módulo.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La idea de clase como molde: un
 único modelo para todas las plantas en lugar de tres juegos de variables sueltas. Es el
-<code>struct</code> de C con las funciones dentro: <code>self</code> hace el papel del
-puntero al struct que en C pasabas a mano (<code>t_list *lst</code>), y
+<code>struct</code> de C con las funciones dentro: <a href="#g-self"><code>self</code></a> hace
+el papel del puntero al struct que en C pasabas a mano (<code>t_list *lst</code>), y
 <code>__init__</code> el de la función que reservaba e inicializaba el nodo — pero sin
-<code>malloc</code>: Python crea el objeto y lo libera cuando nadie lo usa. El enunciado
-sugería instanciar primero y asignar los atributos después; aquí ya se hace todo en el
-constructor, lo que en realidad corresponde a ex3 («Plant Factory»), y el enunciado lo
-admite.</div>
+<code>malloc</code>: Python crea el objeto y lo libera cuando nadie lo usa. Y deja ver el
+problema que resolverá ex3: tres líneas de asignación por planta no escalan cuando el huerto
+crece.</div>
 </div>
 
 <div class="card" id="ex2">
-<h2><span class="ex">ex2</span>ft_plant_growth <span class="tag">a medias</span></h2>
+<h2><span class="ex">ex2</span>ft_plant_growth</h2>
 <div class="meta"><span>Entrega: <b>ft_plant_growth.py</b></span><span>Autorizado: <b>print(), range(), round()</b></span></div>
-<p>El enunciado pide reutilizar la clase de ex1, añadirle métodos <code>grow()</code> y
-<code>age()</code>, simular una semana de crecimiento día a día y mostrar al final cuánto ha
-crecido. El fichero está todavía a medio camino; esto es lo que hay ahora mismo en
-disco:</p>
 <pre><code>class Plant:
-    def __init__(self, name, height, age):
-        self.name = name
-        self.height = height
-        self.age = age
+	def __init__(self) -&gt; None:
+		self.name = ""
+		self.height = 0.0
+		self.days = 0
 
-    def show(self):
-        print(f"{self.name}: {self.height}, {self.age}")
+	def show(self) -&gt; None:
+		print(f"{self.name}: {self.height}cm, {self.days} days old")
 
-    def grow(self, growth_amount):
-        self.height = f"{int(self.height[:-2]) + growth_amount}cm"
-        self.age = f"{int(self.age.split()[0]) + 1} days old"
+	def grow(self, growth_amount: float) -&gt; None:
+		self.height = round(self.height + growth_amount, 1)
+		self.age(1)
 
-    def age(self, days):
-        self.age = f"{int(self.age.split()[0]) + days} days old"</code></pre>
-<p>Como la altura y la edad son cadenas (decisión de ex1), cada método tiene que
-<em>desmontar</em> el texto, operar y volver a montarlo: <code>self.height[:-2]</code> corta
-las dos últimas letras (<code>"cm"</code>) y <code>self.age.split()[0]</code> parte la
-cadena por espacios y se queda con el primer trozo (<code>"30"</code>). <code>grow</code>
-suma la altura y además un día de edad.</p>
-<p>El programa principal se ha movido a una función <code>main()</code>, llamada desde el
-bloque <code>__main__</code>; de momento crea tres plantas y las muestra, igual que ex1:</p>
+	def age(self, days: int) -&gt; None:
+		self.days += days
+
+
+def main() -&gt; None:
+	print("=== Garden Plant Growth ===")
+	rose = Plant()
+	rose.name = "Rose"
+	rose.height = 25.0
+	rose.days = 30
+	start_height = rose.height
+	rose.show()
+	for day in range(1, 8):
+		print(f"=== Day {day} ===")
+		rose.grow(0.8)
+		rose.show()
+	print(f"Growth this week: {round(rose.height - start_height, 1)}cm")
+
+
+if __name__ == "__main__":
+	main()</code></pre>
 <pre><code>$&gt; python3 ft_plant_growth.py
-=== Garden Plant Registry ===
-Rose: 25cm, 30 days old
-Sunflower: 80cm, 45 days old
-Cactus: 15cm, 120 days</code></pre>
-<p>(La tercera planta se creó con <code>"120 days"</code>, sin «old», y así sale.)</p>
-<p>Cosas a tener en cuenta para terminarlo:</p>
-<ul>
-  <li><b>Ojo: el método <code>age</code> queda tapado por el atributo <code>age</code>.</b>
-  En <code>__init__</code>, <code>self.age = age</code> crea un atributo del objeto con ese
-  nombre, y en Python los atributos del objeto se buscan antes que los métodos de la clase.
-  Así que <code>plant.age(1)</code> intenta llamar a una cadena:
-  <pre><code>&gt;&gt;&gt; p = Plant("Rose", "25cm", "30 days old")
-&gt;&gt;&gt; p.grow(1); p.show()
-Rose: 26cm, 31 days old
-&gt;&gt;&gt; p.age(1)
-TypeError: 'str' object is not callable</code></pre>
-  Como el enunciado exige que el método se llame <code>age()</code>, es el atributo el que
-  tendrá que llevar otro nombre.</li>
-  <li><b>Alturas con decimales.</b> El ejemplo del enunciado crece 0,8 cm al día
-  (<code>25.0cm</code> → <code>25.8cm</code>), pero <code>int(self.height[:-2])</code> solo
-  entiende enteros: con <code>"25.8cm"</code> lanzaría <code>ValueError</code>.</li>
-  <li><b>Falta la simulación de la semana</b> (el bucle de 7 días con <code>range</code>) y
-  el resumen «Growth this week».</li>
-  <li><b>flake8 y mypy.</b> A diferencia de ex1, aquí no hay anotaciones de tipo, que en
-  este módulo son obligatorias en todas las funciones y métodos. Y flake8 marca tres avisos
-  (<code>E302</code> y <code>E305</code>: faltan dos líneas en blanco antes y después de
-  <code>main</code>; <code>W291</code>: espacio al final de <code>def main(): </code>).</li>
-</ul>
+=== Garden Plant Growth ===
+Rose: 25.0cm, 30 days old
+=== Day 1 ===
+Rose: 25.8cm, 31 days old
+=== Day 2 ===
+Rose: 26.6cm, 32 days old
+=== Day 3 ===
+Rose: 27.4cm, 33 days old
+=== Day 4 ===
+Rose: 28.2cm, 34 days old
+=== Day 5 ===
+Rose: 29.0cm, 35 days old
+=== Day 6 ===
+Rose: 29.8cm, 36 days old
+=== Day 7 ===
+Rose: 30.6cm, 37 days old
+Growth this week: 5.6cm</code></pre>
+<p>La clase de ex1 con dos <a href="#g-metodo">métodos</a> nuevos que cambian el
+<a href="#g-estado">estado</a> de la planta. <code>age(days)</code> suma días a
+<code>self.days</code>. <code>grow(growth_amount)</code> suma la altura y, además, llama a
+<code>self.age(1)</code>: en este diseño crecer un día implica envejecer un día, y así el bucle
+solo necesita una llamada por día. La altura pasa a ser <code>0.0</code> por defecto, un
+<code>float</code>, porque ahora crece de 0.8 en 0.8.</p>
+<p>El programa principal está en una función <code>main()</code> llamada desde el bloque
+<code>__main__</code>. Guarda la altura inicial en <code>start_height</code>, recorre los días
+con <code>range(1, 8)</code> (del 1 al 7: el final no se incluye) y al acabar resta para el
+resumen. Que el crecimiento sea un parámetro de <code>grow</code> es lo que permite que
+«distintas plantas evolucionen de forma distinta», como sugiere el enunciado: a cada una se le
+puede pasar su ritmo.</p>
+<p>El <code>round(…, 1)</code> no es decoración: sin él la salida sería
+<code>Rose: 27.400000000000002cm</code> al tercer día y el resumen diría
+<code>5.600000000000005cm</code>, por cómo se guarda la
+<a href="#g-float">coma flotante</a>. Por eso se redondea en cada paso y también en la resta
+final.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que un objeto tiene
 <em>estado</em> y que los métodos lo cambian: tras <code>grow()</code> la planta ya no es la
-misma. Y, de rebote, una lección que en C venía impuesta por los tipos: guardar los datos en
-la forma con la que se calcula (números) y convertirlos a texto solo al mostrarlos. En C
-<code>int height</code> no podía contener <code>"cm"</code>; Python te deja meter lo que
-quieras en un atributo, y el precio es tener que parsearlo cada vez. También aparece el
-espacio de nombres compartido de un objeto: atributos y métodos viven en el mismo
-diccionario de nombres, algo que en C, con un <code>struct</code> y funciones aparte, no
-podía chocar.</div>
+misma. Que un método puede llamar a otro método del mismo objeto a través de
+<a href="#g-self"><code>self</code></a>. Y la lección de guardar los datos en la forma con la
+que se calcula (números) y convertirlos a texto solo al mostrarlos: en una versión anterior la
+altura era la cadena <code>"25cm"</code> y cada método tenía que desmontarla y volver a
+montarla. Atributos y métodos viven en el mismo espacio de nombres de un objeto, así que un
+atributo <code>age</code> habría tapado al método <code>age()</code>: llamarlo
+<code>days</code> evita el choque.</div>
 </div>
 
-<div class="card" id="pendientes">
-<h2><span class="ex">ex3–ex6</span>Pendientes</h2>
-<p>Se añadirán cuando estén hechos. Según el enunciado:</p>
+<div class="card" id="ex3">
+<h2><span class="ex">ex3</span>ft_plant_factory</h2>
+<div class="meta"><span>Entrega: <b>ft_plant_factory.py</b></span><span>Autorizado: <b>print(), range(), round()</b></span></div>
+<pre><code>class Plant:
+	def __init__(self, name: str, height: float, days: int) -&gt; None:
+		self.name = name
+		self.height = height
+		self.days = days
+
+	def show(self) -&gt; None:
+		print(f"{self.name}: {self.height}cm, {self.days} days old")
+
+	def grow(self, growth_amount: float) -&gt; None:
+		self.height = round(self.height + growth_amount, 1)
+		self.age(1)
+
+	def age(self, days: int) -&gt; None:
+		self.days += days
+
+
+def main() -&gt; None:
+	print("=== Plant Factory Output ===")
+	plants = [
+		Plant("Rose", 25.0, 30),
+		Plant("Oak", 200.0, 365),
+		Plant("Cactus", 5.0, 90),
+		Plant("Sunflower", 80.0, 45),
+		Plant("Fern", 15.0, 120),
+	]
+	for plant in plants:
+		print("Created: ", end="")
+		plant.show()
+
+
+if __name__ == "__main__":
+	main()</code></pre>
+<pre><code>$&gt; python3 ft_plant_factory.py
+=== Plant Factory Output ===
+Created: Rose: 25.0cm, 30 days old
+Created: Oak: 200.0cm, 365 days old
+Created: Cactus: 5.0cm, 90 days old
+Created: Sunflower: 80.0cm, 45 days old
+Created: Fern: 15.0cm, 120 days old</code></pre>
+<p>El <a href="#g-constructor">constructor</a> ahora recibe los datos iniciales
+(<code>name</code>, <code>height</code>, <code>days</code>) y los guarda: cada planta nace
+completa en una sola expresión, <code>Plant("Oak", 200.0, 365)</code>, lista para usar
+<code>grow()</code> sin más pasos. Las cinco plantas se fabrican dentro de una lista y un bucle
+las muestra todas.</p>
+<p><code>print("Created: ", end="")</code> imprime el prefijo sin salto de línea
+(<code>end</code> es lo que <code>print</code> añade al final, <code>"\n"</code> si no se dice
+nada), y a continuación <code>show()</code> completa la línea. Así se cumple la nota del
+enunciado: <code>show()</code> se usa sin cambiarlo. <code>grow</code> y <code>age</code> siguen
+en la clase aunque este programa no los llame: es la misma clase, mejorada, no una nueva.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Para qué sirve de verdad el
+constructor: garantizar que ningún <a href="#g-objeto">objeto</a> exista a medio hacer. En ex1
+había un momento en que la rosa existía con nombre vacío y altura 0; aquí no. Es la diferencia
+entre <code>malloc</code> + rellenar los campos a mano y una función <code>ft_lstnew</code> que
+devuelve el nodo ya inicializado. Y, de paso, que los objetos se pueden guardar en listas y
+recorrer como cualquier otro valor.</div>
+</div>
+
+<div class="card" id="ex4">
+<h2><span class="ex">ex4</span>ft_garden_security</h2>
+<div class="meta"><span>Entrega: <b>ft_garden_security.py</b></span><span>Autorizado: <b>print(), range(), round()</b></span></div>
+<pre><code>class Plant:
+	def __init__(self, name: str, height: float, age: int) -&gt; None:
+		self.name = name
+		self._height = height
+		self._age = age
+		if height &lt; 0 or age &lt; 0:
+			print(f"{self.name}: Error, height and age can't be negative")
+			if height &lt; 0:
+				self._height = 0.0
+			if age &lt; 0:
+				self._age = 0
+
+	def set_height(self, height: float) -&gt; None:
+		if height &gt;= 0:
+			self._height = height
+			print(f"Height updated: {self._height}cm")
+		else:
+			print(f"{self.name}: Error, height can't be negative")
+			print("Height update rejected")
+
+	def set_age(self, age: int) -&gt; None:
+		if age &gt;= 0:
+			self._age = age
+			print(f"Age updated: {self._age} days")
+		else:
+			print(f"{self.name}: Error, age can't be negative")
+			print("Age update rejected")
+
+	def get_height(self) -&gt; float:
+		return (self._height)
+
+	def get_age(self) -&gt; int:
+		return (self._age)
+
+	def show(self) -&gt; None:
+		print(f"{self.name}: {self._height}cm, {self._age} days old")
+
+	def grow(self, growth_amount: float) -&gt; None:
+		self._height = round(self._height + growth_amount, 1)
+		self.age(1)
+
+	def age(self, days: int) -&gt; None:
+		self._age += days
+
+
+def main() -&gt; None:
+	print("=== Garden Security System ===")
+	rose = Plant("Rose", 15.0, 10)
+	print("Plant created: ", end="")
+	rose.show()
+	rose.set_height(25.0)
+	rose.set_age(30)
+	rose.set_height(-25.0)
+	rose.set_age(-30)
+	print("Current state: ", end="")
+	rose.show()
+
+
+if __name__ == "__main__":
+	main()</code></pre>
+<pre><code>$&gt; python3 ft_garden_security.py
+=== Garden Security System ===
+Plant created: Rose: 15.0cm, 10 days old
+Height updated: 25.0cm
+Age updated: 30 days
+Rose: Error, height can't be negative
+Height update rejected
+Rose: Error, age can't be negative
+Age update rejected
+Current state: Rose: 25.0cm, 30 days old</code></pre>
+<p>La altura y la edad pasan a ser atributos <a href="#g-protegido">protegidos</a>,
+<code>_height</code> y <code>_age</code>, y solo se tocan a través de métodos de la clase. Los
+<a href="#g-getter-setter">setters</a> <code>set_height</code> y <code>set_age</code> validan
+antes de guardar: con un valor negativo imprimen el error y dejan el dato como estaba, que es lo
+que se ve en «Current state: Rose: 25.0cm, 30 days old». Los getters devuelven el valor sin
+más. El constructor también valida: si una planta nace con datos negativos, avisa y pone
+<code>0.0</code> o <code>0</code> en el dato malo («crear la planta con valores por defecto»,
+la otra opción que da el enunciado).</p>
+<p>Comparado con el ejemplo, cambian dos detalles que no se comprueban de forma estricta:
+«Height updated: 25.0cm» en lugar de «25cm» (porque se le pasa <code>25.0</code>) y faltan las
+líneas en blanco entre los bloques. Los paréntesis de <code>return (self._height)</code> son
+costumbre de la norma de C; en Python sobran, pero no molestan.</p>
+<p><b>Un hueco en la protección:</b> <code>grow</code> y <code>age</code> escriben directamente
+en <code>_height</code> y <code>_age</code> sin validar. <code>rose.grow(-50)</code> deja la
+rosa en <code>-35.0cm</code> y <code>rose.age(-100)</code> en <code>-89 days</code>, justo lo
+que el ejercicio quiere impedir. El enunciado no pide validar esos métodos, pero es fácil que en
+la evaluación te pregunten si se puede corromper la planta de otra manera.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La
+<a href="#g-encapsulacion">encapsulación</a>: un objeto no es solo un saco de datos, también
+es responsable de que esos datos tengan sentido. Y que en Python esa protección es un pacto
+entre programadores, no un muro: el guion bajo no impide escribir
+<code>rose._height = -1</code>, solo avisa de que no se debe. Lo que de verdad protege es que
+todo el código de la clase pase por los mismos puntos de control, y por eso conviene que todos
+los caminos que cambian un dato (también <code>grow</code>) pasen por su setter.</div>
+</div>
+
+<div class="card" id="ex5">
+<h2><span class="ex">ex5</span>ft_plant_types</h2>
+<div class="meta"><span>Entrega: <b>ft_plant_types.py</b></span><span>Autorizado: <b>super(), print(), range(), round()</b></span></div>
+<pre><code>class Plant:
+	def __init__(self, name: str, height: float, age: int) -&gt; None:
+		self.name = name
+		self._height = height
+		self._age = age
+		if height &lt; 0 or age &lt; 0:
+			print(f"{self.name}: Error, height and age can't be negative")
+			if height &lt; 0:
+				self._height = 0.0
+			if age &lt; 0:
+				self._age = 0
+
+	def set_height(self, height: float) -&gt; None:
+		if height &gt;= 0:
+			self._height = height
+			print(f"Height updated: {self._height}cm")
+		else:
+			print(f"{self.name}: Error, height can't be negative")
+			print("Height update rejected")
+
+	def set_age(self, age: int) -&gt; None:
+		if age &gt;= 0:
+			self._age = age
+			print(f"Age updated: {self._age} days")
+		else:
+			print(f"{self.name}: Error, age can't be negative")
+			print("Age update rejected")
+
+	def get_height(self) -&gt; float:
+		return (self._height)
+
+	def get_age(self) -&gt; int:
+		return (self._age)
+
+	def show(self) -&gt; None:
+		print(f"{self.name}: {self._height}cm, {self._age} days old")
+
+	def grow(self, growth_amount: float) -&gt; None:
+		self._height = round(self._height + growth_amount, 1)
+		self.age(1)
+
+	def age(self, days: int) -&gt; None:
+		self._age += days
+
+
+class Flower(Plant):
+	def __init__(
+			self, name: str, height: float, age: int,
+			color: str
+	) -&gt; None:
+		super().__init__(name, height, age)
+		self._color = color
+		self._bloom = False
+
+	def show(self) -&gt; None:
+		super().show()
+		print(f" Color: {self._color}")
+		if self._bloom:
+			print(f" {self.name} is blooming beautifully!")
+		else:
+			print(f" {self.name} has not bloomed yet")
+
+	def bloom(self) -&gt; None:
+		self._bloom = True
+
+
+class Tree(Plant):
+	def __init__(
+			self, name: str, height: float, age: int,
+			trunk_diameter: float
+	) -&gt; None:
+		super().__init__(name, height, age)
+		self._trunk_diameter = trunk_diameter
+
+	def produce_shade(self) -&gt; None:
+		print(
+			f"Tree {self.name} now produces a shade of {self._height}cm "
+			f"long and {self._trunk_diameter}cm wide."
+		)
+
+	def show(self) -&gt; None:
+		super().show()
+		print(f" Trunk diameter: {self._trunk_diameter}cm")
+
+
+class Vegetable(Plant):
+	def __init__(
+			self, name: str, height: float, age: int,
+			harvest_season: str
+	) -&gt; None:
+		super().__init__(name, height, age)
+		self._harvest_season = harvest_season
+		self._nutritional_value = 0
+
+	def show(self) -&gt; None:
+		super().show()
+		print(f" Harvest season: {self._harvest_season}")
+		print(f" Nutritional value: {self._nutritional_value}")
+
+	def age(self, days: int) -&gt; None:
+		super().age(days)
+		self._nutritional_value += days
+
+
+def main() -&gt; None:
+	print("=== Garden Plant Types ===")
+	print("=== Flower")
+	rose = Flower("Rose", 15.0, 10, "red")
+	rose.show()
+	print("[asking the rose to bloom]")
+	rose.bloom()
+	rose.show()
+	print()
+	print("=== Tree")
+	oak = Tree("Oak", 200.0, 365, 5.0)
+	oak.show()
+	print("[asking the oak to produce shade]")
+	oak.produce_shade()
+	print()
+	print("=== Vegetable")
+	tomato = Vegetable("Tomato", 5.0, 10, "April")
+	tomato.show()
+	print("[make tomato grow and age for 20 days]")
+	for _ in range(20):
+		tomato.grow(2.1)
+	tomato.show()
+
+
+if __name__ == "__main__":
+	main()</code></pre>
+<pre><code>$&gt; python3 ft_plant_types.py
+=== Garden Plant Types ===
+=== Flower
+Rose: 15.0cm, 10 days old
+ Color: red
+ Rose has not bloomed yet
+[asking the rose to bloom]
+Rose: 15.0cm, 10 days old
+ Color: red
+ Rose is blooming beautifully!
+
+=== Tree
+Oak: 200.0cm, 365 days old
+ Trunk diameter: 5.0cm
+[asking the oak to produce shade]
+Tree Oak now produces a shade of 200.0cm long and 5.0cm wide.
+
+=== Vegetable
+Tomato: 5.0cm, 10 days old
+ Harvest season: April
+ Nutritional value: 0
+[make tomato grow and age for 20 days]
+Tomato: 47.0cm, 30 days old
+ Harvest season: April
+ Nutritional value: 20</code></pre>
+<p><code>Plant</code> es la de ex4 sin cambios, y sobre ella se montan tres clases hijas por
+<a href="#g-herencia">herencia</a>: <code>Flower</code> (color y <code>bloom()</code>),
+<code>Tree</code> (diámetro del tronco y <code>produce_shade()</code>) y <code>Vegetable</code>
+(temporada de cosecha y valor nutricional, que empieza en 0). Ninguna repite el código común:
+cada constructor llama primero a <a href="#g-super"><code>super().__init__(...)</code></a> para
+que <code>Plant</code> guarde nombre, altura y edad (y los valide), y luego añade sus propios
+atributos.</p>
+<p>Las tres <a href="#g-override">sobrescriben</a> <code>show()</code> llamando primero a
+<code>super().show()</code>, que imprime la línea normal de planta, y añaden debajo sus
+características con un espacio delante. La firma de los constructores ocupa varias líneas
+(con la indentación extra de flake8) para no pasar de 79 caracteres.</p>
+<p>El tomate es el caso interesante. <code>Vegetable</code> sobrescribe <code>age()</code>: llama
+a la de <code>Plant</code> y además suma los días al valor nutricional. El bucle solo llama 20
+veces a <code>grow(2.1)</code>, pero <code>Plant.grow</code> termina con
+<code>self.age(1)</code>, y como <code>self</code> es un tomate se ejecuta
+<code>Vegetable.age</code>: por <a href="#g-polimorfismo">despacho dinámico</a>, 20 llamadas a
+<code>grow</code> dan 20 días más y 20 puntos de valor nutricional. 5.0 + 20 × 2.1 = 47.0, y
+sale exacto gracias al <a href="#g-float"><code>round</code></a> de cada paso (sin él serían
+<code>47.000000000000014</code>).</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — A organizar el código por
+parentesco: lo que comparten todas las plantas va una vez en la madre y cada hija solo escribe
+lo que la distingue. A extender un método sin copiarlo, con <code>super()</code>. Y la idea más
+potente de la orientación a objetos: el código de <code>Plant</code> llama a
+<code>self.age</code> sin saber qué clase de planta tiene delante, y aun así se ejecuta la
+versión correcta. En C eso exigiría guardar un puntero a función en cada struct.</div>
+</div>
+
+<div class="card" id="ex6">
+<h2><span class="ex">ex6</span>ft_garden_analytics</h2>
+<div class="meta"><span>Entrega: <b>ft_garden_analytics.py</b></span><span>Autorizado: <b>super(), print(), range(), round(), staticmethod(), classmethod()</b></span></div>
+<pre><code>class Plant:
+	class Stats:
+		def __init__(self) -&gt; None:
+			self._grow_calls = 0
+			self._age_calls = 0
+			self._show_calls = 0
+
+		def add_grow(self) -&gt; None:
+			self._grow_calls += 1
+
+		def add_age(self) -&gt; None:
+			self._age_calls += 1
+
+		def add_show(self) -&gt; None:
+			self._show_calls += 1
+
+		def display(self) -&gt; None:
+			print(
+				f"Stats: {self._grow_calls} grow, {self._age_calls} age, "
+				f"{self._show_calls} show"
+			)
+
+	def __init__(self, name: str, height: float, age: int) -&gt; None:
+		self.name = name
+		self._height = height
+		self._age = age
+		self._stats = Plant.Stats()
+		if (height &lt; 0 or age &lt; 0):
+			print("Error: Height and age must be greater or equal to 0")
+			if (height &lt; 0):
+				self._height = 0.0
+			if (age &lt; 0):
+				self._age = 0
+
+	def set_height(self, height: float) -&gt; None:
+		if height &gt;= 0:
+			self._height = height
+			print(f"Height updated: {self._height}cm")
+		else:
+			print(f"{self.name}: Error, height can't be negative")
+			print("Height update rejected")
+
+	def set_age(self, age: int) -&gt; None:
+		if age &gt;= 0:
+			self._age = age
+			print(f"Age updated: {self._age} days")
+		else:
+			print(f"{self.name}: Error, age can't be negative")
+			print("Age update rejected")
+
+	def get_height(self) -&gt; float:
+		return (self._height)
+
+	def get_age(self) -&gt; int:
+		return (self._age)
+
+	def get_stats(self) -&gt; "Plant.Stats":
+		return (self._stats)
+
+	def show(self) -&gt; None:
+		self._stats.add_show()
+		print(f"{self.name}: {self._height}cm, {self._age} days old")
+
+	def grow(self, growth_amount: float) -&gt; None:
+		self._stats.add_grow()
+		self._height = round(self._height + growth_amount, 1)
+
+	def age(self, days: int) -&gt; None:
+		self._stats.add_age()
+		self._age += days
+
+	@staticmethod
+	def older_year(days: int) -&gt; bool:
+		return (days &gt; 365)
+
+	@classmethod
+	def anonymous(cls) -&gt; "Plant":
+		return (cls("Unknown plant", 0.0, 0))
+
+
+class Flower(Plant):
+	def __init__(
+			self, name: str, height: float, age: int,
+			color: str
+	) -&gt; None:
+		super().__init__(name, height, age)
+		self._color = color
+		self._bloom = False
+
+	def show(self) -&gt; None:
+		super().show()
+		print(f" Color: {self._color}")
+		if (self._bloom):
+			print(f" {self.name} is blooming beautifully!")
+		else:
+			print(f" {self.name} has not bloomed yet")
+
+	def bloom(self) -&gt; None:
+		self._bloom = True
+
+
+class Seed(Flower):
+	def __init__(
+			self, name: str, height: float, age: int, color: str,
+			seed_number: int
+	) -&gt; None:
+		super().__init__(name, height, age, color)
+		self._seed_number = seed_number
+
+	def show(self) -&gt; None:
+		super().show()
+		if (self._bloom):
+			print(f" Seeds: {self._seed_number}")
+		else:
+			print(" Seeds: 0")
+
+
+class Tree(Plant):
+	class TreeStats(Plant.Stats):
+		def __init__(self) -&gt; None:
+			super().__init__()
+			self._shade_calls = 0
+
+		def add_shade(self) -&gt; None:
+			self._shade_calls += 1
+
+		def display(self) -&gt; None:
+			super().display()
+			print(f" {self._shade_calls} shade")
+
+	def __init__(
+			self, name: str, height: float, age: int,
+			trunk_diameter: float
+	) -&gt; None:
+		super().__init__(name, height, age)
+		self._trunk_diameter = trunk_diameter
+		self._tree_stats = Tree.TreeStats()
+		self._stats = self._tree_stats
+
+	def produce_shade(self) -&gt; None:
+		self._tree_stats.add_shade()
+		print(
+			f"Tree {self.name} now produces a shade of {self._height}cm "
+			f"long and {self._trunk_diameter}cm wide."
+		)
+
+	def show(self) -&gt; None:
+		super().show()
+		print(f" Trunk diameter: {self._trunk_diameter}cm")
+
+
+class Vegetable(Plant):
+	def __init__(
+			self, name: str, height: float, age: int,
+			harvest_season: str
+	) -&gt; None:
+		super().__init__(name, height, age)
+		self._harvest_season = harvest_season
+		self._nutritional_value = 0
+
+	def show(self) -&gt; None:
+		super().show()
+		print(f" Harvest season: {self._harvest_season}")
+		print(f" Nutritional value: {self._nutritional_value}")
+
+	def age(self, days: int) -&gt; None:
+		super().age(days)
+		self._nutritional_value += days
+
+
+def display_statistics(plant: Plant) -&gt; None:
+	print(f"[statistics for {plant.name}]")
+	plant.get_stats().display()
+
+
+def main() -&gt; None:
+	print("=== Garden statistics ===")
+	print("=== Check year-old")
+	print(f"Is 30 days more than a year? -&gt; {Plant.older_year(30)}")
+	print(f"Is 400 days more than a year? -&gt; {Plant.older_year(400)}")
+	print()
+	print("=== Flower")
+	rose = Flower("Rose", 15.0, 10, "red")
+	rose.show()
+	display_statistics(rose)
+	print("[asking the rose to grow and bloom]")
+	rose.grow(8.0)
+	rose.bloom()
+	rose.show()
+	display_statistics(rose)
+	print()
+	print("=== Tree")
+	oak = Tree("Oak", 200.0, 365, 5.0)
+	oak.show()
+	display_statistics(oak)
+	print("[asking the oak to produce shade]")
+	oak.produce_shade()
+	display_statistics(oak)
+	print()
+	print("=== Seed")
+	sunflower = Seed("Sunflower", 80.0, 45, "yellow", 42)
+	sunflower.show()
+	print("[make sunflower grow, age and bloom]")
+	sunflower.grow(30.0)
+	sunflower.age(20)
+	sunflower.bloom()
+	sunflower.show()
+	display_statistics(sunflower)
+	print()
+	print("=== Anonymous")
+	unknown = Plant.anonymous()
+	unknown.show()
+	display_statistics(unknown)
+
+
+if __name__ == "__main__":
+	main()</code></pre>
+<pre><code>$&gt; python3 ft_garden_analytics.py
+=== Garden statistics ===
+=== Check year-old
+Is 30 days more than a year? -&gt; False
+Is 400 days more than a year? -&gt; True
+
+=== Flower
+Rose: 15.0cm, 10 days old
+ Color: red
+ Rose has not bloomed yet
+[statistics for Rose]
+Stats: 0 grow, 0 age, 1 show
+[asking the rose to grow and bloom]
+Rose: 23.0cm, 10 days old
+ Color: red
+ Rose is blooming beautifully!
+[statistics for Rose]
+Stats: 1 grow, 0 age, 2 show
+
+=== Tree
+Oak: 200.0cm, 365 days old
+ Trunk diameter: 5.0cm
+[statistics for Oak]
+Stats: 0 grow, 0 age, 1 show
+ 0 shade
+[asking the oak to produce shade]
+Tree Oak now produces a shade of 200.0cm long and 5.0cm wide.
+[statistics for Oak]
+Stats: 0 grow, 0 age, 1 show
+ 1 shade
+
+=== Seed
+Sunflower: 80.0cm, 45 days old
+ Color: yellow
+ Sunflower has not bloomed yet
+ Seeds: 0
+[make sunflower grow, age and bloom]
+Sunflower: 110.0cm, 65 days old
+ Color: yellow
+ Sunflower is blooming beautifully!
+ Seeds: 42
+[statistics for Sunflower]
+Stats: 1 grow, 1 age, 2 show
+
+=== Anonymous
+Unknown plant: 0.0cm, 0 days old
+[statistics for Unknown plant]
+Stats: 0 grow, 0 age, 1 show</code></pre>
+<p>Las clases de ex5 ampliadas con todo lo que pide el enunciado:</p>
 <ul>
-  <li><b>ex3 — ft_plant_factory</b>: crear las plantas directamente con sus datos
-  iniciales mediante el constructor (al menos cinco) y mostrarlas.</li>
-  <li><b>ex4 — ft_garden_security</b>: encapsulación con atributos «protegidos»
-  (<code>_height</code>), getters y setters que rechazan alturas y edades negativas.</li>
-  <li><b>ex5 — ft_plant_types</b>: herencia — <code>Flower</code>, <code>Tree</code> y
-  <code>Vegetable</code> derivan de <code>Plant</code> y reutilizan su código con
-  <code>super()</code>.</li>
-  <li><b>ex6 — ft_garden_analytics</b>: métodos estáticos y de clase, una clase anidada para
-  estadísticas, una clase <code>Seed</code> que hereda de <code>Flower</code> y una función
-  que muestra estadísticas de cualquier planta.</li>
+  <li><b>Estadísticas en una <a href="#g-clase-anidada">clase anidada</a>.</b>
+  <code>Plant.Stats</code> guarda tres contadores protegidos y solo deja sumarles uno
+  (<code>add_grow</code>, <code>add_age</code>, <code>add_show</code>) o mostrarlos
+  (<code>display</code>): encapsulación. Cada planta crea la suya en el constructor y
+  <code>show</code>, <code>grow</code> y <code>age</code> la avisan cada vez que se llaman.
+  Ahora <code>grow</code> ya no llama a <code>age(1)</code>: si lo hiciera, la rosa marcaría
+  «1 grow, 1 age» cuando el ejemplo pide «1 grow, 0 age».</li>
+  <li><b><a href="#g-staticmethod">Método estático</a>.</b> <code>older_year(days)</code> no
+  necesita ninguna planta: compara con 365 y se llama sobre la clase,
+  <code>Plant.older_year(400)</code>. Usa la sintaxis de
+  <a href="#g-decorador">decorador</a>.</li>
+  <li><b><a href="#g-classmethod">Método de clase</a>.</b> <code>anonymous(cls)</code> fabrica
+  una planta «Unknown plant» de 0.0 cm y 0 días llamando a <code>cls(...)</code>.</li>
+  <li><b><code>Seed</code> hereda de <code>Flower</code></b>, que hereda de <code>Plant</code>:
+  una cadena de <a href="#g-herencia">herencia</a> de tres niveles. Su <code>show</code> añade
+  la línea de semillas a lo que ya imprime la flor: 0 mientras no ha florecido y las guardadas
+  (42) después.</li>
+  <li><b>Los árboles cuentan también la sombra.</b> <code>Tree.TreeStats</code> hereda de
+  <code>Plant.Stats</code>, añade un contador y <a href="#g-override">sobrescribe</a>
+  <code>display</code> para imprimir « 1 shade» debajo. El constructor de <code>Tree</code> crea
+  una <code>TreeStats</code> y la pone en <code>_stats</code>, sustituyendo la normal que acababa
+  de crear <code>Plant.__init__</code>, y guarda el mismo objeto en <code>_tree_stats</code>. Los
+  dos atributos apuntan al mismo objeto; el segundo existe para que <a href="#g-mypy">mypy</a>
+  acepte <code>add_shade()</code>, porque para él <code>_stats</code> es solo un
+  <code>Plant.Stats</code>.</li>
+  <li><b>Una función fuera de las clases para cualquier planta.</b>
+  <code>display_statistics(plant: Plant)</code> sirve igual para una rosa, un roble, un girasol
+  o la planta anónima, porque todas son <code>Plant</code> y todas tienen
+  <code>get_stats()</code>. Con el roble, <code>display()</code> es la versión de
+  <code>TreeStats</code>: <a href="#g-polimorfismo">polimorfismo</a> otra vez.</li>
 </ul>
+<p>La salida coincide línea a línea con el ejemplo del enunciado.</p>
+<p><b>Dos cosas que pueden salir en la evaluación:</b> como <code>grow</code> ya no llama a
+<code>age</code>, el tomate de esta versión solo gana valor nutricional con <code>age()</code>
+(en ex5 también crecía con <code>grow()</code>); y <code>anonymous</code> solo funciona llamada
+sobre <code>Plant</code>, porque <code>cls</code> es la clase con la que se llama y los
+constructores de las hijas piden un dato más: <code>Tree.anonymous()</code> lanza
+<code>TypeError: Tree.__init__() missing 1 required positional argument: 'trunk_diameter'</code>.
+Ninguna de las dos aparece en el programa, que funciona sin errores.</p>
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que los métodos no tienen por qué
+trabajar sobre un objeto: los hay del objeto (<code>self</code>), de la clase
+(<code>cls</code>) y de ninguno de los dos, y elegir uno u otro dice algo de lo que hace. Que un
+objeto puede contener otros objetos (la planta y sus estadísticas): composición, además de
+herencia. Y que todo junto funciona como un sistema: la evaluación avisa de que te pedirá
+explicar cómo interactúan las piezas, por ejemplo qué pasa exactamente, clase por clase, cuando
+se llama a <code>sunflower.show()</code> (<code>Seed.show</code> → <code>Flower.show</code> →
+<code>Plant.show</code>, que cuenta una vez).</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado. El enunciado avisa de que pueden pedirte explicar conceptos, enseñar las
+relaciones de herencia o ampliar el código en directo. Antes de mirar la respuesta, intenta
+contestar tú.</p>
+
+<h3>El programa</h3>
+<details id="q-name-main">
+<summary>¿Para qué sirve <code>if __name__ == "__main__":</code>?</summary>
+<p>Para que el código de prueba solo se ejecute cuando lanzas el fichero directamente. Si otro
+fichero lo importa, <code>__name__</code> vale el nombre del módulo y el bloque no se ejecuta:
+se puede reutilizar la clase <code>Plant</code> sin que imprima la demostración del huerto.
+→ <a href="#g-name-main">__name__</a>, <a href="#ex0">ex0</a></p>
+</details>
+<details id="q-shebang">
+<summary>Añade el shebang y ejecútalo sin escribir <code>python3</code>.</summary>
+<p>Primera línea <code>#!/usr/bin/env python3</code>, luego <code>chmod +x
+ft_garden_intro.py</code> y <code>./ft_garden_intro.py</code>. <code>env</code> busca
+<code>python3</code> en el <code>PATH</code>, así que vale en cualquier puesto.
+→ <a href="#g-shebang">Shebang</a></p>
+</details>
+<details id="q-round">
+<summary>¿Por qué usas <code>round()</code> en <code>grow</code>?</summary>
+<p>Porque 0.8 no es exacto en binario y el error se acumula: sin redondear, el tercer día saldría
+<code>27.400000000000002cm</code>. Redondear a un decimal en cada paso deja la altura en el valor
+que se espera. → <a href="#g-float">Coma flotante</a>, <a href="#ex2">ex2</a></p>
+</details>
+
+<h3>Clases y encapsulación</h3>
+<details id="q-self">
+<summary>¿Qué es <code>self</code> y qué hace <code>__init__</code>?</summary>
+<p><code>self</code> es el objeto sobre el que se llama el método: <code>rose.show()</code> es
+<code>Plant.show(rose)</code>. <code>__init__</code> es el constructor: Python lo llama solo al
+hacer <code>Plant(...)</code> para dejar el objeto con sus atributos listos. En ex1 no recibe
+datos y se rellenan después; desde ex3 los recibe y la planta nace completa.
+→ <a href="#g-self">self</a>, <a href="#ex1">ex1</a>, <a href="#ex3">ex3</a></p>
+</details>
+<details id="q-protegido">
+<summary>¿Por qué <code>_height</code> y no <code>__height</code>? ¿Se puede saltar?</summary>
+<p>El enunciado pide la convención «protegida», un solo guion bajo, y no el name mangling de dos.
+Sí se puede saltar (<code>rose._height = -1</code> funciona): es un pacto, no un muro. Lo que
+protege es que la clase solo cambie el dato tras validarlo en los setters.
+→ <a href="#g-protegido">Protegido</a>, <a href="#ex4">ex4</a></p>
+</details>
+<details id="q-negativo">
+<summary>¿Hay alguna forma de dejar una planta con altura negativa?</summary>
+<p>Sí, sin tocar los atributos: <code>grow</code> y <code>age</code> no validan, y
+<code>rose.grow(-50)</code> deja la rosa en <code>-35.0cm</code>. Se arreglaría haciendo que
+pasen por la misma validación que los setters. → <a href="#ex4">ex4</a></p>
+</details>
+
+<h3>Herencia</h3>
+<details id="q-super">
+<summary>¿Qué pasa si quitas <code>super().__init__(...)</code> del constructor de
+<code>Flower</code>?</summary>
+<p>Que nunca se ejecuta el <code>__init__</code> de <code>Plant</code>: la flor tendría color
+pero no <code>name</code>, <code>_height</code> ni <code>_age</code>, y <code>show()</code>
+fallaría con <code>AttributeError</code>. <code>super()</code> es lo que evita copiar el código
+común en cada hija. → <a href="#g-super">super()</a>, <a href="#ex5">ex5</a></p>
+</details>
+<details id="q-tomate">
+<summary>Si el bucle solo llama a <code>grow</code>, ¿por qué sube el valor nutricional del
+tomate?</summary>
+<p>Porque <code>Plant.grow</code> llama a <code>self.age(1)</code> y <code>self</code> es un
+<code>Vegetable</code>, así que se ejecuta su <code>age</code> sobrescrito, que suma también al
+valor nutricional. Python elige el método según la clase real del objeto.
+→ <a href="#g-polimorfismo">Polimorfismo</a>, <a href="#ex5">ex5</a></p>
+</details>
+<details id="q-arbol">
+<summary>Dibuja las relaciones de herencia de ex6.</summary>
+<p><code>Plant</code> ← <code>Flower</code> ← <code>Seed</code>; <code>Plant</code> ←
+<code>Tree</code>; <code>Plant</code> ← <code>Vegetable</code>. Y, aparte, las estadísticas:
+<code>Plant.Stats</code> ← <code>Tree.TreeStats</code>. Las clases <code>Stats</code> están
+anidadas, pero eso no es herencia: cada planta <em>tiene</em> un objeto de estadísticas.
+→ <a href="#ex6">ex6</a></p>
+</details>
+
+<h3>Métodos especiales</h3>
+<details id="q-static-class">
+<summary>¿Qué diferencia hay entre <code>@staticmethod</code> y <code>@classmethod</code>?</summary>
+<p>El estático no recibe ni objeto ni clase: <code>older_year</code> solo compara un número. El
+de clase recibe la clase en <code>cls</code> y puede fabricar objetos con ella:
+<code>anonymous</code> devuelve <code>cls("Unknown plant", 0.0, 0)</code>. Ninguno necesita una
+planta ya creada. → <a href="#g-staticmethod">Estático</a>,
+<a href="#g-classmethod">De clase</a>, <a href="#ex6">ex6</a></p>
+</details>
+<details id="q-display">
+<summary>¿Cómo muestra <code>display_statistics</code> la sombra solo en los árboles?</summary>
+<p>No lo decide ella: llama a <code>plant.get_stats().display()</code>, y el objeto de
+estadísticas de un árbol es un <code>TreeStats</code>, cuyo <code>display</code> sobrescrito
+añade la línea de sombra. La función funciona con cualquier planta sin preguntar su tipo.
+→ <a href="#ex6">ex6</a></p>
+</details>
+<details id="q-ampliar">
+<summary>Te piden en directo una nueva estadística, por ejemplo cuántas veces florece una flor.</summary>
+<p>El patrón ya está en el árbol: una clase de estadísticas hija de <code>Plant.Stats</code> con
+su contador y su <code>display</code>, puesta en el constructor de <code>Flower</code>, y una
+llamada a su <code>add_…</code> dentro de <code>bloom()</code>. → <a href="#ex6">ex6</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — Python Module 01 · <a href="../M2/202_Python_Module_00.html">← volver a Python Module 00</a></footer>

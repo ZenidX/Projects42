@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,12 +28,14 @@ qué es una macro, cómo se declara un <code>struct</code> y cómo se agrupan da
 6 ejercicios (ex00–ex05).</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft.h</a></li>
   <li><a href="#ex01">ex01 — ft_boolean.h</a></li>
   <li><a href="#ex02">ex02 — ft_abs.h</a></li>
   <li><a href="#ex03">ex03 — ft_point.h</a></li>
   <li><a href="#ex04">ex04 — ft_strs_to_tab</a></li>
   <li><a href="#ex05">ex05 — ft_show_tab</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>El preámbulo</b> — El enunciado abre con la entrada de Wikipedia sobre el
@@ -40,10 +44,222 @@ naturalistas europeos tomaron por una broma. Cierra con el clásico de la casa: 
 tiene nada que ver con el ornitorrinco". El guiño encaja con el módulo: la cabecera es esa pieza
 rara que no es del todo código ejecutable ni del todo documentación.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 08 casi no tiene funciones: tiene cabeceras, macros y tipos, y cada uno trae su vocabulario.
+Aquí está cada palabra explicada desde cero y con un ejemplo sacado del propio módulo. En el resto
+de la página, la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su
+entrada.</p>
+
+<h3>Del .c al ejecutable</h3>
+<details id="g-compilacion">
+<summary>Compilación por separado y enlazador</summary>
+<p>El compilador trabaja con <em>un</em> <code>.c</code> cada vez y lo convierte en un archivo
+objeto (<code>.o</code>) con el código máquina de sus funciones. Mientras compila
+<code>ft_show_tab.c</code> no ve nada de <code>ft_strs_to_tab.c</code>: para él, lo que no está en
+ese archivo (o en lo que ese archivo incluye) no existe. Después, el <em>enlazador</em> (linker)
+junta todos los <code>.o</code> y conecta cada llamada con la función que la resuelve.</p>
+<p>De ahí salen dos errores distintos: si usas una función sin declararla, se queja el compilador;
+si la declaras pero nadie la define, se queja el enlazador (<code>undefined reference</code>); y si
+la definen dos <code>.o</code>, también el enlazador (<code>multiple definition</code>). Las
+cabeceras existen para que cada <code>.c</code> sepa qué hay en los demás sin tener su código.</p>
+</details>
+<details id="g-preprocesador">
+<summary>Preprocesador</summary>
+<p>Un programa que pasa por el <code>.c</code> <em>antes</em> que el compilador y que solo hace
+trabajo de texto: obedece las líneas que empiezan por <code>#</code> (<code>#include</code>,
+<code>#define</code>, <code>#ifndef</code>…), las borra y entrega al compilador el texto resultante.
+No sabe nada de tipos ni de funciones: corta, pega y sustituye.</p>
+<p>Se puede ver lo que produce con <code>cc -E archivo.c</code>. Con el <code>main</code> de ex01,
+la línea <code>if (ft_is_even(argc - 1) == TRUE)</code> le llega al compilador como
+<code>if (ft_is_even(argc - 1) == 1)</code>: el compilador nunca llega a ver la palabra
+<code>TRUE</code>.</p>
+</details>
+<details id="g-include">
+<summary><code>#include</code>: comillas frente a <code>&lt; &gt;</code></summary>
+<p><code>#include</code> pega, en ese punto, el contenido entero del archivo indicado. Con comillas
+(<code>#include "ft_stock_str.h"</code>) se busca primero en la carpeta del propio <code>.c</code> (y
+en las que se añadan con <code>-I</code>); con ángulos (<code>#include &lt;unistd.h&gt;</code>), solo
+en las carpetas del sistema. Por convención, comillas para tus cabeceras y ángulos para las de la
+biblioteca estándar.</p>
+<p>En ex01 se ve para qué sirve: el <code>main</code> del enunciado llama a <code>write</code> sin
+incluir <code>&lt;unistd.h&gt;</code>; como incluye <code>ft_boolean.h</code> y esta incluye
+<code>&lt;unistd.h&gt;</code>, el prototipo de <code>write</code> acaba pegado igualmente antes del
+<code>main</code>.</p>
+</details>
+<details id="g-prototipo">
+<summary>Declaración, definición y prototipo</summary>
+<p>Una <em>definición</em> es la función entera, con su cuerpo entre llaves. Una
+<em>declaración</em> solo anuncia que existe: nombre, tipo de retorno y tipos de los parámetros,
+acabada en <code>;</code>. Esa declaración completa es el <em>prototipo</em>. Con él, el compilador
+ya puede comprobar que la llamas bien, aunque el código esté en otro archivo.</p>
+<p>ex00 entero son cinco prototipos, como <code>int	ft_strlen(char *str);</code>. Una función se
+puede declarar tantas veces como quieras, pero definirse solo una: por eso en un <code>.h</code> van
+declaraciones y no definiciones.</p>
+</details>
+<details id="g-cabecera">
+<summary>Archivo de cabecera (<code>.h</code>)</summary>
+<p>Un archivo pensado para ser incluido, no para compilarse solo. Reúne lo que varios
+<code>.c</code> necesitan compartir: prototipos, <code>typedef</code>, structs y macros. La «h» es
+de <em>header</em>, cabecera, porque se incluye al principio.</p>
+<p>En C 08 cada ejercicio, menos los dos últimos, es solo una cabecera: <code>ft.h</code>,
+<code>ft_boolean.h</code>, <code>ft_abs.h</code> y <code>ft_point.h</code>. Y
+<code>ft_stock_str.h</code> es la que comparten ex04 y ex05 para usar el mismo struct.</p>
+</details>
+<details id="g-guard">
+<summary>Include guard (guarda de inclusión)</summary>
+<p>Tres líneas del preprocesador que impiden que el contenido de una cabecera se pegue dos veces en
+el mismo <code>.c</code>:</p>
+<pre><code>#ifndef FT_H     /* si FT_H todavía no existe… */
+# define FT_H    /* …créalo… */
+…                /* …y deja pasar el contenido */
+#endif           /* la segunda vez FT_H ya existe y se salta todo */</code></pre>
+<p>Hace falta porque las cabeceras se incluyen unas a otras y es fácil que una llegue dos veces.
+Un prototipo repetido no molesta, pero un struct sí. Con el <code>ft_point.h</code> del repo, que no
+tiene guard, incluirlo dos veces da:</p>
+<pre><code>ft_point.h:13:16: error: redefinition of ‘struct s_point’</code></pre>
+<p>La Norma pide que la macro se llame como el archivo, en mayúsculas y con <code>_H</code>:
+<code>ft_boolean.h</code> → <code>FT_BOOLEAN_H</code>.</p>
+</details>
+
+<h3>Macros</h3>
+<details id="g-macro">
+<summary>Macro (<code>#define</code>)</summary>
+<p>Una regla de sustitución de texto para el preprocesador. Hay dos clases. La macro
+<em>constante</em> pone un nombre a un valor: con <code># define TRUE 1</code>, cada
+<code>TRUE</code> del código pasa a ser <code>1</code>. La macro <em>con parámetros</em> parece una
+función: con <code># define EVEN(x) ((x) % 2 == 0)</code>, <code>EVEN(nbr)</code> pasa a ser
+<code>((nbr) % 2 == 0)</code>.</p>
+<p>Pero no es una función: no hay llamada ni retorno, no se comprueban tipos y el argumento no se
+calcula antes, sino que se copia tal cual allí donde aparece el parámetro. Es rápida porque no
+existe en tiempo de ejecución, y peligrosa por lo mismo (ver las dos entradas siguientes).</p>
+</details>
+<details id="g-precedencia">
+<summary>Precedencia de operadores y los paréntesis de las macros</summary>
+<p>La <em>precedencia</em> decide qué operador se aplica primero cuando no hay paréntesis:
+<code>2 + 3 * 4</code> es 14 porque <code>*</code> va antes que <code>+</code>. El signo menos de
+delante (<code>-x</code>) va antes que la resta.</p>
+<p>En una macro eso muerde porque el argumento se pega como texto. Si <code>ABS</code> fuera
+<code>(x &lt; 0 ? -x : x)</code>, <code>ABS(a - b)</code> se convertiría en
+<code>(a - b &lt; 0 ? -a - b : a - b)</code>, y <code>-a - b</code> no es <code>-(a - b)</code>.
+Por eso cada parámetro va entre paréntesis y la expresión entera también:
+<code>((x) &lt; 0 ? -(x) : (x))</code>. Con eso, <code>ABS(2 - 7)</code> da 5.</p>
+</details>
+<details id="g-efecto-lateral">
+<summary>Efecto secundario y doble evaluación</summary>
+<p>Una expresión tiene un <em>efecto secundario</em> (o efecto lateral) cuando, además de dar un
+valor, cambia algo: <code>x++</code> vale <code>x</code> y además suma 1 a <code>x</code>; una
+llamada a <code>write</code> imprime.</p>
+<p>Si el parámetro de una macro aparece dos veces, el argumento se escribe dos veces y su efecto se
+produce dos veces. Con el <code>ABS</code> del repo y <code>x = -1</code>,
+<code>ABS(x++)</code> se expande a <code>((x++) &lt; 0 ? -(x++) : (x++))</code>: el primer
+<code>x++</code> compara −1 y deja <code>x</code> en 0, el segundo devuelve <code>-0</code> y deja
+<code>x</code> en 1. Ejecutado, imprime <code>0</code> y <code>x=1</code>: ni el valor absoluto de −1
+ni un solo incremento. Una función de verdad habría dado 1 y <code>x = 0</code>.</p>
+</details>
+<details id="g-ternario">
+<summary>Operador ternario <code>? :</code></summary>
+<p><code>condición ? a : b</code> vale <code>a</code> si la condición es cierta y <code>b</code> si no.
+Es un <code>if</code>/<code>else</code> que, en vez de ejecutar instrucciones, da un valor, y por eso
+cabe dentro de una expresión o de una macro. Se llama ternario porque es el único operador de C con
+tres operandos.</p>
+<p>Lo usan el <code>main</code> de ex01 (<code>(EVEN(nbr)) ? TRUE : FALSE</code>) y
+<code>ABS</code>. La Norma lo prohíbe en tu código; aquí se puede porque el enunciado lo pone y
+porque estos ejercicios se pasan con <code>-R CheckDefine</code>.</p>
+</details>
+<details id="g-checkdefine">
+<summary>Norminette y <code>-R CheckDefine</code></summary>
+<p>La <code>norminette</code> comprueba que el código cumple la Norma de 42, y la Moulinette la
+pasa antes de corregir: si da error, el ejercicio no puntúa. La Norma solo admite
+<code>#define</code> de constantes. Pasada sin flag, el <code>ft_abs.h</code> del repo da:</p>
+<pre><code>Error: MACRO_FUNC_FORBIDDEN (line:  13, col:  13):	Macro functions are forbidden
+Error: PREPROC_CONSTANT     (line:  13, col:  17):	Preprocessor statement must only contain constant defines
+Error: TERNARY_FBIDDEN      (line:  13, col:  26):	Ternaries are forbidden</code></pre>
+<p>Por eso el enunciado dice que ex01 y ex02 se pasan con <code>norminette -R CheckDefine</code>:
+con ese flag esas tres desaparecen y quedan las demás reglas, como el sangrado (ver la sección
+<a href="#q-norm-macro">de preguntas</a>).</p>
+</details>
+
+<h3>Tipos y memoria</h3>
+<details id="g-typedef">
+<summary><code>typedef</code> (alias de tipo)</summary>
+<p><code>typedef</code> da otro nombre a un tipo que ya existe. No crea un tipo nuevo: el compilador
+trata los dos nombres como el mismo. Sirve para que el código diga lo que significa el dato.</p>
+<p><code>typedef int t_bool;</code> hace que <code>t_bool</code> sea un <code>int</code> que, por el
+nombre, se lee como «sí o no». Y <code>typedef struct s_point {…} t_point;</code> permite escribir
+<code>t_point</code> en vez de <code>struct s_point</code>. La Norma pide el prefijo
+<code>t_</code> para los typedef y <code>s_</code> para los structs.</p>
+</details>
+<details id="g-struct">
+<summary><code>struct</code> (estructura)</summary>
+<p>Un tipo hecho a mano que junta varias variables, los <em>campos</em>, bajo un nombre. Se guardan
+seguidas en memoria, en el orden en que se declaran (el compilador puede dejar huecos de relleno
+entre ellas para alinearlas).</p>
+<p><code>t_point</code> tiene dos <code>int</code>, <code>x</code> e <code>y</code>.
+<code>t_stock_str</code> tiene un <code>int</code> y dos punteros: en una máquina de 64 bits ocupa
+16 bytes de datos y 4 de relleno tras <code>size</code>, 24 en total. Por eso el
+<code>malloc</code> de ex04 se escribe <code>sizeof(t_stock_str) * (ac + 1)</code> y no con
+números a mano.</p>
+</details>
+<details id="g-flecha">
+<summary>Los operadores <code>.</code> y <code>-&gt;</code></summary>
+<p>El punto accede a un campo de un struct: <code>point.x</code>. La flecha hace lo mismo a través de
+un puntero al struct: <code>point-&gt;x</code> es exactamente <code>(*point).x</code>, primero se va
+a la dirección y luego se coge el campo. Los paréntesis de <code>(*point).x</code> son obligatorios,
+porque el punto va antes que el asterisco.</p>
+<p>El <code>main</code> de ex03 usa la flecha porque <code>set_point</code> recibe un
+<code>t_point *</code>. En ex05 se usa el punto, <code>par[i].str</code>, porque
+<code>par[i]</code> ya es el struct, no un puntero.</p>
+</details>
+<details id="g-malloc">
+<summary>Memoria dinámica: <code>malloc</code> y <code>free</code></summary>
+<p><code>malloc(n)</code> reserva n bytes en el <em>heap</em>, una zona de memoria que no se libera
+sola al salir de la función, y devuelve su dirección, o <code>NULL</code> si no hay memoria.
+<code>free</code> devuelve esa memoria. Se usa cuando el tamaño no se sabe hasta que el programa
+corre, o cuando el dato tiene que sobrevivir a la función que lo crea.</p>
+<p>ex04 hace las dos cosas: el número de structs depende de <code>ac</code> y el array tiene que
+seguir vivo cuando <code>ft_strs_to_tab</code> termina, para que lo use <code>ft_show_tab</code>.
+Una variable local no serviría: desaparece con la función.</p>
+</details>
+<details id="g-centinela">
+<summary>Valor centinela</summary>
+<p>Un valor especial que marca el final de una secuencia, para no tener que guardar su longitud
+aparte. Quien la recorre avanza hasta encontrarlo. El <code>'\0'</code> de las cadenas y el
+<code>NULL</code> que hay tras el último <code>argv</code> son centinelas.</p>
+<p>En ex04 se reservan <code>ac + 1</code> structs y el último lleva <code>str = 0</code>. Así
+<code>ft_show_tab</code>, que solo recibe el puntero, sabe dónde parar. El centinela tiene que ser un
+valor que no pueda aparecer en los datos: <code>str = 0</code> sirve porque ningún argumento es un
+puntero nulo; <code>size == 0</code> no sirve, porque <code>""</code> es un argumento válido de
+longitud 0.</p>
+</details>
+<details id="g-off-by-one">
+<summary>Error por uno (off-by-one) y desbordamiento de buffer</summary>
+<p>Un error por uno es un bucle o una cuenta que se pasa o se queda corta en exactamente un
+elemento: <code>&lt;=</code> donde iba <code>&lt;</code>, olvidar el <code>+ 1</code> del
+<code>'\0'</code>… Si se pasa al escribir, escribe fuera de la memoria reservada: un
+<em>desbordamiento de buffer</em>. A veces no pasa nada visible, a veces se corrompe otro dato y
+el programa falla mucho después, lejos del error.</p>
+<p>Valgrind lo detecta aunque el programa parezca funcionar. Con el <code>ft_strifcpy</code> del
+repo dice <code>Invalid write of size 1</code> … <code>0 bytes after a block of size 4</code>: reserva
+<code>len + 1</code> bytes, copia <code>len + 1</code> (el bucle va hasta <code>&lt;=</code>) y luego
+escribe un <code>'\0'</code> más.</p>
+</details>
+<details id="g-fuga">
+<summary>Fuga de memoria (leak)</summary>
+<p>Memoria reservada con <code>malloc</code> que nadie libera y cuya dirección ya se ha perdido: no
+se puede recuperar hasta que el programa termina. En un programa corto no se nota; en uno que corre
+mucho tiempo se va comiendo la memoria. Se buscan con <code>valgrind --leak-check=full</code>.</p>
+<p>En ex04 hay <code>ac + 1</code> bloques: uno por cada <code>copy</code> y el del array. Quien
+llama a <code>ft_strs_to_tab</code> es quien tiene que liberarlos: primero cada <code>copy</code> y
+luego el array. Los <code>str</code> no, porque apuntan a <code>av</code>, que no se reservó con
+<code>malloc</code>.</p>
+</details>
+</div>
+
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft.h</h2>
 <div class="meta"><span>Entregable: <b>ft.h</b></span><span>Funciones autorizadas: <b>ninguna</b></span></div>
-<p>Crear un archivo de cabecera con los prototipos de cinco funciones:</p>
+<p>Crear un <a href="#g-cabecera">archivo de cabecera</a> con los <a href="#g-prototipo">prototipos</a> de cinco funciones:</p>
 <pre><code>#ifndef FT_H
 # define FT_H
 
@@ -57,11 +273,11 @@ int	ft_strcmp(char *s1, char *s2);
 <div class="trasfondo"><b>Por qué existen los <code>.h</code></b> — El compilador de C procesa cada
 <code>.c</code> por separado y no sabe nada de las funciones que viven en otro archivo. Un
 <em>prototipo</em> es una promesa: "esta función existe, se llama así y tiene estos tipos". El
-<code>#include "ft.h"</code> no es magia — el <strong>preprocesador</strong> literalmente pega el
+<a href="#g-include"><code>#include "ft.h"</code></a> no es magia — el <a href="#g-preprocesador"><strong>preprocesador</strong></a> literalmente pega el
 contenido del <code>.h</code> en el punto del <code>#include</code> antes de compilar. Por eso una
 cabecera solo debe declarar, no definir: si dos <code>.c</code> incluyen el mismo <code>.h</code>
-con código dentro, ese código se duplica y el enlazador se queja. El <code>#ifndef FT_H</code> /
-<code>#define FT_H</code> / <code>#endif</code> es el <em>include guard</em>: si un mismo archivo
+con código dentro, ese código se duplica y el <a href="#g-compilacion">enlazador</a> se queja. El <code>#ifndef FT_H</code> /
+<code>#define FT_H</code> / <code>#endif</code> es el <a href="#g-guard"><em>include guard</em></a>: si un mismo archivo
 se incluye dos veces (algo habitual con cabeceras que se incluyen entre sí), la segunda vez la
 macro <code>FT_H</code> ya está definida y todo el bloque se salta. Sin él, redefiniciones y
 errores. La Norma exige el guard con el nombre del archivo en mayúsculas.</div>
@@ -84,29 +300,29 @@ y funcionar: cuenta si el número de argumentos es par o impar.</p>
 typedef int	t_bool;</code></pre>
 <p>La cabecera aporta todo lo que el <code>main</code> usa sin definir: el tipo <code>t_bool</code>
 (un simple <code>int</code> con nombre con intención), las constantes <code>TRUE</code>/<code>FALSE</code>/<code>SUCCESS</code>,
-los mensajes y la macro <code>EVEN</code>. Incluye <code>&lt;unistd.h&gt;</code> porque el
+los mensajes y la <a href="#g-macro">macro</a> <code>EVEN</code>. Incluye <a href="#g-include"><code>&lt;unistd.h&gt;</code></a> porque el
 <code>main</code> llama a <code>write</code> sin incluirlo él mismo.</p>
 <div class="trasfondo"><b>Macros y <code>typedef</code></b> — Una macro <code>#define</code> es
-sustitución de texto pura, antes de compilar: donde ponga <code>EVEN(x)</code> el preprocesador
+sustitución de texto pura, antes de compilar: donde ponga <code>EVEN(x)</code> el <a href="#g-preprocesador">preprocesador</a>
 escribe <code>((x) % 2 == 0)</code>. No es una función: no hay llamada, no hay tipos, no hay coste
-en tiempo de ejecución. El <code>typedef int t_bool</code> no crea un tipo nuevo, solo un
+en tiempo de ejecución. El <a href="#g-typedef"><code>typedef int t_bool</code></a> no crea un tipo nuevo, solo un
 <em>alias</em>: sirve para que el código se lea con intención (<code>t_bool</code> dice "esto es un
-sí/no", aunque por dentro sea un entero). El flag <code>-R CheckDefine</code> hace que la
+sí/no", aunque por dentro sea un entero). El flag <a href="#g-checkdefine"><code>-R CheckDefine</code></a> hace que la
 norminette vigile expresamente el estilo de las macros: constantes en mayúsculas y bien formadas.</div>
 </div>
 
 <div class="card" id="ex02">
 <h2><span class="ex">ex02</span>ft_abs.h</h2>
 <div class="meta"><span>Entregable: <b>ft_abs.h</b></span><span>Norminette: <b>-R CheckDefine</b></span></div>
-<p>Una sola macro que sustituye su parámetro por su valor absoluto:</p>
+<p>Una sola <a href="#g-macro">macro</a> que sustituye su parámetro por su valor absoluto:</p>
 <pre><code># define ABS(Value) (((Value) &lt; 0) ? -(Value) : (Value))</code></pre>
 <div class="trasfondo"><b>Los paréntesis no son decorado</b> — En una macro, cada aparición del
 parámetro <strong>tiene que ir entre paréntesis</strong>, y el resultado entero también. Como la
 macro es sustitución de texto, <code>ABS(a - b)</code> sin paréntesis se expandiría a
-<code>-a - b</code> (que no es <code>-(a-b)</code>) y romper la precedencia. Con
+<code>-a - b</code> (que no es <code>-(a-b)</code>) y romper la <a href="#g-precedencia">precedencia</a>. Con
 <code>-(Value)</code> y el paréntesis exterior, la expansión respeta el operando completo. Es el
 peligro clásico de las macros frente a las funciones: no evalúan argumentos, copian texto. Por eso
-también <code>ABS(x++)</code> incrementaría <code>x</code> dos veces — una macro no es una función,
+también <a href="#g-efecto-lateral"><code>ABS(x++)</code></a> incrementaría <code>x</code> dos veces — una macro no es una función,
 aunque lo parezca.</div>
 </div>
 
@@ -120,12 +336,12 @@ aunque lo parezca.</div>
 	int	x;
 	int	y;
 }	t_point;</code></pre>
-<div class="trasfondo"><b>Structs: agrupar datos en memoria</b> — Un <code>struct</code> es un
+<div class="trasfondo"><b>Structs: agrupar datos en memoria</b> — Un <a href="#g-struct"><code>struct</code></a> es un
 molde para poner varias variables juntas bajo un mismo nombre, contiguas en memoria. Aquí un
 <code>t_point</code> ocupa dos <code>int</code> seguidos; <code>point.x</code> es el primero y
 <code>point.y</code> el siguiente. El detalle de estilo 42: la estructura se llama
-<code>s_point</code> y el alias <code>t_point</code> (prefijos <code>s_</code> de <em>struct</em> y
-<code>t_</code> de <em>type</em>). El <code>-&gt;</code> del <code>main</code> es azúcar para
+<code>s_point</code> y el <a href="#g-typedef">alias</a> <code>t_point</code> (prefijos <code>s_</code> de <em>struct</em> y
+<code>t_</code> de <em>type</em>). El <a href="#g-flecha"><code>-&gt;</code></a> del <code>main</code> es azúcar para
 "desreferencia el puntero y accede al campo": <code>point-&gt;x</code> es <code>(*point).x</code>.
 Entender que un struct es solo memoria contigua es la base de todo lo que viene después: arrays de
 structs, listas enlazadas, y la gestión manual de memoria.</div>
@@ -134,7 +350,7 @@ structs, listas enlazadas, y la gestión manual de memoria.</div>
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>ft_strs_to_tab</h2>
 <div class="meta"><span>Entregable: <b>ft_strs_to_tab.c</b></span><span>Funciones: <b>malloc, free</b></span></div>
-<p>Transformar un array de cadenas (los argumentos) en un array de estructuras
+<p>Transformar un array de cadenas (los argumentos) en un array de <a href="#g-struct">estructuras</a>
 <code>t_stock_str</code>, cada una con el tamaño de la cadena, la cadena original y una copia:</p>
 <pre><code>typedef struct s_stock_str
 {
@@ -142,9 +358,9 @@ structs, listas enlazadas, y la gestión manual de memoria.</div>
 	char	*str;
 	char	*copy;
 }	t_stock_str;</code></pre>
-<p>Se reserva memoria para <code>ac + 1</code> estructuras; la última hace de centinela con
+<p>Se reserva memoria para <code>ac + 1</code> estructuras; la última hace de <a href="#g-centinela">centinela</a> con
 <code>str = 0</code> para marcar el final. La copia se hace con un <code>ft_strdup</code> propio
-(reservar <code>len + 1</code> y copiar carácter a carácter). Si algún <code>malloc</code> falla,
+(reservar <code>len + 1</code> y copiar carácter a carácter). Si algún <a href="#g-malloc"><code>malloc</code></a> falla,
 se devuelve <code>NULL</code>.</p>
 <div class="trasfondo"><b>Array de structs y el centinela</b> — Aquí se juntan dos ideas: reservar
 memoria dinámica (<code>malloc</code>) para un número de elementos que no se sabe hasta ejecución,
@@ -159,7 +375,7 @@ trabajo.</div>
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>ft_show_tab</h2>
 <div class="meta"><span>Entregable: <b>ft_show_tab.c</b></span><span>Funciones: <b>write</b></span></div>
-<p>Recorrer el array creado por el ejercicio anterior y mostrar, por cada estructura: la cadena, su
+<p>Recorrer el array creado por el ejercicio anterior y mostrar, por cada <a href="#g-struct">estructura</a>: la cadena, su
 tamaño y la copia, cada uno seguido de un salto de línea.</p>
 <pre><code>while (par[i].str)
 {
@@ -171,12 +387,118 @@ tamaño y la copia, cada uno seguido de un salto de línea.</p>
 	write(1, "\n", 1);
 	i++;
 }</code></pre>
-<div class="trasfondo"><b>Recorrer hasta el centinela</b> — El bucle no necesita saber cuántos
+<div class="trasfondo"><b>Recorrer hasta el <a href="#g-centinela">centinela</a></b> — El bucle no necesita saber cuántos
 elementos hay: avanza mientras <code>par[i].str</code> no sea <code>NULL</code>, que es justo la
 marca de fin que dejó <code>ft_strs_to_tab</code>. Este par de ejercicios (ex04 construye, ex05
 consume) es el primer contacto con el patrón productor/consumidor sobre una estructura de datos
 propia, y con el hecho de que solo se dispone de <code>write</code>: no hay <code>printf</code>,
 así que hay que escribir a mano un <code>ft_putnbr</code> para imprimir el tamaño dígito a dígito.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: cabeceras, macros, structs y memoria, y puntos
+débiles del código del repo. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Cabeceras</h3>
+<details id="q-guard">
+<summary>¿Para qué sirven el <code>#ifndef</code>, el <code># define</code> y el <code>#endif</code>?</summary>
+<p>Son el include guard: la primera vez que se incluye la cabecera definen la macro
+(<code>FT_H</code>) y dejan pasar el contenido; la segunda vez la macro ya existe y se salta todo.
+Sin él, un struct incluido dos veces no compila: <code>redefinition of ‘struct s_point’</code>.
+→ <a href="#ex00">ex00</a>, <a href="#g-guard">include guard</a></p>
+</details>
+<details id="q-solo-declarar">
+<summary>¿Por qué en un <code>.h</code> van prototipos y no el código de las funciones?</summary>
+<p>Porque <code>#include</code> pega el archivo entero en cada <code>.c</code> que lo incluye. Si
+llevara definiciones, cada <code>.o</code> tendría su copia de la función y el enlazador fallaría con
+<code>multiple definition</code>. Declarar se puede muchas veces; definir, una.
+→ <a href="#ex00">ex00</a>, <a href="#g-compilacion">compilación por separado</a></p>
+</details>
+
+<h3>Macros</h3>
+<details id="q-macro-funcion">
+<summary>¿Qué diferencia hay entre la macro <code>ABS</code> y una función <code>ft_abs</code>?</summary>
+<p>La macro es texto que el preprocesador pega antes de compilar: no hay llamada, no se comprueban
+tipos y el argumento se copia cada vez que aparece el parámetro, sin calcularse antes. Con
+<code>x = -1</code>, <code>ABS(x++)</code> da 0 y deja <code>x</code> en 1, porque el
+<code>x++</code> se ejecuta dos veces. → <a href="#ex02">ex02</a>,
+<a href="#g-efecto-lateral">doble evaluación</a></p>
+</details>
+<details id="q-parentesis">
+<summary>¿Por qué <code>ABS</code> lleva tantos paréntesis?</summary>
+<p>Para que el argumento y el resultado se comporten como un solo valor sea cual sea la expresión
+que se pase. Sin ellos, <code>ABS(a - b)</code> calcularía <code>-a - b</code>, y
+<code>2 * ABS(x)</code> mezclaría el <code>*</code> con la condición del <a href="#g-ternario">ternario</a>.
+→ <a href="#ex02">ex02</a>, <a href="#g-precedencia">precedencia</a></p>
+</details>
+<details id="q-norm-macro">
+<summary>¿Una macro con parámetros pasa la norminette?</summary>
+<p>No con la norminette normal: da <code>MACRO_FUNC_FORBIDDEN</code> y
+<code>PREPROC_CONSTANT</code>, y el ternario <code>TERNARY_FBIDDEN</code>. Por eso el enunciado
+manda pasar ex01 y ex02 con <code>-R CheckDefine</code>, y la Moulinette también lo hace. Con ese
+flag quedan las demás reglas: el <code>ft_abs.h</code> del repo sigue dando
+<code>TOO_MANY_WS</code> por el espacio de <code># define</code> fuera de un guard, y
+<code>ft_boolean.h</code>, <code>TAB_REPLACE_SPACE</code> por el tabulador de
+<code>typedef	int</code>. → <a href="#g-checkdefine">-R CheckDefine</a></p>
+</details>
+
+<h3>Structs y memoria</h3>
+<details id="q-flecha">
+<summary>¿Por qué en ex03 se escribe <code>point-&gt;x</code> y en ex05 <code>par[i].str</code>?</summary>
+<p>Porque en ex03 <code>point</code> es un puntero a <code>t_point</code>, y la flecha es
+«desreferencia y coge el campo»: <code>(*point).x</code>. En ex05 <code>par[i]</code> ya es el
+struct (los corchetes ya desreferencian), así que basta el punto. → <a href="#ex03">ex03</a>,
+<a href="#g-flecha">. y -&gt;</a></p>
+</details>
+<details id="q-ac-mas-uno">
+<summary>¿Por qué reservas <code>ac + 1</code> structs y cómo sabe <code>ft_show_tab</code> dónde parar?</summary>
+<p>El de más es el centinela: el enunciado pide que el último tenga <code>str</code> a 0.
+<code>ft_show_tab</code> solo recibe el puntero, sin la longitud, y avanza hasta encontrarlo.
+→ <a href="#ex04">ex04</a>, <a href="#g-centinela">centinela</a></p>
+</details>
+<details id="q-leaks">
+<summary>¿Quién libera la memoria de <code>ft_strs_to_tab</code>, y qué hay que liberar?</summary>
+<p>Quien la llama, porque la función devuelve el array. Hay que hacer un <code>free</code> de cada
+<code>copy</code> y otro del array, en ese orden (si liberas antes el array pierdes los punteros a
+las copias). Los <code>str</code> no se liberan: apuntan a <code>av</code>. Y si un
+<code>malloc</code> falla a mitad, lo correcto es liberar lo ya reservado antes de devolver
+<code>NULL</code>. → <a href="#g-fuga">fuga de memoria</a></p>
+</details>
+
+<h3>Puntos débiles del código del repo (mejor tener la respuesta preparada)</h3>
+<details id="q-null">
+<summary>¿Qué devuelve tu <code>ft_strs_to_tab</code> si falla un <code>malloc</code>?</summary>
+<p>El enunciado pide <code>NULL</code>, pero el código del repo no comprueba ningún
+<code>malloc</code>: si falla el del array, escribe en la dirección 0 y el programa muere; si falla
+el de una copia, lo hace <code>ft_strifcpy</code>. Hay que comprobar cada uno. La versión de la
+tarjeta lo describe así. → <a href="#ex04">ex04</a>, <a href="#g-malloc">malloc</a></p>
+</details>
+<details id="q-off-by-one">
+<summary>¿Pasa valgrind tu <code>ft_strs_to_tab</code>?</summary>
+<p>No sin errores: <code>ft_strifcpy(av[i], 0, size)</code> reserva <code>size + 1</code> bytes,
+copia <code>size + 1</code> (el bucle llega hasta <code>i &lt;= fin - ini</code>) y luego escribe el
+<code>'\0'</code> en la posición <code>size + 1</code>, un byte fuera. Valgrind lo marca como
+<code>Invalid write of size 1</code>. La salida por pantalla es correcta, y por eso no se nota.
+→ <a href="#g-off-by-one">error por uno</a></p>
+</details>
+<details id="q-vacia">
+<summary>¿Qué pasa si uno de los argumentos es la cadena vacía <code>""</code>?</summary>
+<p>Con el código del repo, <code>ft_show_tab</code> se para ahí: su bucle es
+<code>while (par[i].size)</code> y no <code>while (par[i].str)</code>. Ejecutado con
+<code>./t hola "" mundo</code>, muestra <code>./t</code> y <code>hola</code> y no llega a
+<code>mundo</code>. El centinela que fija el enunciado es <code>str == 0</code>.
+→ <a href="#ex05">ex05</a>, <a href="#g-centinela">centinela</a></p>
+</details>
+<details id="q-odd">
+<summary>¿Tienes también una macro <code>ODD</code>?</summary>
+<p>El enunciado no la pide, pero el test avisa de que se pregunta en la defensa. En el repo está
+como <code># define ODD(X) ((x) % 2 !=0)</code>: el parámetro es <code>X</code> y el cuerpo usa
+<code>x</code>, así que en cuanto se usa <code>ODD(3)</code> no compila
+(<code>‘x’ undeclared</code>). Mientras nadie la use no se nota, porque una macro solo se comprueba
+al expandirse. → <a href="#g-macro">macro</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 08 · <a href="011_c09.html">continuar con C 09 →</a></footer>

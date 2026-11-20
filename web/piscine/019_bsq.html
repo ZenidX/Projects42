@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -26,6 +28,7 @@ Makefile, varios ficheros de entrada, entrada estándar, validación estricta y 
 que no perdona.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#struct">t_map — el estado del programa</a></li>
   <li><a href="#main">main — uno o varios mapas</a></li>
   <li><a href="#leer">ft_read_file — leer el mapa</a></li>
@@ -34,6 +37,7 @@ que no perdona.</p>
   <li><a href="#solver">ft_bsq_isolver — buscar el cuadrado</a></li>
   <li><a href="#pintar">ft_print_map — pintar y escribir</a></li>
   <li><a href="#ojo">Ojo: lo que se escapa</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>El enunciado</b> — Programa <code>bsq</code>; funciones autorizadas
@@ -59,11 +63,243 @@ A diferencia de los rushes, este lo corrige la Moulinette. El código está en
 <code>packs/piscine/019_bsq/repo/</code> y la salida de arriba es la del programa tal
 cual.</div>
 
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>BSQ es el primer programa completo de la piscine, y la página usa palabras de cómo C habla con
+el sistema, de cómo se gestiona la memoria y de cómo se mide lo que cuesta un algoritmo. Aquí está
+cada una explicada desde cero y con un ejemplo sacado del propio BSQ. En el resto de la página, la
+primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Leer, escribir y guardar el mapa</h3>
+<details id="g-fd">
+<summary>Descriptor de fichero, entrada y salida estándar</summary>
+<p>Un <em>descriptor</em> es el número con el que el sistema identifica un fichero abierto por el
+programa. <code>open</code> devuelve uno nuevo (o -1 si falla) y desde ahí <code>read</code>,
+<code>write</code> y <code>close</code> trabajan con ese número, no con el nombre. Todo proceso
+nace con tres ya abiertos: el 0 es la <em>entrada estándar</em> (stdin), el 1 la <em>salida
+estándar</em> (stdout) y el 2 la <em>salida de error</em> (stderr).</p>
+<p>BSQ aprovecha que la lectura no distingue de dónde viene el descriptor: sin argumentos llama a
+<code>ft_map_from_fd(0)</code>, así que <code>./bsq &lt; mapa</code> y <code>cat mapa | ./bsq</code>
+funcionan con el mismo código que un fichero; con argumentos, <code>ft_read_map</code> solo añade el
+<code>open</code> y el <code>close</code>. Todo lo que escribe, incluido <code>map error</code>, va
+por el 1.</p>
+</details>
+<details id="g-syscall">
+<summary>Llamada al sistema</summary>
+<p>Una función que no hace el trabajo ella misma sino que se lo pide al núcleo del sistema
+operativo: <code>open</code>, <code>read</code>, <code>write</code> y <code>close</code> lo son.
+Cada llamada supone cambiar del programa al núcleo y volver, así que tiene un coste fijo
+apreciable aunque mueva un solo byte.</p>
+<p>Por eso <code>ft_print_map</code> escribe cada fila de una vez: según el comentario del código,
+en un mapa de 300×300 son 600 <code>write</code> (fila y salto) en lugar de 90 000, uno por
+celda.</p>
+</details>
+<details id="g-buffer">
+<summary>Buffer</summary>
+<p>Una zona de memoria de tamaño fijo donde se dejan los datos de paso, entre quien los produce y
+quien los usa. <code>read(fd, buf, n)</code> llena como mucho <code>n</code> bytes y devuelve
+cuántos ha leído de verdad: 0 al final del fichero, -1 si hay error.</p>
+<p><code>ft_read_file</code> usa <code>char buffer[256]</code> y lee como mucho 255 bytes, para
+dejar sitio al <code>'\0'</code> que pone en <code>buffer[n]</code> antes de pegar el trozo con
+<code>ft_strfreecat</code>.</p>
+</details>
+<details id="g-terminador">
+<summary>Terminador nulo</summary>
+<p>En C una cadena es una fila de <code>char</code> que acaba en el byte <code>'\0'</code>. No se
+guarda la longitud: el final se sabe porque ahí está el cero, y cada reserva necesita un byte más
+que los caracteres visibles.</p>
+<p><code>ft_strfreecat</code> reserva <code>ft_strlen(s1) + ft_strlen(s2) + 1</code> por ese
+byte, y <code>ft_strifcpy</code>, <code>fin - ini + 1</code>. <code>read</code> no pone el cero:
+lo añade <code>ft_read_file</code> a mano.</p>
+</details>
+<details id="g-malloc">
+<summary>Memoria dinámica: <code>malloc</code> y <code>free</code></summary>
+<p><code>malloc(n)</code> pide al sistema un bloque de <code>n</code> bytes que vive hasta que
+alguien lo devuelve con <code>free</code>; si no hay memoria, devuelve <code>NULL</code>. Hace
+falta cuando el tamaño no se conoce al compilar, como el de un mapa que llega de un fichero.</p>
+<p>En BSQ cada fila del mapa es un bloque, el array de filas es otro y el <code>t_map</code>, otro
+más. La cadena con el fichero entero se va rehaciendo: <code>ft_strfreecat</code> reserva una
+nueva, copia y hace <code>free</code> de la anterior.</p>
+</details>
+<details id="g-fuga">
+<summary>Fuga de memoria y valgrind</summary>
+<p>Una <em>fuga</em> (<em>leak</em>) es memoria reservada con <code>malloc</code> que ya no se
+puede liberar porque no queda ningún puntero hacia ella. Valgrind ejecuta el programa vigilando
+cada reserva y cada liberación, y al final dice lo que quedó sin liberar.</p>
+<p>En BSQ todo camino de error pasa por <code>ft_parse_error</code>, que libera el split y la
+estructura. Con <code>valgrind --leak-check=full</code>, tanto un mapa válido seguido de un fichero
+que no existe como un mapa con filas desiguales acaban en «All heap blocks were freed -- no leaks
+are possible».</p>
+</details>
+<details id="g-centinela">
+<summary>Centinela (el <code>NULL</code> final de un array)</summary>
+<p>Un valor especial que marca el final de una secuencia, para no tener que guardar su longitud
+aparte. El <code>'\0'</code> es el centinela de las cadenas; en un array de punteros se usa
+<code>NULL</code>.</p>
+<p><code>ft_split</code> devuelve un <code>char **</code> acabado en <code>NULL</code>, y
+<code>ft_arrlen</code> y <code>ft_free_split</code> lo recorren hasta ahí. Por eso BSQ comprueba
+que haya exactamente <code>height + 1</code> líneas antes de validar: si faltaran, el bucle hasta
+<code>map[height]</code> leería el <code>NULL</code> y seguiría fuera del array.</p>
+</details>
+<details id="g-split">
+<summary>Split (partir una cadena)</summary>
+<p>Partir una cadena en trozos usando unos caracteres separadores, y devolver los trozos en un
+array. La versión de la piscine (C 07) junta los separadores seguidos: entre dos separadores
+pegados no sale un trozo vacío, sino nada.</p>
+<p><code>ft_split(map_str, "\n")</code> convierte el fichero en líneas: <code>map[0]</code> es la
+cabecera y las demás, las filas. Que funda los <code>'\n'</code> seguidos es cómodo, pero hace
+que una línea vacía en medio del mapa desaparezca en vez de dar error.</p>
+</details>
+<details id="g-cabecera">
+<summary>Cabecera (del mapa)</summary>
+<p>La primera línea de un fichero cuando no es dato sino descripción de lo que viene detrás. Es
+un patrón muy común en formatos de fichero: primero se dice cómo leer y después llegan los
+datos.</p>
+<p>En BSQ la cabecera <code>9.ox</code> dice: 9 filas, <code>'.'</code> vacío, <code>'o'</code>
+obstáculo y <code>'x'</code> lleno. Los símbolos se reconocen por su <em>posición</em> (los tres
+últimos caracteres), no por no ser dígitos.</p>
+</details>
+<details id="g-ascii">
+<summary>ASCII y caracteres imprimibles</summary>
+<p>ASCII asigna un número de 0 a 127 a cada carácter. Del 32 (el espacio) al 126 (<code>~</code>)
+son <em>imprimibles</em>: se ven en pantalla. Por debajo del 32 están los de control
+(<code>'\n'</code> es el 10, el tabulador el 9) y el 127 es DEL.</p>
+<p><code>ft_check_obj</code> exige que los tres símbolos estén entre 32 y 126 y sean distintos.
+El enunciado recuerda que el espacio y los dígitos también son imprimibles, así que
+<code>2 #x</code> (vacío el espacio) es una cabecera válida.</p>
+</details>
+
+<h3>El algoritmo y su coste</h3>
+<details id="g-fuerza-bruta">
+<summary>Fuerza bruta</summary>
+<p>Resolver un problema probando todas las posibilidades, sin ninguna idea que descarte
+candidatos. Es fácil de escribir y de demostrar correcto, pero el coste se dispara.</p>
+<p>En BSQ, la fuerza bruta pura sería: para cada casilla y para cada lado posible, revisar todo el
+cuadrado desde cero. <code>ft_bsq_isolver</code> parte de esa idea (cada casilla vacía es una
+posible esquina superior izquierda) pero no la aplica a ciegas: la poda.</p>
+</details>
+<details id="g-poda">
+<summary>Poda</summary>
+<p>Descartar candidatos sin examinarlos, porque se sabe de antemano que no pueden mejorar la
+mejor solución encontrada. Es lo que convierte una fuerza bruta en algo usable.</p>
+<p><code>ft_bsq_isolver</code> poda dos veces: empieza a probar desde el récord + 1 (un cuadrado
+igual o menor no serviría) y, si un cuadrado tiene un obstáculo, deja esa esquina (todos los
+mayores desde ahí también lo tendrían). <code>ft_validate_sq</code> lo señala poniendo
+<code>*tmp = -1</code>.</p>
+</details>
+<details id="g-cuadratico">
+<summary>Coste cuadrático</summary>
+<p>Un coste que crece con el cuadrado del tamaño de la entrada: el doble de datos, cuatro veces el
+trabajo. Suele salir de repetir, para cada elemento nuevo, un trabajo proporcional a todo lo
+anterior. Se escribe O(n²).</p>
+<p>La lectura de BSQ lo es: cada <code>ft_strfreecat</code> copia todo lo acumulado para añadir 255
+bytes. Con un fichero de 1 MB son unas 4000 lecturas y, de media, medio megabyte copiado en cada
+una: unos 2000 millones de bytes copiados para leer un millón.</p>
+</details>
+<details id="g-pd">
+<summary>Programación dinámica</summary>
+<p>Resolver un problema guardando las soluciones de subproblemas pequeños y construyendo con ellas
+las de los grandes, en lugar de recalcularlas. Es la solución clásica de BSQ, aunque este código
+no la usa.</p>
+<p>La idea: para cada casilla, el lado del mayor cuadrado que <em>acaba</em> en ella (esquina
+inferior derecha) es 0 si es obstáculo, y si no, 1 + el mínimo de los de arriba, izquierda y
+arriba-izquierda. Con el mapa</p>
+<pre><code>.....        1 1 1 1 1
+..o..        1 2 0 1 2
+.....        1 2 1 1 2
+.....        1 2 2 2 2</code></pre>
+<p>el máximo es 2, y el primero en orden de lectura cae en la segunda fila, segunda columna: el
+cuadrado de las filas 1–2 y columnas 1–2, el mismo que pinta BSQ (<code>xx...</code> /
+<code>xxo..</code>). Una sola pasada, coste proporcional al número de casillas.</p>
+</details>
+<details id="g-desempate">
+<summary>Desempate por orden de recorrido</summary>
+<p>Cuando varias soluciones son igual de buenas, la regla que elige una. Si el recorrido ya visita
+los candidatos en el orden de preferencia, basta con quedarse con el primero: no hace falta
+comparar posiciones.</p>
+<p>BSQ recorre fila a fila y, en cada fila, de izquierda a derecha, y solo cambia el récord con
+<code>map-&gt;sq[2] &lt; *tmp</code> (menor estricto). Un cuadrado del mismo tamaño encontrado
+después está más abajo o más a la derecha, y nunca sustituye al primero.</p>
+</details>
+<details id="g-valla">
+<summary>Problema de la valla (<em>fencepost</em>)</summary>
+<p>Para una valla de 10 tramos hacen falta 11 postes: los separadores son uno menos (o uno más)
+que las cosas que separan. Es la fuente de los errores «por uno» más comunes.</p>
+<p>Con varios ficheros, BSQ pone una línea en blanco <em>entre</em> salidas: con 3 mapas, 2 líneas.
+Por eso <code>main</code> escribe el salto antes de cada mapa salvo el primero
+(<code>if (i &gt; 1)</code>), y no después de cada uno.</p>
+</details>
+
+<h3>C, compilación y reglas de 42</h3>
+<details id="g-struct">
+<summary>Struct y typedef</summary>
+<p>Un <code>struct</code> agrupa varias variables bajo un nombre; <code>typedef</code> le da un
+alias para no escribir <code>struct s_map</code> cada vez. Con un puntero a la estructura, los
+campos se leen con <code>-&gt;</code>: <code>map-&gt;height</code> es <code>(*map).height</code>.</p>
+<p><code>t_map</code> reúne los símbolos, las filas, el ancho, el alto y el mejor cuadrado. Así
+cada función recibe un solo parámetro con todo el estado.</p>
+</details>
+<details id="g-array-param">
+<summary>Arrays como parámetro</summary>
+<p>En C un array no se pasa entero a una función: se pasa la dirección de su primer elemento. Por
+eso escribir <code>int i[2]</code> en un parámetro es lo mismo que <code>int *i</code>, y la
+función puede leer y cambiar el array de quien la llama.</p>
+<p><code>ft_validate_sq(t_map *map, int i[2], int *tmp)</code> recibe la fila y la columna en
+<code>i</code> y el lado por puntero, para poder devolver el −1. Usar arrays de dos enteros
+(<code>i[2]</code>, <code>j[2]</code>) es también un truco para respetar el límite de cinco variables
+por función de la Norma.</p>
+</details>
+<details id="g-atoi">
+<summary>atoi</summary>
+<p>Convierte el principio de una cadena en un entero: salta espacios, lee un signo opcional y
+acumula dígitos hasta el primer carácter que no lo es. Decide ella sola dónde para.</p>
+<p>BSQ usa su propio <code>ft_atoi</code> sobre la cabecera entera. Con <code>9.ox</code> se para en
+el <code>'.'</code> y da 9; con <code>21ox</code> (2 filas, vacío <code>'1'</code>) sigue por el
+<code>'1'</code> y da 21.</p>
+</details>
+<details id="g-desbordamiento">
+<summary>Desbordamiento de entero</summary>
+<p>Un <code>int</code> de 32 bits va de −2 147 483 648 a 2 147 483 647. Si una operación con signo
+se sale de ese rango, el resultado es comportamiento indefinido: en la práctica suele dar la vuelta
+y salir un número sin sentido.</p>
+<p><code>ft_atoi</code> no lo comprueba: una cabecera con un número de 11 cifras desborda dentro de
+<code>r * 10</code>. El enunciado dice que la altura puede ser «cualquier valor de int válido», así
+que una altura mayor no tiene que funcionar, pero tampoco hay un control explícito.</p>
+</details>
+<details id="g-makefile">
+<summary>Makefile y relink</summary>
+<p><code>make</code> lee las reglas del Makefile (objetivo, dependencias y comandos) y solo rehace
+lo que esté más viejo que aquello de lo que depende. <em>Relink</em> es volver a enlazar el
+ejecutable sin que haya cambiado nada, y el enunciado lo prohíbe.</p>
+<p>En BSQ, un segundo <code>make</code> responde <code>make: Nothing to be done for 'all'.</code>
+Como la regla patrón es <code>%.o: %.c bsq.h</code>, tocar <code>bsq.h</code> recompila todos los
+objetos y vuelve a enlazar, que es lo correcto.</p>
+</details>
+<details id="g-norma">
+<summary>Norma y norminette</summary>
+<p>La Norma es el estilo obligatorio de 42: funciones de 25 líneas como mucho, cuatro parámetros y
+cinco variables por función, sin <code>for</code> ni <code>switch</code>, cabecera de 42 en cada
+fichero… <code>norminette</code> es el programa que la comprueba, y un error es un 0.</p>
+<p>Todos los <code>.c</code> y el <code>.h</code> de BSQ pasan <code>norminette</code> sin errores.
+La Norma explica varias decisiones del código, como el <code>t_map</code> que lo lleva todo o los
+índices en arrays <code>i[2]</code>.</p>
+</details>
+<details id="g-moulinette">
+<summary>Moulinette</summary>
+<p>El corrector automático de 42: compila la entrega con <code>cc -Wall -Wextra -Werror</code>, la
+pasa por la norminette y la ejecuta contra sus propias pruebas. No se discute con ella: un fallo es
+un fallo.</p>
+<p>A diferencia de los rushes, BSQ lo corrige la Moulinette, y el enunciado avisa de que es «muy
+estricta y meticulosa». Además hay defensa, en la que cada persona del grupo tiene que entender
+todo el proyecto.</p>
+</details>
+</div>
+
 <div class="card" id="struct">
 <h2><span class="ex">bsq.h</span>t_map</h2>
 <div class="meta"><span>Entrega: <b>bsq.h</b></span><span>Autorizado: <b>open, close, read, write, malloc, free, exit</b></span></div>
-<p>Todo lo que se sabe de un mapa viaja en una sola estructura. Dos decisiones que conviene
-tener en la cabeza para leer el resto: <code>map[0]</code> es la <em>cabecera</em> (las filas
+<p>Todo lo que se sabe de un mapa viaja en una sola <a href="#g-struct">estructura</a>. Dos decisiones que conviene
+tener en la cabeza para leer el resto: <code>map[0]</code> es la <a href="#g-cabecera"><em>cabecera</em></a> (las filas
 van de <code>map[1]</code> a <code>map[height]</code>), y el mejor cuadrado se guarda como
 fila, columna y lado en <code>sq[3]</code>.</p>
 <pre><code>/*
@@ -81,7 +317,7 @@ typedef struct s_map
 }	t_map;</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A diseñar el estado antes que las
 funciones. Con una estructura bien pensada, cada función recibe un <code>t_map *</code> y la
-Norma (máximo cuatro parámetros) deja de ser un problema. Dejar la cabecera en
+<a href="#g-norma">Norma</a> (máximo cuatro parámetros) deja de ser un problema. Dejar la cabecera en
 <code>map[0]</code> evita copiar el mapa, a cambio de que todos los índices de fila empiecen en
 1.</div>
 </div>
@@ -105,7 +341,7 @@ pudo leer o no es válido) solo escribe el error; si no, resuelve, pinta y liber
 		ft_run_map(ft_read_map(argv[i]));
 		i++;
 	}</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — El problema de la valla otra vez
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — <a href="#g-valla">El problema de la valla</a> otra vez
 (C00): la línea en blanco va <em>entre</em> salidas, así que se escribe antes de cada mapa
 menos del primero. Y que cada mapa es independiente: un fichero que no existe en medio de la
 lista da su <code>map error</code> y el programa sigue con el siguiente.</div>
@@ -115,8 +351,8 @@ lista da su <code>map error</code> y el programa sigue con el siguiente.</div>
 <h2><span class="ex">leer</span>ft_read_file, ft_map_from_fd y ft_read_map</h2>
 <div class="meta"><span>Entrega: <b>ft_read_file_map.c</b>, <b>ft_str_utils.c</b></span><span>Autorizado: <b>open, read, close, malloc, free</b></span></div>
 <p>La lectura es la misma idea que en el Rush 02 (de hecho <code>ft_split.c</code> es idéntico):
-leer a trozos de 255 bytes y pegarlos con <code>ft_strfreecat</code>, que devuelve un bloque
-nuevo y libera el anterior. La lectura está separada en dos niveles para que la entrada estándar
+leer a <a href="#g-buffer">trozos de 255 bytes</a> y pegarlos con <code>ft_strfreecat</code>, que devuelve un bloque
+nuevo y libera el anterior. La lectura está separada en dos niveles para que la <a href="#g-fd">entrada estándar</a>
 y los ficheros compartan código: <code>ft_map_from_fd</code> trabaja con cualquier descriptor, y
 <code>ft_read_map</code> solo añade el <code>open</code> y el <code>close</code>.</p>
 <pre><code>	map_str = ft_strifcpy("", 0, 0);
@@ -130,12 +366,12 @@ y los ficheros compartan código: <code>ft_map_from_fd</code> trabaja con cualqu
 		n = read(fd, buffer, sizeof(buffer) - 1);
 	}</code></pre>
 <p>Ojo: cada vuelta copia <em>todo</em> lo acumulado para añadir 255 bytes, así que el coste
-crece con el cuadrado del tamaño del fichero. En un mapa de 1000×1000 generado con el script del
+<a href="#g-cuadratico">crece con el cuadrado</a> del tamaño del fichero. En un mapa de 1000×1000 generado con el script del
 enunciado (1 MB, unas 4000 lecturas), el programa tarda unos 6 segundos, y prácticamente todo
 ese tiempo es la lectura: el mismo mapa con una línea de más, que se rechaza justo después de
 leerlo, tarda lo mismo.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la entrada no siempre cabe en
-un buffer fijo y hay que crecer bajo demanda. Y que crecer de 255 en 255 bytes copiando todo
+un buffer fijo y hay que <a href="#g-malloc">crecer bajo demanda</a>. Y que crecer de 255 en 255 bytes copiando todo
 cada vez es cuadrático: con el diccionario del Rush 02 no se nota; con un mapa de un megabyte,
 sí. BSQ es el primer proyecto donde el rendimiento se ve sin medir.</div>
 </div>
@@ -143,8 +379,8 @@ sí. BSQ es el primer proyecto donde el rendimiento se ve sin medir.</div>
 <div class="card" id="cabecera">
 <h2><span class="ex">cabecera</span>ft_parse_header y ft_check_obj</h2>
 <div class="meta"><span>Entrega: <b>ft_parse_header.c</b></span><span>Autorizado: <b>ninguna</b></span></div>
-<p>Los tres últimos caracteres de la primera línea son vacío, obstáculo y lleno; todo lo de
-delante tiene que ser dígitos. <code>ft_check_obj</code> exige que los tres sean imprimibles
+<p>Los tres últimos caracteres de la <a href="#g-cabecera">primera línea</a> son vacío, obstáculo y lleno; todo lo de
+delante tiene que ser dígitos. <code>ft_check_obj</code> exige que los tres sean <a href="#g-ascii">imprimibles</a>
 (32 a 126) y distintos entre sí, y <code>ft_is_pos</code> convierte una altura de 0 o negativa
 en 0, que es el «no válido».</p>
 <pre><code>	h = map-&gt;map[0];
@@ -159,7 +395,7 @@ en 0, que es el «no válido».</p>
 	map-&gt;height = ft_is_pos(ft_atoi(h));
 	return (map-&gt;height != 0);</code></pre>
 <p>Ojo: <code>ft_only_digits</code> mira solo los <code>len - 3</code> primeros caracteres, pero
-<code>ft_atoi(h)</code> lee la cabecera <em>entera</em> mientras haya dígitos. El enunciado
+<a href="#g-atoi"><code>ft_atoi(h)</code></a> lee la cabecera <em>entera</em> mientras haya dígitos. El enunciado
 recuerda que un dígito es un carácter válido para el mapa: con la cabecera
 <code>21ox</code> (2 líneas, vacío <code>'1'</code>), <code>ft_atoi</code> lee 21 y el mapa sale
 como <code>map error</code>. Bastaría con no dejar que la conversión pase de
@@ -173,9 +409,9 @@ contrato no coincide del todo con lo que necesitas: atoi decide sola dónde para
 <div class="card" id="validar">
 <h2><span class="ex">validar</span>ft_parse_map y ft_validate_map</h2>
 <div class="meta"><span>Entrega: <b>ft_parse_map.c</b>, <b>ft_split.c</b></span><span>Autorizado: <b>malloc</b>, <b>free</b></span></div>
-<p>El fichero se parte por <code>'\n'</code>; la cabecera tiene que ser válida y el número de
+<p>El fichero <a href="#g-split">se parte por <code>'\n'</code></a>; la cabecera tiene que ser válida y el número de
 líneas tiene que coincidir exactamente con lo prometido. Ese conteo, como explica el propio
-comentario del código, protege dos cosas: que <code>ft_validate_map</code> no se salga del array
+comentario del código, protege dos cosas: que <code>ft_validate_map</code> no <a href="#g-centinela">se salga del array</a>
 si faltan líneas y que no se acepten líneas de sobra.</p>
 <pre><code>	map-&gt;map = ft_split(map_str, "\n");
 	if (!map-&gt;map || ft_arrlen(map-&gt;map) &lt; 2)
@@ -197,8 +433,8 @@ obstáculos. El carácter «lleno» dentro del mapa también es error: lo pone e
 			j++;
 		}</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que la mitad de la nota de BSQ son
-mapas inválidos. La Moulinette prueba cabeceras raras, líneas desiguales, caracteres extraños y
-ficheros vacíos, y cada uno tiene que acabar en <code>map error</code> sin fugas: por eso todo
+mapas inválidos. La <a href="#g-moulinette">Moulinette</a> prueba cabeceras raras, líneas desiguales, caracteres extraños y
+ficheros vacíos, y cada uno tiene que acabar en <code>map error</code> <a href="#g-fuga">sin fugas</a>: por eso todo
 camino de error pasa por <code>ft_parse_error</code>, que libera el split y la estructura.</div>
 </div>
 
@@ -233,12 +469,12 @@ esquina también). Si no, y es mayor que el récord, se guarda.</p>
 		map-&gt;sq[1] = i[1];
 		map-&gt;sq[2] = *tmp;
 	}</code></pre>
-<p>El desempate del enunciado sale solo: como se recorre en orden de lectura y el récord solo
+<p>El <a href="#g-desempate">desempate</a> del enunciado sale solo: como se recorre en orden de lectura y el récord solo
 se sustituye con <code>&lt;</code> estricto, un cuadrado del mismo tamaño encontrado más tarde
 (más abajo o más a la derecha) nunca reemplaza al primero. Los límites del <code>while</code>
 garantizan que el cuadrado no se salga por abajo ni por la derecha.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — A razonar sobre el coste. Comprobar
-cada casilla con cada tamaño desde cero sería inviable; esta solución poda de dos formas
+cada casilla con cada tamaño <a href="#g-fuerza-bruta">desde cero sería inviable</a>; esta solución <a href="#g-poda">poda de dos formas</a>
 (empezar por el récord + 1 y abandonar al primer obstáculo). Aun así, cada casilla vacía revisa
 un cuadrado de (récord + 1)² celdas, así que el coste depende de lo grande que sea la respuesta.
 En los mapas de prueba de 1000×1000 con obstáculos la búsqueda es rápida; lo lento es leer. Y
@@ -260,8 +496,8 @@ bucles no entran y el mapa sale tal cual.</p>
 		ft_putstr("\n");
 		i++;
 	}</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <code>write</code> es una llamada
-al sistema y cada una cuesta. El comentario del código lo cuantifica: en un mapa de 300×300, 600
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que <code>write</code> es una <a href="#g-syscall">llamada
+al sistema</a> y cada una cuesta. El comentario del código lo cuantifica: en un mapa de 300×300, 600
 llamadas en vez de 90 000. Es la misma lección que <code>ft_print_comb2</code> (C00) componiendo
 un buffer de 5 bytes, a otra escala.</div>
 </div>
@@ -272,20 +508,129 @@ un buffer de 5 bytes, a otra escala.</div>
 <ul>
 <li><b>Cabecera con dígitos como símbolo.</b> Ver <a href="#cabecera">la cabecera</a>:
 <code>21ox</code> da <code>map error</code> en un mapa válido.</li>
-<li><b>Líneas vacías.</b> <code>ft_split</code> funde los <code>'\n'</code> seguidos, así que una
+<li><b>Líneas vacías.</b> <a href="#g-split"><code>ft_split</code> funde</a> los <code>'\n'</code> seguidos, así que una
 línea vacía desaparece en lugar de dar error. <code>1.ox</code> seguido de una línea vacía y de
 <code>...</code> se acepta como mapa de una línea.</li>
 <li><b>Último salto de línea.</b> Por la misma razón, un mapa cuya última línea no acaba en
 <code>'\n'</code> se acepta, aunque el enunciado dice que las líneas van separadas por saltos de
 línea.</li>
-<li><b>Lectura cuadrática.</b> Ver <a href="#leer">la lectura</a>: unos 6 s para 1 MB.</li>
-<li><b>Salida del error.</b> <code>map error</code> va a la salida estándar. Este enunciado no dice
-por qué descriptor debe salir; conviene comprobar qué espera la Moulinette.</li>
+<li><b><a href="#g-cuadratico">Lectura cuadrática</a>.</b> Ver <a href="#leer">la lectura</a>: unos 6 s para 1 MB.</li>
+<li><b>Salida del error.</b> <code>map error</code> va a <a href="#g-fd">la salida estándar</a>. Este enunciado no dice
+por qué descriptor debe salir; conviene comprobar qué espera la <a href="#g-moulinette">Moulinette</a>.</li>
 </ul>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en un proyecto con Moulinette
 los casos límite no son un extra: son el examen. Un split que «limpia» las líneas vacías es
 cómodo para parsear, pero borra justo la información que hace falta para rechazar un mapa
 mal formado.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: el algoritmo, entrada y errores, memoria y
+entrega, y puntos débiles. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>El algoritmo</h3>
+<details id="q-algoritmo">
+<summary>Explícame cómo encuentras el cuadrado.</summary>
+<p>Recorro el mapa en orden de lectura. Cada casilla vacía es una posible esquina superior
+izquierda: desde ella pruebo cuadrados empezando por el récord + 1 y voy creciendo mientras no
+me salga del mapa. Si un cuadrado tiene un obstáculo, abandono esa esquina; si no y es mayor que el
+récord, guardo fila, columna y lado en <code>sq[3]</code>. → <a href="#solver">ft_bsq_isolver</a></p>
+</details>
+<details id="q-desempate">
+<summary>Si hay dos cuadrados igual de grandes, ¿cuál pintas y dónde está ese código?</summary>
+<p>El de más arriba y, entre esos, el de más a la izquierda, como pide el enunciado. No hay
+código específico: sale del orden de recorrido y de que el récord solo se cambia con
+<code>&lt;</code> estricto, así que un empate encontrado después nunca reemplaza al primero.
+→ <a href="#solver">ft_bsq_isolver</a></p>
+</details>
+<details id="q-coste">
+<summary>¿Es rápido? ¿Conoces otra forma de hacerlo?</summary>
+<p>La búsqueda poda bastante (récord + 1 y corte al primer obstáculo), y en mapas de 1000×1000 con
+obstáculos va rápida; lo lento es la lectura. La alternativa clásica es la programación dinámica:
+el lado del cuadrado que acaba en cada casilla es 1 + el mínimo de sus tres vecinos de arriba e
+izquierda, en una sola pasada. → <a href="#solver">ft_bsq_isolver</a>,
+<a href="#g-pd">programación dinámica</a></p>
+</details>
+
+<h3>Entrada y errores</h3>
+<details id="q-invalido">
+<summary>¿Qué mapas dan <code>map error</code>?</summary>
+<p>Cabecera de menos de 4 caracteres, con algo que no sean dígitos delante de los símbolos, con
+símbolos no imprimibles o repetidos, o con altura 0; un número de líneas distinto del de la
+cabecera; filas de distinto ancho; caracteres que no sean vacío u obstáculo (también el
+de lleno); un fichero vacío o que no se puede abrir. → <a href="#cabecera">la cabecera</a>,
+<a href="#validar">la validación</a></p>
+</details>
+<details id="q-stdin">
+<summary>¿Qué hace sin argumentos? ¿Y con varios ficheros, si uno no existe?</summary>
+<p>Sin argumentos lee un único mapa del descriptor 0, así que vale <code>./bsq &lt; mapa</code> o
+<code>cat mapa | ./bsq</code>. Con varios, cada fichero va por separado con una línea en blanco
+entre salidas: el que no existe saca su <code>map error</code> y el programa sigue con el
+siguiente. → <a href="#main">main</a>, <a href="#leer">la lectura</a></p>
+</details>
+<details id="q-limites">
+<summary>¿Cómo sabes que el cuadrado no se sale del mapa?</summary>
+<p>Por las condiciones del <code>while</code>: antes de crecer, <code>tmp &lt;= height - i[0]</code>
+y <code>tmp &lt; width - i[1]</code>, así que tras el <code>tmp++</code> el cuadrado llega como mucho a
+la última fila y la última columna. Y el mapa ya está validado: todas las filas miden
+<code>width</code> y hay exactamente <code>height</code>. → <a href="#solver">ft_bsq_isolver</a></p>
+</details>
+
+<h3>Memoria y entrega</h3>
+<details id="q-leaks">
+<summary>¿Hay leaks, también cuando el mapa es inválido?</summary>
+<p>No. Todo error de parseo pasa por <code>ft_parse_error</code>, que libera el split y la
+estructura, y los mapas válidos se liberan en <code>ft_run_map</code> tras pintarlos. Valgrind no da
+fugas ni con un mapa válido seguido de un fichero que no existe ni con un mapa de filas desiguales.
+→ <a href="#validar">la validación</a>, <a href="#g-fuga">fugas</a></p>
+</details>
+<details id="q-relink">
+<summary>¿Tu Makefile hace relink? ¿Y si cambio <code>bsq.h</code>?</summary>
+<p>No: un segundo <code>make</code> dice <code>Nothing to be done for 'all'</code>. Como cada
+<code>.o</code> depende de su <code>.c</code> y de <code>bsq.h</code>, tocar la cabecera recompila
+todo, que es lo que debe pasar. Tiene <code>all</code>, <code>clean</code>, <code>fclean</code>,
+<code>re</code> y <code>.PHONY</code>. → <a href="#g-makefile">Makefile y relink</a></p>
+</details>
+<details id="q-funciones">
+<summary>¿Usas alguna función no autorizada? ¿Pasa la norminette?</summary>
+<p>No. El ejecutable solo importa <code>open</code>, <code>close</code>, <code>read</code>,
+<code>write</code>, <code>malloc</code> y <code>free</code> (lo comprueba <code>nm -u bsq</code>);
+<code>ft_atoi</code>, <code>ft_split</code> y <code>ft_strlen</code> son propias. Todos los ficheros
+pasan la norminette. → <a href="#struct">t_map</a>, <a href="#g-norma">la Norma</a></p>
+</details>
+
+<h3>Puntos débiles (mejor tener la respuesta preparada)</h3>
+<details id="q-digito">
+<summary>¿Funciona un mapa cuyo carácter vacío es un dígito?</summary>
+<p>No. Con la cabecera <code>21ox</code> (2 filas, vacío <code>'1'</code>), <code>ft_atoi</code> lee
+21 y el mapa sale como <code>map error</code>. La comprobación de dígitos mira solo los
+<code>len - 3</code> primeros caracteres, pero la conversión no se para ahí. → <a href="#cabecera">la
+cabecera</a></p>
+</details>
+<details id="q-vacias">
+<summary>¿Qué pasa con una línea vacía en medio del mapa?</summary>
+<p>Que se acepta: <code>ft_split</code> funde los <code>'\n'</code> seguidos y la línea desaparece.
+<code>1.ox</code>, una línea vacía y <code>...</code> se resuelve como mapa de una fila. Lo mismo
+con un mapa cuya última línea no acaba en <code>'\n'</code>. → <a href="#ojo">lo que se
+escapa</a></p>
+</details>
+<details id="q-lento">
+<summary>¿Por qué tarda unos segundos con un mapa grande?</summary>
+<p>Por la lectura, no por la búsqueda: cada trozo de 255 bytes se pega copiando todo lo leído hasta
+entonces, y eso es cuadrático en el tamaño del fichero. Se arreglaría leyendo trozos mucho más
+grandes o duplicando la reserva cada vez que se llena. → <a href="#leer">la lectura</a></p>
+</details>
+
+<h3>Sobre el trabajo</h3>
+<details id="q-grupo">
+<summary>Es un proyecto en grupo: ¿qué hizo cada uno?</summary>
+<p>Esta te la tienes que preparar tú. El enunciado avisa de que cada persona del grupo debe
+entender todo el proyecto y de que se comprobará en la defensa, así que cualquiera puede tener que
+explicar la lectura, la validación o el algoritmo. Un cambio en directo probable: aceptar dígitos
+como símbolos o rechazar las líneas vacías.</p>
+</details>
 </div>
 
 <footer>42.zenidx.com — BSQ · fin de la piscine · <a href="../index.html#cursus">continuar con el cursus →</a></footer>

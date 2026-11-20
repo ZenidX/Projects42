@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sistema zen — 42.zenidx.com</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="logo" href="index.html">42.zenidx.com</a>
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="index.html#piscine">Piscine</a>
+      <a href="index.html#cursus">Cursus</a>
+      <a href="galaxia.html">Galaxia</a>
+      <a href="zen.html" class="active">Sistema zen</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+
+<h1>El sistema zen</h1>
+<p class="sub">Cómo está montado el trabajo detrás de esta web: los ejercicios viven en
+<em>packs</em>, unas pocas herramientas de terminal los eligen, los prueban y los entregan, y la web
+copia la misma estructura. Empezó en la piscine y ahora abarca el cursus entero; la idea es que el
+outer core entre igual.</p>
+
+<ul class="toc">
+  <li><a href="#idea">01 — La idea</a></li>
+  <li><a href="#pack">02 — Qué es un pack</a></li>
+  <li><a href="#etapas">03 — Etapas, milestones y números</a></li>
+  <li><a href="#herramientas">04 — Las herramientas</a></li>
+  <li><a href="#piscine">05 — Cómo funcionaba en la piscine</a></li>
+  <li><a href="#cursus">06 — Lo que añadió el cursus</a></li>
+  <li><a href="#entregas">07 — Entregar: zengit y vogsphere</a></li>
+  <li><a href="#web">08 — La web sigue a los packs</a></li>
+  <li><a href="#outer">09 — Lo que viene: el outer core</a></li>
+</ul>
+
+<div class="card" id="idea">
+<h2><span class="ex">01</span>La idea</h2>
+<p>En 42 te pasas el día haciendo las mismas cuatro cosas: editar, mirar la norma, compilar y
+probar. El sistema zen hace que las tres últimas pasen solas. Eliges un ejercicio una vez y una
+ventana de terminal partida en paneles se pone a vigilarlo: uno enseña el árbol de ficheros, otro
+pasa la norma y otro relanza los tests cada pocos segundos. Tú solo escribes; si algo se pone en
+rojo, lo ves al momento.</p>
+<pre><code>+---------------+-------------+---------------+
+|               | watch tree  |               |
+| zenpack       +-------------+ asistente     |
+|   + shell     | norminette  |               |
+|               +-------------+---------------+
+|               | watch tests | shell del pack|
++---------------+-------------+---------------+</code></pre>
+<p>Todo se apoya en un truco muy simple: un único fichero de estado,
+<code>~/.local/state/zenidx/current-pack</code>, que guarda la ruta del pack activo. Solo
+<code>zenpack</code> lo escribe; todos los demás lo leen <em>en cada vuelta</em>. Por eso, al cambiar
+de ejercicio, los seis paneles se reapuntan sin reiniciar nada.</p>
+<div class="trasfondo"><b>Por qué scripts sueltos</b> — Cada herramienta es un script de shell
+pequeño que hace una cosa y lleva su ayuda en la cabecera. Se comunican por ese fichero y no
+por un programa central, así que se pueden usar a mano, en un panel o desde otro script, y
+<code>zenhelp</code> monta el mapa leyendo esas cabeceras en vez de duplicarlas.</div>
+</div>
+
+<div class="card" id="pack">
+<h2><span class="ex">02</span>Qué es un pack</h2>
+<p>Un pack es una carpeta por proyecto con todo lo que hace falta para trabajarlo:</p>
+<pre><code>~/zenidx/packs/ETAPA/[MN/]NNN_nombre/
+├── repo/          lo que se entrega (ex00, ex01, ... o el proyecto entero)
+├── test/          Makefile + test.c  →  compila un binario `runner`
+├── subject.pdf    el enunciado (y subject.txt, su texto)
+└── extra/         lo que no se entrega: pruebas, scripts, notas</code></pre>
+<p>La separación importa: <code>repo/</code> es exactamente lo que verá la Moulinette, y nada de
+<code>test/</code> ni de <code>extra/</code> puede colarse en la entrega. El repositorio
+<code>ZenidX/Projects42</code> versiona los packs enteros; vogsphere solo recibe cada
+<code>repo/</code>.</p>
+</div>
+
+<div class="card" id="etapas">
+<h2><span class="ex">03</span>Etapas, milestones y números</h2>
+<p>La <b>etapa</b> es el tramo de 42: <code>piscine</code> y <code>cursus</code>. Dentro, los packs
+van numerados del <code>000</code> al <code>999</code> en el orden en que se hacen, que casi nunca es
+el alfabético:</p>
+<pre><code>packs/piscine/000_shell00 … 015_c13, 016_rush00 … 019_bsq
+packs/cursus/M0/000_C-piscine-reloaded, M0/001_Libft
+packs/cursus/M1/100_ft_printf, 101_get_next_line, 102_push_swap, 103_Exam_atonement
+packs/cursus/M2/200_Born2beroot … 213_Exam_Rank_02
+…
+packs/cursus/M6/600_ft_transcendence … 602_Exam_Rank_06</code></pre>
+<p>La piscine son 20 packs y cabe en una lista. El cursus son más de treinta, así que se parte en
+<b>milestones</b>: un directorio <code>MN/</code> por cada rank de la intra, y la centena del número
+sigue al milestone (<code>M1/100</code>, <code>M2/200</code>…). Los títulos salen de
+<code>packs/cursus/.milestones</code>, y con ese fichero el menú de <code>zenpack</code> pregunta
+primero por el rank y luego por el proyecto. El reparto de proyectos por rank se leyó del
+holy graph de la intra, siguiendo el camino 42next. La <a href="galaxia.html">galaxia</a> de esta web
+lo dibuja igual.</p>
+<p>Para elegir no hace falta escribirlo entero: <code>zenpack 005_c03</code>, <code>zenpack c03</code>
+y <code>zenpack 005</code> llevan al mismo sitio.</p>
+</div>
+
+<div class="card" id="herramientas">
+<h2><span class="ex">04</span>Las herramientas</h2>
+<table>
+<tr><th>Comando</th><th>Qué hace</th></tr>
+<tr><td><code>zenpack</code></td><td>Elige o crea (<code>-n</code>) el pack activo y te deja en su <code>repo/</code>. Es el único que escribe el estado.</td></tr>
+<tr><td><code>zenin</code></td><td>Ejecuta un comando dentro del pack activo: la pieza básica de los paneles.</td></tr>
+<tr><td><code>zenwatch</code></td><td>Envuelve <code>zenin</code> en <code>watch -n</code>; con Ctrl+C deja una shell viva en vez de cerrar el panel.</td></tr>
+<tr><td><code>zentest</code></td><td><code>cd &lt;pack&gt;/test &amp;&amp; make &amp;&amp; ./runner ../repo</code>; con <code>--compact</code>, resumen para el panel.</td></tr>
+<tr><td><code>zennorm</code></td><td>norminette, o flake8 si el repo es de Python; los flags especiales de un pack van en su <code>.zennorm</code>.</td></tr>
+<tr><td><code>zenshell</code> / <code>zcd</code></td><td>Una shell dentro del pack, o saltar a él desde la shell en la que estás.</td></tr>
+<tr><td><code>zenlibft</code></td><td>Copia la libft maestra a un proyecto y trae de vuelta lo nuevo.</td></tr>
+<tr><td><code>zengit</code></td><td>git para los repos de vogsphere, con el <code>.git</code> fuera del pack.</td></tr>
+<tr><td><code>zen</code> / <code>zenlayout</code></td><td>Menú de ajustes (layout, ritmo de cada panel) y abrir el layout en Terminator.</td></tr>
+<tr><td><code>zenhelp</code></td><td>El mapa de todo; <code>zenhelp zengit</code> enseña la ayuda de uno.</td></tr>
+</table>
+<p>Todo vive en <code>tools/zen/</code> y se instala copiando los scripts a <code>~/.local/bin</code>
+con <code>./install.sh</code>, que se puede relanzar las veces que haga falta y guarda una copia
+<code>.bak</code> de lo que pisa. El <code>PATH</code> va en <code>~/.zshenv</code> y no en
+<code>~/.zshrc</code> porque los paneles arrancan la shell en modo no interactivo, que no lee
+<code>.zshrc</code>.</p>
+</div>
+
+<div class="card" id="piscine">
+<h2><span class="ex">05</span>Cómo funcionaba en la piscine</h2>
+<p>En la piscine cada módulo era un pack con su <code>test/</code>. El día a día era:</p>
+<ol>
+  <li><code>zenpack c03</code>: el layout se pone a vigilar C 03.</li>
+  <li>Escribir <code>ex00/ft_strcmp.c</code>. En segundos, el panel de norminette dice si
+  cumple la norma y el de tests compila y lo prueba.</li>
+  <li>Cuando todo está en verde, entregar <code>repo/</code> a vogsphere.</li>
+</ol>
+<p>Los runners de C 00 a C 08 salen de una plantilla común: una cabecera, los casos de cada
+módulo y un final. El runner se recompila una vez por ejercicio, hace <code>#include</code> del
+fuente del alumno y anula su <code>main</code> con <code>-Dmain=</code> para poder llamar a sus
+funciones. Cada caso corre en un proceso hijo con tiempo límite, así que un segfault o un bucle
+infinito marcan ese caso como <code>CRASH</code> o <code>TIMEOUT</code> y el resto sigue.</p>
+<div class="trasfondo"><b>La excepción de C 08</b> — En C 08 casi todo lo que se entrega son
+cabeceras, así que el runner no solo ejecuta código. También genera ficheros mínimos y los
+compila con <code>-fsyntax-only</code> para distinguir «no está declarado» de «está declarado con
+otro tipo». Ese módulo obliga además a escribir macros con parámetros, que la norminette prohíbe:
+por eso <code>zennorm</code> admite flags propios de cada pack, y el panel no se queda en rojo por
+errores que no puedes arreglar.</div>
+<p>Las páginas de la <a href="index.html#piscine">piscine</a> documentan esas soluciones ejercicio a
+ejercicio.</p>
+</div>
+
+<div class="card" id="cursus">
+<h2><span class="ex">06</span>Lo que añadió el cursus</h2>
+<p>El salto al cursus cambió la escala: pasó de 20 módulos de un día a decenas de proyectos de
+semanas, repartidos por ranks. El sistema creció en cuatro direcciones:</p>
+<ul>
+  <li><b>Milestones</b>: <code>cursus/M0</code>…<code>M6</code>, con el menú en dos pasos.</li>
+  <li><b>Testers propios por proyecto</b>. El de Libft compila cada <code>ft_*.c</code> por
+  separado, vigila <code>malloc</code>/<code>free</code> para cazar fugas, hace fallar el malloc
+  número k y pone buffers pegados a una página protegida para que leer un byte de más dé
+  <code>CRASH</code>. El de get_next_line se recompila con varios <code>BUFFER_SIZE</code> (1, 42,
+  10000000). El de ft_printf compara cada caso con el <code>snprintf</code> de glibc y saca una
+  línea OK/KO por llamada.</li>
+  <li><b>Una libft maestra</b> en <code>lib/libft</code>. Casi todo el cursus la reutiliza, pero
+  vogsphere necesita los ficheros dentro de cada <code>repo/</code>, y un enlace simbólico no se
+  entrega. <code>zenlibft</code> la copia a cada proyecto y, con <code>-b</code>, se trae lo nuevo
+  que hayas escrito allí. Antes de tocar la maestra comprueba que lo nuevo compila, pasa la norma
+  y está en el Makefile.</li>
+  <li><b>Python</b>. Desde el rank 02 hay proyectos en Python, y <code>zennorm</code> decide en cada
+  pasada qué norma toca: si en el repo solo hay <code>.py</code>, flake8; si no, norminette.</li>
+</ul>
+</div>
+
+<div class="card" id="entregas">
+<h2><span class="ex">07</span>Entregar: zengit y vogsphere</h2>
+<p>Cada entrega es su propio repo de git en vogsphere, pero los ficheros también están versionados
+en <code>ZenidX/Projects42</code>. Si cada <code>repo/</code> llevara su <code>.git</code> dentro, el
+repo grande solo vería un puntero vacío (un <em>gitlink</em>) en lugar de los ficheros. La
+solución de <code>zengit</code> es guardar el <code>.git</code> de cada entrega fuera, en
+<code>~/.local/share/zenidx-vogsphere/&lt;slug&gt;.git</code>, con <code>core.worktree</code>
+apuntando de vuelta al pack:</p>
+<pre><code>cd ~/zenidx/packs/cursus/M1/100_ft_printf
+zengit init
+zengit remote add origin vogsphere@…:vogsphere/&lt;id&gt;
+zengit add . &amp;&amp; zengit commit -m "entrega" &amp;&amp; zengit push</code></pre>
+<p>El árbol de trabajo es siempre el que se registró en el alta, así que <code>zengit add .</code>
+desde la raíz del pack solo añade lo que hay en <code>repo/</code>, nunca el enunciado ni los
+tests.</p>
+</div>
+
+<div class="card" id="web">
+<h2><span class="ex">08</span>La web sigue a los packs</h2>
+<p>Esta web es <code>web/</code> dentro del mismo repositorio y copia su estructura:</p>
+<pre><code>packs/piscine/004_c02/          →  web/piscine/004_c02.html
+packs/cursus/M1/102_push_swap/  →  web/cursus/M1/102_push_swap.html</code></pre>
+<p>Cada proyecto hecho tiene una página con su código explicado, un glosario de teoría y las
+preguntas probables de la evaluación. Los que faltan tienen una ficha «pendiente» que explica el
+enunciado sin dar la solución. Con cada push a <code>main</code> que toque <code>web/</code>, un
+GitHub Action la publica en GitHub Pages.</p>
+</div>
+
+<div class="card" id="outer">
+<h2><span class="ex">09</span>Lo que viene: el outer core</h2>
+<p>Después del common core (los ranks 00 a 06) llega el <b>outer core</b>, la parte de
+especialización del cursus. El sistema está pensado para que entre sin cambiar ninguna
+herramienta: será una etapa más, <code>packs/outercore/</code>, con sus milestones en un
+<code>.milestones</code> si hacen falta, sus packs numerados y su reflejo en <code>web/</code>.
+<code>zenpack</code>, <code>zentest</code> y <code>zengit</code> ya entienden cualquier etapa,
+porque no tienen ninguna lista de proyectos escrita dentro. En la <a href="galaxia.html">galaxia</a>,
+el outer core es el anillo exterior, de momento vacío.</p>
+</div>
+
+<footer>42.zenidx.com — el sistema zen · <a href="index.html">volver al inicio →</a></footer>
+</div>
+<script src="toc.js" defer></script>
+</body>
+</html>

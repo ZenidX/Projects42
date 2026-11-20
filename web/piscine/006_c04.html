@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -25,23 +27,227 @@
 arbitraria. 6 ejercicios (ex00–ex05).</p>
 
 <div class="trasfondo"><b>Números, bases y representación</b> — El tema del módulo. Un
-<code>int</code> en memoria es un patrón de bits; «42» es solo <em>una forma de escribirlo</em> en
-base 10. La misma cantidad es <code>101010</code> en binario, <code>2a</code> en hexadecimal o
+<code>int</code> en memoria es un <a href="#g-complemento-dos">patrón de bits</a>; «42» es solo <em>una forma de escribirlo</em> en
+<a href="#g-base">base 10</a>. La misma cantidad es <code>101010</code> en <a href="#g-binario">binario</a>, <code>2a</code> en hexadecimal o
 <code>52</code> en octal: cambia la notación, no el valor. Convertir texto→número (<code>atoi</code>)
 y número→texto (<code>putnbr</code>) es traducir entre esas representaciones, y hacerlo <em>en
 cualquier base</em> obliga a entender la notación posicional de raíz: cada dígito vale su símbolo por
 la base elevada a su posición. Este módulo también es el primer contacto con los límites del
-<code>int</code> —el <em>overflow</em>— y con el caso más venenoso de todo C: <code>INT_MIN</code>,
+<code>int</code> —el <a href="#g-overflow"><em>overflow</em></a>— y con el caso más venenoso de todo C: <a href="#g-int-min"><code>INT_MIN</code></a>,
 el negativo que no tiene positivo.</p></div>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_strlen</a></li>
   <li><a href="#ex01">ex01 — ft_putstr</a></li>
   <li><a href="#ex02">ex02 — ft_putnbr</a></li>
   <li><a href="#ex03">ex03 — ft_atoi</a></li>
   <li><a href="#ex04">ex04 — ft_putnbr_base</a></li>
   <li><a href="#ex05">ex05 — ft_atoi_base</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 04 traduce entre texto y números, y para eso hay que saber cómo se escribe un número en una
+base, cómo lo guarda la máquina y dónde están sus límites. Aquí está cada idea explicada desde cero y
+con un ejemplo sacado del propio módulo. En el resto de la página, la primera vez que sale uno de
+estos términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Texto y salida</h3>
+<details id="g-cadena">
+<summary>Cadena de C y terminador nulo (<code>\0</code>)</summary>
+<p>Una cadena en C es una fila de <code>char</code> seguidos en memoria que acaba en un byte con
+valor 0, el <em>terminador nulo</em> (<code>'\0'</code>). La longitud no se guarda en ningún sitio:
+para saberla hay que contar hasta ese 0. <code>"42"</code> ocupa 3 bytes: <code>'4'</code>,
+<code>'2'</code> y <code>'\0'</code>.</p>
+<p><code>ft_strlen</code> es exactamente ese recuento, y <code>ft_putstr</code> usa la misma
+condición, <code>while (str[i])</code>, para saber cuándo dejar de escribir.</p>
+</details>
+<details id="g-write">
+<summary><code>write</code>, descriptores de fichero, stdout y stderr</summary>
+<p><code>write(fd, dirección, n)</code> escribe <code>n</code> bytes a partir de una dirección de
+memoria en el destino <code>fd</code>. El <code>fd</code> (<em>descriptor de fichero</em>) es un
+número pequeño que identifica un destino abierto: todo programa empieza con el 0 (entrada estándar,
+stdin), el 1 (salida estándar, stdout) y el 2 (salida de errores, stderr). Se declara en
+<code>&lt;unistd.h&gt;</code>.</p>
+<p>En C 04 siempre es <code>write(1, &amp;c, 1)</code>: un byte cada vez por stdout. Por eso
+<code>ft_putnbr</code> no puede escribir el número <code>4</code> directamente: tiene que tener el
+carácter <code>'4'</code> en una variable y pasar su dirección.</p>
+</details>
+<details id="g-syscall">
+<summary>Llamada al sistema (<em>syscall</em>)</summary>
+<p>Un programa no puede tocar la pantalla ni el disco por su cuenta: se lo pide al núcleo del
+sistema operativo (el <em>kernel</em>) mediante una llamada al sistema. <code>write</code> es una
+envoltura casi directa de la syscall del mismo nombre. <code>printf</code>, en cambio, es una función
+de biblioteca: da formato al texto, lo guarda en un búfer y al final acaba llamando a
+<code>write</code>.</p>
+<p>Cada syscall cuesta mucho más que una función normal, así que escribir de byte en byte, como hace
+<code>ft_putstr</code>, es lento. Para la piscine da igual; importa más adelante.</p>
+</details>
+<details id="g-ascii">
+<summary>ASCII y el truco de <code>'0'</code></summary>
+<p>Para el ordenador cada carácter es un número según la tabla ASCII: <code>'0'</code> es 48,
+<code>'1'</code> es 49… hasta <code>'9'</code>, 57. Como los dígitos van seguidos, el valor de un
+dígito escrito es <code>c - '0'</code>, y el carácter de un valor de 0 a 9 es <code>v + '0'</code>.</p>
+<p><code>ft_atoi</code> usa lo primero (<code>str[i] - '0'</code>) y <code>ft_putnbr</code> lo segundo
+(<code>n % 10 + '0'</code>). En las versiones en base ya no vale: los símbolos de
+<code>"0123456789ABCDEF"</code> no son consecutivos en ASCII (<code>'9'</code> es 57 y
+<code>'A'</code>, 65), así que el valor se saca de la posición en la cadena base.</p>
+</details>
+<details id="g-isspace">
+<summary>Espacios en blanco (<code>isspace</code>)</summary>
+<p>Para la biblioteca de C son «blancos» seis caracteres: el espacio (32) y cinco de control, del 9
+al 13: tabulador <code>\t</code>, salto de línea <code>\n</code>, tabulador vertical
+<code>\v</code>, salto de página <code>\f</code> y retorno de carro <code>\r</code>. Es lo que
+devuelve verdadero en <code>isspace</code>.</p>
+<p>La <code>atoi</code> de verdad salta todos los que haya al principio, y por eso
+<code>ft_atoi</code> empieza con <code>while (str[i] == ' ' || (str[i] &gt;= 9 &amp;&amp; str[i]
+&lt;= 13))</code>.</p>
+</details>
+
+<h3>Números y su representación</h3>
+<details id="g-base">
+<summary>Notación posicional y base</summary>
+<p>En la notación posicional, cada dígito vale su símbolo multiplicado por la base elevada a su
+posición, contando desde la derecha y desde 0. En base 10, <code>423</code> es
+4·10² + 2·10¹ + 3·10⁰. La base es cuántos símbolos distintos hay; con base b, los dígitos van de 0 a
+b − 1.</p>
+<p>Sacar los dígitos es hacer lo contrario: <code>n % b</code> es la última cifra y
+<code>n / b</code> es el resto del número sin ella. 423 % 10 = 3 y 423 / 10 = 42. En
+<code>ft_putnbr_base</code> la base es una cadena: su longitud es b, y el símbolo del dígito d es
+<code>base[d]</code>.</p>
+</details>
+<details id="g-binario">
+<summary>Binario, octal y hexadecimal</summary>
+<p>Son las bases 2, 8 y 16, las que más se usan en informática porque encajan con los bits: un dígito
+octal son 3 bits y uno hexadecimal, 4. En hexadecimal, después del 9 vienen A (10) a F (15).</p>
+<p>El 42 es <code>101010</code> en binario, <code>52</code> en octal y <code>2a</code> en hexadecimal.
+<code>ft_putnbr_base(42, "01")</code> imprime <code>101010</code>, y
+<code>ft_putnbr_base(42, "poneyvif")</code>, una base octal con letras, imprime <code>vn</code>: la
+<code>v</code> está en la posición 5 y la <code>n</code> en la 2. Ojo con el ejemplo del enunciado en
+español, <code>"poneyguay"</code>: tiene 9 símbolos y la <code>y</code> repetida, así que ni es octal
+ni es una base válida, y <code>ft_putnbr_base</code> no imprime nada con ella.</p>
+</details>
+<details id="g-complemento-dos">
+<summary>Complemento a dos y rango de <code>int</code></summary>
+<p>Un <code>int</code> son 32 bits. Para guardar negativos, casi todas las máquinas usan el
+<em>complemento a dos</em>: el bit más alto pesa −2³¹ en vez de +2³¹. Así, el rango va de
+−2147483648 a 2147483647: hay un negativo más que positivos, porque el 0 ocupa uno de los «no
+negativos».</p>
+<p>Esa asimetría es la causa de todo el cuidado con el mínimo en <code>ft_putnbr</code> y
+<code>ft_putnbr_base</code>: el máximo positivo es 2147483647, así que 2147483648 no cabe.</p>
+</details>
+<details id="g-int-min">
+<summary><code>INT_MIN</code></summary>
+<p>Es el <code>int</code> más pequeño, −2147483648, definido en <code>&lt;limits.h&gt;</code>. Su
+opuesto, 2147483648, no cabe en un <code>int</code>, así que <code>-nb</code> con
+<code>nb = INT_MIN</code> desborda.</p>
+<p>Hay dos formas de esquivarlo, y el módulo tiene las dos: pasar a <code>long</code> antes de
+cambiar el signo (el código de esta página) o tratar ese valor aparte, que es lo que hace el repo:
+<code>ft_putnbr</code> escribe <code>"-2147483648"</code> tal cual, y <code>ft_putnbr_base</code>
+calcula la primera parte con <code>-(nbr + b)</code>, que sí cabe. Las dos imprimen bien
+<code>-2147483648</code> y, en hexadecimal, <code>-80000000</code>.</p>
+</details>
+<details id="g-overflow">
+<summary>Desbordamiento (<em>overflow</em>)</summary>
+<p>Pasa cuando el resultado de una operación no cabe en el tipo donde se guarda. Con enteros
+<em>con signo</em>, como <code>int</code>, el estándar de C no dice qué pasa: es
+<a href="#g-ub">comportamiento indefinido</a>. En la práctica suele «dar la vuelta» al otro extremo
+del rango, pero no se puede contar con ello.</p>
+<p>En <code>ft_atoi("2147483648")</code>, <code>result * 10 + dígito</code> se pasa del máximo en la
+última cifra. En esta máquina salió −2147483648, igual que la <code>atoi</code> de glibc, pero es pura
+casualidad: el <code>man atoi</code> no define qué devuelve cuando el número no cabe.</p>
+</details>
+<details id="g-ub">
+<summary>Comportamiento indefinido</summary>
+<p>Es lo que el estándar de C llama a las situaciones para las que no promete nada: desbordar un
+<code>int</code> con signo, leer fuera de un array, leer a través de <code>NULL</code>… El programa
+puede funcionar, dar basura o morir, y puede cambiar con otro compilador o con otras opciones de
+optimización. «A mí me funciona» no demuestra nada.</p>
+<p>Por eso <code>-INT_MIN</code> no se «arregla» comprobando el resultado después: hay que evitar
+llegar a calcularlo.</p>
+</details>
+<details id="g-long">
+<summary><code>long</code> y pasar a un tipo más ancho</summary>
+<p><code>long</code> es un entero que, en Linux y macOS de 64 bits, ocupa 8 bytes y llega hasta
+9223372036854775807. (En Windows ocupa 4, como <code>int</code>: no es universal.) Al asignar un
+<code>int</code> a un <code>long</code> (<code>n = nb;</code>) el valor se conserva y a partir de ahí
+las cuentas se hacen con el tipo grande.</p>
+<p>En <code>ft_putnbr</code> de esta página, con <code>nb = INT_MIN</code>, <code>n = -n</code> da
+2147483648, que en un <code>long</code> cabe de sobra.</p>
+</details>
+
+<h3>Técnicas</h3>
+<details id="g-recursion">
+<summary>Recursión</summary>
+<p>Una función es recursiva cuando se llama a sí misma con un problema más pequeño, y tiene un
+<em>caso base</em> en el que deja de llamarse. Cada llamada espera a que termine la siguiente antes de
+seguir con lo que tenía después.</p>
+<p><code>ft_putnbr(423)</code> llama a <code>ft_putnbr(42)</code>, que llama a
+<code>ft_putnbr(4)</code>; esta ya no se llama (4 &lt; 10, el caso base), imprime <code>4</code> y
+vuelve. Entonces la de 42 imprime <code>2</code> y la de 423, <code>3</code>. Los dígitos salen de
+izquierda a derecha aunque se calculen de derecha a izquierda. Para un <code>int</code> hay como
+mucho 10 niveles en base 10 y 32 en base 2.</p>
+</details>
+<details id="g-acumular">
+<summary>Acumular por posición (método de Horner)</summary>
+<p>Para leer un número cifra a cifra de izquierda a derecha no hace falta saber cuántas cifras tiene:
+basta con multiplicar lo acumulado por la base y sumar la cifra nueva. Leer <code>"423"</code>: 0·10
++ 4 = 4, 4·10 + 2 = 42, 42·10 + 3 = 423. Es la regla de Horner, la forma de evaluar un polinomio con
+el mínimo de multiplicaciones.</p>
+<p><code>ft_atoi</code> lo hace con 10 (<code>result * 10 + dígito</code>) y
+<code>ft_atoi_base</code> con la longitud de la base. <code>ft_atoi_base("ff",
+"0123456789abcdef")</code>: 0·16 + 15 = 15, 15·16 + 15 = 255.</p>
+</details>
+<details id="g-validar">
+<summary>Validar la entrada</summary>
+<p>Comprobar que lo que te pasan tiene sentido antes de usarlo. Una base con símbolos repetidos no
+sirve (en <code>"0100"</code>, ¿el <code>0</code> vale 0 o 2?), una de un solo símbolo no puede
+escribir más que ceros, y una con <code>+</code> o <code>-</code> chocaría con los signos.</p>
+<p>Los dos ejercicios en base validan primero y, si la base no vale, no hacen nada:
+<code>ft_putnbr_base(42, "0+")</code> no imprime nada y <code>ft_atoi_base("12", "0")</code> devuelve
+0.</p>
+</details>
+<details id="g-static">
+<summary>Funciones <code>static</code></summary>
+<p>Una función declarada <code>static</code> solo existe dentro de su archivo: el resto del programa
+no la ve. Sirve para las funciones de ayuda, para que no choquen con otra del mismo nombre en otro
+archivo.</p>
+<p>El código de esta página usa <code>static int ft_base_ok</code>. En el repo,
+<code>ft_base_ok</code> no es <code>static</code> ni en ex04 ni en ex05, y al enlazar los dos archivos
+juntos gcc falla con <code>multiple definition of `ft_base_ok'</code>. La Moulinette compila cada
+ejercicio por separado y no lo nota, pero en un proyecto con varios archivos sí pasaría.</p>
+</details>
+<details id="g-o-n">
+<summary>Coste lineal, O(n)</summary>
+<p>Un algoritmo es O(n) cuando su trabajo crece en proporción al tamaño de la entrada n: el doble de
+largo, el doble de tiempo. Es el coste de recorrer algo una vez.</p>
+<p><code>ft_strlen</code> es O(n) en la longitud de la cadena, porque la única forma de saberla es
+contar hasta el <code>\0</code>. Por eso llamarla en la condición de un bucle que recorre la misma
+cadena convierte un recorrido O(n) en O(n²).</p>
+</details>
+
+<h3>La entrega</h3>
+<details id="g-moulinette">
+<summary>Moulinette</summary>
+<p>El corrector automático de 42. Compila cada ejercicio con <code>cc -Wall -Wextra -Werror</code>
+junto a su propio <code>main</code>, lo ejecuta y compara el resultado con el esperado. Es muy
+estricta y no se discute con ella: un warning, una salida distinta, un <em>segfault</em> o un cuelgue
+y el ejercicio cuenta como fallado. Según el enunciado, primero te corrigen compañeros de la piscine
+y después la Moulinette.</p>
+<p>Como pone su propio <code>main</code>, el tuyo tiene que estar comentado o quitado.</p>
+</details>
+<details id="g-norminette">
+<summary>Norma y norminette</summary>
+<p>La Norma es el estilo obligatorio en 42: funciones de 25 líneas como mucho, 5 funciones por
+archivo, nada de <code>for</code> ni de <code>switch</code>, declaraciones al principio…
+<code>norminette</code> la comprueba; si falla, la nota es 0 aunque el código funcione.</p>
+<p>Por las 25 líneas, <code>ft_putnbr_base</code> y <code>ft_atoi_base</code> se parten en funciones
+de ayuda. El enunciado pide pasarla con <code>-R CheckForbiddenSourceHeader</code>; los seis
+archivos del repo dan <code>OK!</code>.</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_strlen</h2>
@@ -56,10 +262,10 @@ el negativo que no tiene positivo.</p></div>
 		i++;
 	return (i);
 }</code></pre>
-<p>Se cuenta avanzando hasta el <code>\0</code>. El índice donde está el terminador coincide con la
+<p>Se cuenta avanzando hasta el <a href="#g-cadena"><code>\0</code></a>. El índice donde está el terminador coincide con la
 longitud, porque contamos desde 0. Es la operación más básica sobre cadenas y aparece, explícita o
 disimulada, en casi todos los demás ejercicios de la piscina.</p>
-<div class="trasfondo"><b>Concepto — medir cuesta O(n)</b>. En C, saber la longitud de una cadena
+<div class="trasfondo"><b>Concepto — medir cuesta <a href="#g-o-n">O(n)</a></b>. En C, saber la longitud de una cadena
 no es gratis: hay que recorrerla entera cada vez. Por eso escribir <code>while (i &lt;
 strlen(s))</code> dentro de un bucle es un clásico error de rendimiento (recorre la cadena en cada
 vuelta). Lenguajes como Python o Rust guardan la longitud aparte justamente para no pagar este peaje.</div>
@@ -80,12 +286,12 @@ vuelta). Lenguajes como Python o Rust guardan la longitud aparte justamente para
 		i++;
 	}
 }</code></pre>
-<p>Se escribe carácter a carácter con <code>write</code> sobre el descriptor 1 (la salida estándar).
+<p>Se escribe carácter a carácter con <a href="#g-write"><code>write</code></a> sobre el descriptor 1 (la salida estándar).
 Se pasa <code>&amp;str[i]</code> porque <code>write</code> quiere una dirección y un número de bytes;
 aquí, un byte cada vez.</p>
 <div class="trasfondo"><b>Concepto — <code>write</code> es la salida de verdad</b>. Sin
 <code>printf</code> (que no está autorizado), toca hablar directamente con el kernel vía la
-<em>syscall</em> <code>write</code>. El <code>1</code> es <code>stdout</code>; el <code>2</code>,
+<a href="#g-syscall"><em>syscall</em></a> <code>write</code>. El <code>1</code> es <code>stdout</code>; el <code>2</code>,
 <code>stderr</code>. Todo lo que imprime tu programa acaba, tarde o temprano, en una llamada como
 esta: <code>printf</code> no es más que una capa cómoda por encima.</div>
 </div>
@@ -110,14 +316,14 @@ esta: <code>printf</code> no es más que una capa cómoda por encima.</div>
 	c = n % 10 + '0';
 	write(1, &amp;c, 1);
 }</code></pre>
-<p>Se copia <code>nb</code> a un <code>long</code> antes de nada. La recursión imprime los dígitos en
+<p>Se copia <code>nb</code> a un <a href="#g-long"><code>long</code></a> antes de nada. La <a href="#g-recursion">recursión</a> imprime los dígitos en
 orden: para 423, la llamada con <code>42</code> ocurre <em>antes</em> de imprimir el <code>3</code>,
 así que las centenas y decenas salen primero. La conversión dígito→carácter es el
-<code>+ '0'</code> que veíamos en C02, ahora en su uso real.</p>
-<div class="trasfondo"><b>Concepto — <code>INT_MIN</code>, el número maldito</b>. El rango de un
+<a href="#g-ascii"><code>+ '0'</code></a> que veíamos en C02, ahora en su uso real.</p>
+<div class="trasfondo"><b>Concepto — <a href="#g-int-min"><code>INT_MIN</code></a>, el número maldito</b>. El rango de un
 <code>int</code> es asimétrico: de −2147483648 a +2147483647. El mínimo <em>no tiene</em> positivo
-representable, así que <code>-n</code> con <code>n = INT_MIN</code> se desborda (comportamiento
-indefinido). El truco de copiar a <code>long</code> —que sí tiene sitio para 2147483648— esquiva la
+representable, así que <code>-n</code> con <code>n = INT_MIN</code> se <a href="#g-overflow">desborda</a> (<a href="#g-ub">comportamiento
+indefinido</a>). El truco de copiar a <code>long</code> —que sí tiene sitio para 2147483648— esquiva la
 trampa. Reconocer este caso límite es un rito de paso: casi todo el mundo lo suspende la primera vez.</div>
 </div>
 
@@ -151,13 +357,13 @@ Con varios <code>-</code>, el resultado es negativo si su número es impar.</p>
 	}
 	return (result * sign);
 }</code></pre>
-<p>Tres fases claras: saltar blancos (el espacio 32 y los controles 9–13, que es lo que reconoce
+<p>Tres fases claras: saltar <a href="#g-isspace">blancos</a> (el espacio 32 y los controles 9–13, que es lo que reconoce
 <code>isspace</code>), procesar los signos acumulando en <code>sign</code> (cada <code>-</code> lo
-invierte), y acumular dígitos con <code>result = result * 10 + dígito</code>. Con la entrada
+invierte), y <a href="#g-acumular">acumular</a> dígitos con <code>result = result * 10 + dígito</code>. Con la entrada
 <code>" ---+--+1234ab567"</code> hay cinco <code>-</code> (impar) → negativo, y la lectura para en la
 <code>a</code>: sale <code>-1234</code>.</p>
 <div class="trasfondo"><b>Concepto — acumular por posición</b>. El corazón, <code>result * 10 +
-dígito</code>, <em>es</em> la notación posicional en base 10: cada dígito nuevo empuja los anteriores
+dígito</code>, <em>es</em> la <a href="#g-base">notación posicional</a> en base 10: cada dígito nuevo empuja los anteriores
 una posición a la izquierda (multiplicar por 10) y se suma el actual. Cambia el 10 por otra base y
 tienes ex05. Este patrón de «desplazar y sumar» es la máquina universal de leer números.</div>
 </div>
@@ -166,7 +372,7 @@ tienes ex05. Este patrón de «desplazar y sumar» es la máquina universal de l
 <h2><span class="ex">ex04</span>ft_putnbr_base</h2>
 <div class="meta"><span>Prototipo: <b>void ft_putnbr_base(int nbr, char *base)</b></span><span>Autorizada: write</span></div>
 <p>Imprimir <code>nbr</code> en la base descrita por la cadena <code>base</code>, que enumera sus
-símbolos (<code>"01"</code> = binario, <code>"0123456789ABCDEF"</code> = hexadecimal…). Si la base es
+símbolos (<code>"01"</code> = <a href="#g-binario">binario</a>, <code>"0123456789ABCDEF"</code> = hexadecimal…). Si la base es
 inválida —menos de 2 símbolos, con repetidos, o con <code>+</code>/<code>-</code>— no se imprime nada.</p>
 <pre><code>static int	ft_base_ok(char *base)
 {
@@ -215,10 +421,10 @@ void	ft_putnbr_base(int nbr, char *base)
 	}
 	ft_put_base(n, base, len);
 }</code></pre>
-<p>Primero se valida la base: rechaza signos, duplicados y longitudes menores que 2. La impresión es
-la misma recursión que <code>ft_putnbr</code>, pero generalizada: en vez de dividir entre 10 se divide
+<p>Primero se <a href="#g-validar">valida</a> la base: rechaza signos, duplicados y longitudes menores que 2. La impresión es
+la misma <a href="#g-recursion">recursión</a> que <code>ft_putnbr</code>, pero generalizada: en vez de dividir entre 10 se divide
 entre <code>len</code> (el número de símbolos), y en vez de <code>+ '0'</code> se indexa
-<code>base[n % len]</code>. El paso a <code>long</code> vuelve a estar por <code>INT_MIN</code>.
+<code>base[n % len]</code>. El paso a <a href="#g-long"><code>long</code></a> vuelve a estar por <a href="#g-int-min"><code>INT_MIN</code></a>.
 (<code>ft_baselen</code>, omitida aquí, solo cuenta símbolos de la base.)</p>
 <div class="trasfondo"><b>Concepto — la base es un parámetro, no una constante</b>. Descubrir que
 imprimir en decimal, binario o hex es <em>el mismo algoritmo</em> con distinto divisor es una pequeña
@@ -230,7 +436,7 @@ lo que te pasan.</div>
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>ft_atoi_base</h2>
 <div class="meta"><span>Prototipo: <b>int ft_atoi_base(char *str, char *base)</b></span></div>
-<p>Como <code>ft_atoi</code>, pero leyendo <code>str</code> en la base dada. Si la base es inválida
+<p>Como <code>ft_atoi</code>, pero leyendo <code>str</code> en la base dada. Si la base es <a href="#g-validar">inválida</a>
 —menos de 2 símbolos, repetidos, o con <code>+</code>, <code>-</code> o espacios— devuelve 0.</p>
 <pre><code>static int	ft_index(char c, char *base)
 {
@@ -278,17 +484,97 @@ int	ft_atoi_base(char *str, char *base)
 	return (ft_convert(str, base, ft_baselen(base)));
 }</code></pre>
 <p>La estructura calca a <code>ft_atoi</code> (blancos, signos, dígitos), con dos cambios: el valor de
-un símbolo ya no es <code>str[i] - '0'</code> sino su <strong>posición en la base</strong>
-(<code>ft_index</code>), y la acumulación multiplica por <code>len</code> en vez de por 10. El bucle
+un símbolo ya no es <code>str[i] - '0'</code> sino su <strong><a href="#g-base">posición en la base</a></strong>
+(<code>ft_index</code>), y la <a href="#g-acumular">acumulación</a> multiplica por <code>len</code> en vez de por 10. El bucle
 de dígitos se detiene en cuanto aparece un carácter que no pertenece a la base
 (<code>ft_index</code> devuelve −1). Aquí la base inválida también incluye espacios, porque un espacio
-como símbolo chocaría con el salto de blancos. (<code>ft_base_ok</code> y <code>ft_baselen</code> son
+como símbolo chocaría con el salto de <a href="#g-isspace">blancos</a>. (<code>ft_base_ok</code> y <code>ft_baselen</code> son
 las del ejercicio anterior, con el añadido del rechazo de espacios.)</p>
 <div class="trasfondo"><b>Concepto — el símbolo y su valor</b>. En hex, <code>'F'</code> «vale» 15
 porque ocupa la posición 15 de <code>"0123456789ABCDEF"</code>. Separar el <em>glifo</em> (lo que se
 escribe) de su <em>valor</em> (lo que representa) mediante una tabla de posiciones es una idea que
 reaparece por todas partes: codificaciones, tokenizadores, intérpretes. <code>ft_atoi_base</code> es
 su forma más pequeña y honesta.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado a fondo. Están agrupadas en: defender el código, casos límite, y Moulinette y
+Norma. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Defender el código</h3>
+<details id="q-recursion">
+<summary>¿Cómo consigue <code>ft_putnbr</code> imprimir las cifras en orden?</summary>
+<p>Con recursión: antes de escribir la última cifra (<code>n % 10</code>) se llama a sí misma con el
+resto del número (<code>n / 10</code>), así que las cifras de la izquierda salen antes. Para cuando
+<code>n &lt; 10</code>: es el caso base. → <a href="#g-recursion">recursión</a>,
+<a href="#ex02">ex02</a></p>
+</details>
+<details id="q-atoi-signos">
+<summary>¿Qué devuelve <code>ft_atoi(" ---+--+1234ab567")</code>?</summary>
+<p><code>-1234</code>. Salta el espacio, cuenta cinco <code>-</code> (impar, así que negativo), lee
+<code>1234</code> y para en la <code>a</code>: lo que viene después no se mira. → <a href="#ex03">ex03</a></p>
+</details>
+<details id="q-base">
+<summary>¿Qué cambia entre <code>ft_putnbr</code> y <code>ft_putnbr_base</code>?</summary>
+<p>Solo dos cosas: se divide entre la longitud de la base en vez de entre 10, y el carácter de cada
+cifra es <code>base[n % len]</code> en vez de <code>n % 10 + '0'</code>. El algoritmo es el mismo.
+→ <a href="#g-base">base</a>, <a href="#ex04">ex04</a></p>
+</details>
+<details id="q-static">
+<summary>¿Por qué las funciones de ayuda son <code>static</code>?</summary>
+<p>Para que solo existan en su archivo. Si no lo son, dos archivos con una función del mismo nombre no
+se pueden enlazar juntos: con los <code>ft_base_ok</code> de ex04 y ex05 del repo, gcc da
+<code>multiple definition</code>. → <a href="#g-static">static</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-int-min">
+<summary>¿Qué pasa con <code>ft_putnbr(-2147483648)</code>?</summary>
+<p>Es el caso que más se prueba. <code>-nb</code> no cabe en un <code>int</code> (el máximo es
+2147483647), así que hay que evitarlo: o pasar a <code>long</code> antes de cambiar el signo, como el
+código de la página, o tratarlo aparte, como el repo. Las dos versiones imprimen
+<code>-2147483648</code>. → <a href="#g-int-min">INT_MIN</a>, <a href="#ex02">ex02</a></p>
+</details>
+<details id="q-overflow">
+<summary>¿Y si a <code>ft_atoi</code> le pasas un número que no cabe en un <code>int</code>?</summary>
+<p>El resultado no está definido, ni en la tuya ni en la de la libc: el <code>man atoi</code> no lo
+cubre. Con <code>"2147483648"</code> las dos devolvieron <code>-2147483648</code> en esta máquina,
+pero es un desbordamiento de <code>int</code> con signo. → <a href="#g-overflow">overflow</a></p>
+</details>
+<details id="q-base-invalida">
+<summary>¿Qué bases son inválidas y qué haces con ellas?</summary>
+<p>Vacía o de un solo símbolo, con símbolos repetidos, o con <code>+</code> o <code>-</code>. En
+<code>ft_atoi_base</code>, además, con espacios. <code>ft_putnbr_base</code> no imprime nada y
+<code>ft_atoi_base</code> devuelve 0. → <a href="#g-validar">validar</a>, <a href="#ex04">ex04</a>,
+<a href="#ex05">ex05</a></p>
+</details>
+<details id="q-espacios">
+<summary>¿Por qué en <code>ft_atoi_base</code> la base no puede tener espacios ni signos?</summary>
+<p>Porque <code>ft_atoi_base</code> salta blancos y lee signos antes de las cifras: si el espacio o el
+<code>-</code> fueran también cifras, no se sabría qué es cada uno. El repo rechaza también los
+blancos del 9 al 13, por la misma razón. → <a href="#g-isspace">blancos</a>, <a href="#ex05">ex05</a></p>
+</details>
+
+<h3>Moulinette y Norma</h3>
+<details id="q-printf">
+<summary>¿Por qué no usas <code>printf</code>?</summary>
+<p>Porque no está autorizada: solo <code>write</code> en ex01, ex02 y ex04, y ninguna en ex00, ex03 y
+ex05. <code>write</code> escribe bytes, así que cada cifra hay que convertirla antes en carácter.
+→ <a href="#g-write">write</a>, <a href="#ex01">ex01</a></p>
+</details>
+<details id="q-main">
+<summary>¿Puedo dejar el <code>main</code> de pruebas?</summary>
+<p>Solo comentado, como en el <code>ft_putnbr.c</code> del repo. La Moulinette compila con su propio
+<code>main</code> y dos no enlazan. → <a href="#g-moulinette">Moulinette</a></p>
+</details>
+<details id="q-norma">
+<summary>¿Por qué <code>ft_atoi_base</code> está partida en varias funciones?</summary>
+<p>Por la Norma: una función no puede pasar de 25 líneas, y validar la base, buscar el índice de un
+símbolo y convertir no caben juntos. Con 5 funciones por archivo como máximo, hay sitio de sobra.
+→ <a href="#g-norminette">Norma</a>, <a href="#ex05">ex05</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 04 · <a href="../index.html">← volver al índice</a></footer>

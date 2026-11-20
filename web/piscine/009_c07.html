@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -25,32 +27,231 @@
 Duplicar cadenas, generar rangos, unir, convertir bases y partir por separadores.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_strdup</a></li>
   <li><a href="#ex01">ex01 — ft_range</a></li>
   <li><a href="#ex02">ex02 — ft_ultimate_range</a></li>
   <li><a href="#ex03">ex03 — ft_strjoin</a></li>
   <li><a href="#ex04">ex04 — ft_convert_base</a></li>
   <li><a href="#ex05">ex05 — ft_split</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
-<div class="trasfondo"><b>El concepto que vertebra el módulo: el heap, <code>malloc</code> y el
-<em>ownership</em></b> — Hasta ahora toda tu memoria era <em>automática</em>: variables locales y
-arrays de tamaño fijo que viven en la <em>pila</em> (<em>stack</em>) y desaparecen solos al salir de la
+<div class="trasfondo"><b>El concepto que vertebra el módulo: el heap, <a href="#g-malloc"><code>malloc</code></a> y el
+<a href="#g-ownership"><em>ownership</em></a></b> — Hasta ahora toda tu memoria era <em>automática</em>: variables locales y
+arrays de tamaño fijo que viven en la <a href="#g-stack-heap"><em>pila</em></a> (<em>stack</em>) y desaparecen solos al salir de la
 función. El problema: una función no puede devolver un array local, porque al terminar ese array ya no
 existe — devolverías la dirección de memoria basura. Cuando el tamaño se decide <em>en ejecución</em>
 (¿cuántos enteros hay entre <code>min</code> y <code>max</code>? ¿cuántas palabras tiene esta cadena?)
 necesitas otra región: el <em>heap</em> (montón). <code>malloc(n)</code> te reserva <code>n</code> bytes
 del heap y te devuelve su dirección; esa memoria vive hasta que <em>tú</em> la liberas con
-<code>free</code>. De ahí nacen las dos reglas que este módulo te mete en el cuerpo. Primera: reservas
+<a href="#g-free"><code>free</code></a>. De ahí nacen las dos reglas que este módulo te mete en el cuerpo. Primera: reservas
 el tamaño exacto, y por eso escribes <code>malloc(sizeof(int) * n)</code> o
 <code>sizeof(char) * (len + 1)</code> — el <code>+1</code> es para el <code>'\0'</code> que cierra
-toda cadena, y <code>sizeof</code> pregunta al compilador cuánto ocupa cada elemento en <em>esta</em>
+toda cadena, y <a href="#g-sizeof"><code>sizeof</code></a> pregunta al compilador cuánto ocupa cada elemento en <em>esta</em>
 máquina en vez de asumir 4 u 8. Segunda: el <em>ownership</em> (propiedad). Cuando una función devuelve
 memoria del heap, el que la llama <em>hereda</em> la obligación de liberarla; si nadie lo hace, esa
-memoria queda reservada para siempre y tienes una <em>fuga</em> (<em>memory leak</em>). Los tests de
+memoria queda reservada para siempre y tienes una <a href="#g-leak"><em>fuga</em></a> (<em>memory leak</em>). Los tests de
 este módulo comprueban tanto el contenido como que todo lo que reservas se pueda <code>free</code>-ar.
 (El prólogo lista las criaturas del <em>Donjon de Naheulbeuk</em> — zombis, arañas gigantes, papel
 higiénico, raviolis; humor de rol francés, sin relación con el ejercicio.)</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 07 es el módulo en el que la memoria deja de ser automática: hay que pedirla, medirla, llenarla
+y saber quién la devuelve. Aquí está cada término explicado desde cero y con un ejemplo sacado del
+propio módulo. En el resto de la página, la primera vez que sale uno de estos términos en cada
+tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Memoria dinámica</h3>
+<details id="g-stack-heap">
+<summary>Pila (stack) y heap</summary>
+<p>Un programa en marcha guarda sus datos en dos zonas principales. La <em>pila</em> (<em>stack</em>)
+es donde viven las variables locales: se reservan solas al entrar en una función y desaparecen solas
+al salir. El <em>heap</em> (montón) es memoria que se pide a mano, del tamaño que haga falta en ese
+momento, y que dura hasta que se devuelve a mano.</p>
+<p>Por eso <code>ft_range</code> no puede devolver un <code>int r[5]</code> local: al volver, esa
+memoria de la pila ya no es suya. Tiene que pedirla al heap con <code>malloc</code>, y esa sí sigue
+existiendo cuando quien la llamó la recibe.</p>
+</details>
+<details id="g-malloc">
+<summary>malloc</summary>
+<p><code>malloc(n)</code> reserva <code>n</code> bytes en el heap y devuelve la dirección del
+primero, como <code>void *</code> (un puntero «a cualquier cosa» que se puede asignar a un
+<code>char *</code> o a un <code>int *</code>). Los bytes reservados no están a cero: contienen lo que
+hubiera antes. Si no puede reservar, devuelve <code>NULL</code>.</p>
+<p>En C 07 es la única función autorizada en casi todos los ejercicios. ex04 permite además
+<code>free</code>.</p>
+</details>
+<details id="g-null">
+<summary>NULL y comprobar lo que devuelve malloc</summary>
+<p><code>NULL</code> es un puntero que no apunta a nada; se usa para decir «no hay resultado». Si
+<code>malloc</code> falla y no lo compruebas, el código siguiente escribe en <code>NULL</code> y el
+programa muere con un segfault.</p>
+<p>En el repo, <code>ft_strdup</code>, <code>ft_ultimate_range</code> y <code>ft_strjoin</code>
+comprueban el <code>malloc</code>; <code>ft_range</code> no, y <code>ft_split</code> solo comprueba el
+del array, no el de cada palabra. <code>NULL</code> también es parte del contrato de ex01: con
+<code>min &gt;= max</code> se devuelve <code>NULL</code> a propósito.</p>
+</details>
+<details id="g-sizeof">
+<summary>sizeof</summary>
+<p><code>sizeof(tipo)</code> dice cuántos bytes ocupa un tipo en la máquina donde se compila. Lo
+calcula el compilador, no cuesta nada en ejecución. Aquí: <code>sizeof(char)</code> es 1 siempre,
+<code>sizeof(int)</code> es 4 y <code>sizeof(char *)</code> es 8.</p>
+<p>Como <code>malloc</code> cuenta en bytes, para 5 enteros hay que pedir <code>sizeof(int) * 5</code>,
+20 bytes, y no 5. El array de <code>ft_split</code> se pide con <code>sizeof(char *)</code>.</p>
+</details>
+<details id="g-terminador">
+<summary>El +1 del terminador '\0'</summary>
+<p>Una cadena de C acaba en el byte <code>'\0'</code>, que no cuenta en su longitud pero ocupa sitio.
+Por eso una copia de una cadena de longitud <code>len</code> necesita <code>len + 1</code> bytes.
+<code>"hola"</code> tiene longitud 4 y ocupa 5.</p>
+<p>Sale en ex00 (<code>malloc(sizeof(char) * (i + 1))</code>), en ex03, en cada palabra de ex05
+(<code>i[0] - i[2] + 1</code>) y en ex04 con el signo: <code>d + 2 + neg</code> cuenta las cifras,
+el <code>'\0'</code> y el <code>-</code> si hace falta.</p>
+</details>
+<details id="g-free">
+<summary>free</summary>
+<p><code>free(p)</code> devuelve al sistema la memoria que reservó <code>malloc</code>. Solo se puede
+llamar con un puntero que salió de <code>malloc</code> (o con <code>NULL</code>, que no hace nada) y
+una sola vez: liberar dos veces lo mismo es un <em>double free</em>, y usar la memoria después de
+liberarla es otro error.</p>
+<p>Las funciones de C 07 no liberan lo que devuelven: lo libera quien las llama. Para el resultado
+de <code>ft_split</code> hay que hacer <code>free</code> de cada palabra y después del array.</p>
+</details>
+<details id="g-leak">
+<summary>Fuga de memoria (memory leak)</summary>
+<p>Memoria reservada con <code>malloc</code> que nadie libera y a la que ya no apunta ningún puntero:
+sigue ocupada pero no se puede usar ni devolver. En un programa que acaba enseguida no se nota; en
+uno que funciona horas o reserva en un bucle, se come la memoria.</p>
+<p>Un caso que pide atención en ex05: si el <code>malloc</code> de una palabra fallara a mitad, lo
+correcto sería liberar las palabras ya creadas y el array antes de devolver <code>NULL</code>; si
+no, se pierden.</p>
+</details>
+<details id="g-ownership">
+<summary>Propiedad de la memoria (ownership)</summary>
+<p>Quién tiene la obligación de liberar un bloque. No es algo que C controle: es un acuerdo que hay
+que cumplir. La regla de C 07: la función que reserva y <em>devuelve</em> memoria pasa la propiedad
+a quien la llama, que es quien tiene que hacer el <code>free</code>.</p>
+<p>Por eso el enunciado de ex03 insiste en que, con <code>size == 0</code>, se devuelva una cadena
+vacía «que pueda liberarse con free()»: quien llama va a hacer <code>free</code> sin mirar, y
+tiene que ser memoria de <code>malloc</code>, no un <code>""</code> literal.</p>
+</details>
+<details id="g-valgrind">
+<summary>Valgrind</summary>
+<p>Una herramienta que ejecuta tu programa vigilando cada acceso a memoria. Avisa de lecturas o
+escrituras fuera de lo reservado, de memoria usada sin inicializar y, al acabar, de los bloques que
+no se liberaron. Se usa así: <code>valgrind --leak-check=full ./a.out</code>.</p>
+<p>Con un <code>main</code> que llama a las seis funciones del repo y libera todo lo que recibe,
+<code>valgrind -q --leak-check=full</code> no informa de ningún error ni fuga.</p>
+</details>
+
+<h3>Punteros</h3>
+<details id="g-copia-puntero">
+<summary>Copiar el puntero frente a copiar el contenido</summary>
+<p>Un puntero es una dirección. <code>dst = src</code> copia la dirección: los dos nombres apuntan a
+los mismos bytes, y si cambias uno, cambia «el otro». Duplicar una cadena es reservar memoria nueva y
+copiar en ella los bytes uno a uno.</p>
+<p>Es la diferencia entre ex00 y una asignación. Con el repo, <code>ft_strdup("hola")</code> devuelve
+un bloque nuevo con <code>hola</code> que se puede modificar o liberar sin tocar el original.</p>
+</details>
+<details id="g-doble-puntero">
+<summary>Puntero de salida y doble puntero (int **)</summary>
+<p>Una función de C solo devuelve un valor con <code>return</code>. Para «devolver» algo más, quien
+llama le pasa la <em>dirección</em> de una variable suya y la función escribe ahí. Si esa variable
+es a su vez un puntero, lo que se pasa es un puntero a puntero: <code>int **</code>.</p>
+<p>En ex02 se llama así: <code>int *u; n = ft_ultimate_range(&amp;u, 5, 8);</code>. Después
+<code>n</code> vale 3 y <code>u</code> apunta a <code>5 6 7</code>. Con <code>(8, 5)</code>,
+<code>n</code> vale 0 y <code>u</code> queda en <code>NULL</code>.</p>
+</details>
+<details id="g-precedencia">
+<summary>Precedencia: (*range)[i] frente a *range[i]</summary>
+<p>En C los corchetes se aplican antes que el <code>*</code>. <code>*range[i]</code> significa
+<code>*(range[i])</code>: tomar la casilla <code>i</code> de <code>range</code> como si fuera un array
+de punteros y luego seguirla. <code>(*range)[i]</code> es lo que se quiere en ex02: seguir
+<code>range</code> hasta el puntero del llamador y tomar la casilla <code>i</code> de su array.</p>
+<p>Con <code>i = 0</code> las dos coinciden; con <code>i = 1</code>, <code>*range[1]</code> lee
+memoria que no es tuya.</p>
+</details>
+<details id="g-centinela">
+<summary>Array de punteros con NULL al final (centinela)</summary>
+<p>Un <code>char **</code> como el que devuelve <code>ft_split</code> es un array cuyas casillas son
+punteros a cadenas. Para que quien lo recibe sepa dónde acaba sin que le digan el tamaño, la última
+casilla vale <code>NULL</code>: un <em>centinela</em>. Por eso se reserva una casilla de más.</p>
+<p>Con el repo, <code>ft_split("  hola,,mundo ;fin ", ", ;")</code> da
+<code>["hola", "mundo", "fin", NULL]</code>, y <code>ft_split("", ",")</code> un array con solo el
+<code>NULL</code>.</p>
+</details>
+
+<h3>Bases y cadenas</h3>
+<details id="g-base">
+<summary>Base de numeración</summary>
+<p>La forma de escribir un número con un conjunto de símbolos. En base 10 se usan diez cifras y cada
+posición vale diez veces más que la de su derecha; en base 2, dos cifras y cada posición vale el
+doble; en base 16, dieciséis (<code>0123456789abcdef</code>). El número es el mismo, cambia cómo se
+escribe: 255 en decimal es <code>ff</code> en hexadecimal y <code>11111111</code> en binario.</p>
+<p>En ex04 la base es una cadena: su longitud es cuántos símbolos hay y la posición de cada símbolo
+es lo que vale. Con <code>"01"</code>, <code>'1'</code> vale 1.</p>
+</details>
+<details id="g-base-valida">
+<summary>Base válida</summary>
+<p>Las reglas vienen de <code>ft_putnbr_base</code> y <code>ft_atoi_base</code>: al menos dos
+símbolos, ninguno repetido y ninguno que sea <code>+</code>, <code>-</code> o un espacio en blanco.
+Con un solo símbolo no se puede escribir nada, con símbolos repetidos una cifra tendría dos valores, y
+los signos y espacios se confundirían con el número.</p>
+<p><code>ft_base_ok</code> del repo devuelve 0 si la base no vale y su longitud si vale. Con
+<code>"0"</code>, <code>"0+1"</code> y <code>"011"</code> como base de destino,
+<code>ft_convert_base</code> devuelve <code>NULL</code>.</p>
+</details>
+<details id="g-atoi-base">
+<summary>Leer un número en una base (atoi_base)</summary>
+<p>Convertir texto en número: se saltan los espacios del principio, se cuentan los signos (cada
+<code>-</code> cambia el signo) y se leen cifras mientras pertenezcan a la base, haciendo en cada una
+<code>resultado = resultado · base + cifra</code>. Al primer carácter que no es de la base se para.</p>
+<p>Con <code>"--42"</code> en decimal, los dos menos se anulan y sale 42, que en octal es
+<code>52</code>. Con <code>" \t-+-2a"</code> en hexadecimal sale 42 y en binario
+<code>101010</code>. Con <code>"12x9"</code>, la lectura para en la <code>x</code> y queda 12.</p>
+</details>
+<details id="g-itoa-base">
+<summary>Escribir un número en una base (itoa_base)</summary>
+<p>El camino inverso: la última cifra es el resto de dividir entre la base, y el resto del número
+es el cociente. Se repite hasta que el cociente es 0. Las cifras salen de derecha a izquierda, así que
+hay que colocarlas desde el final o usar recursión, que las deja en orden a la vuelta.</p>
+<p><code>ft_itoa_base</code> del repo es recursiva: baja hasta la cifra más alta, reserva ahí la
+cadena (ya sabe cuántas cifras hay, porque ha contado la profundidad <code>d</code>) y cada nivel
+escribe su cifra al volver. Con negativos usa <code>-(n % b)</code>, porque en C el resto de un
+negativo es negativo. <code>"-2147483648"</code> a hexadecimal da <code>-80000000</code>.</p>
+</details>
+<details id="g-overflow">
+<summary>Overflow al leer el número</summary>
+<p>Un <code>int</code> va de −2147483648 a 2147483647. Si el texto representa un número más grande,
+el acumulador desborda, que en C es comportamiento indefinido, y sale un valor sin sentido.</p>
+<p>El enunciado de ex04 lo resuelve por contrato: «el número representado por nbr debe caber dentro de
+un entero». El repo acumula en <code>int</code>, y con <code>"2147483648"</code> devuelve
+<code>-2147483648</code>; es una entrada que el enunciado deja fuera.</p>
+</details>
+<details id="g-multiarchivo">
+<summary>Varios archivos .c, prototipos y multiple definition</summary>
+<p>Para usar en un archivo una función escrita en otro, basta con declarar su prototipo
+(<code>int ft_strlen(char *s);</code>) y compilar los dos juntos. Lo que no puede haber es la
+misma función pública definida en dos archivos que se enlazan juntos: el enlazador da
+<code>multiple definition</code>.</p>
+<p>ex04 obliga a partir el código en dos archivos: <code>ft_strlen</code> y
+<code>ft_char_init</code> viven en <code>ft_convert_base2.c</code> y <code>ft_convert_base.c</code>
+los declara arriba. Y el error se puede provocar: enlazar juntos el ex00 y el ex03 del repo da
+<code>multiple definition of `ft_strlen'</code>, porque los dos la definen.</p>
+</details>
+<details id="g-separador">
+<summary>Separador y charset</summary>
+<p>Un <em>separador</em> es un carácter que marca dónde acaba una palabra y empieza otra. En ex05
+<code>charset</code> no es una cadena que haya que encontrar entera: es un conjunto, y <em>cada</em>
+uno de sus caracteres separa por sí solo. Varios separadores seguidos son un único corte, así que no
+salen palabras vacías.</p>
+<p>Con <code>", ;"</code>, en <code>"  hola,,mundo ;fin "</code> separan los espacios, las comas y el
+punto y coma. Con <code>charset</code> vacío no separa nada (el repo solo corta en el
+<code>'\0'</code>) y <code>"a b"</code> sale como una sola palabra.</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_strdup</h2>
@@ -75,10 +276,10 @@ devolviendo la copia.</p>
 	return (dst);
 }</code></pre>
 <p>Tres pasos que se repetirán todo el módulo: medir (<code>ft_strlen</code>), reservar el tamaño
-justo (<code>+1</code> para el terminador), copiar y cerrar con <code>'\0'</code>. Y siempre,
-comprobar que <code>malloc</code> no devolvió <code>NULL</code> antes de escribir.</p>
+justo (<code>+1</code> para el <a href="#g-terminador">terminador</a>), copiar y cerrar con <code>'\0'</code>. Y siempre,
+comprobar que <a href="#g-malloc"><code>malloc</code></a> no devolvió <a href="#g-null"><code>NULL</code></a> antes de escribir.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El ciclo de vida de una cadena en el heap y
-por qué no basta con <code>dst = src</code>: eso copiaría el <em>puntero</em> (dos nombres para los
+por qué no basta con <a href="#g-copia-puntero"><code>dst = src</code></a>: eso copiaría el <em>puntero</em> (dos nombres para los
 mismos bytes), no el contenido. Duplicar significa pedir memoria propia y copiar byte a byte. Es el
 "hola mundo" de la gestión de memoria: si esto lo tienes claro, el resto del módulo son variaciones.</div>
 </div>
@@ -87,7 +288,7 @@ mismos bytes), no el contenido. Duplicar significa pedir memoria propia y copiar
 <h2><span class="ex">ex01</span>ft_range</h2>
 <div class="meta"><span>Entrega: <b>ft_range.c</b></span><span>Autorizado: <b>malloc</b></span></div>
 <p>Devolver un array con todos los enteros de <code>min</code> a <code>max</code>, incluyendo
-<code>min</code> y excluyendo <code>max</code>. Si <code>min &gt;= max</code>, devolver <code>NULL</code>.</p>
+<code>min</code> y excluyendo <code>max</code>. Si <code>min &gt;= max</code>, devolver <a href="#g-null"><code>NULL</code></a>.</p>
 <pre><code>int	*ft_range(int min, int max)
 {
 	int	*arr;
@@ -109,10 +310,10 @@ mismos bytes), no el contenido. Duplicar significa pedir memoria propia y copiar
 	return (arr);
 }</code></pre>
 <p>El tamaño se calcula: <code>max - min</code> elementos. Al ser un array de enteros, se reserva
-<code>sizeof(int) * size</code> — no <code>size</code> a secas: cada <code>int</code> ocupa varios
+<a href="#g-sizeof"><code>sizeof(int) * size</code></a> — no <code>size</code> a secas: cada <code>int</code> ocupa varios
 bytes.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que devolver un array desde una función
-<em>exige</em> heap: un <code>int arr[size]</code> local moriría al volver. Y que el tamaño de la
+<em>exige</em> <a href="#g-stack-heap">heap</a>: un <code>int arr[size]</code> local moriría al volver. Y que el tamaño de la
 reserva se cuenta en bytes, de ahí <code>sizeof(int)</code>. También el contrato de errores: ante
 entrada inválida (<code>min &gt;= max</code>) devuelves <code>NULL</code>, y quien te llama tendrá que
 comprobarlo antes de usar el resultado — el mismo patrón que <code>malloc</code> usa contigo.</div>
@@ -122,7 +323,7 @@ comprobarlo antes de usar el resultado — el mismo patrón que <code>malloc</co
 <h2><span class="ex">ex02</span>ft_ultimate_range</h2>
 <div class="meta"><span>Entrega: <b>ft_ultimate_range.c</b></span><span>Autorizado: <b>malloc</b></span></div>
 <p>Igual que ex01 pero el array se devuelve <em>por parámetro</em> (<code>int **range</code>) y la
-función devuelve el <em>tamaño</em>, o <code>-1</code> si falla el <code>malloc</code>. Si
+función devuelve el <em>tamaño</em>, o <code>-1</code> si falla el <a href="#g-malloc"><code>malloc</code></a>. Si
 <code>min &gt;= max</code>, deja <code>*range</code> en <code>NULL</code> y devuelve <code>0</code>.</p>
 <pre><code>int	ft_ultimate_range(int **range, int min, int max)
 {
@@ -146,10 +347,10 @@ función devuelve el <em>tamaño</em>, o <code>-1</code> si falla el <code>mallo
 	}
 	return (size);
 }</code></pre>
-<p>El doble puntero <code>int **range</code> es la clave: el llamador pasa la dirección de su propio
+<p>El <a href="#g-doble-puntero">doble puntero</a> <code>int **range</code> es la clave: el llamador pasa la dirección de su propio
 puntero, y la función escribe en él con <code>*range = …</code>. Así la función devuelve <em>dos</em>
 cosas: el array (por el parámetro) y el tamaño (por el <code>return</code>). Ojo a los paréntesis en
-<code>(*range)[i]</code>: primero se deshace un nivel de indirección, luego se indexa.</p>
+<a href="#g-precedencia"><code>(*range)[i]</code></a>: primero se deshace un nivel de indirección, luego se indexa.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El idioma clásico de C para "devolver varias
 cosas": una por <code>return</code> y las demás por punteros de salida — aquí llevado a un doble
 puntero porque lo que se rellena es, a su vez, un puntero. Es exactamente el patrón de
@@ -162,7 +363,7 @@ de punteros que separa "compila por suerte" de "sé lo que escribo".</div>
 <h2><span class="ex">ex03</span>ft_strjoin</h2>
 <div class="meta"><span>Entrega: <b>ft_strjoin.c</b></span><span>Autorizado: <b>malloc</b></span></div>
 <p>Concatenar las <code>size</code> cadenas de <code>strs</code> usando <code>sep</code> entre ellas.
-Si <code>size == 0</code>, devolver una cadena vacía que se pueda <code>free</code>-ar.</p>
+Si <code>size == 0</code>, devolver una cadena vacía que se pueda <a href="#g-free"><code>free</code></a>-ar.</p>
 <pre><code>char	*ft_strjoin(int size, char **strs, char *sep)
 {
 	char	*res;
@@ -191,7 +392,7 @@ para que la siguiente copia continúe donde acabó la anterior. El separador se 
 nunca después del último (de ahí <code>if (i &lt; size - 1)</code>).</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La estrategia "medir primero, reservar una
 vez, llenar después", que evita reservar y re-reservar en cada paso. Y el detalle exigido: con
-<code>size == 0</code> no devuelves <code>NULL</code> sino <code>""</code> — una cadena de un solo byte
+<code>size == 0</code> no devuelves <a href="#g-null"><code>NULL</code></a> sino <code>""</code> — una cadena de un solo byte
 (<code>'\0'</code>) reservada en el heap. Esa distinción entre "no hay resultado" (<code>NULL</code>) y
 "el resultado es vacío pero existe y hay que liberarlo" es sutil y muy real: media librería estándar
 depende de tratarla bien.</div>
@@ -200,8 +401,8 @@ depende de tratarla bien.</div>
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>ft_convert_base</h2>
 <div class="meta"><span>Entrega: <b>ft_convert_base.c</b>, <b>ft_convert_base2.c</b></span><span>Autorizado: <b>malloc, free</b></span></div>
-<p>Convertir la cadena <code>nbr</code>, escrita en <code>base_from</code>, a su representación en
-<code>base_to</code>. Cualquier base inválida ⇒ <code>NULL</code>. Se respetan las reglas de
+<p>Convertir la cadena <code>nbr</code>, escrita en <a href="#g-base"><code>base_from</code></a>, a su representación en
+<code>base_to</code>. Cualquier <a href="#g-base-valida">base inválida</a> ⇒ <code>NULL</code>. Se respetan las reglas de
 <code>atoi_base</code>: espacios iniciales, varios signos <code>+</code>/<code>-</code>, y solo un
 <code>-</code> como prefijo del resultado.</p>
 <pre><code>/* validación de base: longitud &gt;= 2, sin repetidos,
@@ -219,12 +420,12 @@ char	*ft_convert_base(char *nbr, char *base_from, char *base_to)
 	return (fill_result(value, base_to, ft_baselen(base_to)));
 }</code></pre>
 <p>El problema se parte en dos mitades limpias: <strong>leer</strong> y <strong>escribir</strong>.
-<code>ft_atoi_base</code> lee la cadena en <code>base_from</code> y produce un <code>long</code>
+<a href="#g-atoi-base"><code>ft_atoi_base</code></a> lee la cadena en <code>base_from</code> y produce un <code>long</code>
 (saltando espacios, aplicando todos los signos, acumulando <code>valor · base + dígito</code>).
-<code>fill_result</code> hace lo inverso: toma el número y genera la cadena en <code>base_to</code>
+<a href="#g-itoa-base"><code>fill_result</code></a> hace lo inverso: toma el número y genera la cadena en <code>base_to</code>
 dividiendo repetidamente entre el tamaño de la base, y antepone un único <code>-</code> si es
 negativo. El módulo obliga a dos archivos porque no cabe todo en cinco funciones por fichero: los
-helpers de validación y lectura viven en <code>ft_convert_base2.c</code> y se declaran como prototipos
+helpers de validación y lectura viven en <code>ft_convert_base2.c</code> y se declaran como <a href="#g-multiarchivo">prototipos</a>
 en el principal.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Que "convertir de base" no es una operación:
 son dos, con un entero como puente. Un número no "está en base 10"; está en la máquina como bits, y las
@@ -232,7 +433,7 @@ bases solo son formas de <em>escribirlo</em>. Separar el <em>parser</em> (texto�
 <em>formateador</em> (entero→texto) es el mismo diseño que hay detrás de <code>printf</code>,
 <code>scanf</code> y cualquier serializador. Además concentra las trampas de robustez de toda la
 piscine: bases con caracteres repetidos o prohibidos, signos múltiples, el prefijo con un solo
-<code>-</code>, y usar <code>long</code> para que el acumulador no se desborde al leer. Y es tu primer
+<code>-</code>, y usar <code>long</code> para que el acumulador no se <a href="#g-overflow">desborde</a> al leer. Y es tu primer
 proyecto multi-archivo: aprender a declarar prototipos para compartir funciones entre <code>.c</code>
 sin un <code>.h</code>.</div>
 </div>
@@ -240,8 +441,8 @@ sin un <code>.h</code>.</div>
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>ft_split</h2>
 <div class="meta"><span>Entrega: <b>ft_split.c</b></span><span>Autorizado: <b>malloc</b></span></div>
-<p>Partir <code>str</code> en palabras, tratando <em>cada</em> carácter de <code>charset</code> como
-separador. Devolver un array de cadenas terminado en <code>NULL</code>, sin cadenas vacías y sin
+<p>Partir <code>str</code> en palabras, tratando <em>cada</em> carácter de <a href="#g-separador"><code>charset</code></a> como
+separador. Devolver un array de cadenas terminado en <a href="#g-centinela"><code>NULL</code></a>, sin cadenas vacías y sin
 modificar <code>str</code>.</p>
 <pre><code>char	**ft_split(char *str, char *charset)
 {
@@ -261,11 +462,112 @@ solo se crea palabra cuando hay al menos un carácter no separador.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El ejercicio cumbre del módulo: memoria
 dinámica <em>de dos niveles</em>. Reservas un array de punteros (<code>char **</code>) y, para cada
 casilla, reservas otra cadena (<code>char *</code>) — memoria que apunta a memoria. Y con ello, el
-<em>ownership</em> completo: quien recibe el resultado debe liberar primero cada palabra y luego el
+<a href="#g-ownership"><em>ownership</em></a> completo: quien recibe el resultado debe liberar primero cada palabra y luego el
 array. El centinela <code>NULL</code> al final es lo que permite recorrerlo sin saber su tamaño
 (<code>while (result[i])</code>), la misma convención que el <code>'\0'</code> de las cadenas pero un
 nivel más arriba. Contar antes de reservar, tratar los separadores consecutivos, respetar la cadena de
 entrada: es el ejercicio donde todo C07 (medir, reservar el tamaño exacto, copiar, no fugar) se junta.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado. Están agrupadas en: memoria, casos límite, ft_convert_base y puntos débiles.
+Las respuestas hablan del código de tu entrega (<code>repo/</code>), que no siempre es el mismo que
+se muestra en las tarjetas. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Memoria</h3>
+<details id="q-dup">
+<summary>¿Por qué <code>ft_strdup</code> no puede hacer simplemente <code>return (src);</code>?</summary>
+<p>Porque eso devuelve la misma dirección, no una copia: quien llama podría intentar
+<code>free</code> de una cadena que no salió de <code>malloc</code>, o cambiarla creyendo que es suya.
+<code>strdup</code> reserva <code>longitud + 1</code> bytes nuevos y copia el contenido con su
+<code>'\0'</code>. → <a href="#ex00">ex00</a>, <a href="#g-copia-puntero">copiar puntero o contenido</a></p>
+</details>
+<details id="q-heap">
+<summary>¿Por qué <code>ft_range</code> no devuelve un array local?</summary>
+<p>Porque las variables locales viven en la pila y dejan de existir al volver de la función: se
+devolvería una dirección a memoria que ya no es tuya. La memoria de <code>malloc</code> está en el
+heap y dura hasta que alguien hace <code>free</code>. → <a href="#ex01">ex01</a>,
+<a href="#g-stack-heap">pila y heap</a></p>
+</details>
+<details id="q-free">
+<summary>¿Quién libera la memoria que devuelven tus funciones? ¿Hay leaks?</summary>
+<p>Quien las llama: la propiedad pasa con el puntero devuelto. Para <code>ft_split</code>, primero
+cada palabra y después el array. Con un <code>main</code> que libera todo, valgrind no informa de
+ninguna fuga ni error en las seis funciones. → <a href="#g-ownership">ownership</a>,
+<a href="#g-valgrind">valgrind</a></p>
+</details>
+<details id="q-ultimate">
+<summary>¿Por qué <code>ft_ultimate_range</code> recibe un <code>int **</code>?</summary>
+<p>Porque tiene que devolver dos cosas: el tamaño, por <code>return</code>, y el array, escribiéndolo
+en el puntero de quien llama. Para cambiar un <code>int *</code> de otra función hace falta su
+dirección, un <code>int **</code>. Dentro se escribe <code>(*range)[i]</code>, con paréntesis por la
+precedencia. → <a href="#ex02">ex02</a>, <a href="#g-doble-puntero">doble puntero</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-strjoin0">
+<summary>¿Qué devuelve <code>ft_strjoin</code> con <code>size == 0</code>?</summary>
+<p>Una cadena vacía reservada con <code>malloc(1)</code>, que se puede liberar: el enunciado lo exige
+así. Con <code>size</code> 0 la longitud total se queda en 0, se reserva 1 byte y solo se escribe el
+<code>'\0'</code>. Con <code>{"uno", "dos", "tres"}</code> y <code>", "</code> sale
+<code>uno, dos, tres</code>, sin separador al final. → <a href="#ex03">ex03</a>,
+<a href="#g-ownership">ownership</a></p>
+</details>
+<details id="q-split-vacias">
+<summary>¿Cómo evitas las cadenas vacías en <code>ft_split</code>? ¿Y con <code>str</code> vacía?</summary>
+<p>Una palabra empieza al pasar de separador a no separador y acaba al volver a un separador (o al
+<code>'\0'</code>), así que varios separadores seguidos no crean nada. <code>"  hola,,mundo ;fin "</code>
+con <code>", ;"</code> da <code>hola</code>, <code>mundo</code>, <code>fin</code>. Con
+<code>""</code> se devuelve un array con solo el <code>NULL</code>. → <a href="#ex05">ex05</a>,
+<a href="#g-separador">separador</a>, <a href="#g-centinela">centinela</a></p>
+</details>
+
+<h3>ft_convert_base</h3>
+<details id="q-convert">
+<summary>Explícame cómo convierte <code>ft_convert_base</code>.</summary>
+<p>En dos pasos con un <code>int</code> en medio. <code>ft_atoi_base</code> lee el texto en
+<code>base_from</code> (espacios, signos, cifras mientras sean de la base) y
+<code>ft_itoa_base</code> lo escribe en <code>base_to</code> de forma recursiva, con un solo
+<code>-</code> delante si es negativo. Antes, si alguna base no vale, se devuelve <code>NULL</code>.
+<code>"255"</code> de decimal a hexadecimal da <code>ff</code>. → <a href="#ex04">ex04</a>,
+<a href="#g-atoi-base">atoi_base</a>, <a href="#g-itoa-base">itoa_base</a></p>
+</details>
+<details id="q-base">
+<summary>¿Cuándo es inválida una base? ¿Y qué pasa con <code>" \t-+-2a"</code>?</summary>
+<p>Si tiene menos de dos símbolos, alguno repetido, o un <code>+</code>, un <code>-</code> o un
+espacio en blanco: <code>"0"</code>, <code>"011"</code> y <code>"0+1"</code> dan <code>NULL</code>.
+<code>" \t-+-2a"</code> en hexadecimal: se saltan los espacios, los dos <code>-</code> se anulan y
+queda 42, que en binario es <code>101010</code>. → <a href="#g-base-valida">base válida</a>,
+<a href="#g-atoi-base">atoi_base</a></p>
+</details>
+<details id="q-dos-archivos">
+<summary>¿Por qué dos archivos en ex04, y cómo se ven entre ellos?</summary>
+<p>Porque lo pide el enunciado y porque la Norma limita a cinco funciones por archivo: el principal
+tiene cinco y <code>ft_strlen</code> y <code>ft_char_init</code> van en
+<code>ft_convert_base2.c</code>. El principal las declara con su prototipo arriba y se compilan
+juntos. Lo que no puede pasar es definir la misma función en los dos. → <a href="#ex04">ex04</a>,
+<a href="#g-multiarchivo">varios archivos</a></p>
+</details>
+
+<h3>Puntos débiles (mejor tener la respuesta preparada)</h3>
+<details id="q-malloc-null">
+<summary>¿Compruebas siempre que <code>malloc</code> no devuelva <code>NULL</code>?</summary>
+<p>No en todas. <code>ft_strdup</code>, <code>ft_ultimate_range</code> (devuelve −1),
+<code>ft_strjoin</code> y <code>ft_itoa_base</code> sí. <code>ft_range</code> no la comprueba y
+escribiría en <code>NULL</code>. <code>ft_split</code> comprueba el array pero no cada palabra, y si
+una fallara no libera las anteriores. Además <code>ft_range</code> reserva un <code>int</code> de
+más (<code>max - min + 1</code>), inofensivo. → <a href="#g-null">NULL y malloc</a>,
+<a href="#g-leak">fuga</a></p>
+</details>
+<details id="q-int">
+<summary>¿Qué pasa si <code>nbr</code> no cabe en un <code>int</code>?</summary>
+<p>El acumulador desborda: <code>"2147483648"</code> sale como <code>-2147483648</code>. El enunciado
+dice que el número debe caber en un entero, así que esa entrada queda fuera del contrato; si se quiere
+blindar, se acumula en <code>long</code>. <code>"-2147483648"</code> sí funciona: da
+<code>-80000000</code> en hexadecimal. → <a href="#g-overflow">overflow</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 07 · <a href="008_c06.html">← C 06</a> · <a href="010_c08.html">C 08 →</a></footer>

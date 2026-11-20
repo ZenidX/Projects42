@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -25,6 +27,7 @@ cuadrada, primos y un cierre con las diez reinas. Casi todo se puede hacer de do
 con un bucle o llamándose a sí misma— y el módulo te obliga a comparar ambas.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_iterative_factorial</a></li>
   <li><a href="#ex01">ex01 — ft_recursive_factorial</a></li>
   <li><a href="#ex02">ex02 — ft_iterative_power</a></li>
@@ -34,26 +37,250 @@ con un bucle o llamándose a sí misma— y el módulo te obliga a comparar amba
   <li><a href="#ex06">ex06 — ft_is_prime</a></li>
   <li><a href="#ex07">ex07 — ft_find_next_prime</a></li>
   <li><a href="#ex08">ex08 — ft_ten_queens_puzzle</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
 <div class="trasfondo"><b>El concepto que vertebra el módulo: recursión vs. iteración</b> —
-Una función <em>iterativa</em> resuelve el problema con un bucle y unas pocas variables: la
-memoria que usa es constante. Una función <em>recursiva</em> se llama a sí misma con un caso más
-pequeño hasta tocar un <em>caso base</em>; cada llamada pendiente ocupa un marco (<em>stack
+Una función <a href="#g-iteracion"><em>iterativa</em></a> resuelve el problema con un bucle y unas pocas variables: la
+memoria que usa es constante. Una función <a href="#g-recursion"><em>recursiva</em></a> se llama a sí misma con un caso más
+pequeño hasta tocar un <a href="#g-caso-base"><em>caso base</em></a>; cada llamada pendiente ocupa un <a href="#g-pila">marco</a> (<em>stack
 frame</em>) en la pila, con sus parámetros y su punto de retorno. C05 empareja deliberadamente
 factorial y potencia en versión iterativa y recursiva para que veas que resuelven <em>lo mismo</em>
 con costes distintos: la recursión es más corta y se lee como la definición matemática, pero cada
 nivel cuesta pila, y si te olvidas del caso base o no reduces el problema, la pila se desborda
-(<code>stack overflow</code>) y el programa muere. Entender esto aquí, con funciones de tres líneas,
-es lo que te permite después leer un árbol o un backtracking sin perderte. (El prólogo del enunciado
+(<a href="#g-stack-overflow"><code>stack overflow</code></a>) y el programa muere. Entender esto aquí, con funciones de tres líneas,
+es lo que te permite después leer un árbol o un <a href="#g-backtracking">backtracking</a> sin perderte. (El prólogo del enunciado
 cita al Sombrero Seleccionador de <em>Harry Potter</em> para acto seguido avisar de que el proyecto
 no va de magia; es el humor absurdo de costumbre.)</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C 05 mezcla dos mundos: el de cómo se ejecuta una función que se llama a sí misma (la pila, los
+marcos, el caso base) y el de la aritmética entera (factorial, primos, raíces, desbordamientos). Aquí
+está cada término explicado desde cero y con un ejemplo sacado del propio módulo. En el resto de la
+página, la primera vez que sale uno de estos términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Recursión y pila</h3>
+<details id="g-iteracion">
+<summary>Iteración (función iterativa)</summary>
+<p>Resolver un problema repitiendo un bloque con un bucle (<code>while</code>) y unas pocas
+variables que van cambiando en cada vuelta. La función se llama una sola vez y hace todo el trabajo
+dentro de su bucle, así que la memoria que usa no crece con el tamaño del problema.</p>
+<p>En C 05 son iterativas ex00 y ex02: <code>ft_iterative_factorial(5)</code> da cinco vueltas al
+bucle y devuelve 120, con las mismas dos variables de principio a fin.</p>
+</details>
+<details id="g-recursion">
+<summary>Recursión (función recursiva)</summary>
+<p>Una función es <em>recursiva</em> cuando, para resolver un problema, se llama a sí misma con una
+versión más pequeña del mismo problema. Funciona porque cada llamada confía en que la siguiente
+devolverá la respuesta correcta para el caso pequeño, y solo tiene que añadir su parte.</p>
+<p>Toda recursión correcta tiene dos piezas: un <a href="#g-caso-base">caso base</a> que se responde
+sin volver a llamarse, y un <em>paso recursivo</em> que acerca el argumento a ese caso base. En ex01,
+<code>ft_recursive_factorial(3)</code> calcula <code>3 * ft_recursive_factorial(2)</code>, que
+calcula <code>2 * ft_recursive_factorial(1)</code>, y así hasta llegar a 0, que devuelve 1 sin
+llamar a nadie. Después las multiplicaciones se van resolviendo a la vuelta: 1, 1, 2, 6.</p>
+</details>
+<details id="g-caso-base">
+<summary>Caso base</summary>
+<p>El caso que una función recursiva sabe responder directamente, sin volver a llamarse. Es lo que
+hace que la recursión termine. Si falta, o si el paso recursivo no se acerca a él, la función se
+llama sin fin hasta agotar la <a href="#g-pila">pila</a>.</p>
+<p>En el módulo: <code>0! = 1</code> en el factorial, <code>nb^0 = 1</code> en la potencia, y los
+dos casos base de Fibonacci (<code>fib(0) = 0</code> y <code>fib(1) = 1</code>), porque cada
+término necesita los dos anteriores. En las reinas el caso base es «ya hay diez columnas
+colocadas»: se imprime la solución y se devuelve 1.</p>
+</details>
+<details id="g-pila">
+<summary>Pila de llamadas y marco (stack frame)</summary>
+<p>Cada vez que se llama a una función, el programa le reserva un trozo de memoria llamado
+<em>marco</em> (<em>stack frame</em>) con sus parámetros, sus variables locales y la dirección a la
+que volver al acabar. Los marcos se apilan unos encima de otros en una zona de memoria llamada
+<em>pila</em> (<em>stack</em>), y se quitan en orden inverso: el último en entrar es el primero en
+salir.</p>
+<p>En una recursión hay tantos marcos a la vez como llamadas pendientes:
+<code>ft_recursive_factorial(10)</code> llega a tener once marcos apilados (del 10 al 0) antes de
+empezar a devolver. La versión iterativa usa uno solo. En las reinas, cada marco de
+<code>ft_q_isolver</code> guarda su propia copia del tablero <code>pos[10]</code> y su
+<code>i</code>, y por eso al volver de una rama el tablero del nivel anterior sigue intacto.</p>
+</details>
+<details id="g-stack-overflow">
+<summary>Desbordamiento de pila (stack overflow)</summary>
+<p>La pila tiene un tamaño fijo y pequeño: en este Linux, <code>ulimit -s</code> dice 8192 KB. Si
+una recursión apila más marcos de los que caben, el programa escribe fuera de la zona permitida y el
+sistema lo mata con un <code>Segmentation fault</code>.</p>
+<p>Pasa con recursiones sin <a href="#g-caso-base">caso base</a> y también con recursiones correctas
+pero demasiado profundas. Medido con el ex01 del repo: <code>ft_recursive_factorial(1000000)</code>
+termina con <code>Segmentation fault</code> (código de salida 139) antes de devolver nada, porque
+necesita un millón de marcos. El resultado ya habría sido basura por
+<a href="#g-overflow">overflow</a>, pero el programa ni siquiera llega a calcularlo.</p>
+</details>
+<details id="g-arbol">
+<summary>Recursión en árbol y crecimiento exponencial</summary>
+<p>Cuando una función se llama a sí misma <em>más de una vez</em> en cada nivel, las llamadas forman
+un árbol: cada una abre dos ramas, cada rama otras dos… El número de llamadas crece de forma
+<em>exponencial</em>: con cada nivel de más, se multiplica por una cantidad fija.</p>
+<p>Fibonacci es el ejemplo de libro. Contando las llamadas que hace la versión recursiva:</p>
+<pre><code>fib(10)  =        55      177 llamadas
+fib(20)  =      6765    21891 llamadas
+fib(30)  =    832040  2692537 llamadas
+fib(40)  = 102334155  331160281 llamadas</code></pre>
+<p>Cada diez índices más, unas 120 veces más llamadas. <code>ft_fibonacci(40)</code> del repo tarda
+unos 0.8 s en esta máquina; con la misma proporción, <code>fib(50)</code> se iría a más de minuto y medio. El motivo es que
+se recalcula lo mismo muchas veces: <code>fib(38)</code> se calcula dos veces, <code>fib(37)</code>
+tres…</p>
+</details>
+<details id="g-memoizacion">
+<summary>Memoización y programación dinámica</summary>
+<p>Dos formas de no repetir trabajo en una recursión en árbol. <em>Memoizar</em> es apuntar cada
+resultado la primera vez que se calcula (en un array, por ejemplo) y consultarlo después en vez de
+recalcularlo. La <em>programación dinámica</em> va al revés: calcula los casos pequeños primero y
+construye los grandes a partir de ellos, normalmente con un bucle.</p>
+<p>No se usan en C 05 (el enunciado exige la versión recursiva de Fibonacci), pero en el
+<code>ft_fibonacci.c</code> del repo hay comentada una versión iterativa con dos variables que se van
+pisando: eso es programación dinámica reducida a lo mínimo, y cuesta n vueltas en vez de cientos de
+millones de llamadas.</p>
+</details>
+<details id="g-backtracking">
+<summary>Backtracking (vuelta atrás)</summary>
+<p>Una forma de buscar todas las soluciones de un problema construyéndolas paso a paso: en cada paso
+se prueba una opción; si no viola ninguna regla, se sigue al paso siguiente; si sí, o cuando se han
+agotado las opciones de ese paso, se vuelve al paso anterior y se prueba su siguiente opción. Las
+ramas imposibles se cortan en cuanto se detectan, sin explorarlas enteras.</p>
+<p>En ex08 cada paso es una columna y cada opción una fila. Si la reina de la columna 3 choca con
+alguna anterior, no se mira ninguna de las 10⁶ formas de rellenar las columnas 4 a 9 a partir de
+ahí. La función del repo encuentra las 724 soluciones; la primera es <code>0257948136</code> y la
+última <code>9742051863</code>, como en el ejemplo del enunciado.</p>
+</details>
+
+<h3>Aritmética entera</h3>
+<details id="g-acumulador">
+<summary>Acumulador y elemento neutro</summary>
+<p>Un <em>acumulador</em> es una variable que va guardando un resultado parcial mientras un bucle
+recorre los datos: la suma hasta aquí, el producto hasta aquí. Tiene que empezar en el
+<em>elemento neutro</em> de la operación, el valor que no cambia nada: 0 para la suma (x + 0 = x) y
+1 para el producto (x · 1 = x).</p>
+<p>En ex00 y ex02 el acumulador empieza en 1 (<code>p = 1</code>, <code>i = 1</code> en el repo). Si
+empezara en 0, todos los factoriales y todas las potencias darían 0. Y de paso, si el bucle no da
+ninguna vuelta, se devuelve el neutro: así salen solos <code>0! = 1</code> y <code>0^0 = 1</code>.</p>
+</details>
+<details id="g-factorial">
+<summary>Factorial (n!)</summary>
+<p>El producto de todos los enteros de 1 a n: <code>5! = 1·2·3·4·5 = 120</code>. Por convención
+<code>0! = 1</code>, y para negativos no está definido (el enunciado pide devolver 0). Cuenta de
+cuántas formas se pueden ordenar n cosas distintas.</p>
+<p>Crece muy deprisa: <code>12! = 479001600</code> es el último que cabe en un <code>int</code>.
+<code>13!</code> vale 6 227 020 800 y el ex00 del repo devuelve 1932053504, un valor sin sentido por
+<a href="#g-overflow">overflow</a>, que el enunciado permite no tratar.</p>
+</details>
+<details id="g-potencia">
+<summary>Potencia (nb elevado a power)</summary>
+<p>Multiplicar un número por sí mismo varias veces: <code>2^10 = 2·2·…·2</code> (diez veces) = 1024.
+El exponente 0 da 1 en cualquier base, también <code>0^0</code>, que en matemáticas se discute pero
+el enunciado fija en 1. Con exponente negativo el resultado sería una fracción (2⁻¹ = 0.5), que no
+cabe en un <code>int</code>: por eso se pide devolver 0.</p>
+<p>Las dos versiones del repo dan <code>(-2)^3 = -8</code>, <code>2^-1 = 0</code> y
+<code>2^31 = -2147483648</code>, este último ya por <a href="#g-overflow">overflow</a>.</p>
+</details>
+<details id="g-fibonacci">
+<summary>Sucesión de Fibonacci</summary>
+<p>Cada término es la suma de los dos anteriores, empezando por 0 y 1:
+<code>0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55…</code> El enunciado cuenta desde el índice 0, así que
+<code>ft_fibonacci(0) = 0</code>, <code>ft_fibonacci(1) = 1</code> y
+<code>ft_fibonacci(10) = 55</code>; con índice negativo pide −1.</p>
+<p><b>De dónde viene:</b> la popularizó Leonardo de Pisa, «Fibonacci», en su <em>Liber Abaci</em>
+de 1202, con un problema de cuántas parejas de conejos hay cada mes.</p>
+</details>
+<details id="g-modulo">
+<summary>Operador % (resto) y divisibilidad</summary>
+<p><code>a % b</code> es el resto de dividir <code>a</code> entre <code>b</code> con división
+entera: <code>17 % 5 = 2</code> porque 17 = 3·5 + 2. Si el resto es 0, <code>b</code> divide a
+<code>a</code> exactamente: <code>nb % i == 0</code> es la forma de preguntar «¿i es divisor de
+nb?».</p>
+<p>En C, con negativos el resto lleva el signo del dividendo: <code>-17 % 5 = -2</code>. Por eso en
+el ex04 de C 07 hace falta <code>-(n % b)</code> para sacar la cifra de un negativo. En ex06 el repo
+comprueba <code>nb % i == 0 || - nb % i == 0</code>, pero la segunda mitad sobra: a esa línea solo se
+llega con <code>nb &gt;= 2</code>, y −nb % i es 0 exactamente cuando nb % i lo es.</p>
+</details>
+<details id="g-primo">
+<summary>Número primo</summary>
+<p>Un entero mayor que 1 cuyos únicos divisores son 1 y él mismo: 2, 3, 5, 7, 11, 13… El 1 no es
+primo (solo tiene un divisor) y el 0 tampoco, como recuerda el enunciado; los negativos no se
+consideran. El 9 no lo es porque 3 lo divide.</p>
+<p>El mayor <code>int</code>, 2147483647, es primo. Por eso <code>ft_find_next_prime</code> siempre
+encuentra respuesta dentro del rango de <code>int</code>: con cualquier <code>nb</code> válido,
+como mucho llega a 2147483647. Con el repo: siguiente primo de −5 → 2, de 4 → 5, de 13 → 13 y de 14
+→ 17.</p>
+</details>
+<details id="g-raiz">
+<summary>Raíz cuadrada entera y por qué basta probar hasta √n</summary>
+<p>La raíz cuadrada de n es el número que multiplicado por sí mismo da n. Es <em>entera</em> si ese
+número es entero, y entonces n es un <em>cuadrado perfecto</em>: 16 = 4·4. El 15 no tiene raíz
+entera, y <code>ft_sqrt(15)</code> devuelve 0.</p>
+<p>Lo de «√n» vale también para los primos: los divisores van en parejas
+(<code>36 = 2·18 = 3·12 = 4·9 = 6·6</code>), y en cada pareja uno es como mucho √n. Si no hay
+ningún divisor hasta √n, no hay ninguno. Para 2147483647 eso es parar en 46 340 en vez de en más de
+dos mil millones. Medido: el ex06 del repo, que prueba hasta <code>i &lt; nb</code>, tarda 9.3 s con
+2147483647.</p>
+</details>
+
+<h3>Tipos y lenguaje C</h3>
+<details id="g-overflow">
+<summary>Desbordamiento de enteros (overflow) e INT_MAX</summary>
+<p>Un <code>int</code> ocupa 4 bytes y solo puede guardar valores entre −2147483648
+(<code>INT_MIN</code>) y 2147483647 (<code>INT_MAX</code>). Si una operación da un resultado fuera
+de ese rango, se dice que <em>desborda</em>. En C, desbordar un entero con signo es
+<a href="#g-ub">comportamiento indefinido</a>; en la práctica, en estas máquinas el valor «da la
+vuelta» y sale un número sin sentido, a menudo negativo.</p>
+<p>En C 05 aparece por todas partes: <code>13!</code>, <code>2^31</code>, y sobre todo en
+<code>i * i</code> al buscar raíces. 46340² = 2147395600 cabe, pero 46341² = 2147488281 ya no. El
+enunciado permite no tratar el overflow del resultado en factorial, potencia y Fibonacci, pero no el
+de las cuentas intermedias, que pueden dejar un bucle sin parar.</p>
+</details>
+<details id="g-long">
+<summary>long y cast para que el producto no desborde</summary>
+<p><code>long</code> es un entero de 8 bytes en Linux de 64 bits: llega hasta unos 9·10¹⁸. Un
+<em>cast</em> es escribir el tipo entre paréntesis delante de una expresión, <code>(long) i</code>,
+para que se trate como de ese tipo. Si uno de los operandos de <code>*</code> es <code>long</code>,
+la multiplicación entera se hace en <code>long</code>.</p>
+<p>El ex05 del repo deja <code>i</code> como <code>int</code> y hace la comparación en
+<code>long</code>: <code>(long) i * i &lt;= (long) nb</code>. Con <code>nb = INT_MAX</code> el bucle
+para en 46341 sin desbordar y devuelve 0; con <code>2147395600</code> devuelve 46340.</p>
+</details>
+<details id="g-ub">
+<summary>Comportamiento indefinido (undefined behavior)</summary>
+<p>Lo que el estándar de C no define: el compilador puede hacer cualquier cosa, y «funciona en mi
+máquina» no garantiza nada. Ejemplos: desbordar un <code>int</code>, leer fuera de un array,
+desreferenciar <code>NULL</code>.</p>
+<p>El enunciado lo usa como excepción: tus funciones no pueden hacer segfault «excepto en el caso de
+comportamientos indefinidos», y dice que con overflow «el valor devuelto queda indefinido». Por eso
+nadie te puede pedir un valor concreto para <code>ft_iterative_factorial(13)</code>.</p>
+</details>
+<details id="g-static">
+<summary>static en una función</summary>
+<p>Una función declarada <code>static</code> solo se ve dentro de su archivo <code>.c</code>. Sirve
+para los <em>helpers</em>: funciones auxiliares que nadie de fuera debe llamar ni puede chocar con
+otra del mismo nombre en otro archivo.</p>
+<p>En ex07 tiene sentido marcar <code>static</code> la copia de <code>ft_is_prime</code>: si alguien
+compila tu ex07 junto con tu ex06, o con un <code>main</code> de pruebas que también la defina, dos
+funciones públicas con el mismo nombre dan <code>multiple definition</code> al enlazar. El repo la
+deja sin <code>static</code>; como cada ejercicio se compila aparte, no falla.</p>
+</details>
+<details id="g-complejidad">
+<summary>Coste: O(n), O(√n) y O(2ⁿ)</summary>
+<p>La notación O dice cómo crece el trabajo cuando crece la entrada, sin contar constantes. O(n): el
+doble de entrada, el doble de trabajo. O(√n): crece mucho más despacio (para n cien veces mayor, solo
+diez veces más trabajo). O(2ⁿ), exponencial: cada unidad de más multiplica el trabajo.</p>
+<p>En C 05: el factorial y la potencia son O(n) en el número de vueltas o llamadas; ft_sqrt y la
+primalidad hasta √nb son O(√n); la primalidad hasta nb, como la del repo, es O(n); y Fibonacci
+recursivo es exponencial (crece como 1.618ⁿ, el número áureo).</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_iterative_factorial</h2>
 <div class="meta"><span>Entrega: <b>ft_iterative_factorial.c</b></span><span>Autorizado: nada</span></div>
-<p>Factorial <em>iterativo</em>: <code>n! = 1·2·3·…·n</code>. Si el argumento no es válido
-(negativo) devuelve <code>0</code>; los desbordamientos no hay que tratarlos.</p>
+<p><a href="#g-factorial">Factorial</a> <a href="#g-iteracion"><em>iterativo</em></a>: <code>n! = 1·2·3·…·n</code>. Si el argumento no es válido
+(negativo) devuelve <code>0</code>; los <a href="#g-overflow">desbordamientos</a> no hay que tratarlos.</p>
 <pre><code>int	ft_iterative_factorial(int nb)
 {
 	int	result;
@@ -70,7 +297,7 @@ no va de magia; es el humor absurdo de costumbre.)</div>
 	}
 	return (result);
 }</code></pre>
-<p>El acumulador arranca en <code>1</code> (el elemento neutro del producto), no en <code>0</code> —
+<p>El <a href="#g-acumulador">acumulador</a> arranca en <code>1</code> (el elemento neutro del producto), no en <code>0</code> —
 si empezara en cero todo el resultado sería cero. Con <code>nb == 0</code> el bucle no se ejecuta y
 devuelve <code>1</code>, que es la definición correcta de <code>0! = 1</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El patrón <em>acumulador</em>: una variable
@@ -81,7 +308,7 @@ y la base de casi todos los bucles de cómputo que escribirás. Memoria constant
 <div class="card" id="ex01">
 <h2><span class="ex">ex01</span>ft_recursive_factorial</h2>
 <div class="meta"><span>Entrega: <b>ft_recursive_factorial.c</b></span><span>Autorizado: nada</span></div>
-<p>El mismo factorial, ahora <em>recursivo</em>.</p>
+<p>El mismo factorial, ahora <a href="#g-recursion"><em>recursivo</em></a>.</p>
 <pre><code>int	ft_recursive_factorial(int nb)
 {
 	if (nb &lt; 0)
@@ -91,20 +318,20 @@ y la base de casi todos los bucles de cómputo que escribirás. Memoria constant
 	return (nb * ft_recursive_factorial(nb - 1));
 }</code></pre>
 <p>Dos guardas antes de recurrir: el <em>caso de error</em> (<code>nb &lt; 0 → 0</code>) y el
-<em>caso base</em> (<code>nb &lt;= 1 → 1</code>, que cubre tanto <code>0!</code> como <code>1!</code>).
+<a href="#g-caso-base"><em>caso base</em></a> (<code>nb &lt;= 1 → 1</code>, que cubre tanto <code>0!</code> como <code>1!</code>).
 Solo cuando ninguno se cumple la función se llama a sí misma con <code>nb - 1</code>.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La estructura de toda función recursiva:
 primero el caso base que <em>detiene</em> la recursión, después el paso que <em>reduce</em> el
 problema hacia ese caso. La expresión <code>nb * ft_recursive_factorial(nb - 1)</code> es literalmente
 la definición matemática <code>n! = n · (n-1)!</code>. Compárala con el bucle de ex00: mismo resultado,
-pero aquí hay <code>nb</code> marcos apilados a la vez. Con un factorial da igual; con recursiones
+pero aquí hay <code>nb</code> <a href="#g-pila">marcos apilados</a> a la vez. Con un factorial da igual; con recursiones
 profundas empieza a importar.</div>
 </div>
 
 <div class="card" id="ex02">
 <h2><span class="ex">ex02</span>ft_iterative_power</h2>
 <div class="meta"><span>Entrega: <b>ft_iterative_power.c</b></span><span>Autorizado: nada</span></div>
-<p>Potencia iterativa <code>nb^power</code>. Si <code>power &lt; 0</code> devuelve <code>0</code>;
+<p><a href="#g-potencia">Potencia iterativa</a> <code>nb^power</code>. Si <code>power &lt; 0</code> devuelve <code>0</code>;
 por definición <code>0^0 = 1</code>.</p>
 <pre><code>int	ft_iterative_power(int nb, int power)
 {
@@ -123,7 +350,7 @@ por definición <code>0^0 = 1</code>.</p>
 <p>Multiplicar <code>nb</code> por sí mismo <code>power</code> veces. El caso <code>0^0</code> sale
 gratis: con <code>power == 0</code> el bucle no entra y queda <code>result = 1</code>, que es la
 convención que pide el enunciado.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el elemento neutro importa. Igual que el
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que el <a href="#g-acumulador">elemento neutro</a> importa. Igual que el
 factorial empieza en 1, la potencia también, porque 1 es el neutro del producto. Y que los casos
 límite (<code>power</code> cero o negativo) no son excepciones que gestionar aparte: se caen solos
 del diseño si eliges bien el valor inicial y la condición del bucle.</div>
@@ -132,7 +359,7 @@ del diseño si eliges bien el valor inicial y la condición del bucle.</div>
 <div class="card" id="ex03">
 <h2><span class="ex">ex03</span>ft_recursive_power</h2>
 <div class="meta"><span>Entrega: <b>ft_recursive_power.c</b></span><span>Autorizado: nada</span></div>
-<p>La misma potencia, recursiva.</p>
+<p>La misma <a href="#g-potencia">potencia</a>, recursiva.</p>
 <pre><code>int	ft_recursive_power(int nb, int power)
 {
 	if (power &lt; 0)
@@ -144,17 +371,17 @@ del diseño si eliges bien el valor inicial y la condición del bucle.</div>
 <p>Caso base <code>power == 0 → 1</code>; paso <code>nb^p = nb · nb^(p-1)</code>. Fíjate en que aquí
 el parámetro que se reduce es <code>power</code>, no <code>nb</code>: <code>nb</code> viaja intacto
 por toda la cadena de llamadas.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en una recursión no todos los argumentos
-cambian. Uno es el que <em>decrece</em> hacia el caso base (<code>power</code>) y otro es un dato fijo
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en una <a href="#g-recursion">recursión</a> no todos los argumentos
+cambian. Uno es el que <em>decrece</em> hacia el <a href="#g-caso-base">caso base</a> (<code>power</code>) y otro es un dato fijo
 que se arrastra (<code>nb</code>). Distinguir cuál es cuál es exactamente lo que tendrás que hacer con
-recursiones de verdad, como el backtracking de ex08.</div>
+recursiones de verdad, como el <a href="#g-backtracking">backtracking</a> de ex08.</div>
 </div>
 
 <div class="card" id="ex04">
 <h2><span class="ex">ex04</span>ft_fibonacci</h2>
 <div class="meta"><span>Entrega: <b>ft_fibonacci.c</b></span><span>Autorizado: nada</span></div>
-<p>Devuelve el elemento <code>index</code> de Fibonacci (0, 1, 1, 2, 3, 5…), con el primero en el
-índice 0. Debe ser <em>recursiva</em>. Si <code>index &lt; 0</code> devuelve <code>-1</code>.</p>
+<p>Devuelve el elemento <code>index</code> de <a href="#g-fibonacci">Fibonacci</a> (0, 1, 1, 2, 3, 5…), con el primero en el
+índice 0. Debe ser <a href="#g-recursion"><em>recursiva</em></a>. Si <code>index &lt; 0</code> devuelve <code>-1</code>.</p>
 <pre><code>int	ft_fibonacci(int index)
 {
 	if (index &lt; 0)
@@ -165,21 +392,21 @@ recursiones de verdad, como el backtracking de ex08.</div>
 		return (1);
 	return (ft_fibonacci(index - 1) + ft_fibonacci(index - 2));
 }</code></pre>
-<p>Aquí hay <em>dos</em> casos base (<code>0</code> y <code>1</code>) porque cada término depende de
+<p>Aquí hay <em>dos</em> <a href="#g-caso-base">casos base</a> (<code>0</code> y <code>1</code>) porque cada término depende de
 los dos anteriores, y <em>dos</em> llamadas recursivas por nivel.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — La recursión <em>en árbol</em>, y su lado
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — La recursión <a href="#g-arbol"><em>en árbol</em></a>, y su lado
 oscuro. <code>fib(n)</code> vuelve a calcular <code>fib(n-2)</code> por dos caminos distintos, y
 <code>fib(n-3)</code> tres veces, y así: el número de llamadas crece exponencialmente. <code>fib(40)</code>
-ya dispara más de mil millones de llamadas. El enunciado exige la versión recursiva justamente para
-que <em>sientas</em> esa explosión, y para que más adelante entiendas por qué existen la memoización y
-la programación dinámica. La versión iterativa (dos variables que se van pisando) lo haría en O(n) y
+ya hace 331 160 281 llamadas, más de trescientos millones. El enunciado exige la versión recursiva justamente para
+que <em>sientas</em> esa explosión, y para que más adelante entiendas por qué existen la <a href="#g-memoizacion">memoización</a> y
+la programación dinámica. La versión iterativa (dos variables que se van pisando) lo haría en <a href="#g-complejidad">O(n)</a> y
 sin pila; que la piscine te prohíba usarla aquí es pedagógico, no práctico.</div>
 </div>
 
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>ft_sqrt</h2>
 <div class="meta"><span>Entrega: <b>ft_sqrt.c</b></span><span>Autorizado: nada</span></div>
-<p>Raíz cuadrada <em>entera</em>: devuelve la raíz si es exacta, o <code>0</code> si no lo es
+<p><a href="#g-raiz">Raíz cuadrada <em>entera</em></a>: devuelve la raíz si es exacta, o <code>0</code> si no lo es
 (o si <code>nb</code> no tiene raíz entera).</p>
 <pre><code>int	ft_sqrt(int nb)
 {
@@ -197,10 +424,10 @@ sin pila; que la piscine te prohíba usarla aquí es pedagógico, no práctico.<
 <p>Se prueban candidatos <code>1, 2, 3…</code> hasta que <code>i·i</code> alcanza o supera
 <code>nb</code>. Si lo iguala exactamente, esa es la raíz; si lo supera sin igualarlo,
 <code>nb</code> no es un cuadrado perfecto y la respuesta es <code>0</code>.</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas. (1) El desbordamiento como
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas. (1) El <a href="#g-overflow">desbordamiento</a> como
 problema de tipos: <code>i·i</code> puede superar los ~2.147 millones que aguanta un <code>int</code>
 antes de que <code>i</code> llegue a la raíz de un <code>nb</code> grande. Declarar <code>i</code> como
-<code>long</code> evita que el producto se desborde y el bucle nunca pare. Es tu primer encuentro con
+<a href="#g-long"><code>long</code></a> evita que el producto se desborde y el bucle nunca pare. Es tu primer encuentro con
 "el tipo importa aunque el resultado quepa". (2) Que a veces el algoritmo obvio (probar en orden) es
 suficiente; optimizarlo con búsqueda binaria es una mejora que puedes razonar después.</div>
 </div>
@@ -208,7 +435,7 @@ suficiente; optimizarlo con búsqueda binaria es una mejora que puedes razonar d
 <div class="card" id="ex06">
 <h2><span class="ex">ex06</span>ft_is_prime</h2>
 <div class="meta"><span>Entrega: <b>ft_is_prime.c</b></span><span>Autorizado: nada</span></div>
-<p>Devuelve <code>1</code> si <code>nb</code> es primo, <code>0</code> si no. Ni <code>0</code> ni
+<p>Devuelve <code>1</code> si <code>nb</code> es <a href="#g-primo">primo</a>, <code>0</code> si no. Ni <code>0</code> ni
 <code>1</code> son primos (ni los negativos).</p>
 <pre><code>int	ft_is_prime(int nb)
 {
@@ -226,19 +453,19 @@ suficiente; optimizarlo con búsqueda binaria es una mejora que puedes razonar d
 	return (1);
 }</code></pre>
 <p>La clave está en la condición <code>i·i &lt;= nb</code>: no hace falta probar divisores más allá de
-la raíz cuadrada de <code>nb</code>, porque si <code>nb</code> tuviera un divisor mayor que su raíz,
+la <a href="#g-raiz">raíz cuadrada</a> de <code>nb</code>, porque si <code>nb</code> tuviera un divisor mayor que su raíz,
 su pareja sería uno menor que ya habríamos encontrado.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Optimización por razonamiento matemático, no
 por trucos de código. Comprobar divisores hasta <code>nb</code> funciona pero es lento; parar en
-<code>√nb</code> convierte un O(n) en O(√n) y solo requiere entender <em>por qué</em> los divisores
-vienen en parejas. Otra vez <code>long</code> para que <code>i·i</code> no se desborde con primos
-grandes. La aritmética de <code>%</code> (resto) es el detector de divisibilidad de todo el módulo.</div>
+<code>√nb</code> convierte un <a href="#g-complejidad">O(n)</a> en O(√n) y solo requiere entender <em>por qué</em> los divisores
+vienen en parejas. Otra vez <a href="#g-long"><code>long</code></a> para que <code>i·i</code> no se desborde con primos
+grandes. La aritmética de <a href="#g-modulo"><code>%</code> (resto)</a> es el detector de divisibilidad de todo el módulo.</div>
 </div>
 
 <div class="card" id="ex07">
 <h2><span class="ex">ex07</span>ft_find_next_prime</h2>
 <div class="meta"><span>Entrega: <b>ft_find_next_prime.c</b></span><span>Autorizado: nada</span></div>
-<p>Devuelve el primo inmediatamente <em>superior o igual</em> a <code>nb</code>.</p>
+<p>Devuelve el <a href="#g-primo">primo</a> inmediatamente <em>superior o igual</em> a <code>nb</code>.</p>
 <pre><code>static int	ft_is_prime(int nb)
 {
 	/* … idéntica a ex06 … */
@@ -254,7 +481,7 @@ int	ft_find_next_prime(int nb)
 lo sea. Como el propio <code>nb</code> cuenta, si ya es primo se devuelve tal cual.</p>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La <em>reutilización</em> como diseño: en vez
 de reescribir la primalidad, la encapsulas en un <em>helper</em> y la llamas. Como el helper no debe
-verse desde fuera del archivo, se declara <code>static</code> — tu primera decisión consciente de
+verse desde fuera del archivo, se declara <a href="#g-static"><code>static</code></a> — tu primera decisión consciente de
 <em>ámbito</em> (qué es público y qué es privado dentro de un <code>.c</code>). La Norma limita a 5
 funciones por archivo y este es un buen ejemplo de por qué partir un problema en piezas pequeñas ayuda
 a que cada una quepa y se lea.</div>
@@ -310,15 +537,114 @@ static int	solve(int *board, int col)
 columna por construcción. <code>is_valid</code> solo tiene que comprobar, contra las reinas ya
 colocadas, la misma <em>fila</em> (<code>board[i] == row</code>) y las dos <em>diagonales</em>
 (cuando la distancia en columnas iguala la distancia en filas).</p>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — El <em>backtracking</em>, que es la síntesis de
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — El <a href="#g-backtracking"><em>backtracking</em></a>, que es la síntesis de
 todo C05. <code>solve</code> avanza columna a columna probando filas; cuando una fila es válida la fija
-y baja un nivel (recursión), y cuando agota las diez filas de una columna simplemente vuelve —
-"deshace" — y prueba la siguiente opción del nivel anterior. La pila de llamadas <em>es</em> el
+y baja un nivel (<a href="#g-recursion">recursión</a>), y cuando agota las diez filas de una columna simplemente vuelve —
+"deshace" — y prueba la siguiente opción del nivel anterior. La <a href="#g-pila">pila de llamadas</a> <em>es</em> el
 tablero parcial: no necesitas guardar y restaurar estado a mano porque cada marco recuerda su propio
-<code>col</code> y su propio <code>row</code>. Colocar el caso base (<code>col == 10</code>: solución
+<code>col</code> y su propio <code>row</code>. Colocar el <a href="#g-caso-base">caso base</a> (<code>col == 10</code>: solución
 completa, imprime y suma 1) y acumular los retornos de las ramas es el mismo esqueleto del factorial
 recursivo, pero ramificado. Si entiendes por qué esto explora exactamente todas las combinaciones
 válidas y ninguna inválida, tienes la llave de laberintos, sudokus y parsers.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe, con una respuesta corta y el enlace a la sección
+donde está explicado. Están agrupadas en: recursión, casos límite, rendimiento y Norma. Las
+respuestas hablan del código de tu entrega (<code>repo/</code>), que no siempre es el mismo que se
+muestra en las tarjetas. Antes de mirar la respuesta, intenta contestar tú.</p>
+
+<h3>Recursión</h3>
+<details id="q-rec-vs-it">
+<summary>¿Qué diferencia hay entre tu factorial iterativo y el recursivo?</summary>
+<p>El resultado es el mismo. El iterativo usa un bucle y un <a href="#g-acumulador">acumulador</a>
+que empieza en 1: un solo marco en la pila, memoria constante. El recursivo se llama con
+<code>nb - 1</code> hasta el caso base <code>nb == 0</code>, así que con <code>nb = 10</code> hay
+once marcos apilados a la vez y las multiplicaciones se hacen a la vuelta.
+→ <a href="#ex00">ex00</a>, <a href="#ex01">ex01</a>, <a href="#g-pila">pila de llamadas</a></p>
+</details>
+<details id="q-sin-base">
+<summary>¿Qué pasa si quitas el caso base de una función recursiva?</summary>
+<p>Que nunca deja de llamarse: cada llamada añade un marco hasta que la pila se llena y el programa
+muere con <code>Segmentation fault</code>. Tampoco hace falta quitarlo: con el caso base bien
+puesto, <code>ft_recursive_factorial(1000000)</code> también revienta la pila (código 139) porque
+necesita un millón de marcos. → <a href="#g-stack-overflow">desbordamiento de pila</a></p>
+</details>
+<details id="q-fib-lento">
+<summary>¿Por qué <code>ft_fibonacci(40)</code> tarda casi un segundo? ¿Cómo lo mejorarías?</summary>
+<p>Porque cada llamada hace dos llamadas, y se recalculan los mismos términos una y otra vez:
+<code>fib(40)</code> hace 331 160 281 llamadas. Se arregla guardando los resultados (memoización) o
+con un bucle de dos variables, como la versión comentada en tu archivo, que hace 40 vueltas. El
+enunciado exige la recursiva, así que se entrega esa. → <a href="#ex04">ex04</a>,
+<a href="#g-arbol">recursión en árbol</a></p>
+</details>
+<details id="q-reinas">
+<summary>Explícame tus diez reinas. ¿Cómo detectas las diagonales?</summary>
+<p><code>pos[col] = fila</code>: una reina por columna, así que nunca comparten columna.
+<code>ft_q_isolver</code> prueba las diez filas de la columna <code>p</code>; si
+<code>ft_q_ava</code> la acepta, baja a <code>p + 1</code>, y al llegar a <code>p == 10</code>
+imprime y devuelve 1. Dos reinas están en la misma diagonal cuando la diferencia de filas es igual a
+la de columnas (<code>pos[i] ± (p - i) == pos[p]</code>). Las columnas aún vacías valen −100 y no
+chocan nunca. Total: 724. → <a href="#ex08">ex08</a>, <a href="#g-backtracking">backtracking</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-negativos">
+<summary>¿Qué devuelve cada función con un argumento negativo?</summary>
+<p>Lo que pide cada enunciado: los factoriales, 0; las potencias con <code>power &lt; 0</code>, 0;
+<code>ft_fibonacci</code>, −1; <code>ft_sqrt</code> y <code>ft_is_prime</code>, 0;
+<code>ft_find_next_prime(-5)</code>, 2, porque sube hasta el primer primo. Comprobado con el repo.
+→ <a href="#ex00">ex00</a>, <a href="#ex04">ex04</a>, <a href="#ex07">ex07</a></p>
+</details>
+<details id="q-cero">
+<summary>¿Cuánto valen <code>0!</code>, <code>0^0</code> y <code>ft_is_prime(1)</code>?</summary>
+<p><code>0! = 1</code> y <code>0^0 = 1</code>: el bucle no da ninguna vuelta y se devuelve el valor
+inicial, 1, que es el neutro del producto. En la versión recursiva son el caso base.
+<code>ft_is_prime(0)</code> y <code>ft_is_prime(1)</code> dan 0: el enunciado lo dice
+expresamente. → <a href="#g-acumulador">acumulador y elemento neutro</a>, <a href="#g-primo">primo</a></p>
+</details>
+<details id="q-sqrt-overflow">
+<summary>¿Por qué <code>ft_sqrt(2147483647)</code> no se queda colgado?</summary>
+<p>Porque la condición se calcula en <code>long</code>: <code>(long) i * i &lt;= (long) nb</code>.
+Con <code>int</code>, 46341² desbordaría, saldría negativo y el bucle seguiría para siempre. Con
+<code>long</code>, en 46341 el producto supera a <code>nb</code>, el bucle para y devuelve 0.
+→ <a href="#ex05">ex05</a>, <a href="#g-long">long y cast</a></p>
+</details>
+<details id="q-factorial-13">
+<summary>¿Qué devuelve <code>ft_iterative_factorial(13)</code>?</summary>
+<p>1932053504, que no es 13! (6 227 020 800): no cabe en un <code>int</code>. El enunciado dice que
+el overflow no hay que tratarlo y que el valor queda indefinido; el último factorial correcto es
+<code>12! = 479001600</code>. → <a href="#g-factorial">factorial</a>, <a href="#g-overflow">overflow</a></p>
+</details>
+
+<h3>Rendimiento (mejor tener la respuesta preparada)</h3>
+<details id="q-primo-lento">
+<summary>¿Cuánto tarda tu <code>ft_is_prime(2147483647)</code>?</summary>
+<p>Unos 9 segundos medidos, porque el repo prueba divisores hasta <code>i &lt; nb</code>: más de dos
+mil millones de divisiones. Si la prueba tiene límite de tiempo, puede dar timeout, y lo mismo
+<code>ft_find_next_prime</code>, que usa la misma función. La mejora es parar en
+<code>(long) i * i &lt;= nb</code>: unas 46 000 vueltas, como en la tarjeta de ex06.
+→ <a href="#ex06">ex06</a>, <a href="#g-raiz">por qué basta hasta √n</a></p>
+</details>
+<details id="q-static">
+<summary>¿Por qué ex07 lleva su propia copia de <code>ft_is_prime</code>?</summary>
+<p>Porque cada ejercicio se entrega y se compila solo: ex07 no puede usar el archivo de ex06. Lo
+limpio es marcarla <code>static</code>, para que no se vea fuera del archivo ni choque con otra
+<code>ft_is_prime</code>; en el repo no lo está. → <a href="#ex07">ex07</a>,
+<a href="#g-static">static</a></p>
+</details>
+
+<h3>Norma y entrega</h3>
+<details id="q-norma">
+<summary>¿Pasa la Norma? ¿Qué es <code>-R CheckForbiddenSourceHeader</code>?</summary>
+<p>El enunciado pide pasar norminette con ese flag, y la Moulinette lo usa también. Con la versión
+3.3.59 instalada, los nueve archivos dan <code>OK!</code>. Funciones autorizadas: ninguna de ex00 a
+ex07 y solo <code>write</code> en ex08; el <code>#include &lt;unistd.h&gt;</code> que llevan todos
+no llama a nada, pero solo hace falta en ex08. El <code>main</code> de pruebas de
+<code>ft_fibonacci.c</code> está comentado, que es lo que permite el enunciado.
+→ <a href="#ex08">ex08</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 05 · <a href="006_c04.html">← C 04</a> · <a href="008_c06.html">C 06 →</a></footer>

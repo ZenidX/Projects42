@@ -14,6 +14,8 @@
       <a href="../index.html">Inicio</a>
       <a href="../index.html#piscine" class="active">Piscine</a>
       <a href="../index.html#cursus">Cursus</a>
+      <a href="../galaxia.html">Galaxia</a>
+      <a href="../zen.html">Sistema zen</a>
     </nav>
   </div>
 </header>
@@ -25,6 +27,7 @@ memoria con dirección, y que un puntero no es más (ni menos) que esa direcció
 una variable.</p>
 
 <ul class="toc">
+  <li><a href="#glosario">G — Glosario de teoría</a></li>
   <li><a href="#ex00">ex00 — ft_ft</a></li>
   <li><a href="#ex01">ex01 — ft_ultimate_ft</a></li>
   <li><a href="#ex02">ex02 — ft_swap</a></li>
@@ -34,17 +37,269 @@ una variable.</p>
   <li><a href="#ex06">ex06 — ft_strlen</a></li>
   <li><a href="#ex07">ex07 — ft_rev_int_tab</a></li>
   <li><a href="#ex08">ex08 — ft_sort_int_tab</a></li>
+  <li><a href="#preguntas">? — Preguntas probables</a></li>
 </ul>
 
-<div class="trasfondo"><b>Por qué un módulo entero de punteros</b> — C pasa <em>todo</em> por
-valor: cuando llamas <code>f(x)</code>, la función recibe una copia y no puede tocar tu
+<div class="trasfondo"><b>Por qué un módulo entero de punteros</b> — C pasa <em>todo</em> <a href="#g-paso-por-valor">por
+valor</a>: cuando llamas <code>f(x)</code>, la función recibe una copia y no puede tocar tu
 variable. La única forma de que una función modifique algo del que llama es darle la
-<em>dirección</em> de ese algo. De esa limitación — deliberada, C es de 1972 y mapea casi
-directo a ensamblador — nace todo este módulo: los punteros no son un tema avanzado de C,
+<em><a href="#g-direccion">dirección</a></em> de ese algo. De esa limitación — deliberada, C es de 1972 y mapea casi
+directo a ensamblador — nace todo este módulo: los <a href="#g-puntero">punteros</a> no son un tema avanzado de C,
 son <em>el</em> mecanismo del lenguaje para compartir memoria entre funciones. (El prólogo
 del enunciado atribuye a "Una noche en la ópera de los Hermanos Marx" el diálogo de la Royale
 con queso… que es de Pulp Fiction. Error a propósito: comprobar las fuentes también es parte
 del oficio.)</div>
+
+<div class="card" id="glosario">
+<h2><span class="ex">G</span>Glosario de teoría</h2>
+<p>C01 es el módulo en el que aparecen de golpe las palabras que vas a oír el resto del cursus:
+dirección, puntero, desreferenciar, paso por valor… Aquí está cada una explicada desde cero y con un
+ejemplo sacado de los propios ejercicios. En el resto de la página, la primera vez que sale uno de
+estos términos en cada tarjeta lleva un enlace a su entrada.</p>
+
+<h3>Memoria y punteros</h3>
+<details id="g-direccion">
+<summary>Memoria, dirección y el operador <code>&amp;</code></summary>
+<p>La memoria del programa es una fila enorme de casillas de un byte, numeradas. El número de una
+casilla es su <em>dirección</em>. Cada variable ocupa unas cuantas casillas seguidas (un
+<code>int</code> suele ocupar 4) y su dirección es la de la primera.</p>
+<p>El operador <code>&amp;</code> delante de una variable da su dirección: si tienes
+<code>int n;</code>, <code>&amp;n</code> es «dónde vive <code>n</code>». Es lo que hace el main de
+prueba de ex00: <code>ft_ft(&amp;n)</code> no le pasa el valor de <code>n</code>, sino el sitio donde
+está guardado.</p>
+</details>
+<details id="g-puntero">
+<summary>Puntero</summary>
+<p>Una variable que guarda una dirección. <code>int *nbr</code> se lee «<code>nbr</code> es un
+puntero a <code>int</code>»: lo que contiene no es un entero, sino la dirección de un entero. El
+tipo (<code>int *</code>, <code>char *</code>…) le dice al compilador qué hay en esa dirección y
+cuántos bytes leer cuando vaya allí.</p>
+<p>En C01 todos los prototipos llevan punteros: <code>ft_ft(int *nbr)</code>,
+<code>ft_swap(int *a, int *b)</code>, <code>ft_putstr(char *str)</code>. Un puntero ocupa lo mismo
+apunte a lo que apunte (8 bytes en un sistema de 64 bits).</p>
+</details>
+<details id="g-desreferencia">
+<summary>Desreferenciar e indirección (el <code>*</code> al usar)</summary>
+<p>El <code>*</code> tiene dos papeles. En una declaración (<code>int *nbr</code>) dice «esto es un
+puntero». Al usarlo (<code>*nbr = 42</code>) significa «ve a la dirección que guarda
+<code>nbr</code> y trabaja con lo que hay allí». Eso es <em>desreferenciar</em>, y acceder a algo a
+través de su dirección se llama <em>indirección</em>.</p>
+<p><code>&amp;</code> y <code>*</code> son opuestos: <code>*&amp;n</code> es <code>n</code>. En ex00,
+<code>*nbr = 42</code> escribe 42 en la variable del que llama, no en <code>nbr</code>.</p>
+</details>
+<details id="g-puntero-a-puntero">
+<summary>Puntero a puntero (varios niveles de indirección)</summary>
+<p>Un puntero es una variable más, así que también tiene dirección, y esa dirección se puede guardar
+en otro puntero: <code>int **pp</code> apunta a un <code>int *</code>, que apunta a un
+<code>int</code>. Cada <code>*</code> del tipo es un salto; cada <code>*</code> al usarlo deshace
+uno.</p>
+<p>ex01 lo lleva a nueve: <code>int *********nbr</code>. Para probarlo hacen falta un
+<code>int</code> y ocho punteros intermedios, cada uno con la dirección del anterior; al final se
+llama <code>ft_ultimate_ft(&amp;p8)</code>. El uso real de verdad es el doble puntero
+(<code>t_list **</code> en C12): una función que tiene que cambiar el puntero del que llama, no lo
+apuntado.</p>
+</details>
+<details id="g-paso-por-valor">
+<summary>Paso por valor</summary>
+<p>Cuando llamas a una función, C copia cada argumento en el parámetro correspondiente. La función
+trabaja con esa copia: si la cambia, la variable original no se entera. Es la única forma de pasar
+argumentos que tiene C.</p>
+<p>Por eso un <code>swap(int a, int b)</code> no sirve: intercambia sus copias y, al volver, todo
+sigue igual. Con punteros también se pasa por valor, pero lo que se copia es la dirección, y con
+una copia de la dirección se llega a la misma variable. Otros lenguajes tienen «paso por
+referencia» (C++ con <code>int &amp;a</code>); C lo imita así.</p>
+</details>
+<details id="g-parametro-salida">
+<summary>Parámetro de salida</summary>
+<p>Un parámetro puntero que no sirve para darle datos a la función, sino para que la función deje
+ahí un resultado. Es como C devuelve más de un valor: <code>return</code> solo puede devolver
+uno.</p>
+<p>En ex03, <code>div</code> y <code>mod</code> son de salida: quien llama declara dos
+<code>int</code>, pasa sus direcciones y la función los rellena. En ex04 <code>a</code> y
+<code>b</code> son de entrada y salida a la vez: se leen y luego se sobrescriben.</p>
+</details>
+<details id="g-aliasing">
+<summary>Aliasing</summary>
+<p>Hay <em>aliasing</em> cuando dos nombres llegan a la misma memoria: dos punteros con la misma
+dirección, o un puntero y la variable a la que apunta. Si escribes por uno, cambia lo que lees por
+el otro, y el orden de las operaciones pasa a importar.</p>
+<p>ex04 es el ejemplo pequeño: <code>*a</code> se usa para calcular el cociente y el resto, y además
+es donde se guarda el cociente. Si se escribiera <code>*a = *a / *b</code> antes de calcular el
+resto, el resto saldría del valor nuevo. Otro caso: <code>ft_swap(&amp;x, &amp;x)</code> funciona con
+la temporal, pero el truco del swap con XOR sin temporal dejaría <code>x</code> a 0.</p>
+</details>
+<details id="g-segfault">
+<summary>Puntero nulo y segfault</summary>
+<p><code>NULL</code> es un puntero que no apunta a nada (vale 0). Desreferenciarlo, o desreferenciar
+cualquier dirección que no es del programa, hace que el sistema mate el proceso con la señal
+<code>SIGSEGV</code>: el famoso <em>segmentation fault</em>.</p>
+<p>Ninguna función de C01 comprueba si le pasan <code>NULL</code>: <code>ft_putstr(NULL)</code> o
+<code>ft_strlen(NULL)</code> revientan, igual que las de la libc. El enunciado lo admite: las
+funciones no deben terminar de forma inesperada «excepto en el caso de comportamientos
+indefinidos», y pasar <code>NULL</code> donde se espera una cadena lo es.</p>
+</details>
+
+<h3>Arrays y cadenas</h3>
+<details id="g-array">
+<summary>Array</summary>
+<p>Un bloque de elementos del mismo tipo, uno detrás de otro en memoria. <code>int tab[5]</code>
+reserva 5 <code>int</code> seguidos; <code>tab[0]</code> es el primero y <code>tab[4]</code> el
+último. C no comprueba los límites: <code>tab[5]</code> compila y lee la memoria de al lado.</p>
+<p>ex07 y ex08 reciben un array de enteros y lo modifican: <code>{1, 2, 3, 4, 5}</code> pasa a
+<code>{5, 4, 3, 2, 1}</code> con <code>ft_rev_int_tab</code>.</p>
+</details>
+<details id="g-indexacion">
+<summary>Indexar y aritmética de punteros: <code>tab[i]</code> es <code>*(tab + i)</code></summary>
+<p>Sumar un entero a un puntero avanza esa cantidad de <em>elementos</em>, no de bytes:
+<code>tab + 1</code> con <code>int *tab</code> avanza 4 bytes, y con <code>char *str</code>, 1. Los
+corchetes son solo otra forma de escribirlo: <code>tab[i]</code> significa exactamente
+<code>*(tab + i)</code>.</p>
+<p>Por eso en ex05 <code>&amp;str[i]</code> es la dirección del carácter <code>i</code>, lo que
+<code>write</code> necesita. Se podría escribir igual <code>str + i</code>.</p>
+</details>
+<details id="g-decaimiento">
+<summary>Un array «degenera» a puntero</summary>
+<p>Cuando pasas un array a una función, no se copia el array: se pasa la dirección de su primer
+elemento. Dentro de la función el parámetro es un puntero, y por mucho que escribas
+<code>int tab[]</code> en el prototipo, el compilador lo trata como <code>int *tab</code>.</p>
+<p>La consecuencia: la función no puede saber cuántos elementos hay. <code>sizeof(tab)</code> dentro
+de <code>ft_rev_int_tab</code> daría 8 (lo que ocupa un puntero), no el tamaño del array. Por eso
+ex07 y ex08 reciben <code>size</code> aparte.</p>
+</details>
+<details id="g-cadena">
+<summary>Cadena en C (string)</summary>
+<p>C no tiene tipo cadena. Una cadena es un array de <code>char</code> que termina en un byte 0, y se
+maneja con un <code>char *</code> que apunta a su primer carácter. Una cadena literal como
+<code>"Hola"</code> ocupa 5 bytes: las cuatro letras y el 0 final.</p>
+<p>Los literales son de solo lectura: <code>char *s = "Hola"; s[0] = 'h';</code> compila pero
+suele acabar en segfault. Para una cadena que se pueda modificar hay que usar un array:
+<code>char s[] = "Hola";</code>. En C01 no importa porque <code>ft_putstr</code> y
+<code>ft_strlen</code> solo leen.</p>
+</details>
+<details id="g-terminador">
+<summary>Terminador nulo (<code>'\0'</code>)</summary>
+<p>El byte con valor 0 que marca el final de una cadena. Se escribe <code>'\0'</code> y es el
+número 0; no tiene nada que ver con el carácter <code>'0'</code>, que vale 48.</p>
+<p>Como el 0 es «falso» en C, <code>while (str[i])</code> se lee «mientras no haya llegado al
+terminador». <code>ft_strlen("Hola")</code> devuelve 4: cuenta las letras, no el terminador. Si a
+una cadena le falta el 0, cualquier función que la recorra sigue leyendo memoria hasta encontrar
+uno por casualidad.</p>
+</details>
+<details id="g-write">
+<summary><code>write</code> y la salida estándar</summary>
+<p><code>write(fd, dir, n)</code> es una llamada al sistema: pide al sistema operativo que escriba
+<code>n</code> bytes, empezando en la dirección <code>dir</code>, en el descriptor de fichero
+<code>fd</code>. El descriptor 1 es la salida estándar (normalmente la terminal); el 2, la salida de
+errores. Está en <code>&lt;unistd.h&gt;</code>.</p>
+<p><code>ft_putstr</code> llama a <code>write(1, &amp;str[i], 1)</code> una vez por carácter: un
+byte cada vez. Es la única función autorizada del módulo, y solo en ex05.</p>
+</details>
+
+<h3>Aritmética</h3>
+<details id="g-division-entera">
+<summary>División entera y resto (<code>/</code> y <code>%</code>)</summary>
+<p>Entre dos <code>int</code>, <code>/</code> da el cociente sin decimales y <code>%</code> el resto:
+<code>10 / 3</code> es 3 y <code>10 % 3</code> es 1. Desde C99 el cociente se trunca hacia cero
+(se tira la parte decimal), y el resto lleva el signo del dividendo, de forma que siempre se cumple
+<code>(a / b) * b + a % b == a</code>.</p>
+<p>Con negativos sale lo que no todo el mundo espera (ejecutado con el ft_div_mod de ex03):</p>
+<table>
+<tr><th>a, b</th><th>div</th><th>mod</th></tr>
+<tr><td>-10, 3</td><td>-3</td><td>-1</td></tr>
+<tr><td>10, -3</td><td>-3</td><td>1</td></tr>
+<tr><td>-10, -3</td><td>3</td><td>-1</td></tr>
+</table>
+<p>El test de <code>test/</code> prueba justo esos tres casos, además de <code>INT_MAX</code> e
+<code>INT_MIN</code> entre 7.</p>
+</details>
+<details id="g-ub">
+<summary>Comportamiento indefinido</summary>
+<p>Lo que el estándar de C no define: el compilador puede hacer cualquier cosa y el programa puede
+fallar, dar basura o parecer que funciona. No es un error de compilación; se descubre al
+ejecutar, o no se descubre.</p>
+<p>En C01: dividir entre 0 (<code>ft_div_mod(10, 0, …)</code>), <code>INT_MIN / -1</code> (el
+resultado, 2147483648, no cabe en un <code>int</code>), desreferenciar <code>NULL</code> o leer
+fuera de un array. En este ordenador, las dos divisiones matan el programa con
+<code>SIGFPE</code> («Floating point exception», estado de salida 136), aunque no haya ningún
+número decimal por medio.</p>
+</details>
+
+<h3>Algoritmos</h3>
+<details id="g-swap">
+<summary>Intercambio (swap) y variable temporal</summary>
+<p>Para intercambiar dos valores hace falta un tercer sitio: si haces <code>*a = *b</code> primero,
+el valor de <code>*a</code> se pierde. La receta es guardar uno en una temporal, copiar el otro
+encima y poner la temporal en el segundo:</p>
+<pre><code>tmp = *a;
+*a = *b;
+*b = tmp;</code></pre>
+<p>Es ex02, y las mismas tres líneas vuelven dentro de ex07 y ex08, con <code>tab[i]</code> en vez
+de <code>*a</code>.</p>
+</details>
+<details id="g-in-place">
+<summary>In place (en el sitio)</summary>
+<p>Un algoritmo trabaja <em>in place</em> cuando modifica los datos donde están, usando solo unas
+pocas variables extra, en lugar de construir el resultado en otra memoria. Se dice que usa memoria
+constante, O(1), porque lo que gasta de más no depende del tamaño de la entrada.</p>
+<p><code>ft_rev_int_tab</code> y <code>ft_sort_int_tab</code> son in place: no hay array auxiliar,
+solo <code>i</code> y <code>tmp</code>. Además, sin <code>malloc</code> (no autorizado) tampoco
+habría otra opción.</p>
+</details>
+<details id="g-complejidad">
+<summary>Complejidad: O(n), O(n²), O(n³)</summary>
+<p>La <em>complejidad</em> dice cómo crece el trabajo cuando crece la entrada, sin contar
+constantes. O(n) (lineal): el doble de datos, el doble de trabajo; es <code>ft_strlen</code>, que
+mira cada carácter una vez. O(n²) (cuadrático): el doble de datos, cuatro veces el trabajo; suele
+ser un bucle dentro de otro. O(n³): el doble de datos, ocho veces el trabajo.</p>
+<p>Medir lo confirma. <code>ft_rev_int_tab</code> hace <code>size / 2</code> intercambios: O(n).
+<code>ft_sort_int_tab</code> se comenta en la entrada siguiente.</p>
+</details>
+<details id="g-gnome">
+<summary>Ordenación por intercambio de vecinos (gnome sort y la versión de ex08)</summary>
+<p>La familia de ordenaciones más sencilla: mirar parejas de vecinos y, si están al revés,
+cambiarlas. La burbuja recorre el array entero una y otra vez; el <em>gnome sort</em> («ordenación
+del gnomo», por un gnomo que ordena macetas) avanza mientras todo va bien y, cuando cambia una
+pareja, retrocede <em>una</em> posición para ver si el que ha bajado sigue mal colocado. Las dos son
+O(n²).</p>
+<p>La solución de ex08 se parece, pero tras cada intercambio vuelve a <code>i = 0</code>, al
+principio del array, no una posición atrás. Eso la hace más lenta: cada intercambio puede costar
+un recorrido entero. Contando comparaciones con el mismo código, un array al revés de 100 elementos
+necesita 166 749 y uno de 1000, 166 667 499 (unas n³/6): es O(n³) en el peor caso. Para los arrays
+pequeños de la Moulinette no se nota; el resultado es correcto igualmente.</p>
+</details>
+<details id="g-invariante">
+<summary>Invariante</summary>
+<p>Una afirmación que es cierta cada vez que el programa pasa por un punto del bucle. Sirve para
+convencerse de que el código es correcto sin probar todas las entradas.</p>
+<p>En ex08: «cuando <code>i</code> vale k, <code>tab[0..k]</code> está ordenado». Al empezar
+(<code>i = 0</code>) es cierto; avanzar solo ocurre si <code>tab[i] &lt;= tab[i + 1]</code>, así que
+sigue siéndolo; y tras un intercambio se vuelve a 0, donde vuelve a ser cierto. Cuando el bucle
+acaba, <code>i</code> vale <code>size - 1</code> y todo el array está ordenado. Y acaba porque cada
+intercambio quita una pareja desordenada.</p>
+</details>
+
+<h3>La piscine</h3>
+<details id="g-norma">
+<summary>La Norma y norminette</summary>
+<p>Las reglas de estilo obligatorias en 42. Entre otras: funciones de 25 líneas como mucho, como
+mucho 5 funciones por archivo, las declaraciones al principio de la función y una por línea, y
+prohibidos <code>for</code>, <code>do…while</code>, <code>switch</code> y el operador ternario. Por
+eso todos los bucles de la página son <code>while</code> con <code>i = 0;</code> antes.</p>
+<p><code>norminette</code> es el programa que comprueba buena parte de esas reglas, incluida la
+cabecera de 42 en cada archivo. El enunciado avisa de que no es exhaustivo: si quien te evalúa ve
+una falta de Norma, es un 0 aunque norminette no diga nada.</p>
+</details>
+<details id="g-moulinette">
+<summary>Moulinette</summary>
+<p>El corrector automático de 42. Después de la evaluación entre compañeros, compila tus archivos
+con <code>cc -Wall -Wextra -Werror</code> junto a su propio <code>main</code> de pruebas y compara
+los resultados. No se discute con ella: un aviso del compilador, un archivo de más o un fallo en
+un caso límite, y el ejercicio cuenta como suspendido.</p>
+<p>Si tu archivo trae su propio <code>main</code>, choca con el suyo y no enlaza. El runner de
+<code>test/</code> de este pack avisa de eso mismo: «el fuente todavía define main(): quítalo antes
+de entregar».</p>
+</details>
+</div>
 
 <div class="card" id="ex00">
 <h2><span class="ex">ex00</span>ft_ft</h2>
@@ -54,10 +309,10 @@ del oficio.)</div>
 	*nbr = 42;
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La pareja de operadores que define C:
-<code>&amp;</code> ("dame la dirección de") y <code>*</code> ("ve a esta dirección"). Escribir
+<code>&amp;</code> ("dame la <a href="#g-direccion">dirección</a> de") y <code>*</code> ("ve a esta dirección"). Escribir
 <code>*nbr = 42</code> es: toma la dirección que te han pasado, ve a esa celda de memoria y
 escribe 42 en ella. El que llama ve su variable cambiada sin que se la hayas "devuelto".
-Una línea de código, pero es el modelo mental completo de la indirección.</div>
+Una línea de código, pero es el modelo mental completo de la <a href="#g-desreferencia">indirección</a>.</div>
 </div>
 
 <div class="card" id="ex01">
@@ -68,8 +323,8 @@ Una línea de código, pero es el modelo mental completo de la indirección.</di
 	*********nbr = 42;
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Nadie usa nueve niveles de
-indirección; el absurdo es el mensaje. Cada <code>*</code> del tipo añade un salto ("puntero a
-puntero a…"), y cada <code>*</code> al usarlo deshace exactamente uno. Si entiendes que
+<a href="#g-desreferencia">indirección</a>; el absurdo es el mensaje. Cada <code>*</code> del tipo añade un salto ("<a href="#g-puntero-a-puntero">puntero a
+puntero a…</a>"), y cada <code>*</code> al usarlo deshace exactamente uno. Si entiendes que
 <code>*********nbr</code> son nueve saltos encadenados hasta llegar al int del fondo — y que
 el main de prueba necesita nueve variables intermedias, cada una guardando la dirección de la
 anterior — los dobles punteros de C12 (<code>t_list **</code>) te parecerán triviales. Es
@@ -88,9 +343,9 @@ vacunación por sobredosis.</div>
 	*b = tmp;
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — El ejercicio canónico de "por qué
-existen los punteros": un swap por valor (<code>void swap(int a, int b)</code>) compila,
-corre y no hace <em>nada</em> visible — intercambia las copias. Solo con direcciones el efecto
-sobrevive al return. También introduce el patrón de la variable temporal: no puedes pisar un
+existen los punteros": un <a href="#g-swap">swap</a> <a href="#g-paso-por-valor">por valor</a> (<code>void swap(int a, int b)</code>) compila,
+corre y no hace <em>nada</em> visible — intercambia las copias. Solo con <a href="#g-direccion">direcciones</a> el efecto
+sobrevive al return. También introduce el patrón de la <a href="#g-swap">variable temporal</a>: no puedes pisar un
 valor sin guardarlo antes. Este swap reaparecerá dentro de rev_int_tab, sort_int_tab y todos
 los sorts que escribas.</div>
 </div>
@@ -104,8 +359,8 @@ los sorts que escribas.</div>
 	*mod = a % b;
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — C solo puede devolver UN valor con
-<code>return</code>. ¿Y si una operación produce dos (cociente y resto)? El idioma clásico:
-<em>parámetros de salida</em> — el llamador reserva las variables y te pasa sus direcciones
+<code>return</code>. ¿Y si una operación produce dos (<a href="#g-division-entera">cociente y resto</a>)? El idioma clásico:
+<em><a href="#g-parametro-salida">parámetros de salida</a></em> — el llamador reserva las variables y te pasa sus direcciones
 para que las rellenes. Así funcionan media libc y todas las APIs de sistema
 (<code>pipe(int fd[2])</code>, <code>waitpid(&amp;status)</code>…). Los lenguajes modernos
 devuelven tuplas; C te enseña qué hay debajo de esa azúcar.</div>
@@ -124,17 +379,17 @@ devuelven tuplas; C te enseña qué hay debajo de esa azúcar.</div>
 	*a = div;
 	*b = mod;
 }</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Ahora los punteros son entrada
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Ahora los <a href="#g-puntero">punteros</a> son entrada
 <em>y</em> salida a la vez, y aparece un peligro nuevo: el orden. Si escribes
 <code>*a = *a / *b</code> y después calculas el resto, ya has destruido el valor original de
 <code>*a</code> — el resto saldrá mal. Hay que leer todo antes de escribir nada (de ahí las
-temporales). Es la primera lección de <em>aliasing</em>: cuando lees y escribes a través de
+<a href="#g-swap">temporales</a>). Es la primera lección de <em><a href="#g-aliasing">aliasing</a></em>: cuando lees y escribes a través de
 punteros, el orden de las operaciones es parte de la corrección.</div>
 </div>
 
 <div class="card" id="ex05">
 <h2><span class="ex">ex05</span>ft_putstr</h2>
-<div class="meta"><span>Entrega: <b>ft_putstr.c</b></span><span>Autorizado: <b>write</b></span></div>
+<div class="meta"><span>Entrega: <b>ft_putstr.c</b></span><span>Autorizado: <b><a href="#g-write">write</a></b></span></div>
 <pre><code>void	ft_putstr(char *str)
 {
 	int	i;
@@ -146,9 +401,9 @@ punteros, el orden de las operaciones es parte de la corrección.</div>
 		i++;
 	}
 }</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en C <em>no hay tipo cadena</em>.
-Una "string" es solo la dirección de su primer carácter, y la convención de que termina donde
-aparezca el byte 0 (<code>'\0'</code>). La condición <code>while (str[i])</code> es
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Que en C <em>no hay <a href="#g-cadena">tipo cadena</a></em>.
+Una "string" es solo la <a href="#g-direccion">dirección</a> de su primer carácter, y la convención de que termina donde
+aparezca el <a href="#g-terminador">byte 0</a> (<code>'\0'</code>). La condición <code>while (str[i])</code> es
 literalmente "mientras el byte no sea cero". De esa decisión de diseño de 1972 —
 comprometida pero baratísima en memoria — salen strlen, los buffer overflows, y medio siglo
 de bugs; conviene entenderla bien porque es la base de los módulos C02-C04 y de C07.</div>
@@ -168,7 +423,7 @@ de bugs; conviene entenderla bien porque es la base de los módulos C02-C04 y de
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — La consecuencia directa del diseño
 de ex05: como la longitud no se guarda en ninguna parte, <em>medirla cuesta recorrer la
-cadena entera</em>, O(n). En lenguajes con la longitud almacenada, len() es O(1). Entender
+<a href="#g-cadena">cadena</a> entera</em>, <a href="#g-complejidad">O(n)</a>. En lenguajes con la longitud almacenada, len() es O(1). Entender
 este coste explica patrones de todo el C real: por qué no se llama strlen dentro de la
 condición de un bucle, por qué las APIs pasan la longitud junto al puntero, por qué existen
 strlcpy/strlcat. Primer ejercicio del módulo que <em>devuelve</em> algo: `return (i);`.</div>
@@ -191,13 +446,13 @@ strlcpy/strlcat. Primer ejercicio del módulo que <em>devuelve</em> algo: `retur
 		i++;
 	}
 }</code></pre>
-<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas. (1) Un array que entra en
-una función <em>degenera a puntero</em>: dentro solo tienes la dirección del primer elemento,
+<div class="trasfondo"><b>Qué te obliga a aprender</b> — Dos cosas. (1) Un <a href="#g-array">array</a> que entra en
+una función <em><a href="#g-decaimiento">degenera a puntero</a></em>: dentro solo tienes la <a href="#g-indexacion">dirección del primer elemento</a>,
 y por eso el tamaño viaja como parámetro aparte — C no lo sabe. Perder el tamaño = leer
 memoria ajena. (2) El patrón de los dos índices que avanzan desde los extremos
 (<code>i</code> y <code>size-1-i</code>) intercambiando — parar en <code>size/2</code> para
 no des-invertir, y comprobar que el elemento central impar se queda quieto solo. Invertir
-<em>in place</em>, sin array auxiliar, es la primera vez que piensas en memoria constante.</div>
+<em><a href="#g-in-place">in place</a></em>, sin array auxiliar, es la primera vez que piensas en memoria constante.</div>
 </div>
 
 <div class="card" id="ex08">
@@ -223,12 +478,104 @@ no des-invertir, y comprobar que el elemento central impar se queda quieto solo.
 	}
 }</code></pre>
 <div class="trasfondo"><b>Qué te obliga a aprender</b> — Tu primer algoritmo de verdad: no hay
-receta en el enunciado, solo "ordena". La solución de arriba (gnome sort) cabe en la Norma y
-se razona con un invariante simple: si encuentro un par desordenado, lo arreglo y vuelvo a
-empezar; si llego al final, está ordenado. Es O(n²) — y está bien que lo sea: la piscine
+receta en el enunciado, solo "ordena". La solución de arriba (<a href="#g-gnome">gnome sort</a>) cabe en la <a href="#g-norma">Norma</a> y
+se razona con un <a href="#g-invariante">invariante</a> simple: si encuentro un par desordenado, lo arreglo y vuelvo a
+empezar; si llego al final, está ordenado. Es <a href="#g-gnome">O(n²)</a> — y está bien que lo sea: la piscine
 quiere que primero escribas un sort correcto y <em>después</em>, cuando ordenar 100.000
 elementos duela, tengas motivo para aprender quicksort. También es el cierre del módulo:
-swap (ex02) + recorrido con índices (ex07) + mutación in place = ordenación.</div>
+<a href="#g-swap">swap</a> (ex02) + recorrido con índices (ex07) + mutación <a href="#g-in-place">in place</a> = ordenación.</div>
+</div>
+
+<div class="card" id="preguntas">
+<h2><span class="ex">?</span>Preguntas probables de la evaluación</h2>
+<p>Lo que es fácil que pregunte quien te evalúe en C01, con una respuesta corta y el enlace a donde
+está explicado. Están agrupadas en: punteros, casos límite y entrega. Antes de mirar la respuesta,
+intenta contestar tú.</p>
+
+<h3>Punteros</h3>
+<details id="q-puntero">
+<summary>¿Qué es un puntero? ¿Qué hacen <code>&amp;</code> y <code>*</code>?</summary>
+<p>Una variable que guarda una dirección de memoria. <code>&amp;n</code> da la dirección de
+<code>n</code>; <code>*p</code> va a la dirección que guarda <code>p</code>. En ex00,
+<code>*nbr = 42</code> escribe en la variable del que llama. → <a href="#g-puntero">puntero</a>,
+<a href="#ex00">ex00</a></p>
+</details>
+<details id="q-swap-valor">
+<summary>¿Por qué <code>ft_swap</code> recibe punteros y no dos <code>int</code>?</summary>
+<p>Porque C pasa los argumentos por valor: con <code>int a, int b</code> la función intercambia sus
+copias y al volver no ha cambiado nada. Con las direcciones llega a las variables originales.
+→ <a href="#g-paso-por-valor">paso por valor</a>, <a href="#ex02">ex02</a></p>
+</details>
+<details id="q-ultimate">
+<summary>¿Cómo pruebas <code>ft_ultimate_ft</code>?</summary>
+<p>Con un <code>int n</code> y ocho punteros encadenados: <code>p1 = &amp;n</code>,
+<code>p2 = &amp;p1</code>… hasta <code>p8 = &amp;p7</code>, y se llama
+<code>ft_ultimate_ft(&amp;p8)</code>. Los nueve <code>*</code> de la función deshacen los nueve
+saltos y llegan a <code>n</code>. → <a href="#g-puntero-a-puntero">puntero a puntero</a>,
+<a href="#ex01">ex01</a></p>
+</details>
+<details id="q-orden">
+<summary>En <code>ft_ultimate_div_mod</code>, ¿por qué usas <code>div</code> y <code>mod</code> en vez de escribir directamente en <code>*a</code>?</summary>
+<p>Porque <code>*a</code> hace falta para calcular el resto. Si se escribe el cociente en
+<code>*a</code> antes, <code>*a % *b</code> ya usa el valor nuevo y el resto sale mal. Primero se
+lee todo, después se escribe. → <a href="#g-aliasing">aliasing</a>, <a href="#ex04">ex04</a></p>
+</details>
+
+<h3>Casos límite</h3>
+<details id="q-div0">
+<summary>¿Qué pasa si <code>b</code> vale 0 en <code>ft_div_mod</code>?</summary>
+<p>Dividir entre 0 es comportamiento indefinido; aquí el programa muere con <code>SIGFPE</code>. El
+enunciado no pide comprobarlo y el prototipo no tiene forma de avisar del error, así que no se
+comprueba. Lo mismo con <code>INT_MIN</code> entre <code>-1</code>. → <a href="#g-ub">comportamiento
+indefinido</a></p>
+</details>
+<details id="q-negativos">
+<summary>¿Qué da <code>ft_div_mod(-10, 3, &amp;div, &amp;mod)</code>?</summary>
+<p><code>div = -3</code> y <code>mod = -1</code>: el cociente se trunca hacia cero y el resto lleva
+el signo del dividendo. No hay que hacer nada especial: es lo que dan <code>/</code> y
+<code>%</code> en C. → <a href="#g-division-entera">división entera</a></p>
+</details>
+<details id="q-null">
+<summary>¿Y si te pasan <code>NULL</code> a <code>ft_putstr</code> o <code>ft_strlen</code>?</summary>
+<p>Segfault, como con las de la libc. Pasar <code>NULL</code> donde se espera una cadena es
+comportamiento indefinido, y el enunciado solo exige no reventar fuera de esos casos.
+→ <a href="#g-segfault">segfault</a></p>
+</details>
+<details id="q-size">
+<summary>¿Funcionan <code>ft_rev_int_tab</code> y <code>ft_sort_int_tab</code> con <code>size</code> 0 o 1, o con un tamaño impar?</summary>
+<p>Sí. Con 0 o 1, <code>size / 2</code> es 0 y <code>size - 1</code> es -1 o 0, así que no se entra
+en el bucle y no se toca memoria. Con tamaño impar, el bucle de ex07 para en <code>size / 2</code>
+y el del medio se queda en su sitio. El test de <code>test/</code> prueba <code>size</code> 0 y
+1. → <a href="#ex07">ex07</a>, <a href="#ex08">ex08</a></p>
+</details>
+<details id="q-sort">
+<summary>¿Qué algoritmo es tu <code>ft_sort_int_tab</code> y qué complejidad tiene?</summary>
+<p>Intercambio de vecinos: si una pareja está al revés, se cambia y se vuelve a empezar desde
+<code>i = 0</code>. Es correcto por su invariante, pero por volver al principio y no un paso atrás
+cuesta O(n³) en el peor caso, no O(n²): 166 749 comparaciones para 100 números al revés. Un gnome
+sort de verdad haría <code>i--</code>. → <a href="#g-gnome">gnome sort</a>,
+<a href="#g-invariante">invariante</a></p>
+</details>
+
+<h3>Entrega</h3>
+<details id="q-main">
+<summary>¿Puedes entregar el archivo con un <code>main</code> de pruebas?</summary>
+<p>Solo comentado. El enunciado dice que el <code>main</code> se entrega únicamente si se pide un
+programa; aquí se piden funciones, y la Moulinette las compila con su propio <code>main</code>.
+Un segundo <code>main</code> no enlaza. → <a href="#g-moulinette">Moulinette</a></p>
+</details>
+<details id="q-norma">
+<summary>¿Por qué no hay ni un <code>for</code>?</summary>
+<p>Porque la Norma lo prohíbe, igual que <code>do…while</code>, <code>switch</code> y el ternario.
+Todos los bucles son <code>while</code> con el contador inicializado antes, y las declaraciones van
+al principio de la función. → <a href="#g-norma">la Norma</a></p>
+</details>
+<details id="q-printf">
+<summary>¿Podrías usar <code>printf</code> en <code>ft_putstr</code>?</summary>
+<p>No: la única función autorizada en ex05 es <code>write</code>, y en el resto del módulo, ninguna.
+Usar otra es un ejercicio suspendido aunque la salida sea la misma. → <a href="#g-write">write</a>,
+<a href="#ex05">ex05</a></p>
+</details>
 </div>
 
 <footer>42.zenidx.com — C 01 · <a href="002_c00.html">← C 00</a> · <a href="004_c02.html">C 02 →</a></footer>
